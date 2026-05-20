@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
@@ -255,12 +256,17 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
             <p className="mb-2">
               <strong className="text-white/55">Юридическая информация.</strong>
             </p>
-            <ul className="space-y-1 list-disc list-inside marker:text-white/30">
+            <ul className="space-y-1 list-disc list-inside marker:text-white/30 mb-3">
               <li>Курс является информационным образовательным продуктом и не заменяет общеобразовательную программу.</li>
               <li>Результаты обучения индивидуальны и зависят от усилий и регулярности занятий ученика. Конкретный балл на экзамене или оценка в школе не гарантируются.</li>
-              <li>Платформа не собирает излишних персональных данных. Регистрация — только по нику. См. Политику конфиденциальности.</li>
+              <li>Платформа не собирает излишних персональных данных. Регистрация — только по нику.</li>
               <li>Используются собственные методические материалы. Упоминания школьной программы — в рамках свободного использования информации в образовательных целях (ст. 1274 ГК РФ).</li>
             </ul>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-3 border-t border-white/8">
+              <Link to="/legal/offer" target="_blank" className="text-cyan-400/70 hover:text-cyan-300 transition-colors">Публичная оферта →</Link>
+              <Link to="/legal/privacy" target="_blank" className="text-cyan-400/70 hover:text-cyan-300 transition-colors">Политика конфиденциальности →</Link>
+              <Link to="/legal/terms" target="_blank" className="text-cyan-400/70 hover:text-cyan-300 transition-colors">Пользовательское соглашение →</Link>
+            </div>
           </div>
 
         </div>
