@@ -18,6 +18,7 @@ export default function SiteFooter() {
             <p className="text-white/55 text-sm leading-relaxed max-w-md">
               Образовательная онлайн-платформа с ИИ-методистами. Информационно-консультационные услуги в области образования.
             </p>
+            <p className="text-white/35 text-xs mt-2">Продукт ООО «МАТ-ЛАБС»</p>
           </div>
 
           {/* Legal */}
@@ -43,15 +44,18 @@ export default function SiteFooter() {
         </div>
 
         {/* Bottom */}
-        <div className="pt-6 border-t border-white/8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="text-white/40 text-xs leading-relaxed">
-            <p>© {new Date().getFullYear()} Космо-Учитель. Все права защищены.</p>
-            <p className="mt-1 max-w-xl">
-              Сервис не выдаёт документов государственного образца. Услуги носят информационно-консультационный характер. Не подлежит лицензированию в соответствии со ст. 91 273-ФЗ.
-            </p>
-          </div>
-          <div className="text-white/30 text-xs">
-            Обработка данных: 152-ФЗ · Реклама: 38-ФЗ · ЗоЗПП
+        <div className="pt-6 border-t border-white/8 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="text-white/40 text-xs leading-relaxed">
+              <p className="font-bold text-white/70 mb-1">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
+              <p>Сервис «Космо-Учитель» — продукт ООО «МАТ-ЛАБС». Все права защищены.</p>
+              <p className="mt-1 max-w-xl">
+                Сервис не выдаёт документов государственного образца. Услуги носят информационно-консультационный характер. Не подлежит лицензированию в соответствии со ст. 91 273-ФЗ.
+              </p>
+            </div>
+            <div className="text-white/30 text-xs">
+              Обработка данных: 152-ФЗ · Реклама: 38-ФЗ · ЗоЗПП
+            </div>
           </div>
         </div>
 

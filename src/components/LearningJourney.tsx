@@ -218,17 +218,27 @@ export default function LearningJourney() {
         {/* Header (only on subject step) */}
         {step === "subject" && (
           <>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
-                <Icon name="Compass" size={14} className="text-purple-300" />
-                <span className="text-sm text-purple-300 font-medium">Адаптивная программа · Bloom + Mastery Learning</span>
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-10">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
+                  <Icon name="Compass" size={14} className="text-purple-300" />
+                  <span className="text-sm text-purple-300 font-medium">Адаптивная программа</span>
+                </div>
+                <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
+                  Персональный <span className="gradient-text-purple">маршрут обучения</span>
+                </h2>
+                <p className="text-white/55 text-lg">
+                  ИИ-методист протестирует, найдёт пробелы и составит программу, где каждое задание уникально
+                </p>
               </div>
-              <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
-                Персональный <span className="gradient-text-purple">маршрут обучения</span>
-              </h2>
-              <p className="text-white/55 text-lg max-w-2xl mx-auto">
-                ИИ-методист протестирует, найдёт пробелы и составит программу, где каждое задание уникально
-              </p>
+              <div className="relative rounded-3xl overflow-hidden border border-white/10 glow-purple">
+                <img
+                  src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/7bf89b3e-5e97-48ee-aaee-92f99b11c09d.jpg"
+                  alt="Школьники занимаются вместе"
+                  className="w-full aspect-[4/3] object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"></div>
+              </div>
             </div>
 
             {/* Login / saved journeys */}
@@ -365,7 +375,7 @@ export default function LearningJourney() {
             <h2 className="font-montserrat font-black text-3xl text-white mb-3">Программа завершена!</h2>
             <p className="text-white/55 mb-6">
               {progress.user
-                ? `Прогресс сохранён. Через 1–7 дней ИИ напомнит о повторении ключевых тем по системе Spaced Repetition.`
+                ? `Прогресс сохранён. Через 1–7 дней ИИ напомнит о повторении ключевых тем по системе интервального повторения.`
                 : "Войди в аккаунт, чтобы сохранять прогресс и продолжать с любого устройства."}
             </p>
             <button

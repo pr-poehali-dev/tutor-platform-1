@@ -137,7 +137,7 @@ export default function LeaderboardSection() {
               <a href="/legal/offer" className="hover:text-white/70 transition-colors">Оферта</a>
               <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Конфиденциальность</a>
             </div>
-            <p className="text-white/25 text-sm">© 2025 УчисьПро</p>
+            <p className="text-white/25 text-sm">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
           </div>
         </div>
       </footer>

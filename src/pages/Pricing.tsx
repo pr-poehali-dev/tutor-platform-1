@@ -138,17 +138,27 @@ export default function Pricing() {
         </Link>
 
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-5">
-            <Icon name="Sparkles" size={14} className="text-purple-300" />
-            <span className="text-sm text-purple-300 font-medium">Тарифные планы</span>
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-12 md:mb-16">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-5">
+              <Icon name="Sparkles" size={14} className="text-purple-300" />
+              <span className="text-sm text-purple-300 font-medium">Тарифные планы</span>
+            </div>
+            <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4 leading-tight">
+              Выбери подходящий <span className="gradient-text-purple">тариф</span>
+            </h1>
+            <p className="text-white/55 text-base md:text-lg">
+              Подписка стоит дешевле одного занятия с репетитором. Без скрытых платежей. Отмена в любой момент.
+            </p>
           </div>
-          <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4 leading-tight">
-            Выбери подходящий <span className="gradient-text-purple">тариф</span>
-          </h1>
-          <p className="text-white/55 text-base md:text-lg max-w-2xl mx-auto">
-            Подписка стоит дешевле одного занятия с репетитором. Без скрытых платежей. Отмена в любой момент.
-          </p>
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 glow-purple hidden md:block">
+            <img
+              src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/2de2b71a-0b6a-4ae9-9c22-fd957545b027.jpg"
+              alt="Ученица занимается за столом с планшетом и тетрадью"
+              className="w-full aspect-[4/3] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"></div>
+          </div>
         </div>
 
         {/* Plans */}

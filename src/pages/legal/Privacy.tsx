@@ -13,6 +13,12 @@ export default function Privacy() {
           Настоящая Политика разработана в соответствии с Федеральным законом от 27.07.2006 №152-ФЗ «О персональных данных».
         </p>
 
+        <div className="bg-white/4 border border-white/8 rounded-2xl p-4 not-prose">
+          <p className="text-xs text-white/60 mb-1">Оператор персональных данных:</p>
+          <p className="text-white font-semibold">ООО «МАТ-ЛАБС»</p>
+          <p className="text-white/50 text-xs mt-1">владелец и оператор сервиса «Космо-Учитель»</p>
+        </div>
+
         <h2 className="font-montserrat font-black text-lg text-white pt-3">1. Какие данные собираем</h2>
         <p>1.1. <strong className="text-white">Минимально необходимый объём:</strong> ник (псевдоним), возрастная категория (класс), e-mail (для восстановления доступа, по желанию).</p>
         <p>1.2. <strong className="text-white">Не собираем:</strong> ФИО, паспортные данные, точный адрес, телефон, фотографии.</p>

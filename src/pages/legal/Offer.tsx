@@ -14,8 +14,8 @@ export default function Offer() {
         </p>
 
         <h2 className="font-montserrat font-black text-lg text-white pt-3">1. Термины</h2>
-        <p><strong className="text-white">Платформа</strong> — образовательный онлайн-сервис, предоставляющий информационно-консультационные услуги с использованием технологий искусственного интеллекта.</p>
-        <p><strong className="text-white">Исполнитель</strong> — владелец Платформы.</p>
+        <p><strong className="text-white">Платформа</strong> — образовательный онлайн-сервис «Космо-Учитель», предоставляющий информационно-консультационные услуги с использованием технологий искусственного интеллекта.</p>
+        <p><strong className="text-white">Исполнитель</strong> — Общество с ограниченной ответственностью «МАТ-ЛАБС» (ООО «МАТ-ЛАБС»), владелец и оператор Платформы.</p>
         <p><strong className="text-white">Пользователь</strong> — физическое лицо, зарегистрировавшееся на Платформе. Для лиц младше 14 лет — с согласия законного представителя.</p>
         <p><strong className="text-white">Услуги</strong> — доступ к учебным материалам и сессиям с ИИ-методистом.</p>
 
@@ -45,6 +45,13 @@ export default function Offer() {
         <h2 className="font-montserrat font-black text-lg text-white pt-3">7. Прочие условия</h2>
         <p>7.1. Все споры решаются путём переговоров, а при недостижении согласия — в порядке, установленном законодательством РФ.</p>
         <p>7.2. Исполнитель вправе изменять условия оферты, размещая новую редакцию на Платформе.</p>
+
+        <h2 className="font-montserrat font-black text-lg text-white pt-3">8. Реквизиты Исполнителя</h2>
+        <div className="bg-white/4 border border-white/8 rounded-2xl p-4 mt-2 not-prose">
+          <p><strong className="text-white">Наименование:</strong> Общество с ограниченной ответственностью «МАТ-ЛАБС»</p>
+          <p><strong className="text-white">Сокращённое наименование:</strong> ООО «МАТ-ЛАБС»</p>
+          <p className="text-white/55 text-xs mt-2">Полные реквизиты (ИНН, ОГРН, юридический адрес, банковские реквизиты) предоставляются по запросу через форму обратной связи на Платформе.</p>
+        </div>
 
       </section>
     </LegalLayout>
