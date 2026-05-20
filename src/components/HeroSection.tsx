@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 const HERO_IMAGE = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/f7a109b5-3a4a-4080-a8ab-a6a4d093b14e.jpg";
@@ -33,11 +34,18 @@ export default function HeroSection() {
                 Интерактивные уроки, реальные задачи и крутые достижения — всё, чтобы ты кайфовал от учёбы
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up animate-delay-300">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 animate-fade-in-up animate-delay-300">
                 <button className="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-2xl text-base flex items-center gap-2 hover:opacity-90 transition-all glow-purple">
                   <span>Начать учиться</span>
                   <Icon name="ArrowRight" size={18} />
                 </button>
+                <Link
+                  to="/pricing"
+                  className="flex items-center gap-2 px-6 py-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 text-white hover:bg-purple-500/20 hover:border-purple-500/60 transition-all font-bold text-base"
+                >
+                  <Icon name="Sparkles" size={16} className="text-purple-300" />
+                  Перейти к тарифам
+                </Link>
                 <button className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/15 text-white/70 hover:text-white hover:border-white/30 transition-all font-medium">
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                     <Icon name="Play" size={14} />
