@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import StepSubject from "./journey/StepSubject";
 import StepTest from "./journey/StepTest";
 import StepResults from "./journey/StepResults";
 import StepProgram from "./journey/StepProgram";
 import StepLesson from "./journey/StepLesson";
+import UserLoginPanel from "./journey/UserLoginPanel";
+import { useUserProgress, SavedJourney } from "./journey/useUserProgress";
 import {
   LEARNING_PATH_URL,
+  SUBJECTS,
   SubjectChoice,
   TestQuestion,
   TestAnswer,
@@ -23,10 +26,22 @@ export default function LearningJourney() {
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [program, setProgram] = useState<Program | null>(null);
+  const [currentJourneyId, setCurrentJourneyId] = useState<number | null>(null);
   const [currentModule, setCurrentModule] = useState<ProgramModule | null>(null);
   const [completedModules, setCompletedModules] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  const progress = useUserProgress();
+
+  // Load journeys when user logs in
+  useEffect(() => {
+    if (progress.user) {
+      progress.loadJourneys(progress.user.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress.user?.id]);
 
   const callAPI = async <T,>(body: Record<string, unknown>): Promise<T> => {
     const res = await fetch(LEARNING_PATH_URL, {
@@ -37,6 +52,36 @@ export default function LearningJourney() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || data.detail || "Ошибка ИИ");
     return data;
+  };
+
+  // ─── Login ───
+  const handleLogin = async (nick: string, dn?: string, av?: string) => {
+    setLoginError(null);
+    try {
+      await progress.login(nick, dn, av);
+    } catch (e) {
+      setLoginError(e instanceof Error ? e.message : "Ошибка входа");
+    }
+  };
+
+  // ─── Continue saved journey ───
+  const continueSavedJourney = (j: SavedJourney) => {
+    const subj = SUBJECTS.find(s => s.id === j.subject);
+    if (!subj) return;
+    setSubject(subj);
+    setGrade(j.grade);
+    setAnalysis({
+      score_percent: j.initial_score_percent,
+      level_assessment: j.level_assessment,
+      weak_topics: j.weak_topics || [],
+      strong_topics: j.strong_topics || [],
+      personalized_message: "С возвращением! Продолжим с того места, где остановились.",
+      follow_up_questions: [],
+    });
+    setProgram(j.program_data);
+    setCurrentJourneyId(j.id);
+    setCompletedModules(j.completed_module_ids || []);
+    setStep("program");
   };
 
   // ─── Start: get test ───
@@ -81,7 +126,7 @@ export default function LearningJourney() {
     }
   };
 
-  // ─── Build personal program ───
+  // ─── Build personal program (+ save to DB if logged in) ───
   const buildProgram = async () => {
     if (!subject || !analysis) return;
     setIsLoading(true);
@@ -94,6 +139,27 @@ export default function LearningJourney() {
         level: analysis.level_assessment,
       });
       setProgram(data);
+
+      // Save to DB if user logged in
+      if (progress.user) {
+        try {
+          const journeyId = await progress.saveJourney({
+            user_id: progress.user.id,
+            subject: subject.id,
+            grade,
+            level_assessment: analysis.level_assessment,
+            initial_score_percent: analysis.score_percent,
+            program_data: data,
+            weak_topics: analysis.weak_topics,
+            strong_topics: analysis.strong_topics,
+          });
+          setCurrentJourneyId(journeyId);
+          progress.loadJourneys(progress.user.id);
+        } catch {
+          // continue without DB
+        }
+      }
+
       setStep("program");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка");
@@ -107,11 +173,28 @@ export default function LearningJourney() {
     setStep("lesson");
   };
 
-  const onModuleComplete = () => {
+  const onModuleComplete = async () => {
     if (currentModule) {
-      setCompletedModules(prev => [...new Set([...prev, currentModule.id])]);
+      const newCompleted = [...new Set([...completedModules, currentModule.id])];
+      setCompletedModules(newCompleted);
+
+      // Save to DB
+      if (progress.user && currentJourneyId) {
+        try {
+          await progress.completeModule({
+            user_id: progress.user.id,
+            journey_id: currentJourneyId,
+            module_id: currentModule.id,
+            repeat_after_days: currentModule.repeat_after_days || [1, 3, 7],
+            topic: currentModule.topic,
+          });
+        } catch {
+          // continue
+        }
+      }
     }
-    setStep(program && completedModules.length + 1 >= program.modules.length ? "complete" : "program");
+    const allDone = program && currentModule && completedModules.length + 1 >= program.modules.length;
+    setStep(allDone ? "complete" : "program");
     setCurrentModule(null);
   };
 
@@ -122,6 +205,7 @@ export default function LearningJourney() {
     setQuestions([]);
     setAnalysis(null);
     setProgram(null);
+    setCurrentJourneyId(null);
     setCurrentModule(null);
     setCompletedModules([]);
     setError(null);
@@ -133,18 +217,31 @@ export default function LearningJourney() {
 
         {/* Header (only on subject step) */}
         {step === "subject" && (
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
-              <Icon name="Compass" size={14} className="text-purple-300" />
-              <span className="text-sm text-purple-300 font-medium">Адаптивная программа · Bloom + Mastery Learning</span>
+          <>
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
+                <Icon name="Compass" size={14} className="text-purple-300" />
+                <span className="text-sm text-purple-300 font-medium">Адаптивная программа · Bloom + Mastery Learning</span>
+              </div>
+              <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
+                Персональный <span className="gradient-text-purple">маршрут обучения</span>
+              </h2>
+              <p className="text-white/55 text-lg max-w-2xl mx-auto">
+                ИИ-методист протестирует, найдёт пробелы и составит программу, где каждое задание уникально
+              </p>
             </div>
-            <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
-              Персональный <span className="gradient-text-purple">маршрут обучения</span>
-            </h2>
-            <p className="text-white/55 text-lg max-w-2xl mx-auto">
-              ИИ-методист протестирует, найдёт пробелы и составит программу, где каждое задание уникально
-            </p>
-          </div>
+
+            {/* Login / saved journeys */}
+            <UserLoginPanel
+              user={progress.user}
+              savedJourneys={progress.savedJourneys}
+              onLogin={handleLogin}
+              onLogout={progress.logout}
+              onContinueJourney={continueSavedJourney}
+              isLoading={progress.isLoading}
+              error={loginError}
+            />
+          </>
         )}
 
         {/* Progress strip (after subject) */}
@@ -155,8 +252,15 @@ export default function LearningJourney() {
               className="text-white/40 hover:text-white text-xs flex items-center gap-1.5 transition-colors"
             >
               <Icon name="X" size={13} />
-              Прервать
+              К списку маршрутов
             </button>
+            {progress.user && (
+              <div className="ml-auto flex items-center gap-2 text-xs bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+                <span className="text-lg">{progress.user.avatar_emoji}</span>
+                <span className="text-white/70">{progress.user.display_name || progress.user.nickname}</span>
+                <span className="text-yellow-400 font-bold">⚡ {progress.user.total_xp}</span>
+              </div>
+            )}
             <div className="flex-1 flex items-center gap-2">
               {[
                 { id: "test", label: "Тест" },
@@ -260,7 +364,9 @@ export default function LearningJourney() {
             <div className="text-7xl mb-4">🏆</div>
             <h2 className="font-montserrat font-black text-3xl text-white mb-3">Программа завершена!</h2>
             <p className="text-white/55 mb-6">
-              Ты прошёл все модули. ИИ сохранит прогресс и через 1–7 дней предложит повторение по системе Spaced Repetition.
+              {progress.user
+                ? `Прогресс сохранён. Через 1–7 дней ИИ напомнит о повторении ключевых тем по системе Spaced Repetition.`
+                : "Войди в аккаунт, чтобы сохранять прогресс и продолжать с любого устройства."}
             </p>
             <button
               onClick={resetAll}
