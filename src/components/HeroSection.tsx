@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
-const HERO_IMAGE = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/893cbe79-7e6b-4127-a119-848805dc66f3.jpg";
+const HERO_IMAGE = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/0994044b-25d5-4180-a660-45350695aeb1.jpg";
 
 const STATS = [
   { value: "50+", label: "Предметов", icon: "📖", color: "#a855f7" },
