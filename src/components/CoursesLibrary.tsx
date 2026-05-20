@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import Icon from "@/components/ui/icon";
-import { COURSES, Course, SortKey } from "./courses/coursesData";
+import { COURSES, Course, SortKey, getCoursePrice } from "./courses/coursesData";
 import CoursesFilters from "./courses/CoursesFilters";
 import CourseCard from "./courses/CourseCard";
 import CourseDetailModal from "./courses/CourseDetailModal";
@@ -30,7 +30,10 @@ export default function CoursesLibrary() {
     if (gradeFilter !== "all") result = result.filter(c => c.grade === gradeFilter);
     if (formatFilter !== "all") result = result.filter(c => c.format === formatFilter);
     if (trialOnly) result = result.filter(c => c.trialAvailable);
-    result = result.filter(c => c.price >= priceRange[0] && c.price <= priceRange[1]);
+    result = result.filter(c => {
+      const p = getCoursePrice(c);
+      return p >= priceRange[0] && p <= priceRange[1];
+    });
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -43,8 +46,8 @@ export default function CoursesLibrary() {
 
     result.sort((a, b) => {
       if (sortKey === "rating") return b.rating - a.rating;
-      if (sortKey === "price_asc") return a.price - b.price;
-      if (sortKey === "price_desc") return b.price - a.price;
+      if (sortKey === "price_asc") return getCoursePrice(a) - getCoursePrice(b);
+      if (sortKey === "price_desc") return getCoursePrice(b) - getCoursePrice(a);
       if (sortKey === "new") return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       return b.students - a.students;
     });

@@ -139,14 +139,14 @@ export default function AITeacher() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
             <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse inline-block"></span>
-            <span className="text-sm text-purple-300 font-medium">Polza.ai + Yandex SpeechKit · работает в реальном времени</span>
+            <span className="text-sm text-purple-300 font-medium">Работает в реальном времени · с голосом</span>
           </div>
           <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
             Твой персональный{" "}
             <span className="gradient-text-purple">ИИ‑преподаватель</span>
           </h2>
           <p className="text-white/55 text-lg max-w-2xl mx-auto">
-            Полная замена репетитора: умные ответы, живой голос, бесконечное терпение. Доступен 24/7 и стоит в 10 раз дешевле.
+            Умные ответы, живой голос, бесконечное терпение. Доступен круглосуточно и подстраивается под твой темп.
           </p>
         </div>
 
@@ -187,7 +187,7 @@ export default function AITeacher() {
         {!demoActive && (
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { icon: "🕐", title: "Доступен 24/7", desc: "Никаких отмен, опозданий и плохого настроения." },
+              { icon: "🕐", title: "Доступен круглосуточно", desc: "Никаких отмен, опозданий и плохого настроения." },
               { icon: "🎯", title: "Запоминает контекст", desc: "Помнит, что ты не понял, и возвращается к этому." },
               { icon: "😌", title: "Без стресса", desc: "Не ругает за ошибки. Объясняет столько раз, сколько нужно." },
             ].map(f => (

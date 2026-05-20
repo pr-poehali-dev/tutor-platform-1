@@ -48,7 +48,7 @@ export default function LeaderboardSection() {
                     </div>
                     <div className="text-right">
                       <p className="font-montserrat font-black text-base text-white">{user.points.toLocaleString()}</p>
-                      <p className="text-purple-400 text-xs">XP</p>
+                      <p className="text-purple-400 text-xs">опыт</p>
                     </div>
                   </div>
                 ))}
@@ -67,7 +67,7 @@ export default function LeaderboardSection() {
                 </div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-white/60">До #11 места</span>
-                  <span className="text-purple-300 font-semibold">+180 XP</span>
+                  <span className="text-purple-300 font-semibold">+180 опыта</span>
                 </div>
                 <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full" style={{ width: '68%' }}></div>
@@ -75,13 +75,13 @@ export default function LeaderboardSection() {
               </div>
 
               <div className="bg-card/60 border border-white/10 rounded-3xl p-6">
-                <p className="text-white/60 text-sm mb-4">Как зарабатывать XP?</p>
+                <p className="text-white/60 text-sm mb-4">Как зарабатывать опыт?</p>
                 <div className="flex flex-col gap-3">
                   {[
-                    { action: "Пройти урок", xp: "+50 XP", emoji: "📖" },
-                    { action: "Тест без ошибок", xp: "+100 XP", emoji: "🎯" },
-                    { action: "Ежедневный стрик", xp: "+20 XP", emoji: "🔥" },
-                    { action: "Помочь однокласснику", xp: "+30 XP", emoji: "🤝" },
+                    { action: "Пройти урок", xp: "+50 опыта", emoji: "📖" },
+                    { action: "Тест без ошибок", xp: "+100 опыта", emoji: "🎯" },
+                    { action: "Ежедневная серия", xp: "+20 опыта", emoji: "🔥" },
+                    { action: "Помочь однокласснику", xp: "+30 опыта", emoji: "🤝" },
                   ].map((item) => (
                     <div key={item.action} className="flex items-center gap-3">
                       <span className="text-xl">{item.emoji}</span>
@@ -132,10 +132,10 @@ export default function LeaderboardSection() {
               <span className="font-montserrat font-black text-lg gradient-text-purple">УчисьПро</span>
             </div>
             <div className="flex gap-6 text-white/40 text-sm">
-              <a href="#" className="hover:text-white/70 transition-colors">О нас</a>
-              <a href="#" className="hover:text-white/70 transition-colors">Тарифы</a>
-              <a href="#" className="hover:text-white/70 transition-colors">Помощь</a>
-              <a href="#" className="hover:text-white/70 transition-colors">Контакты</a>
+              <a href="#courses" className="hover:text-white/70 transition-colors">Курсы</a>
+              <a href="/pricing" className="hover:text-white/70 transition-colors">Тарифы</a>
+              <a href="/legal/offer" className="hover:text-white/70 transition-colors">Оферта</a>
+              <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Конфиденциальность</a>
             </div>
             <p className="text-white/25 text-sm">© 2025 УчисьПро</p>
           </div>

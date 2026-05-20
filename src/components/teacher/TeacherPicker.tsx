@@ -22,10 +22,10 @@ export default function TeacherPicker({
       {/* Features */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         {[
-          { icon: "🎙️", title: "Живой голос", desc: "Yandex SpeechKit с эмоциями" },
-          { icon: "🧠", title: "GPT-4 ядро", desc: "Polza.ai отвечает мгновенно" },
+          { icon: "🎙️", title: "Живой голос", desc: "Естественная речь с эмоциями" },
+          { icon: "🧠", title: "Умное ядро", desc: "Отвечает мгновенно и по делу" },
           { icon: "💬", title: "Реальный диалог", desc: "Любые вопросы, любой темп" },
-          { icon: "💰", title: "От 0 ₽", desc: "Без оплаты по часам" },
+          { icon: "💰", title: "Доступная цена", desc: "Подписка вместо оплаты за час" },
         ].map(f => (
           <div key={f.title} className="bg-card/50 border border-white/8 rounded-2xl p-4 text-center card-hover">
             <div className="text-3xl mb-2">{f.icon}</div>

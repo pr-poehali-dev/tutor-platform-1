@@ -116,7 +116,7 @@ export default function CoursesSection({ activeCourse, onSetActiveCourse }: Cour
                 </div>
                 <div>
                   <h3 className="font-montserrat font-black text-xl text-white">Мой профиль</h3>
-                  <p className="text-white/50 text-sm">Уровень 7 · 4 820 XP</p>
+                  <p className="text-white/50 text-sm">Уровень 7 · 4 820 опыта</p>
                 </div>
                 <div className="ml-auto bg-yellow-500/20 border border-yellow-500/30 rounded-xl px-3 py-1.5">
                   <span className="text-yellow-400 text-sm font-bold">🔥 7 дней</span>

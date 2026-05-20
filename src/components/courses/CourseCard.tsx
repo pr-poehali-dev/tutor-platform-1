@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
 
 interface CourseCardProps {
   course: Course;
@@ -10,6 +10,8 @@ interface CourseCardProps {
 
 export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenDetail }: CourseCardProps) {
   const fmt = FORMAT_CONFIG[course.format];
+  const realPrice = getCoursePrice(course);
+  const oldPrice = Math.round(realPrice * 1.6);
 
   return (
     <div
@@ -68,7 +70,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1 justify-end">
               <span className="text-cyan-400 text-xs">⚡</span>
-              <span className="text-white text-xs font-bold">24/7</span>
+              <span className="text-white text-xs font-bold">Круглосуточно</span>
             </div>
             <p className="text-white/30 text-xs">мгновенно</p>
           </div>
@@ -110,16 +112,12 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           <div>
             <div className="flex items-baseline gap-1">
               <span className="font-montserrat font-black text-xl text-white">
-                {course.isSale
-                  ? Math.round(course.price * (1 - (course.salePercent || 0) / 100)).toLocaleString()
-                  : course.price.toLocaleString()}
+                {realPrice.toLocaleString("ru-RU")}
               </span>
               <span className="text-white text-sm">₽</span>
             </div>
-            {course.isSale && (
-              <span className="text-white/30 text-xs line-through">{course.price.toLocaleString()} ₽</span>
-            )}
-            <div className="text-white/40 text-xs">{course.priceUnit}</div>
+            <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
+            <div className="text-white/40 text-xs">за полный курс</div>
           </div>
           <div className="ml-auto flex gap-2">
             <button

@@ -75,7 +75,7 @@ export default function LessonRoom({
           <p className="text-white/50 text-xs mb-2">Заработано на уроке</p>
           <div className="flex items-baseline gap-1 mb-2">
             <span className="font-montserrat font-black text-2xl text-yellow-400">{userXP}</span>
-            <span className="text-yellow-400 text-sm">XP</span>
+            <span className="text-yellow-400 text-sm">опыта</span>
           </div>
           <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
             <div

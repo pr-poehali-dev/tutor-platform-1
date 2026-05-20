@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 
 interface Props {
@@ -163,7 +163,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
                 </div>
                 <div>
                   <p className="font-montserrat font-bold text-white text-sm">Преподаёт ИИ-методист</p>
-                  <p className="text-white/55 text-xs">{course.tutorBadge} · доступен 24/7 · подстраивается под твой уровень</p>
+                  <p className="text-white/55 text-xs">{course.tutorBadge} · доступен круглосуточно · подстраивается под твой уровень</p>
                 </div>
               </div>
             </div>
@@ -276,14 +276,14 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-1.5">
               <span className="font-montserrat font-black text-2xl text-white">
-                {course.price === 0 ? "Бесплатно" : `${course.price.toLocaleString("ru-RU")} ₽`}
+                {getCoursePrice(course).toLocaleString("ru-RU")} ₽
               </span>
-              {course.price > 0 && <span className="text-white/45 text-xs">{course.priceUnit}</span>}
+              <span className="text-white/45 text-xs">за полный курс</span>
             </div>
             {course.trialAvailable && (
               <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
-                Пробный урок без оплаты
+                Первый урок без оплаты
               </p>
             )}
           </div>

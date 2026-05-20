@@ -24,6 +24,7 @@ export default function SiteFooter() {
           <div>
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Документы</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link to="/pricing" className="text-white/55 hover:text-white transition-colors">Тарифы и оплата</Link></li>
               <li><Link to="/legal/offer" className="text-white/55 hover:text-white transition-colors">Публичная оферта</Link></li>
               <li><Link to="/legal/privacy" className="text-white/55 hover:text-white transition-colors">Политика конфиденциальности</Link></li>
               <li><Link to="/legal/terms" className="text-white/55 hover:text-white transition-colors">Пользовательское соглашение</Link></li>
