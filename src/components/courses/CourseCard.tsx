@@ -54,19 +54,21 @@ export default function CourseCard({ course, isExpanded, onToggleExpand }: Cours
           ))}
         </div>
 
-        {/* Tutor */}
-        <div className="flex items-center gap-2.5 mb-4 p-3 bg-white/4 rounded-xl border border-white/6">
-          <span className="text-2xl">{course.tutorAvatar}</span>
+        {/* AI Teacher badge (replaces human tutor) */}
+        <div className="flex items-center gap-2.5 mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-base flex-shrink-0">
+            🤖
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-semibold truncate">{course.tutor}</p>
-            <p className="text-purple-400 text-xs">{course.tutorBadge}</p>
+            <p className="text-white text-xs font-semibold">ИИ-преподаватель</p>
+            <p className="text-purple-400 text-xs">Polza.ai + голос SpeechKit</p>
           </div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1 justify-end">
-              <span className="text-yellow-400 text-xs">⭐</span>
-              <span className="text-white text-xs font-bold">{course.rating}</span>
+              <span className="text-cyan-400 text-xs">⚡</span>
+              <span className="text-white text-xs font-bold">24/7</span>
             </div>
-            <p className="text-white/30 text-xs">{course.reviews} отзывов</p>
+            <p className="text-white/30 text-xs">мгновенно</p>
           </div>
         </div>
 
