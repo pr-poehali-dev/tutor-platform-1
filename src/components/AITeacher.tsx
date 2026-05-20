@@ -6,9 +6,9 @@ import Icon from "@/components/ui/icon";
 interface Teacher {
   id: string;
   name: string;
+  age: number;
   subject: string;
-  emoji: string;
-  avatar: string;
+  image: string;
   voice: string;
   style: string;
   color: string;
@@ -22,58 +22,58 @@ const TEACHERS: Teacher[] = [
   {
     id: "alex",
     name: "Алекс",
+    age: 15,
     subject: "Математика",
-    emoji: "🧑‍🏫",
-    avatar: "👨‍💼",
-    voice: "Мужской, спокойный",
-    style: "Строгий математик",
+    image: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/39f22ac0-1618-4f27-916e-ad6ada76398d.jpg",
+    voice: "Мужской, бодрый",
+    style: "Математический гений",
     color: "from-purple-600 to-blue-600",
     accent: "#a855f7",
-    badge: "Топ-1 по математике",
-    traits: ["Точность", "Логика", "Терпение"],
-    greeting: "Привет! Я Алекс, твой преподаватель математики. Сегодня разберём квадратные уравнения — это проще, чем кажется! Готов начать?",
+    badge: "Победитель олимпиад",
+    traits: ["Логика", "Лайфхаки", "Объясняет на пальцах"],
+    greeting: "Хэй! Я Алекс. Сегодня покажу, как уделать квадратные уравнения за 10 минут. Поехали — обещаю, будет несложно!",
   },
   {
     id: "sofia",
     name: "София",
+    age: 15,
     subject: "Английский",
-    emoji: "👩‍🏫",
-    avatar: "👩‍💼",
+    image: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/81041b7f-8580-4171-a204-e3c8323a2928.jpg",
     voice: "Женский, энергичный",
-    style: "Энергичная учительница",
+    style: "Своя в теме",
     color: "from-pink-500 to-rose-600",
     accent: "#f72585",
-    badge: "Носитель языка",
-    traits: ["Юмор", "Практика", "Живые диалоги"],
-    greeting: "Hey! Я София, и я обожаю английский! Сегодня поговорим как настоящие носители языка — никаких скучных правил, только живая речь!",
+    badge: "Свободный английский",
+    traits: ["Мемы", "Сленг", "Живой разговор"],
+    greeting: "Hey, what's up! Я София. Будем учить английский так, как реально говорят — никакой нудной грамматики, только movies, music и vibes!",
   },
   {
     id: "dmitry",
-    name: "Дмитрий",
+    name: "Дима",
+    age: 16,
     subject: "Физика",
-    emoji: "🧑‍🔬",
-    avatar: "👨‍🔬",
-    voice: "Мужской, глубокий",
-    style: "Учёный-энтузиаст",
+    image: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/fdad67ff-2841-4cdc-8926-d2eadd60a660.jpg",
+    voice: "Мужской, спокойный",
+    style: "Любит эксперименты",
     color: "from-cyan-500 to-blue-600",
     accent: "#00d4ff",
-    badge: "Кандидат наук",
-    traits: ["Эксперименты", "Визуализация", "Глубина"],
-    greeting: "Добро пожаловать! Я Дмитрий. Физика — это не формулы, это магия природы! Сегодня объясню механику так, что ты сам не заметишь, как всё поймёшь.",
+    badge: "Чемпион по физике",
+    traits: ["Опыты", "Графики", "Простые примеры"],
+    greeting: "Йо! Я Дима. Физика — это не страшно, это огонь. Сейчас расскажу про механику так, что ты будешь видеть её во всём вокруг!",
   },
   {
     id: "natasha",
-    name: "Наташа",
+    name: "Ника",
+    age: 14,
     subject: "Русский язык",
-    emoji: "👩‍💻",
-    avatar: "👩‍🎓",
-    voice: "Женский, мягкий",
-    style: "Добрый наставник",
+    image: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/39056c22-165f-4885-b366-19265d9a6443.jpg",
+    voice: "Женский, дружелюбный",
+    style: "Лучшая подружка",
     color: "from-rose-500 to-orange-500",
     accent: "#ff6b35",
-    badge: "Эксперт ЕГЭ",
-    traits: ["Поддержка", "Мнемотехники", "Понятность"],
-    greeting: "Привет, дружок! Я Наташа. Русский — это не страшно, это увлекательно! Сегодня разберём орфографию так, что ты запомнишь навсегда.",
+    badge: "Пишет без ошибок",
+    traits: ["Мнемотехники", "Поддержка", "Без занудства"],
+    greeting: "Приветик! Я Ника. Русский кажется сложным, но я знаю классные трюки — после моих объяснений ты будешь писать без единой ошибки!",
   },
 ];
 
@@ -104,66 +104,89 @@ const LESSON_STAGES = [
 
 // ─── AVATAR COMPONENT ─────────────────────────────────────────────────────────
 
-function AvatarDisplay({ teacher, isSpeaking, emotion }: {
+function AvatarDisplay({ teacher, isSpeaking, emotion, size = "md" }: {
   teacher: Teacher;
   isSpeaking: boolean;
   emotion: "neutral" | "happy" | "thinking" | "explaining";
+  size?: "sm" | "md" | "lg";
 }) {
-  const emotionEmoji = {
-    neutral: teacher.avatar,
-    happy: "😄",
-    thinking: "🤔",
-    explaining: "🧑‍💻",
+  const dim = size === "lg" ? "w-48 h-48 md:w-56 md:h-56" : size === "sm" ? "w-20 h-20" : "w-36 h-36 md:w-44 md:h-44";
+
+  const emotionFilter = {
+    neutral: "none",
+    happy: "saturate(1.15) brightness(1.05)",
+    thinking: "saturate(0.85) brightness(0.95)",
+    explaining: "saturate(1.1)",
   }[emotion];
 
   return (
     <div className="relative flex flex-col items-center">
-      {/* Glow ring */}
+      {/* Glow ring + image */}
       <div
-        className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-500 ${isSpeaking ? "scale-105" : "scale-100"}`}
+        className={`relative ${dim} rounded-full transition-all duration-500 ${isSpeaking ? "scale-[1.04]" : "scale-100"}`}
         style={{
-          background: `linear-gradient(135deg, ${teacher.accent}30, ${teacher.accent}10)`,
-          boxShadow: isSpeaking ? `0 0 40px ${teacher.accent}60, 0 0 80px ${teacher.accent}20` : `0 0 20px ${teacher.accent}20`,
-          border: `2px solid ${teacher.accent}40`,
+          boxShadow: isSpeaking
+            ? `0 0 50px ${teacher.accent}80, 0 0 100px ${teacher.accent}30, inset 0 0 0 3px ${teacher.accent}`
+            : `0 0 30px ${teacher.accent}40, inset 0 0 0 2px ${teacher.accent}60`,
         }}
       >
-        {/* Animated ring when speaking */}
+        {/* Animated rings when speaking */}
         {isSpeaking && (
           <>
             <div
-              className="absolute inset-0 rounded-full animate-ping"
-              style={{ backgroundColor: `${teacher.accent}15` }}
+              className="absolute -inset-2 rounded-full animate-ping"
+              style={{ border: `2px solid ${teacher.accent}40`, animationDuration: "1.5s" }}
             />
             <div
-              className="absolute -inset-3 rounded-full"
+              className="absolute -inset-5 rounded-full"
               style={{
-                border: `1px solid ${teacher.accent}30`,
-                animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite",
+                border: `1px solid ${teacher.accent}25`,
+                animation: "ping 2s cubic-bezier(0,0,0.2,1) infinite",
               }}
             />
           </>
         )}
-        <span
-          className="text-6xl md:text-7xl transition-all duration-300 select-none"
-          style={{ filter: isSpeaking ? "drop-shadow(0 0 8px rgba(255,255,255,0.3))" : "none" }}
-        >
-          {emotionEmoji}
-        </span>
+
+        {/* Avatar image */}
+        <div className="absolute inset-0 rounded-full overflow-hidden">
+          <img
+            src={teacher.image}
+            alt={teacher.name}
+            className="w-full h-full object-cover transition-all duration-300"
+            style={{ filter: emotionFilter }}
+          />
+          {/* Color overlay gradient */}
+          <div
+            className="absolute inset-0 mix-blend-overlay opacity-20"
+            style={{ background: `linear-gradient(135deg, ${teacher.accent}, transparent 60%)` }}
+          />
+          {/* Bottom emotion sticker */}
+          {emotion !== "neutral" && (
+            <div className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-white/95 flex items-center justify-center text-xl shadow-lg animate-fade-in">
+              {emotion === "happy" ? "😄" : emotion === "thinking" ? "🤔" : "💡"}
+            </div>
+          )}
+        </div>
+
+        {/* Live indicator */}
+        <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block"></span>
+          <span className="text-white text-xs font-bold">LIVE</span>
+        </div>
       </div>
 
-      {/* Speaking indicator */}
+      {/* Speaking sound bars */}
       {isSpeaking && (
-        <div className="flex items-center gap-1 mt-3">
-          {[1, 2, 3, 4, 5].map(i => (
+        <div className="flex items-end gap-1 mt-3 h-5">
+          {[1, 2, 3, 4, 5, 6, 7].map(i => (
             <div
               key={i}
               className="w-1 rounded-full"
               style={{
                 backgroundColor: teacher.accent,
-                height: `${8 + Math.sin(Date.now() / 200 + i) * 8}px`,
-                animation: `soundBar 0.6s ease-in-out ${i * 0.1}s infinite alternate`,
+                animation: `soundBar 0.5s ease-in-out ${i * 0.08}s infinite alternate`,
                 minHeight: "4px",
-                maxHeight: "20px",
+                height: "16px",
               }}
             />
           ))}
@@ -172,10 +195,12 @@ function AvatarDisplay({ teacher, isSpeaking, emotion }: {
 
       {/* Name badge */}
       <div
-        className="mt-3 px-4 py-1.5 rounded-full text-sm font-bold"
-        style={{ background: `${teacher.accent}25`, color: teacher.accent, border: `1px solid ${teacher.accent}40` }}
+        className="mt-3 px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2"
+        style={{ background: `${teacher.accent}20`, color: teacher.accent, border: `1px solid ${teacher.accent}40` }}
       >
-        {teacher.name} · {teacher.subject}
+        <span>{teacher.name}</span>
+        <span className="w-1 h-1 rounded-full bg-current opacity-50"></span>
+        <span>{teacher.age} лет</span>
       </div>
     </div>
   );
@@ -335,13 +360,21 @@ export default function AITeacher() {
                     )}
 
                     <div
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${teacher.color} flex items-center justify-center text-3xl mx-auto mb-3`}
-                      style={{ boxShadow: selectedTeacher.id === teacher.id ? `0 4px 20px ${teacher.accent}40` : "none" }}
+                      className="relative w-24 h-24 rounded-2xl overflow-hidden mx-auto mb-3"
+                      style={{
+                        boxShadow: selectedTeacher.id === teacher.id ? `0 4px 24px ${teacher.accent}60, inset 0 0 0 2px ${teacher.accent}` : `inset 0 0 0 1px ${teacher.accent}40`,
+                      }}
                     >
-                      {teacher.emoji}
+                      <img src={teacher.image} alt={teacher.name} className="w-full h-full object-cover" />
+                      <div
+                        className="absolute inset-0 mix-blend-overlay opacity-25"
+                        style={{ background: `linear-gradient(135deg, ${teacher.accent}, transparent 65%)` }}
+                      />
+                      {/* Online dot */}
+                      <div className="absolute bottom-1.5 right-1.5 w-3 h-3 rounded-full bg-neon-green border-2 border-card"></div>
                     </div>
 
-                    <p className="font-montserrat font-black text-base text-white mb-0.5">{teacher.name}</p>
+                    <p className="font-montserrat font-black text-base text-white mb-0.5">{teacher.name}, {teacher.age}</p>
                     <p className="text-xs mb-3" style={{ color: teacher.accent }}>{teacher.subject}</p>
 
                     <div className="flex flex-wrap justify-center gap-1 mb-3">
@@ -482,9 +515,11 @@ export default function AITeacher() {
                 className="flex items-center gap-3 px-5 py-3.5 rounded-2xl mb-3 border"
                 style={{ background: `${selectedTeacher.accent}10`, borderColor: `${selectedTeacher.accent}25` }}
               >
-                <span className="text-2xl">{selectedTeacher.emoji}</span>
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0" style={{ boxShadow: `inset 0 0 0 2px ${selectedTeacher.accent}50` }}>
+                  <img src={selectedTeacher.image} alt={selectedTeacher.name} className="w-full h-full object-cover" />
+                </div>
                 <div className="flex-1">
-                  <p className="font-montserrat font-bold text-sm text-white">{selectedTeacher.name}</p>
+                  <p className="font-montserrat font-bold text-sm text-white">{selectedTeacher.name}, {selectedTeacher.age}</p>
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-neon-green inline-block animate-pulse"></span>
                     <span className="text-xs text-white/50">{selectedTeacher.subject} · В эфире</span>
@@ -515,10 +550,10 @@ export default function AITeacher() {
                   >
                     {msg.from === "teacher" && (
                       <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0 mt-0.5"
-                        style={{ background: `${selectedTeacher.accent}25` }}
+                        className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 mt-0.5"
+                        style={{ boxShadow: `inset 0 0 0 1.5px ${selectedTeacher.accent}60` }}
                       >
-                        {selectedTeacher.emoji}
+                        <img src={selectedTeacher.image} alt={selectedTeacher.name} className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div
@@ -544,10 +579,10 @@ export default function AITeacher() {
                 {isTyping && (
                   <div className="flex gap-2.5 animate-fade-in">
                     <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                      style={{ background: `${selectedTeacher.accent}25` }}
+                      className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0"
+                      style={{ boxShadow: `inset 0 0 0 1.5px ${selectedTeacher.accent}60` }}
                     >
-                      {selectedTeacher.emoji}
+                      <img src={selectedTeacher.image} alt={selectedTeacher.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="bg-white/6 border border-white/8 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
                       {[0, 1, 2].map(i => (
