@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 const NAV_ITEMS = [
@@ -6,6 +7,10 @@ const NAV_ITEMS = [
   { label: "Каталог", icon: "Library", section: "library" },
   { label: "Прогресс", icon: "TrendingUp", section: "progress" },
   { label: "Рейтинг", icon: "BarChart2", section: "leaderboard" },
+];
+
+const NAV_LINKS = [
+  { label: "Тарифы", icon: "Sparkles", path: "/pricing" },
 ];
 
 interface NavbarProps {
@@ -42,6 +47,16 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
                 {item.label}
               </button>
             ))}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-300 hover:text-white hover:bg-purple-500/15 transition-all duration-200 border border-purple-500/25"
+              >
+                <Icon name={link.icon} size={15} />
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -72,6 +87,16 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
                 <Icon name={item.icon} size={18} />
                 {item.label}
               </button>
+            ))}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-300 hover:bg-purple-500/15 transition-all border border-purple-500/25"
+              >
+                <Icon name={link.icon} size={18} />
+                {link.label}
+              </Link>
             ))}
             <div className="border-t border-white/10 pt-3 mt-1 flex flex-col gap-2">
               <button className="text-sm text-white/70 py-2">Войти</button>
