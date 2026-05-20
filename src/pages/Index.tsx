@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AITeacher from "@/components/AITeacher";
+import LearningJourney from "@/components/LearningJourney";
 import CoursesLibrary from "@/components/CoursesLibrary";
 import CoursesSection from "@/components/CoursesSection";
 import LeaderboardSection from "@/components/LeaderboardSection";
@@ -46,6 +47,8 @@ export default function Index() {
       />
 
       <HeroSection />
+
+      <LearningJourney />
 
       <AITeacher />
 

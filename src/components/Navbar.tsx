@@ -1,9 +1,9 @@
 import Icon from "@/components/ui/icon";
 
 const NAV_ITEMS = [
+  { label: "Маршрут", icon: "Compass", section: "journey" },
   { label: "ИИ-учитель", icon: "Bot", section: "ai-teacher" },
   { label: "Каталог", icon: "Library", section: "library" },
-  { label: "Курсы", icon: "BookOpen", section: "courses" },
   { label: "Прогресс", icon: "TrendingUp", section: "progress" },
   { label: "Рейтинг", icon: "BarChart2", section: "leaderboard" },
 ];

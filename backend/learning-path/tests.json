@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown action returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "unknown_action"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Subjects list works",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "subjects"},
+      "expectedStatus": 200,
+      "expectedBody": {"subjects": "array"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
