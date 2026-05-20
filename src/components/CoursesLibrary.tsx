@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import Icon from "@/components/ui/icon";
-import { COURSES, SortKey } from "./courses/coursesData";
+import { COURSES, Course, SortKey } from "./courses/coursesData";
 import CoursesFilters from "./courses/CoursesFilters";
 import CourseCard from "./courses/CourseCard";
+import CourseDetailModal from "./courses/CourseDetailModal";
 
 export default function CoursesLibrary() {
   const [subjectFilter, setSubjectFilter] = useState("all");
@@ -14,6 +15,13 @@ export default function CoursesLibrary() {
   const [trialOnly, setTrialOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+  const handleStartWithAI = (_course: Course) => {
+    setSelectedCourse(null);
+    const aiSection = document.getElementById("ai-teacher");
+    if (aiSection) aiSection.scrollIntoView({ behavior: "smooth" });
+  };
 
   const filtered = useMemo(() => {
     let result = [...COURSES];
@@ -129,6 +137,7 @@ export default function CoursesLibrary() {
                 course={course}
                 isExpanded={expandedId === course.id}
                 onToggleExpand={() => setExpandedId(expandedId === course.id ? null : course.id)}
+                onOpenDetail={() => setSelectedCourse(course)}
               />
             ))}
           </div>
@@ -146,6 +155,12 @@ export default function CoursesLibrary() {
         )}
 
       </div>
+
+      <CourseDetailModal
+        course={selectedCourse}
+        onClose={() => setSelectedCourse(null)}
+        onStartWithAI={handleStartWithAI}
+      />
     </section>
   );
 }

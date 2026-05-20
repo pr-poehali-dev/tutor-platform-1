@@ -5,14 +5,16 @@ interface CourseCardProps {
   course: Course;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onOpenDetail?: () => void;
 }
 
-export default function CourseCard({ course, isExpanded, onToggleExpand }: CourseCardProps) {
+export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenDetail }: CourseCardProps) {
   const fmt = FORMAT_CONFIG[course.format];
 
   return (
     <div
-      className={`bg-card/60 border rounded-2xl overflow-hidden card-hover transition-all duration-300 flex flex-col ${
+      onClick={onOpenDetail}
+      className={`bg-card/60 border rounded-2xl overflow-hidden card-hover transition-all duration-300 flex flex-col cursor-pointer ${
         isExpanded ? "border-purple-500/50 glow-purple" : "border-white/8 hover:border-white/20"
       }`}
     >
@@ -121,13 +123,17 @@ export default function CourseCard({ course, isExpanded, onToggleExpand }: Cours
           </div>
           <div className="ml-auto flex gap-2">
             <button
-              onClick={onToggleExpand}
+              onClick={e => { e.stopPropagation(); onToggleExpand(); }}
               className="p-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
+              title="Свернуть/развернуть"
             >
               <Icon name={isExpanded ? "ChevronUp" : "ChevronDown"} size={14} />
             </button>
-            <button className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity">
-              {course.trialAvailable ? "Пробный урок" : "Записаться"}
+            <button
+              onClick={e => { e.stopPropagation(); onOpenDetail?.(); }}
+              className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              Подробнее
             </button>
           </div>
         </div>
