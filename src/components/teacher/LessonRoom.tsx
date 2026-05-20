@@ -18,6 +18,12 @@ interface LessonRoomProps {
   sendMessage: () => void;
   stopDemo: () => void;
   chatRef: RefObject<HTMLDivElement>;
+  isRecording: boolean;
+  isTranscribing: boolean;
+  voiceError: string | null;
+  startRecording: () => void;
+  stopRecording: () => void;
+  cancelRecording: () => void;
 }
 
 export default function LessonRoom({
@@ -35,6 +41,12 @@ export default function LessonRoom({
   sendMessage,
   stopDemo,
   chatRef,
+  isRecording,
+  isTranscribing,
+  voiceError,
+  startRecording,
+  stopRecording,
+  cancelRecording,
 }: LessonRoomProps) {
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
@@ -178,18 +190,92 @@ export default function LessonRoom({
               ⚠️ {error}
             </div>
           )}
+
+          {voiceError && (
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-orange-300 text-xs animate-fade-in">
+              🎙 {voiceError}
+            </div>
+          )}
         </div>
+
+        {/* Recording state */}
+        {(isRecording || isTranscribing) && (
+          <div
+            className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl border animate-fade-in"
+            style={{
+              background: isRecording ? "rgba(239, 68, 68, 0.1)" : `${selectedTeacher.accent}15`,
+              borderColor: isRecording ? "rgba(239, 68, 68, 0.4)" : `${selectedTeacher.accent}40`,
+            }}
+          >
+            {isRecording ? (
+              <>
+                <span className="relative flex h-3 w-3 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <div className="flex-1">
+                  <p className="text-red-300 text-sm font-semibold">Запись идёт...</p>
+                  <p className="text-red-300/60 text-xs">Говори чётко, ИИ слушает</p>
+                </div>
+                <button
+                  onClick={cancelRecording}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white text-xs transition-colors"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={stopRecording}
+                  className="px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <Icon name="Square" size={11} />
+                  Стоп
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex gap-1">
+                  {[0, 1, 2].map(i => (
+                    <div
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: selectedTeacher.accent, animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm flex-1" style={{ color: selectedTeacher.accent }}>
+                  Распознаю речь...
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Input */}
         <div className="mt-3 flex gap-2">
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isLoading || isTranscribing}
+            title={isRecording ? "Остановить запись" : "Записать голосовой вопрос"}
+            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-30 border"
+            style={{
+              background: isRecording ? "rgba(239, 68, 68, 0.2)" : "rgba(255,255,255,0.05)",
+              borderColor: isRecording ? "rgba(239, 68, 68, 0.6)" : "rgba(255,255,255,0.1)",
+            }}
+          >
+            {isRecording ? (
+              <Icon name="MicOff" size={18} className="text-red-400" />
+            ) : (
+              <Icon name="Mic" size={18} className="text-white/70" />
+            )}
+          </button>
           <div className="flex-1 relative">
             <input
               type="text"
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               onKeyDown={e => e.key === "Enter" && sendMessage()}
-              disabled={isLoading}
-              placeholder="Задай вопрос преподавателю..."
+              disabled={isLoading || isRecording}
+              placeholder={isRecording ? "🎙 Запись..." : "Задай вопрос текстом или голосом..."}
               className="w-full bg-card/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-colors disabled:opacity-50"
             />
           </div>

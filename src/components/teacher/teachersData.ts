@@ -1,5 +1,6 @@
 export const AI_CHAT_URL = "https://functions.poehali.dev/d2f39a05-0f9a-44a1-a65e-cace2e81c84b";
 export const TTS_URL = "https://functions.poehali.dev/fa3b03da-815c-4f28-baf2-1a88e36fca8d";
+export const STT_URL = "https://functions.poehali.dev/7dea9f0a-6f61-4a4b-a1f8-1b462199f8c2";
 
 export type Emotion = "neutral" | "happy" | "thinking" | "explaining";
 

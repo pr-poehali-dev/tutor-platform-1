@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import TeacherPicker from "./teacher/TeacherPicker";
 import LessonRoom from "./teacher/LessonRoom";
+import { useVoiceInput } from "./teacher/useVoiceInput";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
 
 export default function AITeacher() {
@@ -30,8 +31,12 @@ export default function AITeacher() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, teacher_id: teacherId }),
       });
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail || data.error || `HTTP ${res.status}`;
+        setError(`Голос недоступен: ${detail}`);
+        return;
+      }
       if (data.audio_base64) {
         if (audioRef.current) {
           audioRef.current.pause();
@@ -41,10 +46,18 @@ export default function AITeacher() {
         setIsSpeaking(true);
         audio.onended = () => { setIsSpeaking(false); setEmotion("neutral"); };
         audio.onerror = () => { setIsSpeaking(false); setEmotion("neutral"); };
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playErr) {
+          // Autoplay policy might block — silent fail
+          setIsSpeaking(false);
+          const msg = playErr instanceof Error ? playErr.message : "браузер заблокировал автовоспроизведение";
+          setError(`Звук заблокирован: ${msg}. Кликни по странице и попробуй снова.`);
+        }
       }
-    } catch {
-      // silent fail — chat still works
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "неизвестная ошибка";
+      setError(`Голос не загрузился: ${msg}`);
     }
   };
 
@@ -101,6 +114,15 @@ export default function AITeacher() {
     await askAI(msg);
   };
 
+  // ─── Voice input ───
+  const sendVoiceText = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+    const msg = text.trim();
+    setVisibleMessages(prev => [...prev, { id: Date.now(), from: "student", text: msg }]);
+    await askAI(msg);
+  };
+  const voice = useVoiceInput(sendVoiceText);
+
   const stopDemo = () => {
     if (audioRef.current) audioRef.current.pause();
     setDemoActive(false);
@@ -152,6 +174,12 @@ export default function AITeacher() {
             sendMessage={sendMessage}
             stopDemo={stopDemo}
             chatRef={chatRef}
+            isRecording={voice.isRecording}
+            isTranscribing={voice.isTranscribing}
+            voiceError={voice.voiceError}
+            startRecording={voice.start}
+            stopRecording={voice.stop}
+            cancelRecording={voice.cancel}
           />
         )}
 
