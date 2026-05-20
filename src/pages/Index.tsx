@@ -7,6 +7,7 @@ import CoursesLibrary from "@/components/CoursesLibrary";
 import CoursesSection from "@/components/CoursesSection";
 import LeaderboardSection from "@/components/LeaderboardSection";
 import SiteFooter from "@/components/SiteFooter";
+import CookieConsent from "@/components/CookieConsent";
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState("courses");
@@ -63,6 +64,8 @@ export default function Index() {
       <LeaderboardSection />
 
       <SiteFooter />
+
+      <CookieConsent />
 
     </div>
   );
