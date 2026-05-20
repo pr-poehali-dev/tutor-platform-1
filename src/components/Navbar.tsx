@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 
 const NAV_ITEMS = [
+  { label: "Каталог", icon: "Library", section: "library" },
   { label: "Курсы", icon: "BookOpen", section: "courses" },
   { label: "Прогресс", icon: "TrendingUp", section: "progress" },
   { label: "Достижения", icon: "Trophy", section: "achievements" },
