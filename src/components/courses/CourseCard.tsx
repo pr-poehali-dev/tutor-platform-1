@@ -63,7 +63,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold">ИИ-преподаватель</p>
-            <p className="text-purple-400 text-xs">Polza.ai + голос SpeechKit</p>
+            <p className="text-purple-400 text-xs">Адаптивное обучение + голос</p>
           </div>
           <div className="text-right flex-shrink-0">
             <div className="flex items-center gap-1 justify-end">
