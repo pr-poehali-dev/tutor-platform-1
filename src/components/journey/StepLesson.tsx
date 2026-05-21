@@ -5,6 +5,8 @@ import LessonTheoryPhase from "./lesson/LessonTheoryPhase";
 import LessonExamplesPhase from "./lesson/LessonExamplesPhase";
 import LessonTasksPhase from "./lesson/LessonTasksPhase";
 import LessonLoadingProgress from "./lesson/LessonLoadingProgress";
+import LessonNarratorBar from "./lesson/LessonNarratorBar";
+import useLessonNarrator from "@/hooks/useLessonNarrator";
 
 interface Props {
   module: ProgramModule;
@@ -32,6 +34,8 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   const [showResult, setShowResult] = useState(false);
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+
+  const narrator = useLessonNarrator();
 
   const loadTasksInBackground = async (lessonRef: Lesson) => {
     try {
@@ -104,6 +108,40 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   }, []);
 
   const currentTask: Task | null = lesson && phase === "tasks" ? lesson.tasks[taskIdx] : null;
+
+  // ─── Текст текущего раздела для озвучки ───
+  const buildNarrationText = (): string => {
+    if (!lesson) return "";
+    if (phase === "theory") {
+      const block = lesson.theory_blocks?.[theoryIdx];
+      if (!block) return "";
+      return `${block.heading}. ${block.content}`;
+    }
+    if (phase === "examples") {
+      const ex = lesson.examples?.[exampleIdx];
+      if (!ex) return "";
+      return `${ex.title}. Условие: ${ex.problem}. Ответ: ${ex.answer}.${ex.note ? " " + ex.note : ""}`;
+    }
+    if (phase === "tasks" && currentTask) {
+      let txt = `Задача ${taskIdx + 1}. ${currentTask.question}`;
+      if (currentTask.type === "multiple_choice" && currentTask.options?.length) {
+        txt += " Варианты: " + currentTask.options.map((o, i) => `${i + 1}. ${o}`).join("; ");
+      }
+      if (showResult && currentTask.explanation) {
+        txt += " " + currentTask.explanation;
+      }
+      return txt;
+    }
+    return "";
+  };
+
+  // ─── Автоозвучка при смене раздела ───
+  useEffect(() => {
+    if (!lesson || isLoading || !narrator.enabled) return;
+    const text = buildNarrationText();
+    if (text) narrator.speak(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lesson, phase, theoryIdx, exampleIdx, taskIdx, showResult, narrator.enabled, narrator.voiceId]);
 
   const isAnswerCorrect = () => {
     if (!currentTask || !showResult) return false;
@@ -240,6 +278,26 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           title="Готовлю задачи для самопроверки"
         />
       )}
+
+      <LessonNarratorBar
+        status={narrator.status}
+        currentText={narrator.currentText}
+        error={narrator.error}
+        voiceId={narrator.voiceId}
+        setVoiceId={narrator.setVoiceId}
+        rate={narrator.rate}
+        setRate={narrator.setRate}
+        enabled={narrator.enabled}
+        setEnabled={narrator.setEnabled}
+        onPause={narrator.pause}
+        onResume={narrator.resume}
+        onStop={narrator.stop}
+        onReplay={() => {
+          const t = buildNarrationText();
+          if (t) narrator.speak(t);
+        }}
+        accent={accent}
+      />
     </div>
   );
 }

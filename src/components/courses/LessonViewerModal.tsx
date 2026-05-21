@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LEARNING_PATH_URL, Lesson, Task } from "@/components/journey/journeyData";
 import LessonLoadingProgress from "@/components/journey/lesson/LessonLoadingProgress";
+import LessonNarratorBar from "@/components/journey/lesson/LessonNarratorBar";
+import useLessonNarrator from "@/hooks/useLessonNarrator";
 import LessonViewerHeader from "./lessonViewer/LessonViewerHeader";
 import LessonViewerTheory from "./lessonViewer/LessonViewerTheory";
 import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
@@ -52,12 +54,15 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
 
+  const narrator = useLessonNarrator();
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
       loadLesson();
     } else {
       document.body.style.overflow = "";
+      narrator.stop();
     }
     return () => { document.body.style.overflow = ""; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,9 +131,45 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     }
   };
 
-  if (!open) return null;
-
   const currentTask: Task | null = lesson && phase === "tasks" ? lesson.tasks[taskIdx] : null;
+
+  // ─── Озвучка текущего раздела ───
+  const buildNarrationText = (): string => {
+    if (!lesson) return "";
+    if (phase === "theory") {
+      const block = lesson.theory_blocks?.[theoryIdx];
+      if (!block) return "";
+      return `${block.heading}. ${block.content}`;
+    }
+    if (phase === "examples") {
+      const ex = lesson.examples?.[exampleIdx];
+      if (!ex) return "";
+      return `${ex.title}. Условие: ${ex.problem}. Ответ: ${ex.answer}.${ex.note ? " " + ex.note : ""}`;
+    }
+    if (phase === "tasks" && currentTask) {
+      let txt = `Задача ${taskIdx + 1}. ${currentTask.question}`;
+      if (currentTask.type === "multiple_choice" && currentTask.options?.length) {
+        txt += " Варианты: " + currentTask.options.map((o, i) => `${i + 1}. ${o}`).join("; ");
+      }
+      if (showResult && currentTask.explanation) {
+        txt += " " + currentTask.explanation;
+      }
+      return txt;
+    }
+    if (phase === "done" && lesson) {
+      return `Урок пройден! Правильных ответов: ${correctCount} из ${lesson.tasks.length}. Молодец!`;
+    }
+    return "";
+  };
+
+  useEffect(() => {
+    if (!open || !lesson || isLoading || !narrator.enabled) return;
+    const text = buildNarrationText();
+    if (text) narrator.speak(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lesson, phase, theoryIdx, exampleIdx, taskIdx, showResult, narrator.enabled, narrator.voiceId, open]);
+
+  if (!open) return null;
 
   const isAnswerCorrect = () => {
     if (!currentTask || !showResult) return false;
@@ -266,6 +307,28 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
             </>
           )}
         </div>
+      </div>
+
+      <div onClick={(e) => e.stopPropagation()}>
+        <LessonNarratorBar
+          status={narrator.status}
+          currentText={narrator.currentText}
+          error={narrator.error}
+          voiceId={narrator.voiceId}
+          setVoiceId={narrator.setVoiceId}
+          rate={narrator.rate}
+          setRate={narrator.setRate}
+          enabled={narrator.enabled}
+          setEnabled={narrator.setEnabled}
+          onPause={narrator.pause}
+          onResume={narrator.resume}
+          onStop={narrator.stop}
+          onReplay={() => {
+            const t = buildNarrationText();
+            if (t) narrator.speak(t);
+          }}
+          accent={accent}
+        />
       </div>
     </div>
   );
