@@ -70,7 +70,7 @@ export default function ExamBank() {
 
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-6 transition-colors"
         >
           <Icon name="ArrowLeft" size={14} />
           На главную
@@ -152,7 +152,7 @@ export default function ExamBank() {
 
           <div className="grid md:grid-cols-3 gap-3">
             <div>
-              <p className="text-white/40 text-xs mb-1.5">Экзамен</p>
+              <p className="text-white/60 text-xs mb-1.5">Экзамен</p>
               <div className="flex flex-wrap gap-1.5">
                 {ALL_EXAMS.map((e) => (
                   <button
@@ -171,7 +171,7 @@ export default function ExamBank() {
             </div>
 
             <div>
-              <p className="text-white/40 text-xs mb-1.5">Год</p>
+              <p className="text-white/60 text-xs mb-1.5">Год</p>
               <div className="flex flex-wrap gap-1.5">
                 {YEARS.map((y) => (
                   <button
@@ -190,7 +190,7 @@ export default function ExamBank() {
             </div>
 
             <div>
-              <p className="text-white/40 text-xs mb-1.5">Поиск по теме или условию</p>
+              <p className="text-white/60 text-xs mb-1.5">Поиск по теме или условию</p>
               <div className="relative">
                 <Icon
                   name="Search"

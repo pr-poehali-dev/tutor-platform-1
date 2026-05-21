@@ -11,6 +11,7 @@ const NAV_ITEMS = [
 
 const NAV_LINKS = [
   { label: "ОГЭ и ЕГЭ", icon: "Library", path: "/exam-bank" },
+  { label: "Калькулятор", icon: "Calculator", path: "/score-calculator" },
   { label: "Тарифы", icon: "Sparkles", path: "/pricing" },
 ];
 

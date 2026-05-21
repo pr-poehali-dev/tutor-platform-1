@@ -5,14 +5,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Offer from "./pages/legal/Offer";
-import Privacy from "./pages/legal/Privacy";
-import Terms from "./pages/legal/Terms";
-import Pricing from "./pages/Pricing";
-import ExamBank from "./pages/ExamBank";
 import { UserDataProvider } from "@/context/UserDataContext";
+
+const Offer = lazy(() => import("./pages/legal/Offer"));
+const Privacy = lazy(() => import("./pages/legal/Privacy"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const ExamBank = lazy(() => import("./pages/ExamBank"));
+const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
+
+const PageSkeleton = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-12 h-12 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -24,16 +33,19 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/legal/offer" element={<Offer />} />
-              <Route path="/legal/privacy" element={<Privacy />} />
-              <Route path="/legal/terms" element={<Terms />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/exam-bank" element={<ExamBank />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<PageSkeleton />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/legal/offer" element={<Offer />} />
+                <Route path="/legal/privacy" element={<Privacy />} />
+                <Route path="/legal/terms" element={<Terms />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/exam-bank" element={<ExamBank />} />
+                <Route path="/score-calculator" element={<ScoreCalculator />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </UserDataProvider>
       </TooltipProvider>

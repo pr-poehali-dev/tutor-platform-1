@@ -15,31 +15,34 @@ export default function SiteFooter() {
               </div>
               <span className="font-montserrat font-black text-white text-lg">УЧИСЬПРО</span>
             </div>
-            <p className="text-white/55 text-sm leading-relaxed max-w-md">
+            <p className="text-white/75 text-sm leading-relaxed max-w-md">
               Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ. Учись когда удобно — на учисьпро.рф.
             </p>
-            <p className="text-white/35 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
+            <p className="text-white/55 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
+          </div>
+
+          {/* Tools */}
+          <div>
+            <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
+              <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
+              <li><Link to="/pricing" className="text-white/70 hover:text-white transition-colors">Тарифы и оплата</Link></li>
+            </ul>
           </div>
 
           {/* Legal */}
           <div>
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Документы</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/pricing" className="text-white/55 hover:text-white transition-colors">Тарифы и оплата</Link></li>
-              <li><Link to="/legal/offer" className="text-white/55 hover:text-white transition-colors">Публичная оферта</Link></li>
-              <li><Link to="/legal/privacy" className="text-white/55 hover:text-white transition-colors">Политика конфиденциальности</Link></li>
-              <li><Link to="/legal/terms" className="text-white/55 hover:text-white transition-colors">Пользовательское соглашение</Link></li>
+              <li><Link to="/legal/offer" className="text-white/70 hover:text-white transition-colors">Публичная оферта</Link></li>
+              <li><Link to="/legal/privacy" className="text-white/70 hover:text-white transition-colors">Конфиденциальность</Link></li>
+              <li><Link to="/legal/terms" className="text-white/70 hover:text-white transition-colors">Пользовательское соглашение</Link></li>
             </ul>
-          </div>
-
-          {/* Info */}
-          <div>
-            <h4 className="font-montserrat font-bold text-white text-sm mb-3">Информация</h4>
-            <ul className="space-y-2 text-sm">
-              <li className="text-white/55 flex items-center gap-1.5"><Icon name="ShieldCheck" size={13} className="text-green-400" /> Данные на серверах в РФ</li>
-              <li className="text-white/55 flex items-center gap-1.5"><Icon name="Lock" size={13} className="text-cyan-400" /> Шифрование HTTPS</li>
-              <li className="text-white/55 flex items-center gap-1.5"><Icon name="UserCheck" size={13} className="text-purple-400" /> Минимум персональных данных</li>
-            </ul>
+            <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5 text-xs">
+              <p className="text-white/70 flex items-center gap-1.5"><Icon name="ShieldCheck" size={12} className="text-green-400" /> Серверы в РФ</p>
+              <p className="text-white/70 flex items-center gap-1.5"><Icon name="Lock" size={12} className="text-cyan-400" /> Шифрование HTTPS</p>
+            </div>
           </div>
         </div>
 

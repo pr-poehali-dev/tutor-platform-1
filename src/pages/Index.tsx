@@ -1,16 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AITeacher from "@/components/AITeacher";
-import LearningJourney from "@/components/LearningJourney";
-import CoursesLibrary from "@/components/CoursesLibrary";
-import CoursesSection from "@/components/CoursesSection";
-import LeaderboardSection from "@/components/LeaderboardSection";
 import SiteFooter from "@/components/SiteFooter";
 import CookieConsent from "@/components/CookieConsent";
-import MySpaceSection from "@/components/myspace/MySpaceSection";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import SocialProofStrip from "@/components/SocialProofStrip";
+
+const AITeacher = lazy(() => import("@/components/AITeacher"));
+const LearningJourney = lazy(() => import("@/components/LearningJourney"));
+const CoursesLibrary = lazy(() => import("@/components/CoursesLibrary"));
+const CoursesSection = lazy(() => import("@/components/CoursesSection"));
+const LeaderboardSection = lazy(() => import("@/components/LeaderboardSection"));
+const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
+
+const SectionSkeleton = () => (
+  <div className="max-w-6xl mx-auto px-4 py-12">
+    <div className="rounded-3xl border border-white/8 bg-white/[0.02] h-64 animate-pulse" />
+  </div>
+);
 
 const SECTION_LABELS: Record<string, string> = {
   hero: "Главная",
@@ -147,20 +155,34 @@ export default function Index() {
 
       <HeroSection />
 
-      <MySpaceSection />
+      <SocialProofStrip />
 
-      <LearningJourney />
+      <Suspense fallback={<SectionSkeleton />}>
+        <MySpaceSection />
+      </Suspense>
 
-      <AITeacher />
+      <Suspense fallback={<SectionSkeleton />}>
+        <LearningJourney />
+      </Suspense>
 
-      <CoursesLibrary />
+      <Suspense fallback={<SectionSkeleton />}>
+        <AITeacher />
+      </Suspense>
 
-      <CoursesSection
-        activeCourse={activeCourse}
-        onSetActiveCourse={setActiveCourse}
-      />
+      <Suspense fallback={<SectionSkeleton />}>
+        <CoursesLibrary />
+      </Suspense>
 
-      <LeaderboardSection />
+      <Suspense fallback={<SectionSkeleton />}>
+        <CoursesSection
+          activeCourse={activeCourse}
+          onSetActiveCourse={setActiveCourse}
+        />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <LeaderboardSection />
+      </Suspense>
 
       <SiteFooter />
 
