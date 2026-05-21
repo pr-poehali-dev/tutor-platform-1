@@ -26,6 +26,8 @@ interface Props {
     grade: string;
     lessonTitle?: string;
   };
+  onRefreshTasks?: () => void;
+  tasksRefreshing?: boolean;
 }
 
 export default function LessonTasksPhase({
@@ -45,6 +47,8 @@ export default function LessonTasksPhase({
   onNextTask,
   accent,
   reportContext,
+  onRefreshTasks,
+  tasksRefreshing,
 }: Props) {
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -61,6 +65,26 @@ export default function LessonTasksPhase({
               {currentTask.type === "multiple_choice" ? "Выбери ответ" :
                currentTask.type === "input" ? "Введи ответ" : "Объясни своими словами"}
             </span>
+            {onRefreshTasks && (
+              <button
+                onClick={onRefreshTasks}
+                disabled={!!tasksRefreshing}
+                aria-label="Сгенерировать новый набор задач"
+                title="Другие задачи"
+                className={`inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border text-[11px] font-semibold transition-all ${
+                  tasksRefreshing
+                    ? "bg-white/5 border-white/10 text-white/40 cursor-wait"
+                    : "bg-white/10 hover:bg-purple-500/20 border-white/15 hover:border-purple-400/40 text-white/70 hover:text-purple-200"
+                }`}
+              >
+                <Icon
+                  name={tasksRefreshing ? "Loader2" : "RefreshCw"}
+                  size={12}
+                  className={tasksRefreshing ? "animate-spin" : ""}
+                />
+                <span className="hidden sm:inline">{tasksRefreshing ? "Готовлю..." : "Другие задачи"}</span>
+              </button>
+            )}
             {reportContext && (
               <button
                 onClick={() => setReportOpen(true)}

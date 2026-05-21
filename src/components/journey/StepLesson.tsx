@@ -9,6 +9,7 @@ import LessonNarratorBar from "./lesson/LessonNarratorBar";
 import useLessonNarrator from "@/hooks/useLessonNarrator";
 import { useUser } from "@/context/UserDataContext";
 import { BADGES } from "@/lib/badges";
+import { getShownQuestions, addShownQuestions } from "@/lib/shownTasks";
 
 interface Props {
   module: ProgramModule;
@@ -40,8 +41,11 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   const narrator = useLessonNarrator();
   const user = useUser();
 
+  const [tasksRefreshing, setTasksRefreshing] = useState(false);
+
   const loadTasksInBackground = async (lessonRef: Lesson) => {
     try {
+      const shown = getShownQuestions(subject.id, module.topic, grade);
       const res = await fetch(LEARNING_PATH_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,13 +55,55 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           topic: module.topic,
           grade,
           difficulty: module.difficulty,
+          shown_questions: shown,
         }),
       });
       const data = await res.json();
       if (!res.ok || !Array.isArray(data?.tasks)) return;
       setLesson({ ...lessonRef, tasks: data.tasks });
+      const questions = (data.tasks as Task[]).map((t) => String(t.question || ""));
+      addShownQuestions(subject.id, module.topic, questions, grade);
     } catch {
       // тихо: пользователь увидит сообщение в фазе задач если ничего не подгрузилось
+    }
+  };
+
+  const refreshTasks = async () => {
+    if (!lesson || tasksRefreshing) return;
+    setTasksRefreshing(true);
+    try {
+      const shown = getShownQuestions(subject.id, module.topic, grade);
+      const res = await fetch(LEARNING_PATH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_lesson_tasks",
+          subject: subject.id,
+          topic: module.topic,
+          grade,
+          difficulty: module.difficulty,
+          shown_questions: shown,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data?.tasks) || data.tasks.length === 0) return;
+      setLesson({ ...lesson, tasks: data.tasks });
+      setTaskIdx(0);
+      setUserAnswer("");
+      setSelectedOption(null);
+      setShowResult(false);
+      setHintsShown(0);
+      setCorrectCount(0);
+      addShownQuestions(
+        subject.id,
+        module.topic,
+        (data.tasks as Task[]).map((t) => String(t.question || "")),
+        grade,
+      );
+    } catch {
+      // ignore
+    } finally {
+      setTasksRefreshing(false);
     }
   };
 
@@ -65,6 +111,7 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
     setIsLoading(true);
     setError(null);
     try {
+      const shown = getShownQuestions(subject.id, module.topic, grade);
       const res = await fetch(LEARNING_PATH_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,12 +123,21 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           difficulty: module.difficulty,
           lesson_title: module.title,
           include_tasks: false,
+          shown_questions: shown,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
       const lessonData = data as Lesson;
       setLesson(lessonData);
+      if (Array.isArray(lessonData.tasks) && lessonData.tasks.length > 0) {
+        addShownQuestions(
+          subject.id,
+          module.topic,
+          lessonData.tasks.map((t) => String(t.question || "")),
+          grade,
+        );
+      }
       setPhase("theory");
       setTheoryIdx(0);
       setExampleIdx(0);
@@ -314,6 +370,8 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
             grade,
             lessonTitle: module.title,
           }}
+          onRefreshTasks={refreshTasks}
+          tasksRefreshing={tasksRefreshing}
         />
       )}
 

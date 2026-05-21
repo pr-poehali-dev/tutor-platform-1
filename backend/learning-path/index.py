@@ -6,6 +6,7 @@ Returns: HTTP-ответ с JSON в зависимости от action
 import json
 import os
 import re
+import random
 import hashlib
 import urllib.request
 import urllib.error
@@ -401,52 +402,122 @@ def _validate_task(task):
     return False, f'unknown type "{ttype}"'
 
 
-def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty):
-    """Генерирует и ВАЛИДИРУЕТ задачи к уроку. Битые задачи перегенерируются."""
-    prompt = TASK_GEN_PROMPT_TEMPLATE.format(
-        subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=5
+def _build_exclusion_block(shown_questions):
+    """Готовит блок промпта со списком уже показанных задач (для исключения повторов)."""
+    if not shown_questions:
+        return ''
+    # берём максимум 25 последних, обрезаем длинные формулировки
+    last = [str(q).strip()[:140] for q in shown_questions[-25:] if str(q).strip()]
+    if not last:
+        return ''
+    bullet = '\n'.join(f'— {q}' for q in last)
+    return (
+        "\n\n🚫 ЗАПРЕЩЕНО ПОВТОРЯТЬ ИЛИ ПЕРЕФРАЗИРОВАТЬ ЭТИ ЗАДАЧИ "
+        "(пользователь уже их видел — будет скучно):\n"
+        f"{bullet}\n"
+        "Сделай ДРУГИЕ задачи: другие числа, другой контекст, другие сюжеты. "
+        "Избегай близких по смыслу формулировок."
     )
-    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2600, temperature=0.5, timeout=50, retries=1)
+
+
+def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_questions=None, n=5, seed=None):
+    """Генерирует и ВАЛИДИРУЕТ задачи к уроку.
+
+    shown_questions — список текстов задач, которые уже показывались (исключаем повторы).
+    seed — случайное число для дополнительного разнообразия в промпте.
+    """
+    exclusion = _build_exclusion_block(shown_questions)
+    variability_hint = ''
+    if seed is not None:
+        variability_hint = (
+            f"\n\n🎲 СИД РАЗНООБРАЗИЯ: {seed}. Используй разные сюжеты (магазин, спорт, кулинария, "
+            "путешествия, игры, природа), разные диапазоны чисел, разные постановки вопроса."
+        )
+
+    prompt = TASK_GEN_PROMPT_TEMPLATE.format(
+        subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=n
+    ) + exclusion + variability_hint
+
+    # temperature повышена до 0.85 для большего разнообразия задач между запросами
+    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2600, temperature=0.85, timeout=50, retries=1)
     raw_tasks = data.get('tasks', []) if isinstance(data, dict) else []
+
+    # нормализуем shown_set для проверки повторов на стороне сервера
+    shown_set = set()
+    if shown_questions:
+        for q in shown_questions:
+            norm = re.sub(r'\s+', ' ', str(q).lower()).strip()
+            if norm:
+                shown_set.add(norm)
 
     valid_tasks = []
     bad_count = 0
     for t in raw_tasks:
         ok, _reason = _validate_task(t)
-        if ok:
-            valid_tasks.append(t)
-        else:
+        if not ok:
             bad_count += 1
+            continue
+        q_norm = re.sub(r'\s+', ' ', str(t.get('question', '')).lower()).strip()
+        if q_norm in shown_set:
+            bad_count += 1
+            continue
+        valid_tasks.append(t)
+        shown_set.add(q_norm)
 
-    # Если хоть одна задача битая — добиваем недостающие отдельным запросом
-    if bad_count > 0 and len(valid_tasks) < 5:
-        need = 5 - len(valid_tasks)
+    # Если задач не хватает — добиваем недостающие отдельным запросом с тем же исключением
+    if len(valid_tasks) < n:
+        need = n - len(valid_tasks)
         try:
-            prompt2 = TASK_GEN_PROMPT_TEMPLATE.format(
-                subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=need
-            ) + f"\n\nДОПОЛНИТЕЛЬНО: {need} новых задач, отличающихся от ранее данных. ОСОБЕННО внимательно с правильными ответами!"
-            data2 = call_polza([{'role': 'user', 'content': prompt2}], max_tokens=1800, temperature=0.4, timeout=45, retries=1)
+            prompt2 = (
+                TASK_GEN_PROMPT_TEMPLATE.format(
+                    subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=need
+                )
+                + exclusion
+                + f"\n\nДОПОЛНИТЕЛЬНО: {need} НОВЫХ задач, ОТЛИЧАЮЩИХСЯ от ранее данных. "
+                  "Возьми другие числа и другой сюжет!"
+            )
+            data2 = call_polza([{'role': 'user', 'content': prompt2}], max_tokens=1800, temperature=0.9, timeout=45, retries=1)
             extra = data2.get('tasks', []) if isinstance(data2, dict) else []
             for t in extra:
-                if len(valid_tasks) >= 5:
+                if len(valid_tasks) >= n:
                     break
                 ok, _ = _validate_task(t)
-                if ok:
-                    valid_tasks.append(t)
+                if not ok:
+                    continue
+                q_norm = re.sub(r'\s+', ' ', str(t.get('question', '')).lower()).strip()
+                if q_norm in shown_set:
+                    continue
+                valid_tasks.append(t)
+                shown_set.add(q_norm)
         except Exception:
             pass
 
-    return valid_tasks[:5]
+    return valid_tasks[:n]
 
 
-def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True):
-    """Урок: теория + примеры. Задачи опционально (по умолчанию да, для обратной совместимости).
-    С кэшем в БД. При include_tasks=False задачи не генерируются — пользователь загрузит их отдельным запросом."""
+def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True, shown_questions=None):
+    """Урок: теория + примеры. Задачи опционально.
+
+    Теория кэшируется (одинаковая тема даёт одинаковую теорию — это хорошо для скорости),
+    но ЗАДАЧИ всегда генерируются свежие — чтобы пользователь не видел повторов.
+    """
     cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
-    if cached:
-        if isinstance(cached, dict):
-            cached['_cached'] = True
-            # если из кэша запросили без задач — всё равно отдаём задачи целиком
+    if cached and isinstance(cached, dict):
+        cached = dict(cached)  # копия, чтобы не мутировать кэш
+        cached['_cached'] = True
+        # ВАЖНО: задачи НЕ берём из кэша — всегда свежие
+        if include_tasks:
+            subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+            try:
+                cached['tasks'] = _generate_lesson_tasks_only(
+                    subject_name, topic, grade, difficulty,
+                    shown_questions=shown_questions,
+                    seed=random.randint(1000, 9999),
+                )
+            except Exception:
+                cached['tasks'] = []
+        else:
+            cached['tasks'] = []
         return cached
 
     subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
@@ -499,24 +570,40 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
     if not isinstance(data, dict):
         data = {}
 
+    # В кэш сохраняем БЕЗ задач — задачи всегда свежие
+    cache_payload = {k: v for k, v in data.items() if k != 'tasks'}
+    save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, cache_payload)
+
     # Задачи опционально (если фронт хочет всё сразу)
     if include_tasks:
         try:
-            data['tasks'] = _generate_lesson_tasks_only(subject_name, topic, grade, difficulty)
+            data['tasks'] = _generate_lesson_tasks_only(
+                subject_name, topic, grade, difficulty,
+                shown_questions=shown_questions,
+                seed=random.randint(1000, 9999),
+            )
         except Exception:
             data['tasks'] = []
     else:
         data['tasks'] = []
 
-    save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, data)
     data['_cached'] = False
     return data
 
 
-def action_generate_lesson_tasks(subject, topic, grade, difficulty):
-    """Отдельный быстрый запрос — только задачи к уроку"""
+def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=None, n=5):
+    """Отдельный быстрый запрос — только задачи к уроку.
+
+    shown_questions — список текстов задач, которые уже видел пользователь (исключаем повторы).
+    n — сколько задач сгенерировать (по умолчанию 5).
+    """
     subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
-    tasks = _generate_lesson_tasks_only(subject_name, topic, grade, difficulty)
+    tasks = _generate_lesson_tasks_only(
+        subject_name, topic, grade, difficulty,
+        shown_questions=shown_questions,
+        n=max(1, min(int(n or 5), 8)),
+        seed=random.randint(1000, 9999),
+    )
     return {'tasks': tasks}
 
 
@@ -658,26 +745,33 @@ def handler(event, context):
             difficulty = body.get('difficulty', 'средний')
             lesson_title = body.get('lesson_title', '')
             include_tasks = bool(body.get('include_tasks', False))
+            shown_questions = body.get('shown_questions') or []
+            if not isinstance(shown_questions, list):
+                shown_questions = []
             if not topic:
                 return {
                     'statusCode': 400,
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
-            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=include_tasks)
+            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=include_tasks, shown_questions=shown_questions)
 
         elif action == 'generate_lesson_tasks':
             subject = body.get('subject', 'math')
             topic = body.get('topic', '')
             grade = body.get('grade', '5-9')
             difficulty = body.get('difficulty', 'средний')
+            shown_questions = body.get('shown_questions') or []
+            if not isinstance(shown_questions, list):
+                shown_questions = []
+            n = body.get('n', 5)
             if not topic:
                 return {
                     'statusCode': 400,
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
-            result = action_generate_lesson_tasks(subject, topic, grade, difficulty)
+            result = action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=shown_questions, n=n)
 
         elif action == 'subjects':
             result = {
