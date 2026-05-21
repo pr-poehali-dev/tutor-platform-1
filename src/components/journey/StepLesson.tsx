@@ -33,6 +33,27 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
 
+  const loadTasksInBackground = async (lessonRef: Lesson) => {
+    try {
+      const res = await fetch(LEARNING_PATH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_lesson_tasks",
+          subject: subject.id,
+          topic: module.topic,
+          grade,
+          difficulty: module.difficulty,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data?.tasks)) return;
+      setLesson({ ...lessonRef, tasks: data.tasks });
+    } catch {
+      // тихо: пользователь увидит сообщение в фазе задач если ничего не подгрузилось
+    }
+  };
+
   const loadLesson = async () => {
     setIsLoading(true);
     setError(null);
@@ -47,11 +68,13 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           grade,
           difficulty: module.difficulty,
           lesson_title: module.title,
+          include_tasks: false,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
-      setLesson(data as Lesson);
+      const lessonData = data as Lesson;
+      setLesson(lessonData);
       setPhase("theory");
       setTheoryIdx(0);
       setExampleIdx(0);
@@ -62,6 +85,11 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
       setUserAnswer("");
       setHintsShown(0);
       setCorrectCount(0);
+
+      // Если урок пришёл из кэша — задачи уже в нём; иначе подгружаем фоном
+      if (!lessonData.tasks || lessonData.tasks.length === 0) {
+        loadTasksInBackground(lessonData);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Ошибка";
       setError(msg);
@@ -202,6 +230,14 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           onNextTask={nextTask}
           accent={accent}
         />
+      )}
+
+      {phase === "tasks" && !currentTask && (
+        <div className="bg-card/60 border border-white/10 rounded-3xl p-10 text-center animate-fade-in">
+          <Icon name="Loader2" size={28} className="animate-spin mx-auto mb-3" style={{ color: accent }} />
+          <p className="text-white font-bold mb-1">Готовлю задачи для самопроверки</p>
+          <p className="text-white/55 text-sm">Это займёт пару секунд — ИИ-методист подбирает задачи по теме</p>
+        </div>
       )}
     </div>
   );

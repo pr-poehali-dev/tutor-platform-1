@@ -62,6 +62,27 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, topic, lessonTitle]);
 
+  const loadTasksInBackground = async (lessonRef: Lesson) => {
+    try {
+      const res = await fetch(LEARNING_PATH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_lesson_tasks",
+          subject: mapSubject(subjectId),
+          topic,
+          grade: mapGrade(grade),
+          difficulty: "средний",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data?.tasks)) return;
+      setLesson({ ...lessonRef, tasks: data.tasks });
+    } catch {
+      // тихо
+    }
+  };
+
   const loadLesson = async () => {
     setIsLoading(true);
     setError(null);
@@ -87,11 +108,16 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           grade: mapGrade(grade),
           difficulty: "средний",
           lesson_title: lessonTitle,
+          include_tasks: false,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
-      setLesson(data as Lesson);
+      const lessonData = data as Lesson;
+      setLesson(lessonData);
+      if (!lessonData.tasks || lessonData.tasks.length === 0) {
+        loadTasksInBackground(lessonData);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка");
     } finally {
@@ -216,6 +242,14 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                   nextTask={nextTask}
                   accent={accent}
                 />
+              )}
+
+              {phase === "tasks" && !currentTask && (
+                <div className="bg-white/4 border border-white/8 rounded-2xl p-10 text-center animate-fade-in">
+                  <Icon name="Loader2" size={28} className="animate-spin mx-auto mb-3" style={{ color: accent }} />
+                  <p className="text-white font-bold mb-1">Готовлю задачи для самопроверки</p>
+                  <p className="text-white/55 text-sm">Это займёт пару секунд — ИИ-методист подбирает задачи по теме</p>
+                </div>
               )}
 
               {phase === "done" && (

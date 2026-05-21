@@ -48,8 +48,8 @@ SUBJECT_TOPICS = {
 }
 
 
-def call_polza(messages, max_tokens=900, temperature=0.7):
-    """Вызов polza.ai с заданными сообщениями"""
+def call_polza(messages, max_tokens=900, temperature=0.7, timeout=50, retries=1):
+    """Вызов polza.ai с заданными сообщениями + автоматический retry при таймауте"""
     api_key = os.environ.get('POLZA_API_KEY', '')
     if not api_key:
         raise Exception('POLZA_API_KEY не настроен')
@@ -62,16 +62,24 @@ def call_polza(messages, max_tokens=900, temperature=0.7):
         'response_format': {'type': 'json_object'},
     }).encode('utf-8')
 
-    req = urllib.request.Request(
-        'https://api.polza.ai/api/v1/chat/completions',
-        data=payload,
-        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-        method='POST',
-    )
-    with urllib.request.urlopen(req, timeout=28) as response:
-        result = json.loads(response.read().decode('utf-8'))
-    content = result['choices'][0]['message']['content'].strip()
-    return json.loads(content)
+    last_err = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(
+                'https://api.polza.ai/api/v1/chat/completions',
+                data=payload,
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                result = json.loads(response.read().decode('utf-8'))
+            content = result['choices'][0]['message']['content'].strip()
+            return json.loads(content)
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+            last_err = e
+            if attempt >= retries:
+                break
+    raise last_err if last_err else Exception('polza.ai недоступен')
 
 
 def cors_headers():
@@ -274,142 +282,161 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
             pass
 
 
-def action_generate_lesson(subject, topic, grade, difficulty, lesson_title=''):
-    """Шаг: Полный урок с теорией, примерами и задачами для самопроверки (с кэшем в БД)"""
-    cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
-    if cached:
-        if isinstance(cached, dict):
-            cached['_cached'] = True
-        return cached
+def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty):
+    """Генерирует только задачи к уроку (быстро, отдельным запросом)"""
+    prompt = f"""Ты — школьный преподаватель по "{subject_name}". Сгенерируй 5 задач для самопроверки по теме "{topic}" (уровень {grade}, сложность {difficulty}).
 
-    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
-    title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
-
-    prompt = f"""Ты — лучший школьный преподаватель по предмету "{subject_name}". Составь ПОДРОБНЫЙ обучающий урок по теме "{topic}" для уровня "{grade}", сложность "{difficulty}".
-{title_hint}
-Урок должен быть РЕАЛЬНЫМ и ПОЛЕЗНЫМ — как будто живой учитель объясняет с нуля. НИКАКИХ заглушек, общих фраз вроде "изучите тему" или "lorem ipsum". Только конкретные факты, формулы, правила, примеры.
-
-ВЕРНИ строго JSON следующей структуры:
+ВЕРНИ строго JSON:
 {{
-  "title": "название урока (5-9 слов)",
-  "subtitle": "что ученик освоит за урок (1 предложение)",
-  "duration_minutes": число от 20 до 40,
-  "objectives": [
-    "цель урока 1 (что научится делать)",
-    "цель урока 2",
-    "цель урока 3"
-  ],
-  "theory_blocks": [
-    {{
-      "heading": "Заголовок раздела теории (например: 'Что такое дробь')",
-      "content": "ПОДРОБНОЕ объяснение раздела в 4-7 предложений. Простым языком, с аналогиями из жизни (пицца, шоколадка, деньги). Конкретные определения, формулы (без LaTeX, обычным текстом), правила.",
-      "key_points": ["ключевой тезис 1", "ключевой тезис 2", "ключевой тезис 3"]
-    }},
-    {{
-      "heading": "Заголовок 2",
-      "content": "Подробное объяснение второго раздела теории...",
-      "key_points": ["тезис 1", "тезис 2"]
-    }},
-    {{
-      "heading": "Заголовок 3",
-      "content": "Подробное объяснение третьего раздела (правила, исключения, формулы)...",
-      "key_points": ["тезис 1", "тезис 2"]
-    }}
-  ],
-  "examples": [
-    {{
-      "title": "Пример 1: краткое название",
-      "problem": "Условие задачи (конкретное, с числами/фактами)",
-      "solution_steps": [
-        "Шаг 1: что делаем и почему (с пояснением)",
-        "Шаг 2: следующее действие с расчётом",
-        "Шаг 3: следующее действие",
-        "Шаг 4: получаем ответ"
-      ],
-      "answer": "финальный ответ",
-      "note": "важный нюанс/частая ошибка (1 предложение)"
-    }},
-    ... 4 разобранных примера от простого к сложному
-  ],
-  "common_mistakes": [
-    "типичная ошибка 1 — как её избежать",
-    "типичная ошибка 2 — как её избежать",
-    "типичная ошибка 3 — как её избежать"
-  ],
-  "summary": "Краткое резюме урока в 2-3 предложения (что узнал, главное правило)",
   "tasks": [
     {{
       "task_id": "t1",
       "type": "multiple_choice",
-      "question": "формулировка задачи 1 (простая, для закрепления)",
+      "question": "задача 1 (простая, закрепление)",
       "context": "",
       "options": ["A", "B", "C", "D"],
       "correct_answer": 0,
       "hints": ["общая подсказка", "более конкретная", "почти решение"],
-      "explanation": "разбор решения в 3-4 предложения с шагами",
+      "explanation": "разбор решения 3-4 предложения с шагами",
       "fun_fact": ""
     }},
     {{
       "task_id": "t2",
       "type": "multiple_choice",
-      "question": "формулировка задачи 2 (средней сложности)",
+      "question": "задача 2 (среднее)",
       "context": "",
-      "options": ["A", "B", "C", "D"],
+      "options": ["A","B","C","D"],
       "correct_answer": 1,
-      "hints": ["...", "...", "..."],
+      "hints": ["...","...","..."],
       "explanation": "...",
       "fun_fact": ""
     }},
     {{
       "task_id": "t3",
       "type": "input",
-      "question": "формулировка задачи 3 (ввод короткого ответа)",
+      "question": "задача 3 (ввод короткого ответа)",
       "context": "",
       "options": [],
       "correct_answer": "ответ",
-      "hints": ["...", "...", "..."],
+      "hints": ["...","...","..."],
       "explanation": "...",
       "fun_fact": ""
     }},
     {{
       "task_id": "t4",
       "type": "multiple_choice",
-      "question": "формулировка задачи 4 (применение)",
+      "question": "задача 4 (применение)",
       "context": "",
-      "options": ["A", "B", "C", "D"],
+      "options": ["A","B","C","D"],
       "correct_answer": 2,
-      "hints": ["...", "...", "..."],
+      "hints": ["...","...","..."],
       "explanation": "...",
       "fun_fact": ""
     }},
     {{
       "task_id": "t5",
       "type": "multiple_choice",
-      "question": "формулировка задачи 5 (сложная, анализ)",
+      "question": "задача 5 (сложная)",
       "context": "",
-      "options": ["A", "B", "C", "D"],
+      "options": ["A","B","C","D"],
       "correct_answer": 3,
-      "hints": ["...", "...", "..."],
+      "hints": ["...","...","..."],
       "explanation": "...",
-      "fun_fact": "интересный факт по теме"
+      "fun_fact": "интересный факт"
     }}
   ]
 }}
 
-ЖЁСТКИЕ ТРЕБОВАНИЯ:
-- Минимум 3 раздела теории по 4-7 предложений каждый — реальное содержательное объяснение
-- 4 разобранных примера со ШАГАМИ решения (не просто ответ)
-- 5 задач для самопроверки: 70% multiple_choice, остальные input
+ТРЕБОВАНИЯ:
+- РОВНО 5 задач: 4 multiple_choice + 1 input
+- correct_answer для multiple_choice — индекс 0..3
 - Без LaTeX, обычным текстом (используй ^, /, * для формул)
-- Языковая норма: русский, обращение на "ты", без занудства
-- Примеры из реальной жизни где возможно (деньги, скорость, спорт, еда)
-- НЕ копируй ничего из учебников — формулируй своими словами"""
+- Русский язык, обращение на "ты"
+- Каждая задача с 3 подсказками от общей к конкретной"""
 
-    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=4500, temperature=0.7)
+    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2200, temperature=0.7, timeout=50, retries=1)
+    return data.get('tasks', []) if isinstance(data, dict) else []
+
+
+def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True):
+    """Урок: теория + примеры. Задачи опционально (по умолчанию да, для обратной совместимости).
+    С кэшем в БД. При include_tasks=False задачи не генерируются — пользователь загрузит их отдельным запросом."""
+    cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
+    if cached:
+        if isinstance(cached, dict):
+            cached['_cached'] = True
+            # если из кэша запросили без задач — всё равно отдаём задачи целиком
+        return cached
+
+    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
+
+    # ── Этап 1: теория + примеры (быстрый запрос, ~2800 токенов) ──
+    prompt_main = f"""Ты — лучший школьный преподаватель по предмету "{subject_name}". Составь ПОДРОБНЫЙ обучающий урок по теме "{topic}" для уровня "{grade}", сложность "{difficulty}".
+{title_hint}
+Урок должен быть РЕАЛЬНЫМ и ПОЛЕЗНЫМ — как будто живой учитель объясняет с нуля. НИКАКИХ заглушек, общих фраз вроде "изучите тему" или "lorem ipsum". Только конкретные факты, формулы, правила, примеры.
+
+ВЕРНИ строго JSON следующей структуры (БЕЗ массива tasks — задачи будут отдельно):
+{{
+  "title": "название урока (5-9 слов)",
+  "subtitle": "что ученик освоит за урок (1 предложение)",
+  "duration_minutes": число от 20 до 40,
+  "objectives": ["цель 1","цель 2","цель 3"],
+  "theory_blocks": [
+    {{
+      "heading": "Заголовок раздела теории",
+      "content": "ПОДРОБНОЕ объяснение в 4-7 предложений. Простым языком, с аналогиями из жизни (пицца, шоколадка, деньги). Конкретные определения, формулы (без LaTeX), правила.",
+      "key_points": ["тезис 1","тезис 2","тезис 3"]
+    }},
+    {{ "heading":"Заголовок 2", "content":"...", "key_points":["...","..."] }},
+    {{ "heading":"Заголовок 3", "content":"...", "key_points":["...","..."] }}
+  ],
+  "examples": [
+    {{
+      "title": "Пример 1: краткое название",
+      "problem": "Условие (конкретное, с числами)",
+      "solution_steps": ["Шаг 1: что делаем","Шаг 2: расчёт","Шаг 3: ...","Шаг 4: ответ"],
+      "answer": "финальный ответ",
+      "note": "важный нюанс (1 предложение)"
+    }},
+    ... всего 4 разобранных примера от простого к сложному
+  ],
+  "common_mistakes": ["ошибка 1 — как избежать","ошибка 2 — как избежать","ошибка 3 — как избежать"],
+  "summary": "Краткое резюме в 2-3 предложения"
+}}
+
+ЖЁСТКИЕ ТРЕБОВАНИЯ:
+- РОВНО 3 раздела теории по 4-7 предложений
+- РОВНО 4 разобранных примера со ШАГАМИ
+- Без LaTeX, обычным текстом (используй ^, /, * для формул)
+- Русский язык, обращение на "ты"
+- НЕ возвращай поле tasks — задачи отдельно
+- Примеры из жизни (деньги, скорость, спорт, еда)"""
+
+    data = call_polza([{'role': 'user', 'content': prompt_main}], max_tokens=2800, temperature=0.7, timeout=50, retries=1)
+
+    if not isinstance(data, dict):
+        data = {}
+
+    # Задачи опционально (если фронт хочет всё сразу)
+    if include_tasks:
+        try:
+            data['tasks'] = _generate_lesson_tasks_only(subject_name, topic, grade, difficulty)
+        except Exception:
+            data['tasks'] = []
+    else:
+        data['tasks'] = []
+
     save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, data)
-    if isinstance(data, dict):
-        data['_cached'] = False
+    data['_cached'] = False
     return data
+
+
+def action_generate_lesson_tasks(subject, topic, grade, difficulty):
+    """Отдельный быстрый запрос — только задачи к уроку"""
+    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    tasks = _generate_lesson_tasks_only(subject_name, topic, grade, difficulty)
+    return {'tasks': tasks}
 
 
 def action_generate_task(subject, topic, difficulty, completed_tasks):
@@ -501,13 +528,27 @@ def handler(event, context):
             grade = body.get('grade', '5-9')
             difficulty = body.get('difficulty', 'средний')
             lesson_title = body.get('lesson_title', '')
+            include_tasks = bool(body.get('include_tasks', False))
             if not topic:
                 return {
                     'statusCode': 400,
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
-            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title)
+            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=include_tasks)
+
+        elif action == 'generate_lesson_tasks':
+            subject = body.get('subject', 'math')
+            topic = body.get('topic', '')
+            grade = body.get('grade', '5-9')
+            difficulty = body.get('difficulty', 'средний')
+            if not topic:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
+                }
+            result = action_generate_lesson_tasks(subject, topic, grade, difficulty)
 
         elif action == 'subjects':
             result = {
