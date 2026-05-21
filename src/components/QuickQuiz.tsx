@@ -92,43 +92,8 @@ export default function QuickQuiz() {
   };
 
   const startFreeAction = () => {
-    const targetIds = ["myspace", "journey", "courses-library", "courses"];
-    const findTarget = (): HTMLElement | null => {
-      for (const id of targetIds) {
-        const el = document.getElementById(id);
-        if (el) return el;
-      }
-      return null;
-    };
-
-    const onHome = window.location.pathname === "/";
-    const target = findTarget();
-
-    if (onHome && target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-
-    // Если мы не на главной — переходим туда и докручиваем к секции
-    if (!onHome) {
-      navigate("/");
-    }
-
-    // Lazy-секции могут ещё не быть в DOM — пробуем найти их с retry
-    let attempts = 0;
-    const maxAttempts = 20;
-    const timer = window.setInterval(() => {
-      attempts += 1;
-      const el = findTarget();
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        window.clearInterval(timer);
-      } else if (attempts >= maxAttempts) {
-        window.clearInterval(timer);
-        // Финальный fallback — ведём на банк заданий, там реальный контент
-        navigate("/exam-bank");
-      }
-    }, 150);
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    navigate("/exam-bank");
   };
 
   const canProceed = currentAnswer.length > 0;
