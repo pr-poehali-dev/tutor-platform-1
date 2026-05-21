@@ -90,6 +90,23 @@ export default function QuickQuiz() {
     setCollapsed(false);
   };
 
+  const startFreeAction = () => {
+    const targetIds = ["myspace", "journey", "courses-library", "courses"];
+    let target: HTMLElement | null = null;
+    for (const id of targetIds) {
+      const el = document.getElementById(id);
+      if (el) {
+        target = el;
+        break;
+      }
+    }
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const canProceed = currentAnswer.length > 0;
 
   // КОМПАКТНЫЙ ВИД — пользователь уже проходил квиз
@@ -132,13 +149,14 @@ export default function QuickQuiz() {
                   <Icon name="Eye" size={14} />
                   Открыть
                 </button>
-                <Link
-                  to={result.ctaPath}
+                <button
+                  type="button"
+                  onClick={startFreeAction}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold hover:scale-[1.03] shadow-lg shadow-purple-500/30 transition-all"
                 >
                   <Icon name="Rocket" size={14} />
                   Продолжить
-                </Link>
+                </button>
                 <button
                   onClick={restart}
                   aria-label="Пройти квиз заново"
@@ -335,13 +353,14 @@ export default function QuickQuiz() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2.5">
-                  <Link
-                    to={result.ctaPath}
+                  <button
+                    type="button"
+                    onClick={startFreeAction}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-purple-500/30 transition-all"
                   >
                     <Icon name="Rocket" size={16} />
                     {result.ctaLabel}
-                  </Link>
+                  </button>
                   <Link
                     to={result.secondaryCtaPath}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-white/15 bg-white/5 text-white font-semibold text-sm hover:bg-white/10 transition-all"
