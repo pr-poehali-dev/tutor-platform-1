@@ -12,8 +12,8 @@ interface SeoProps {
   noindex?: boolean;
 }
 
-const SITE_URL = "https://kosmo-uchitel.ru";
-const DEFAULT_IMG = "https://cdn.poehali.dev/intertnal/img/og.png";
+const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const DEFAULT_IMG = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg";
 
 /**
  * Универсальный SEO-компонент: title, description, canonical, OG, Twitter, JSON-LD.
@@ -29,7 +29,7 @@ export default function Seo({
   jsonLd,
   noindex = false,
 }: SeoProps) {
-  const fullTitle = title.includes("Космо-Учитель") ? title : `${title} — Космо-Учитель`;
+  const fullTitle = title.includes("УЧИСЬПРО") ? title : `${title} — УЧИСЬПРО`;
   const url = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
 
   return (
@@ -52,7 +52,7 @@ export default function Seo({
       <meta property="og:image" content={image} />
       <meta property="og:url" content={url} />
       <meta property="og:locale" content="ru_RU" />
-      <meta property="og:site_name" content="Космо-Учитель" />
+      <meta property="og:site_name" content="УЧИСЬПРО" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

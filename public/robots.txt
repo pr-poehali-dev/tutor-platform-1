@@ -32,5 +32,5 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-Host: https://kosmo-uchitel.ru
-Sitemap: https://kosmo-uchitel.ru/sitemap.xml
+Host: https://xn--h1agdcde2c.xn--p1ai
+Sitemap: https://xn--h1agdcde2c.xn--p1ai/sitemap.xml

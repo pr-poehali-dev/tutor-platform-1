@@ -16,7 +16,7 @@ export default function Privacy() {
         <div className="bg-white/4 border border-white/8 rounded-2xl p-4 not-prose">
           <p className="text-xs text-white/60 mb-1">Оператор персональных данных:</p>
           <p className="text-white font-semibold">ООО «МАТ-ЛАБС»</p>
-          <p className="text-white/50 text-xs mt-1">владелец и оператор сервиса «Космо-Учитель»</p>
+          <p className="text-white/50 text-xs mt-1">владелец и оператор сервиса «УЧИСЬПРО»</p>
         </div>
 
         <h2 className="font-montserrat font-black text-lg text-white pt-3">1. Какие данные собираем</h2>

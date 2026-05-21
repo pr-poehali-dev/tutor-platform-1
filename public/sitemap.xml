@@ -3,43 +3,43 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
   <url>
-    <loc>https://kosmo-uchitel.ru/</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/#journey</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/#journey</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/#ai</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/#ai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/#courses</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/#courses</loc>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/#myspace</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/#myspace</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/#leaderboard</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/#leaderboard</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://kosmo-uchitel.ru/pricing</loc>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/pricing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>

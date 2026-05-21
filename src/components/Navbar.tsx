@@ -29,7 +29,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg animate-pulse-glow">
               🚀
             </div>
-            <span className="font-montserrat font-black text-lg gradient-text-purple">УчисьПро</span>
+            <span className="font-montserrat font-black text-lg gradient-text-purple tracking-wide">УЧИСЬПРО</span>
           </div>
 
           <div className="hidden md:flex items-center gap-1">

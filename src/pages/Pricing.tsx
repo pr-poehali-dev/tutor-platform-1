@@ -128,10 +128,10 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Тарифы и цены на обучение с ИИ-репетитором"
-        description="Тарифные планы Космо-Учитель: пробный 7 дней бесплатно, Базовый от 590₽/мес, Профи с подготовкой к ЕГЭ/ОГЭ. Оплата картой или СБП."
-        canonical="https://kosmo-uchitel.ru/pricing"
-        keywords="тарифы репетитора, цены онлайн школа, подписка ии репетитор, стоимость подготовки егэ"
+        title="Тарифы и цены УЧИСЬПРО — подписка на ИИ-репетитора"
+        description="Тарифные планы УЧИСЬПРО: пробный период 7 дней бесплатно, Базовый от 590 ₽/мес, Профи с подготовкой к ЕГЭ и ОГЭ. Оплата российскими картами и через СБП. Возврат по 7-дневному правилу. Подробности на учисьпро.рф/pricing."
+        canonical="https://xn--h1agdcde2c.xn--p1ai/pricing"
+        keywords="учисьпро тарифы, цены онлайн школа, подписка ии репетитор, стоимость подготовки егэ, тарифы репетитора"
         jsonLd={PRICING_JSON_LD}
       />
       <div className="border-b border-white/5 bg-background/30 backdrop-blur-sm">

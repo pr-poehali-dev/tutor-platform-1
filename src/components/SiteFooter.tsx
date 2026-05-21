@@ -13,12 +13,12 @@ export default function SiteFooter() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">
                 🚀
               </div>
-              <span className="font-montserrat font-black text-white text-lg">Космо-Учитель</span>
+              <span className="font-montserrat font-black text-white text-lg">УЧИСЬПРО</span>
             </div>
             <p className="text-white/55 text-sm leading-relaxed max-w-md">
-              Образовательная онлайн-платформа с ИИ-методистами. Информационно-консультационные услуги в области образования.
+              Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ. Учись когда удобно — на учисьпро.рф.
             </p>
-            <p className="text-white/35 text-xs mt-2">Продукт ООО «МАТ-ЛАБС»</p>
+            <p className="text-white/35 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
           </div>
 
           {/* Legal */}
@@ -48,7 +48,7 @@ export default function SiteFooter() {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="text-white/40 text-xs leading-relaxed">
               <p className="font-bold text-white/70 mb-1">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
-              <p>Сервис «Космо-Учитель» — продукт ООО «МАТ-ЛАБС». Все права защищены.</p>
+              <p>Сервис «УЧИСЬПРО» (учисьпро.рф) — продукт ООО «МАТ-ЛАБС». Все права защищены.</p>
               <p className="mt-1 max-w-xl">
                 Сервис не выдаёт документов государственного образца. Услуги носят информационно-консультационный характер. Не подлежит лицензированию в соответствии со ст. 91 273-ФЗ.
               </p>

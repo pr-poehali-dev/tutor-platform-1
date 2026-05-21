@@ -16,8 +16,8 @@ export default function LegalLayout({ title, subtitle, updatedAt, children }: Pr
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title={title}
-        description={subtitle || `${title} — Космо-Учитель. Действует с ${updatedAt}.`}
-        canonical={`https://kosmo-uchitel.ru${pathname}`}
+        description={subtitle || `${title} — УЧИСЬПРО. Действует с ${updatedAt}.`}
+        canonical={`https://xn--h1agdcde2c.xn--p1ai${pathname}`}
         noindex
       />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">

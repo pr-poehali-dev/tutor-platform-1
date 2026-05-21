@@ -12,7 +12,7 @@ interface Props {
   className?: string;
 }
 
-const SITE_URL = "https://kosmo-uchitel.ru";
+const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
 /**
  * Хлебные крошки + автоматический BreadcrumbList в JSON-LD для Google/Яндекс.
