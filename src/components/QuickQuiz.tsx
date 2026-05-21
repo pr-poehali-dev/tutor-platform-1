@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { QUIZ_STEPS, buildResult } from "@/data/quizFlow";
 import {
@@ -10,7 +10,6 @@ import {
 } from "@/lib/quizStorage";
 
 export default function QuickQuiz() {
-  const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [finished, setFinished] = useState(false);
@@ -91,11 +90,6 @@ export default function QuickQuiz() {
     setCollapsed(false);
   };
 
-  const startFreeAction = () => {
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-    navigate("/exam-bank");
-  };
-
   const canProceed = currentAnswer.length > 0;
 
   // КОМПАКТНЫЙ ВИД — пользователь уже проходил квиз
@@ -133,18 +127,10 @@ export default function QuickQuiz() {
               <div className="flex flex-wrap gap-2 md:flex-shrink-0">
                 <button
                   onClick={expandSavedPlan}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/8 hover:bg-white/12 border border-white/15 text-white text-sm font-medium transition-colors"
-                >
-                  <Icon name="Eye" size={14} />
-                  Открыть
-                </button>
-                <button
-                  type="button"
-                  onClick={startFreeAction}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold hover:scale-[1.03] shadow-lg shadow-purple-500/30 transition-all"
                 >
-                  <Icon name="Rocket" size={14} />
-                  Продолжить
+                  <Icon name="Eye" size={14} />
+                  Открыть план
                 </button>
                 <button
                   onClick={restart}
@@ -342,17 +328,9 @@ export default function QuickQuiz() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2.5">
-                  <button
-                    type="button"
-                    onClick={startFreeAction}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-purple-500/30 transition-all"
-                  >
-                    <Icon name="Rocket" size={16} />
-                    {result.ctaLabel}
-                  </button>
                   <Link
                     to={result.secondaryCtaPath}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-white/15 bg-white/5 text-white font-semibold text-sm hover:bg-white/10 transition-all"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-purple-500/30 transition-all"
                   >
                     <Icon name="Library" size={16} />
                     {result.secondaryCtaLabel}
