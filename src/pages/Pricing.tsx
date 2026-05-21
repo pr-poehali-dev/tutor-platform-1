@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 
 const PLANS = [
   {
@@ -110,9 +112,36 @@ const FAQ = [
   },
 ];
 
+const PRICING_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  },
+];
+
 export default function Pricing() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
+      <Seo
+        title="Тарифы и цены на обучение с ИИ-репетитором"
+        description="Тарифные планы Космо-Учитель: пробный 7 дней бесплатно, Базовый от 590₽/мес, Профи с подготовкой к ЕГЭ/ОГЭ. Оплата картой или СБП."
+        canonical="https://kosmo-uchitel.ru/pricing"
+        keywords="тарифы репетитора, цены онлайн школа, подписка ии репетитор, стоимость подготовки егэ"
+        jsonLd={PRICING_JSON_LD}
+      />
+      <div className="border-b border-white/5 bg-background/30 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <Breadcrumbs items={[
+            { label: "Главная", href: "/" },
+            { label: "Тарифы и цены" },
+          ]} />
+        </div>
+      </div>
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {[...Array(20)].map((_, i) => (
           <div

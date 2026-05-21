@@ -1,5 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /legal/
+Disallow: /api/
+Disallow: /*.json$
+
 User-agent: Googlebot
 Allow: /
+Disallow: /legal/
+
+User-agent: Yandex
+Allow: /
+Disallow: /legal/
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term
 
 User-agent: Bingbot
 Allow: /
@@ -10,5 +22,15 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+# AI crawlers
+User-agent: GPTBot
 Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Host: https://kosmo-uchitel.ru
+Sitemap: https://kosmo-uchitel.ru/sitemap.xml

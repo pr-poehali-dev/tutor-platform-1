@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 
 interface Props {
   title: string;
@@ -9,8 +11,15 @@ interface Props {
 }
 
 export default function LegalLayout({ title, subtitle, updatedAt, children }: Props) {
+  const { pathname } = useLocation();
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
+      <Seo
+        title={title}
+        description={subtitle || `${title} — Космо-Учитель. Действует с ${updatedAt}.`}
+        canonical={`https://kosmo-uchitel.ru${pathname}`}
+        noindex
+      />
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {[...Array(15)].map((_, i) => (
           <div
@@ -28,6 +37,14 @@ export default function LegalLayout({ title, subtitle, updatedAt, children }: Pr
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-10 md:py-14">
+        <Breadcrumbs
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Правовая информация" },
+            { label: title },
+          ]}
+          className="mb-4"
+        />
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-6 transition-colors"
