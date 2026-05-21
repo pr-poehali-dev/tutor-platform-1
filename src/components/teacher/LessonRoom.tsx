@@ -1,6 +1,7 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import Icon from "@/components/ui/icon";
 import AvatarDisplay from "./AvatarDisplay";
+import MicPermissionHelp from "./MicPermissionHelp";
 import { Teacher, LessonMessage, Emotion } from "./teachersData";
 
 interface LessonRoomProps {
@@ -48,6 +49,9 @@ export default function LessonRoom({
   stopRecording,
   cancelRecording,
 }: LessonRoomProps) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const isMicError = !!voiceError && /микрофон|microphone|доступ|denied|permission/i.test(voiceError);
+
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
 
@@ -192,8 +196,20 @@ export default function LessonRoom({
           )}
 
           {voiceError && (
-            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-orange-300 text-xs animate-fade-in">
-              🎙 {voiceError}
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 text-orange-300 text-xs animate-fade-in flex flex-col gap-2">
+              <div className="flex gap-2 items-start">
+                <Icon name="Mic" size={14} className="mt-0.5 flex-shrink-0" />
+                <span className="leading-relaxed">{voiceError}</span>
+              </div>
+              {isMicError && (
+                <button
+                  onClick={() => setHelpOpen(true)}
+                  className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/40 text-orange-100 text-xs font-medium transition-colors"
+                >
+                  <Icon name="HelpCircle" size={13} />
+                  Как разрешить микрофон?
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -303,6 +319,8 @@ export default function LessonRoom({
           ))}
         </div>
       </div>
+
+      <MicPermissionHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
