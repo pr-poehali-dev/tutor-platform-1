@@ -44,6 +44,9 @@ export function formatMath(input: string): React.ReactNode[] {
   // Заменяем sqrt(...) на √...  (визуально привычнее в школьной программе)
   text = text.replace(/sqrt\s*\(([^()]+)\)/gi, "√($1)");
 
+  // Python-стиль ** как степень: x**2 → x^2  (ДО замены одиночных *)
+  text = text.replace(/\*\*\s*(-?\d+|[a-zA-Zа-яА-Я]|\{[^{}]+\})/g, "^$1");
+
   // Заменяем явные звёздочки умножения "число*число" / "буква*буква" на "·"
   text = text.replace(/(\w)\s*\*\s*(\w)/g, "$1·$2");
 
@@ -96,6 +99,71 @@ export function formatMath(input: string): React.ReactNode[] {
  */
 export function MathText({ children, className }: { children: string; className?: string }) {
   return <span className={className}>{formatMath(children)}</span>;
+}
+
+/**
+ * Превращает математический текст в произносимый русский (для TTS).
+ * Например: "x^2 + 3x = 10" → "икс в квадрате плюс три икс равно десять"
+ */
+export function prepareForSpeech(input: string): string {
+  if (!input) return "";
+  let s = input;
+
+  // Юникод-степени → ^N
+  const SUP_MAP: Record<string, string> = {
+    "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4",
+    "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+    "ⁿ": "n",
+  };
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ]/g, (m) => `^${SUP_MAP[m] || m}`);
+  // ** → ^
+  s = s.replace(/\*\*/g, "^");
+
+  // Степени с фигурными скобками: x^{n+1} → "икс в степени (эн плюс один)"
+  s = s.replace(/(\w|\))\^\{([^{}]+)\}/g, (_m, base, exp) => `${base} в степени ${exp}`);
+
+  // Простые степени: x^2 → "икс в квадрате", x^3 → "икс в кубе", x^n → "икс в степени эн"
+  s = s.replace(/(\w|\))\^(-?\d+|[a-zA-Zа-яА-Я])/g, (_m, base, exp) => {
+    if (exp === "2") return `${base} в квадрате`;
+    if (exp === "3") return `${base} в кубе`;
+    return `${base} в степени ${exp}`;
+  });
+
+  // Корни
+  s = s.replace(/sqrt\s*\(([^()]+)\)/gi, "корень из $1");
+  s = s.replace(/√\s*\(([^()]+)\)/g, "корень из $1");
+  s = s.replace(/√\s*(\w+)/g, "корень из $1");
+
+  // Дроби a/b — только между цифрами (чтобы не ломать обычные слеши)
+  s = s.replace(/(\d+)\s*\/\s*(\d+)/g, "$1 делённое на $2");
+
+  // Знаки сравнения и операции
+  s = s.replace(/<=/g, " меньше или равно ")
+       .replace(/>=/g, " больше или равно ")
+       .replace(/!=/g, " не равно ")
+       .replace(/==/g, " равно ")
+       .replace(/=/g, " равно ")
+       .replace(/</g, " меньше ")
+       .replace(/>/g, " больше ")
+       .replace(/·/g, " умножить на ")
+       .replace(/×/g, " умножить на ")
+       .replace(/÷/g, " делить на ")
+       .replace(/±/g, " плюс-минус ")
+       .replace(/∞/g, " бесконечность ");
+
+  // Латинские буквы как переменные → русское чтение
+  const LETTER_MAP: Record<string, string> = {
+    a: "а", b: "бэ", c: "цэ", d: "дэ", e: "е", f: "эф", g: "же",
+    h: "аш", i: "и", j: "жи", k: "ка", l: "эль", m: "эм", n: "эн",
+    o: "о", p: "пэ", q: "ку", r: "эр", s: "эс", t: "тэ", u: "у",
+    v: "вэ", w: "дубль-вэ", x: "икс", y: "игрек", z: "зет",
+  };
+  // Заменяем только ОДИНОЧНЫЕ латинские буквы (не часть английского слова)
+  s = s.replace(/\b([a-z])\b/gi, (_m, ch) => LETTER_MAP[ch.toLowerCase()] || ch);
+
+  // Подчисти лишние пробелы
+  s = s.replace(/\s{2,}/g, " ").trim();
+  return s;
 }
 
 export default MathText;

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
+import CourseVoiceDialog from "./CourseVoiceDialog";
 
 interface CourseCardProps {
   course: Course;
@@ -8,10 +10,26 @@ interface CourseCardProps {
   onOpenDetail?: () => void;
 }
 
+const SUBJECT_ACCENTS: Record<string, string> = {
+  math: "#a855f7",
+  physics: "#06b6d4",
+  english: "#ec4899",
+  russian: "#f59e0b",
+  chemistry: "#10b981",
+  biology: "#84cc16",
+  cs: "#6366f1",
+  literature: "#f43f5e",
+  history: "#eab308",
+  geography: "#0ea5e9",
+  society: "#8b5cf6",
+};
+
 export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenDetail }: CourseCardProps) {
   const fmt = FORMAT_CONFIG[course.format];
   const realPrice = getCoursePrice(course);
   const oldPrice = Math.round(realPrice * 1.6);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const accent = SUBJECT_ACCENTS[course.subject] || "#a855f7";
 
   return (
     <div
@@ -58,23 +76,34 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           ))}
         </div>
 
-        {/* AI Teacher badge (replaces human tutor) */}
-        <div className="flex items-center gap-2.5 mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-xl border border-purple-500/20">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-base flex-shrink-0">
-            🤖
+        {/* AI Teacher badge — кликабельная, открывает голосовой диалог */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setDialogOpen(true); }}
+          aria-label="Поговорить с ИИ-репетитором"
+          className="group flex items-center gap-2.5 mb-4 p-3 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 hover:from-purple-500/25 hover:to-cyan-500/25 rounded-xl border border-purple-500/25 hover:border-purple-400/50 transition-all text-left w-full"
+        >
+          <div className="relative flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-base">
+              🤖
+            </div>
+            {/* Микрофон-индикатор */}
+            <div
+              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-lg ring-2 ring-card/95"
+              style={{ background: accent }}
+            >
+              <Icon name="Mic" size={10} className="text-white" />
+            </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-semibold">ИИ-преподаватель</p>
-            <p className="text-purple-400 text-xs">Адаптивное обучение + голос</p>
+            <p className="text-white text-xs font-bold">Поговорить голосом</p>
+            <p className="text-purple-300 text-xs">Спроси что угодно — отвечу сразу</p>
           </div>
-          <div className="text-right flex-shrink-0">
-            <div className="flex items-center gap-1 justify-end">
-              <span className="text-cyan-400 text-xs">⚡</span>
-              <span className="text-white text-xs font-bold">Круглосуточно</span>
-            </div>
-            <p className="text-white/30 text-xs">мгновенно</p>
-          </div>
-        </div>
+          <Icon
+            name="ChevronRight"
+            size={14}
+            className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-shrink-0"
+          />
+        </button>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -136,6 +165,16 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           </div>
         </div>
       </div>
+
+      <CourseVoiceDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        courseTitle={course.title}
+        courseEmoji={course.emoji}
+        subject={course.subject}
+        grade={course.grade}
+        accent={accent}
+      />
     </div>
   );
 }

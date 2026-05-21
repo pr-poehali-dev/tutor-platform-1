@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { prepareForSpeech } from "@/lib/mathFormat";
 
 const TTS_URL = "https://functions.poehali.dev/fa3b03da-815c-4f28-baf2-1a88e36fca8d";
 
@@ -115,7 +116,9 @@ export default function useLessonNarrator(): UseLessonNarratorResult {
   }, [status]);
 
   const speak = useCallback(async (text: string) => {
-    const clean = text.trim();
+    const original = text.trim();
+    // Преобразуем формулы (x^2, x^3 и т.п.) в произносимый русский
+    const clean = prepareForSpeech(original);
     if (!clean || !enabled) return;
 
     // stop предыдущее
@@ -125,7 +128,8 @@ export default function useLessonNarrator(): UseLessonNarratorResult {
     }
 
     const reqId = ++reqIdRef.current;
-    setCurrentText(clean);
+    // Для отображения оставляем исходный текст (читается визуально лучше)
+    setCurrentText(original);
     setError(null);
 
     const cacheKey = `${voiceId}::${clean}`;
