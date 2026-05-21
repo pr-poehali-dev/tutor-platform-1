@@ -186,6 +186,135 @@ def action_build_program(subject, grade, weak_topics, level):
     return data
 
 
+def action_generate_lesson(subject, topic, grade, difficulty, lesson_title=''):
+    """Шаг: Полный урок с теорией, примерами и задачами для самопроверки"""
+    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
+
+    prompt = f"""Ты — лучший школьный преподаватель по предмету "{subject_name}". Составь ПОДРОБНЫЙ обучающий урок по теме "{topic}" для уровня "{grade}", сложность "{difficulty}".
+{title_hint}
+Урок должен быть РЕАЛЬНЫМ и ПОЛЕЗНЫМ — как будто живой учитель объясняет с нуля. НИКАКИХ заглушек, общих фраз вроде "изучите тему" или "lorem ipsum". Только конкретные факты, формулы, правила, примеры.
+
+ВЕРНИ строго JSON следующей структуры:
+{{
+  "title": "название урока (5-9 слов)",
+  "subtitle": "что ученик освоит за урок (1 предложение)",
+  "duration_minutes": число от 20 до 40,
+  "objectives": [
+    "цель урока 1 (что научится делать)",
+    "цель урока 2",
+    "цель урока 3"
+  ],
+  "theory_blocks": [
+    {{
+      "heading": "Заголовок раздела теории (например: 'Что такое дробь')",
+      "content": "ПОДРОБНОЕ объяснение раздела в 4-7 предложений. Простым языком, с аналогиями из жизни (пицца, шоколадка, деньги). Конкретные определения, формулы (без LaTeX, обычным текстом), правила.",
+      "key_points": ["ключевой тезис 1", "ключевой тезис 2", "ключевой тезис 3"]
+    }},
+    {{
+      "heading": "Заголовок 2",
+      "content": "Подробное объяснение второго раздела теории...",
+      "key_points": ["тезис 1", "тезис 2"]
+    }},
+    {{
+      "heading": "Заголовок 3",
+      "content": "Подробное объяснение третьего раздела (правила, исключения, формулы)...",
+      "key_points": ["тезис 1", "тезис 2"]
+    }}
+  ],
+  "examples": [
+    {{
+      "title": "Пример 1: краткое название",
+      "problem": "Условие задачи (конкретное, с числами/фактами)",
+      "solution_steps": [
+        "Шаг 1: что делаем и почему (с пояснением)",
+        "Шаг 2: следующее действие с расчётом",
+        "Шаг 3: следующее действие",
+        "Шаг 4: получаем ответ"
+      ],
+      "answer": "финальный ответ",
+      "note": "важный нюанс/частая ошибка (1 предложение)"
+    }},
+    ... 4 разобранных примера от простого к сложному
+  ],
+  "common_mistakes": [
+    "типичная ошибка 1 — как её избежать",
+    "типичная ошибка 2 — как её избежать",
+    "типичная ошибка 3 — как её избежать"
+  ],
+  "summary": "Краткое резюме урока в 2-3 предложения (что узнал, главное правило)",
+  "tasks": [
+    {{
+      "task_id": "t1",
+      "type": "multiple_choice",
+      "question": "формулировка задачи 1 (простая, для закрепления)",
+      "context": "",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": 0,
+      "hints": ["общая подсказка", "более конкретная", "почти решение"],
+      "explanation": "разбор решения в 3-4 предложения с шагами",
+      "fun_fact": ""
+    }},
+    {{
+      "task_id": "t2",
+      "type": "multiple_choice",
+      "question": "формулировка задачи 2 (средней сложности)",
+      "context": "",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": 1,
+      "hints": ["...", "...", "..."],
+      "explanation": "...",
+      "fun_fact": ""
+    }},
+    {{
+      "task_id": "t3",
+      "type": "input",
+      "question": "формулировка задачи 3 (ввод короткого ответа)",
+      "context": "",
+      "options": [],
+      "correct_answer": "ответ",
+      "hints": ["...", "...", "..."],
+      "explanation": "...",
+      "fun_fact": ""
+    }},
+    {{
+      "task_id": "t4",
+      "type": "multiple_choice",
+      "question": "формулировка задачи 4 (применение)",
+      "context": "",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": 2,
+      "hints": ["...", "...", "..."],
+      "explanation": "...",
+      "fun_fact": ""
+    }},
+    {{
+      "task_id": "t5",
+      "type": "multiple_choice",
+      "question": "формулировка задачи 5 (сложная, анализ)",
+      "context": "",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": 3,
+      "hints": ["...", "...", "..."],
+      "explanation": "...",
+      "fun_fact": "интересный факт по теме"
+    }}
+  ]
+}}
+
+ЖЁСТКИЕ ТРЕБОВАНИЯ:
+- Минимум 3 раздела теории по 4-7 предложений каждый — реальное содержательное объяснение
+- 4 разобранных примера со ШАГАМИ решения (не просто ответ)
+- 5 задач для самопроверки: 70% multiple_choice, остальные input
+- Без LaTeX, обычным текстом (используй ^, /, * для формул)
+- Языковая норма: русский, обращение на "ты", без занудства
+- Примеры из реальной жизни где возможно (деньги, скорость, спорт, еда)
+- НЕ копируй ничего из учебников — формулируй своими словами"""
+
+    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=4500, temperature=0.7)
+    return data
+
+
 def action_generate_task(subject, topic, difficulty, completed_tasks):
     """Шаг 4: Уникальное задание для модуля (не повторяется)"""
     completed_str = '; '.join(completed_tasks[-20:]) if completed_tasks else 'нет'
@@ -268,6 +397,20 @@ def handler(event, context):
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
             result = action_generate_task(subject, topic, difficulty, completed)
+
+        elif action == 'generate_lesson':
+            subject = body.get('subject', 'math')
+            topic = body.get('topic', '')
+            grade = body.get('grade', '5-9')
+            difficulty = body.get('difficulty', 'средний')
+            lesson_title = body.get('lesson_title', '')
+            if not topic:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
+                }
+            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title)
 
         elif action == 'subjects':
             result = {

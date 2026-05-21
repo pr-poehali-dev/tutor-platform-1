@@ -1,27 +1,35 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { Task, SubjectChoice, ProgramModule, LEARNING_PATH_URL } from "./journeyData";
+import { Task, SubjectChoice, ProgramModule, Lesson, LEARNING_PATH_URL } from "./journeyData";
 
 interface Props {
   module: ProgramModule;
   subject: SubjectChoice;
   onModuleComplete: () => void;
   onBack: () => void;
+  grade?: string;
 }
 
-export default function StepLesson({ module, subject, onModuleComplete, onBack }: Props) {
+type Phase = "theory" | "examples" | "tasks";
+
+export default function StepLesson({ module, subject, onModuleComplete, onBack, grade = "5-9" }: Props) {
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [phase, setPhase] = useState<Phase>("theory");
+  const [theoryIdx, setTheoryIdx] = useState(0);
+  const [exampleIdx, setExampleIdx] = useState(0);
+  const [revealedSteps, setRevealedSteps] = useState(0);
+
   const [taskIdx, setTaskIdx] = useState(0);
-  const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [completedTaskTitles, setCompletedTaskTitles] = useState<string[]>([]);
   const [userAnswer, setUserAnswer] = useState<string>("");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
 
-  const loadTask = async () => {
+  const loadLesson = async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -29,20 +37,27 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "generate_task",
+          action: "generate_lesson",
           subject: subject.id,
           topic: module.topic,
+          grade,
           difficulty: module.difficulty,
-          completed_tasks: completedTaskTitles,
+          lesson_title: module.title,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Ошибка генерации задания");
-      setCurrentTask(data);
-      setUserAnswer("");
-      setSelectedOption(null);
+      if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
+      setLesson(data as Lesson);
+      setPhase("theory");
+      setTheoryIdx(0);
+      setExampleIdx(0);
+      setRevealedSteps(0);
+      setTaskIdx(0);
       setShowResult(false);
+      setSelectedOption(null);
+      setUserAnswer("");
       setHintsShown(0);
+      setCorrectCount(0);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Ошибка";
       setError(msg);
@@ -52,9 +67,21 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack }
   };
 
   useEffect(() => {
-    loadTask();
+    loadLesson();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskIdx]);
+  }, []);
+
+  const currentTask: Task | null = lesson && phase === "tasks" ? lesson.tasks[taskIdx] : null;
+
+  const isAnswerCorrect = () => {
+    if (!currentTask || !showResult) return false;
+    if (currentTask.type === "multiple_choice") {
+      return selectedOption === Number(currentTask.correct_answer);
+    }
+    const correct = String(currentTask.correct_answer).toLowerCase().trim();
+    const user = userAnswer.toLowerCase().trim();
+    return user === correct || (user.length > 3 && correct.includes(user));
+  };
 
   const checkAnswer = () => {
     if (!currentTask) return;
@@ -71,83 +98,302 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack }
   };
 
   const nextTask = () => {
-    if (currentTask) {
-      setCompletedTaskTitles(prev => [...prev, currentTask.question]);
+    if (!lesson) return;
+    const total = lesson.tasks.length;
+    if (taskIdx + 1 >= total) {
+      onModuleComplete();
+      return;
     }
-    if (taskIdx + 1 >= module.tasks_count) {
-      // Module mastery check (Bloom: 80%+)
-      const masteryPercent = ((correctCount + (showResult && isAnswerCorrect() ? 1 : 0)) / module.tasks_count) * 100;
-      if (masteryPercent >= 60) {
-        onModuleComplete();
-      } else {
-        // Retry weak parts
-        setTaskIdx(taskIdx + 1);
-      }
-    } else {
-      setTaskIdx(taskIdx + 1);
-    }
+    setTaskIdx(taskIdx + 1);
+    setUserAnswer("");
+    setSelectedOption(null);
+    setShowResult(false);
+    setHintsShown(0);
   };
 
-  const isAnswerCorrect = () => {
-    if (!currentTask || !showResult) return false;
-    if (currentTask.type === "multiple_choice") {
-      return selectedOption === Number(currentTask.correct_answer);
-    }
-    const correct = String(currentTask.correct_answer).toLowerCase().trim();
-    const user = userAnswer.toLowerCase().trim();
-    return user === correct || (user.length > 3 && correct.includes(user));
-  };
+  // ─── Loading ───
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in max-w-3xl mx-auto">
+        <div className="bg-card/60 border border-white/10 rounded-3xl p-12 text-center">
+          <Icon name="Loader2" size={32} className="animate-spin mx-auto mb-3" style={{ color: subject.accent }} />
+          <p className="text-white font-bold mb-1">ИИ-методист готовит урок</p>
+          <p className="text-white/55 text-sm">Подбираю теорию, примеры и задачи именно по теме «{module.topic}»</p>
+        </div>
+      </div>
+    );
+  }
 
-  const progress = (taskIdx / module.tasks_count) * 100;
+  // ─── Error ───
+  if (error || !lesson) {
+    return (
+      <div className="animate-fade-in max-w-3xl mx-auto">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 text-red-300 text-sm">
+          ⚠️ {error || "Не удалось загрузить урок"}
+          <button onClick={loadLesson} className="block mt-3 text-white underline text-xs">Попробовать снова</button>
+        </div>
+      </div>
+    );
+  }
+
+  const totalTasks = lesson.tasks.length;
+  const phaseProgress =
+    phase === "theory" ? ((theoryIdx + 1) / lesson.theory_blocks.length) * 33 :
+    phase === "examples" ? 33 + ((exampleIdx + 1) / lesson.examples.length) * 33 :
+    66 + ((taskIdx) / totalTasks) * 34;
+
+  const accent = subject.accent;
 
   return (
     <div className="animate-fade-in max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
           <Icon name="ArrowLeft" size={14} />
           К программе
         </button>
         <div className="flex items-center gap-3 text-xs">
-          <span className="text-white/50">Задание {taskIdx + 1} из {module.tasks_count}</span>
-          <span className="text-yellow-400 font-bold flex items-center gap-1">
-            <Icon name="Zap" size={12} /> {correctCount}/{module.tasks_count}
-          </span>
+          <span className="text-white/50">≈ {lesson.duration_minutes} мин</span>
+          {phase === "tasks" && (
+            <span className="text-yellow-400 font-bold flex items-center gap-1">
+              <Icon name="Zap" size={12} /> {correctCount}/{totalTasks}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Module title + progress */}
-      <div className="mb-6">
+      {/* Lesson header */}
+      <div className="mb-5">
         <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">{module.topic}</p>
-        <h2 className="font-montserrat font-black text-xl text-white mb-3">{module.title}</h2>
+        <h2 className="font-montserrat font-black text-2xl text-white mb-1.5">{lesson.title}</h2>
+        <p className="text-white/55 text-sm">{lesson.subtitle}</p>
+      </div>
+
+      {/* Progress strip */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2 text-xs">
+          <span className={`flex items-center gap-1 ${phase === "theory" ? "text-white font-bold" : "text-white/40"}`}>
+            <Icon name="BookOpen" size={12} /> Теория
+          </span>
+          <div className="h-px flex-1 bg-white/10" />
+          <span className={`flex items-center gap-1 ${phase === "examples" ? "text-white font-bold" : "text-white/40"}`}>
+            <Icon name="Lightbulb" size={12} /> Примеры
+          </span>
+          <div className="h-px flex-1 bg-white/10" />
+          <span className={`flex items-center gap-1 ${phase === "tasks" ? "text-white font-bold" : "text-white/40"}`}>
+            <Icon name="Target" size={12} /> Задачи
+          </span>
+        </div>
         <div className="h-2 bg-white/5 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${subject.accent}, ${subject.accent}aa)` }}
+            style={{ width: `${phaseProgress}%`, background: `linear-gradient(90deg, ${accent}, ${accent}aa)` }}
           />
         </div>
       </div>
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="bg-card/60 border border-white/10 rounded-3xl p-12 text-center">
-          <Icon name="Loader2" size={32} className="animate-spin mx-auto mb-3" style={{ color: subject.accent }} />
-          <p className="text-white/55 text-sm">ИИ генерирует уникальное задание...</p>
-        </div>
-      )}
+      {/* Phase: THEORY */}
+      {phase === "theory" && lesson.theory_blocks.length > 0 && (() => {
+        const block = lesson.theory_blocks[theoryIdx];
+        const isFirst = theoryIdx === 0;
+        const isLast = theoryIdx === lesson.theory_blocks.length - 1;
+        return (
+          <div className="bg-card/60 border border-white/10 rounded-3xl p-6 md:p-8 mb-4 animate-fade-in">
+            {/* Objectives only on first block */}
+            {isFirst && lesson.objectives?.length > 0 && (
+              <div className="mb-6 bg-white/4 border border-white/8 rounded-2xl p-4">
+                <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Цели урока</p>
+                <ul className="space-y-1.5">
+                  {lesson.objectives.map((o, i) => (
+                    <li key={i} className="flex items-start gap-2 text-white/80 text-sm">
+                      <span style={{ color: accent }} className="font-bold mt-0.5">✓</span>
+                      <span>{o}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-      {/* Error */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-red-300 text-sm mb-4">
-          ⚠️ {error}
-          <button onClick={loadTask} className="block mt-2 text-white underline text-xs">Попробовать снова</button>
-        </div>
-      )}
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
+              >
+                {theoryIdx + 1}
+              </div>
+              <h3 className="font-montserrat font-black text-lg md:text-xl text-white">{block.heading}</h3>
+            </div>
+            <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4">{block.content}</p>
 
-      {/* Task */}
-      {currentTask && !isLoading && (
+            {block.key_points?.length > 0 && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-2">
+                <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Запомни</p>
+                <ul className="space-y-1.5">
+                  {block.key_points.map((p, i) => (
+                    <li key={i} className="flex items-start gap-2 text-white/85 text-sm">
+                      <Icon name="Sparkle" size={12} style={{ color: accent }} className="mt-1 flex-shrink-0" />
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-6">
+              <button
+                onClick={() => setTheoryIdx(theoryIdx - 1)}
+                disabled={isFirst}
+                className="text-white/50 hover:text-white text-sm flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <Icon name="ArrowLeft" size={14} /> Назад
+              </button>
+              <span className="text-white/40 text-xs">
+                {theoryIdx + 1} из {lesson.theory_blocks.length}
+              </span>
+              {isLast ? (
+                <button
+                  onClick={() => setPhase("examples")}
+                  className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  К примерам <Icon name="ArrowRight" size={14} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setTheoryIdx(theoryIdx + 1)}
+                  className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  Дальше <Icon name="ArrowRight" size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Phase: EXAMPLES */}
+      {phase === "examples" && lesson.examples.length > 0 && (() => {
+        const ex = lesson.examples[exampleIdx];
+        const isFirst = exampleIdx === 0;
+        const isLast = exampleIdx === lesson.examples.length - 1;
+        const allRevealed = revealedSteps >= ex.solution_steps.length;
+        return (
+          <div className="bg-card/60 border border-white/10 rounded-3xl p-6 md:p-8 mb-4 animate-fade-in">
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
+              >
+                <Icon name="Lightbulb" size={16} />
+              </div>
+              <h3 className="font-montserrat font-black text-lg md:text-xl text-white">{ex.title}</h3>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
+              <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5">Задача</p>
+              <p className="text-white/85 text-[15px] leading-relaxed">{ex.problem}</p>
+            </div>
+
+            <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Решение по шагам</p>
+            <div className="flex flex-col gap-2 mb-4">
+              {ex.solution_steps.slice(0, revealedSteps).map((step, i) => (
+                <div key={i} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-xl p-3 animate-fade-in">
+                  <div
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                    style={{ background: accent }}
+                  >
+                    {i + 1}
+                  </div>
+                  <p className="text-white/80 text-sm leading-relaxed">{step}</p>
+                </div>
+              ))}
+            </div>
+
+            {!allRevealed && (
+              <button
+                onClick={() => setRevealedSteps(revealedSteps + 1)}
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 text-white/80 text-sm font-medium transition-all flex items-center justify-center gap-2"
+              >
+                <Icon name="ChevronDown" size={14} />
+                {revealedSteps === 0 ? "Показать первый шаг" : `Показать шаг ${revealedSteps + 1}`}
+              </button>
+            )}
+
+            {allRevealed && (
+              <>
+                <div
+                  className="rounded-2xl p-4 mb-3"
+                  style={{ background: `${accent}15`, border: `1px solid ${accent}40` }}
+                >
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: accent }}>Ответ</p>
+                  <p className="text-white font-bold text-base">{ex.answer}</p>
+                </div>
+                {ex.note && (
+                  <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-3 mb-2">
+                    <p className="text-yellow-200/90 text-xs leading-relaxed">💡 {ex.note}</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="flex items-center justify-between mt-6">
+              <button
+                onClick={() => {
+                  if (isFirst) {
+                    setPhase("theory");
+                    setTheoryIdx(lesson.theory_blocks.length - 1);
+                  } else {
+                    setExampleIdx(exampleIdx - 1);
+                    setRevealedSteps(0);
+                  }
+                }}
+                className="text-white/50 hover:text-white text-sm flex items-center gap-1.5 transition-colors"
+              >
+                <Icon name="ArrowLeft" size={14} /> {isFirst ? "К теории" : "Назад"}
+              </button>
+              <span className="text-white/40 text-xs">
+                Пример {exampleIdx + 1} из {lesson.examples.length}
+              </span>
+              {isLast ? (
+                <button
+                  onClick={() => setPhase("tasks")}
+                  disabled={!allRevealed}
+                  className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  К задачам <Icon name="ArrowRight" size={14} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setExampleIdx(exampleIdx + 1); setRevealedSteps(0); }}
+                  disabled={!allRevealed}
+                  className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  Следующий <Icon name="ArrowRight" size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Phase: TASKS */}
+      {phase === "tasks" && currentTask && (
         <>
-          <div className="bg-card/60 border border-white/10 rounded-3xl p-6 md:p-8 mb-4">
+          <div className="bg-card/60 border border-white/10 rounded-3xl p-6 md:p-8 mb-4 animate-fade-in">
+            <div className="flex items-center justify-between mb-4 text-xs">
+              <span className="text-white/50">Задача {taskIdx + 1} из {totalTasks}</span>
+              <span
+                className="font-bold px-3 py-1 rounded-full"
+                style={{ background: `${accent}15`, color: accent }}
+              >
+                {currentTask.type === "multiple_choice" ? "Выбери ответ" :
+                 currentTask.type === "input" ? "Введи ответ" : "Объясни своими словами"}
+              </span>
+            </div>
+
             {currentTask.context && (
               <div className="bg-white/5 rounded-xl p-3 mb-4 text-white/70 text-sm">
                 📋 {currentTask.context}
@@ -203,10 +449,10 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack }
                   rows={currentTask.type === "explain" ? 4 : 2}
                 />
                 {showResult && (
-                  <div className={`mt-3 p-3 rounded-xl text-sm ${
-                    isAnswerCorrect() ? "bg-green-500/10 text-green-300 border border-green-500/30" : "bg-orange-500/10 text-orange-300 border border-orange-500/30"
+                  <div className={`mt-3 p-3 rounded-xl border text-sm ${
+                    isAnswerCorrect() ? "border-green-500/40 bg-green-500/10 text-green-300" : "border-red-500/40 bg-red-500/10 text-red-300"
                   }`}>
-                    {isAnswerCorrect() ? "🎉 Точно!" : `Правильный ответ: ${currentTask.correct_answer}`}
+                    <strong>Правильный ответ:</strong> {String(currentTask.correct_answer)}
                   </div>
                 )}
               </div>
@@ -214,59 +460,76 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack }
 
             {/* Hints */}
             {!showResult && hintsShown < currentTask.hints.length && (
-              <div className="mt-5 pt-5 border-t border-white/8">
+              <button
+                onClick={() => setHintsShown(hintsShown + 1)}
+                className="mt-4 text-purple-300 hover:text-purple-200 text-xs flex items-center gap-1.5 transition-colors"
+              >
+                <Icon name="Lightbulb" size={12} />
+                Показать подсказку ({hintsShown + 1}/{currentTask.hints.length})
+              </button>
+            )}
+            {hintsShown > 0 && (
+              <div className="mt-3 space-y-2">
                 {currentTask.hints.slice(0, hintsShown).map((h, i) => (
-                  <div key={i} className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-2 text-yellow-200 text-sm">
+                  <div key={i} className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-purple-200 text-xs">
                     💡 {h}
                   </div>
                 ))}
-                <button
-                  onClick={() => setHintsShown(hintsShown + 1)}
-                  className="text-xs text-white/45 hover:text-white/70 transition-colors flex items-center gap-1.5"
-                >
-                  <Icon name="Lightbulb" size={13} />
-                  Показать подсказку ({hintsShown + 1}/{currentTask.hints.length})
-                </button>
               </div>
             )}
 
-            {/* Explanation after answer */}
+            {/* Feedback */}
             {showResult && (
-              <div className="mt-5 pt-5 border-t border-white/8">
-                <p className="text-white/45 text-xs font-semibold uppercase tracking-widest mb-2">📚 Разбор</p>
-                <p className="text-white/75 text-sm leading-relaxed mb-3">{currentTask.explanation}</p>
+              <div className={`mt-5 p-4 rounded-2xl border ${
+                isAnswerCorrect() ? "border-green-500/40 bg-green-500/8" : "border-red-500/40 bg-red-500/8"
+              }`}>
+                <p className={`font-bold mb-2 flex items-center gap-2 ${isAnswerCorrect() ? "text-green-300" : "text-red-300"}`}>
+                  <Icon name={isAnswerCorrect() ? "Check" : "X"} size={16} />
+                  {isAnswerCorrect() ? "Верно!" : "Не совсем"}
+                </p>
+                <p className="text-white/75 text-sm leading-relaxed">{currentTask.explanation}</p>
                 {currentTask.fun_fact && (
-                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3 text-cyan-200 text-xs">
-                    🌟 А ты знал? {currentTask.fun_fact}
-                  </div>
+                  <p className="text-white/45 text-xs mt-3 italic border-t border-white/10 pt-3">
+                    💡 {currentTask.fun_fact}
+                  </p>
                 )}
               </div>
             )}
+
+            {/* CTA */}
+            <div className="mt-6 flex justify-end">
+              {!showResult ? (
+                <button
+                  onClick={checkAnswer}
+                  disabled={currentTask.type === "multiple_choice" ? selectedOption === null : !userAnswer.trim()}
+                  className="text-white font-bold px-6 py-3 rounded-2xl text-sm hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  Проверить
+                </button>
+              ) : (
+                <button
+                  onClick={nextTask}
+                  className="text-white font-bold px-6 py-3 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+                >
+                  {taskIdx + 1 >= totalTasks ? "Завершить урок" : "Следующая задача"}
+                  <Icon name="ArrowRight" size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Actions */}
-          {!showResult ? (
-            <button
-              onClick={checkAnswer}
-              disabled={
-                (currentTask.type === "multiple_choice" && selectedOption === null) ||
-                (currentTask.type !== "multiple_choice" && !userAnswer.trim())
-              }
-              className="w-full flex items-center justify-center gap-2 text-white font-bold py-4 rounded-2xl text-sm hover:opacity-90 transition-all disabled:opacity-30"
-              style={{ background: `linear-gradient(135deg, ${subject.accent}, ${subject.accent}cc)`, boxShadow: `0 4px 24px ${subject.accent}40` }}
-            >
-              <Icon name="Check" size={16} />
-              Проверить ответ
-            </button>
-          ) : (
-            <button
-              onClick={nextTask}
-              className="w-full flex items-center justify-center gap-2 text-white font-bold py-4 rounded-2xl text-sm hover:opacity-90 transition-all"
-              style={{ background: `linear-gradient(135deg, ${subject.accent}, ${subject.accent}cc)`, boxShadow: `0 4px 24px ${subject.accent}40` }}
-            >
-              {taskIdx + 1 >= module.tasks_count ? "Завершить модуль" : "Следующее задание"}
-              <Icon name="ArrowRight" size={16} />
-            </button>
+          {/* Summary on last task */}
+          {taskIdx + 1 >= totalTasks && lesson.common_mistakes?.length > 0 && (
+            <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-4 mb-3">
+              <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">Частые ошибки</p>
+              <ul className="space-y-1.5">
+                {lesson.common_mistakes.map((m, i) => (
+                  <li key={i} className="text-yellow-100/85 text-sm">• {m}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </>
       )}

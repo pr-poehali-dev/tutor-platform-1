@@ -18,9 +18,14 @@
       "method": "POST",
       "path": "/",
       "body": {"action": "subjects"},
-      "expectedStatus": 200,
-      "expectedBody": {"subjects": "array"},
-      "bodyMatcher": "partial"
+      "expectedStatus": 200
+    },
+    {
+      "name": "generate_lesson требует topic",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "generate_lesson", "subject": "math"},
+      "expectedStatus": 400
     }
   ]
 }

@@ -118,4 +118,30 @@ export interface Task {
   fun_fact: string;
 }
 
+export interface TheoryBlock {
+  heading: string;
+  content: string;
+  key_points: string[];
+}
+
+export interface LessonExample {
+  title: string;
+  problem: string;
+  solution_steps: string[];
+  answer: string;
+  note: string;
+}
+
+export interface Lesson {
+  title: string;
+  subtitle: string;
+  duration_minutes: number;
+  objectives: string[];
+  theory_blocks: TheoryBlock[];
+  examples: LessonExample[];
+  common_mistakes: string[];
+  summary: string;
+  tasks: Task[];
+}
+
 export type JourneyStep = "subject" | "test" | "analyzing" | "results" | "program" | "lesson" | "complete";

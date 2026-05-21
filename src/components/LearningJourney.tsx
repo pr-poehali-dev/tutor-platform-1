@@ -364,6 +364,7 @@ export default function LearningJourney() {
           <StepLesson
             module={currentModule}
             subject={subject}
+            grade={grade}
             onModuleComplete={onModuleComplete}
             onBack={() => { setStep("program"); setCurrentModule(null); }}
           />

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
+import LessonViewerModal from "./LessonViewerModal";
 
 interface Props {
   course: Course | null;
@@ -13,6 +14,7 @@ interface Props {
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
   const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
+  const [openLesson, setOpenLesson] = useState<{ title: string; topic: string } | null>(null);
 
   useEffect(() => {
     if (course) {
@@ -173,7 +175,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
           {activeTab === "program" && (
             <div className="animate-fade-in">
               <p className="text-white/50 text-xs mb-4">
-                Программа делится на {detail.modules.length} модуля. Каждый модуль — несколько уроков, по итогу — проверочные задания.
+                Программа делится на {detail.modules.length} модуля. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
               </p>
               <div className="flex flex-col gap-2">
                 {detail.modules.map(m => {
@@ -197,21 +199,31 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
                       </button>
                       {isExpanded && (
                         <div className="px-4 pb-4 pl-16 flex flex-col gap-2 animate-fade-in">
-                          {m.lessons.map(l => (
-                            <div key={l.num} className="flex items-start gap-3 py-2 border-t border-white/5 first:border-t-0">
-                              <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/50 text-xs font-bold flex-shrink-0">
-                                {l.num}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white/85 text-sm">{l.title}</p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-white/35 text-xs flex items-center gap-1">
-                                    <Icon name="Clock" size={11} /> {l.duration}
-                                  </span>
+                          {m.lessons.map(l => {
+                            const topicFromTags = l.topics?.[0] || course.tags[0] || course.title;
+                            return (
+                              <button
+                                key={l.num}
+                                onClick={() => setOpenLesson({ title: l.title, topic: topicFromTags })}
+                                className="flex items-start gap-3 py-2.5 px-2 -mx-2 rounded-xl border-t border-white/5 first:border-t-0 hover:bg-white/5 transition-colors text-left group"
+                              >
+                                <div className="w-7 h-7 rounded-lg bg-white/5 group-hover:bg-purple-500/30 flex items-center justify-center text-white/60 group-hover:text-white text-xs font-bold flex-shrink-0 transition-colors">
+                                  {l.num}
                                 </div>
-                              </div>
-                            </div>
-                          ))}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white/85 group-hover:text-white text-sm transition-colors">{l.title}</p>
+                                  <div className="flex items-center gap-3 mt-1">
+                                    <span className="text-white/35 text-xs flex items-center gap-1">
+                                      <Icon name="Clock" size={11} /> {l.duration}
+                                    </span>
+                                    <span className="text-purple-300/70 group-hover:text-purple-200 text-xs flex items-center gap-1 transition-colors">
+                                      <Icon name="Play" size={11} /> Открыть урок
+                                    </span>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -298,6 +310,17 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
         </div>
 
       </div>
+
+      {openLesson && (
+        <LessonViewerModal
+          open={!!openLesson}
+          onClose={() => setOpenLesson(null)}
+          subjectId={course.subject}
+          topic={openLesson.topic}
+          grade={course.grade}
+          lessonTitle={openLesson.title}
+        />
+      )}
     </div>
   );
 }
