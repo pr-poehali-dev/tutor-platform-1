@@ -9,6 +9,8 @@ import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { UserDataProvider } from "@/context/UserDataContext";
+import { AuthProvider } from "@/context/AuthContext";
+import LoginModal from "@/components/auth/LoginModal";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
@@ -16,6 +18,7 @@ const Terms = lazy(() => import("./pages/legal/Terms"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
+const Cabinet = lazy(() => import("./pages/Cabinet"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -33,19 +36,23 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Suspense fallback={<PageSkeleton />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/legal/offer" element={<Offer />} />
-                <Route path="/legal/privacy" element={<Privacy />} />
-                <Route path="/legal/terms" element={<Terms />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/exam-bank" element={<ExamBank />} />
-                <Route path="/score-calculator" element={<ScoreCalculator />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <AuthProvider>
+              <Suspense fallback={<PageSkeleton />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/legal/offer" element={<Offer />} />
+                  <Route path="/legal/privacy" element={<Privacy />} />
+                  <Route path="/legal/terms" element={<Terms />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/exam-bank" element={<ExamBank />} />
+                  <Route path="/score-calculator" element={<ScoreCalculator />} />
+                  <Route path="/cabinet" element={<Cabinet />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <LoginModal />
+            </AuthProvider>
           </BrowserRouter>
         </UserDataProvider>
       </TooltipProvider>

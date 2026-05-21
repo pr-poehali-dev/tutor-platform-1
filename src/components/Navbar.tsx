@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Маршрут", icon: "Compass", section: "journey" },
@@ -23,6 +24,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onToggleMobile }: NavbarProps) {
+  const { isAuthenticated, openLogin } = useAuth();
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
       <div className="max-w-6xl mx-auto">
@@ -61,13 +63,31 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/pricing"
-              className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
-            >
-              Тарифы
-            </Link>
+          <div className="hidden md:flex items-center gap-2">
+            {isAuthenticated ? (
+              <Link
+                to="/cabinet"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+              >
+                <Icon name="User" size={14} />
+                Кабинет
+              </Link>
+            ) : (
+              <>
+                <button
+                  onClick={openLogin}
+                  className="text-sm text-white/70 hover:text-white transition-colors px-3 py-2"
+                >
+                  Войти
+                </button>
+                <Link
+                  to="/pricing"
+                  className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+                >
+                  Тарифы
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -101,12 +121,30 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               </Link>
             ))}
             <div className="border-t border-white/10 pt-3 mt-1 flex flex-col gap-2">
-              <Link
-                to="/pricing"
-                className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
-              >
-                Тарифы
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/cabinet"
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
+                >
+                  <Icon name="User" size={16} />
+                  Личный кабинет
+                </Link>
+              ) : (
+                <>
+                  <button
+                    onClick={openLogin}
+                    className="text-sm text-white/75 py-2 border border-white/15 rounded-xl"
+                  >
+                    Войти
+                  </button>
+                  <Link
+                    to="/pricing"
+                    className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
+                  >
+                    Тарифы
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

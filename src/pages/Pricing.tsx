@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import { useAuth } from "@/context/AuthContext";
 
 const PLANS = [
   {
@@ -125,6 +126,17 @@ const PRICING_JSON_LD = [
 ];
 
 export default function Pricing() {
+  const { isAuthenticated, openLogin } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePlanClick = () => {
+    if (!isAuthenticated) {
+      openLogin();
+    } else {
+      navigate("/cabinet");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
@@ -239,6 +251,7 @@ export default function Pricing() {
               </ul>
 
               <button
+                onClick={handlePlanClick}
                 className={`w-full font-bold text-sm py-3 rounded-2xl transition-all ${
                   plan.highlighted
                     ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"

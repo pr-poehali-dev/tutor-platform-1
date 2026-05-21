@@ -1,0 +1,36 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS возвращает CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Отправка кода на тестовый номер",
+      "method": "POST",
+      "path": "/?action=send_code",
+      "body": {"phone": "+70001112233"},
+      "expectedStatus": 200,
+      "expectedBody": {"success": true, "test_mode": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неверный формат телефона",
+      "method": "POST",
+      "path": "/?action=send_code",
+      "body": {"phone": "abc"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Без токена /me возвращает 401",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
