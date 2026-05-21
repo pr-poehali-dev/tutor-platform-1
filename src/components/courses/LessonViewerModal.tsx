@@ -172,7 +172,17 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
             <>
               {/* Title */}
               <div className="mb-5">
-                <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">{topic}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-white/40 text-xs font-semibold uppercase tracking-widest">{topic}</p>
+                  {lesson._cached && (
+                    <span
+                      className="text-green-300/90 font-medium flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5 text-[10px]"
+                      title="Урок загружен из кэша, без обращения к ИИ"
+                    >
+                      <Icon name="Zap" size={10} /> мгновенно
+                    </span>
+                  )}
+                </div>
                 <h2 className="font-montserrat font-black text-2xl text-white mb-1.5">{lesson.title}</h2>
                 <p className="text-white/55 text-sm">{lesson.subtitle} · ≈ {lesson.duration_minutes} мин</p>
               </div>

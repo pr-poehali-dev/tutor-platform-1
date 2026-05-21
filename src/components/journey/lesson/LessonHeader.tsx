@@ -42,6 +42,14 @@ export default function LessonHeader({
           К программе
         </button>
         <div className="flex items-center gap-3 text-xs">
+          {lesson._cached && (
+            <span
+              className="text-green-300/90 font-medium flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5"
+              title="Урок загружен из кэша, без обращения к ИИ"
+            >
+              <Icon name="Zap" size={11} /> мгновенно
+            </span>
+          )}
           <span className="text-white/50">≈ {lesson.duration_minutes} мин</span>
           {phase === "tasks" && (
             <span className="text-yellow-400 font-bold flex items-center gap-1">

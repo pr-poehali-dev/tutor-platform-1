@@ -5,8 +5,11 @@ Returns: HTTP-ответ с JSON в зависимости от action
 """
 import json
 import os
+import hashlib
 import urllib.request
 import urllib.error
+import psycopg2
+import psycopg2.extras
 
 
 SUBJECT_TOPICS = {
@@ -186,8 +189,99 @@ def action_build_program(subject, grade, weak_topics, level):
     return data
 
 
+def _get_db_conn():
+    """Создаёт соединение с PostgreSQL"""
+    dsn = os.environ.get('DATABASE_URL', '')
+    if not dsn:
+        return None
+    try:
+        return psycopg2.connect(dsn)
+    except Exception:
+        return None
+
+
+def _lesson_cache_key(subject, topic, grade, difficulty, lesson_title):
+    """Стабильный ключ кэша урока"""
+    raw = f'{subject}|{grade}|{topic}|{difficulty}|{lesson_title or ""}'.lower().strip()
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
+    """Возвращает урок из кэша БД, если есть, и обновляет счётчик попаданий"""
+    key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
+    conn = _get_db_conn()
+    if conn is None:
+        return None
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT lesson_data FROM lesson_cache WHERE cache_key = %s LIMIT 1",
+                (key,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            cur.execute(
+                "UPDATE lesson_cache SET hit_count = hit_count + 1, last_accessed_at = NOW() WHERE cache_key = %s",
+                (key,)
+            )
+            conn.commit()
+            data = row['lesson_data']
+            if isinstance(data, str):
+                data = json.loads(data)
+            return data
+    except Exception:
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson_data):
+    """Сохраняет сгенерированный урок в кэш БД (idempotent)"""
+    key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
+    conn = _get_db_conn()
+    if conn is None:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO lesson_cache
+                    (cache_key, subject, grade, topic, difficulty, lesson_title, lesson_data)
+                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                ON CONFLICT (cache_key) DO NOTHING
+                """,
+                (
+                    key,
+                    subject,
+                    grade,
+                    topic,
+                    difficulty,
+                    lesson_title or '',
+                    json.dumps(lesson_data, ensure_ascii=False),
+                )
+            )
+            conn.commit()
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 def action_generate_lesson(subject, topic, grade, difficulty, lesson_title=''):
-    """Шаг: Полный урок с теорией, примерами и задачами для самопроверки"""
+    """Шаг: Полный урок с теорией, примерами и задачами для самопроверки (с кэшем в БД)"""
+    cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
+    if cached:
+        if isinstance(cached, dict):
+            cached['_cached'] = True
+        return cached
+
     subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
     title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
 
@@ -312,6 +406,9 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title=''):
 - НЕ копируй ничего из учебников — формулируй своими словами"""
 
     data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=4500, temperature=0.7)
+    save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, data)
+    if isinstance(data, dict):
+        data['_cached'] = False
     return data
 
 

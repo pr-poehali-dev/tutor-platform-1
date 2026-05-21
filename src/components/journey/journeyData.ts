@@ -142,6 +142,7 @@ export interface Lesson {
   common_mistakes: string[];
   summary: string;
   tasks: Task[];
+  _cached?: boolean;
 }
 
 export type JourneyStep = "subject" | "test" | "analyzing" | "results" | "program" | "lesson" | "complete";
