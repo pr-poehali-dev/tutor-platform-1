@@ -6,6 +6,7 @@ import CookieConsent from "@/components/CookieConsent";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SocialProofStrip from "@/components/SocialProofStrip";
+import QuickQuiz from "@/components/QuickQuiz";
 
 const AITeacher = lazy(() => import("@/components/AITeacher"));
 const LearningJourney = lazy(() => import("@/components/LearningJourney"));
@@ -156,6 +157,8 @@ export default function Index() {
       <HeroSection />
 
       <SocialProofStrip />
+
+      <QuickQuiz />
 
       <Suspense fallback={<SectionSkeleton />}>
         <MySpaceSection />
