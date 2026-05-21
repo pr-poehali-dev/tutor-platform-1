@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { Lesson, ProgramModule } from "../journeyData";
+import { MathText } from "@/lib/mathFormat";
 
 type Phase = "theory" | "examples" | "tasks";
 
@@ -62,8 +63,12 @@ export default function LessonHeader({
       {/* Lesson header */}
       <div className="mb-5">
         <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">{module.topic}</p>
-        <h2 className="font-montserrat font-black text-2xl text-white mb-1.5">{lesson.title}</h2>
-        <p className="text-white/55 text-sm">{lesson.subtitle}</p>
+        <h2 className="font-montserrat font-black text-2xl text-white mb-1.5">
+          <MathText>{lesson.title}</MathText>
+        </h2>
+        <p className="text-white/55 text-sm">
+          <MathText>{lesson.subtitle}</MathText>
+        </p>
       </div>
 
       {/* Progress strip */}

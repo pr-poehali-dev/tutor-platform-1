@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { Lesson, Task } from "../journeyData";
+import { MathText } from "@/lib/mathFormat";
 
 interface Props {
   lesson: Lesson;
@@ -52,12 +53,12 @@ export default function LessonTasksPhase({
 
         {currentTask.context && (
           <div className="bg-white/5 rounded-xl p-3 mb-4 text-white/70 text-sm">
-            📋 {currentTask.context}
+            📋 <MathText>{currentTask.context}</MathText>
           </div>
         )}
 
         <h3 className="font-montserrat font-black text-lg md:text-xl text-white mb-6 leading-snug">
-          {currentTask.question}
+          <MathText>{currentTask.question}</MathText>
         </h3>
 
         {currentTask.type === "multiple_choice" ? (
@@ -89,7 +90,7 @@ export default function LessonTasksPhase({
                      showWrong ? <Icon name="X" size={14} /> :
                      String.fromCharCode(65 + idx)}
                   </div>
-                  <span className="text-sm text-white">{opt}</span>
+                  <span className="text-sm text-white"><MathText>{opt}</MathText></span>
                 </button>
               );
             })}
@@ -108,7 +109,7 @@ export default function LessonTasksPhase({
               <div className={`mt-3 p-3 rounded-xl border text-sm ${
                 isAnswerCorrect() ? "border-green-500/40 bg-green-500/10 text-green-300" : "border-red-500/40 bg-red-500/10 text-red-300"
               }`}>
-                <strong>Правильный ответ:</strong> {String(currentTask.correct_answer)}
+                <strong>Правильный ответ:</strong> <MathText>{String(currentTask.correct_answer)}</MathText>
               </div>
             )}
           </div>
@@ -128,7 +129,7 @@ export default function LessonTasksPhase({
           <div className="mt-3 space-y-2">
             {currentTask.hints.slice(0, hintsShown).map((h, i) => (
               <div key={i} className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-purple-200 text-xs">
-                💡 {h}
+                💡 <MathText>{h}</MathText>
               </div>
             ))}
           </div>
@@ -143,10 +144,12 @@ export default function LessonTasksPhase({
               <Icon name={isAnswerCorrect() ? "Check" : "X"} size={16} />
               {isAnswerCorrect() ? "Верно!" : "Не совсем"}
             </p>
-            <p className="text-white/75 text-sm leading-relaxed">{currentTask.explanation}</p>
+            <p className="text-white/75 text-sm leading-relaxed">
+              <MathText>{currentTask.explanation}</MathText>
+            </p>
             {currentTask.fun_fact && (
               <p className="text-white/45 text-xs mt-3 italic border-t border-white/10 pt-3">
-                💡 {currentTask.fun_fact}
+                💡 <MathText>{currentTask.fun_fact}</MathText>
               </p>
             )}
           </div>
@@ -182,7 +185,7 @@ export default function LessonTasksPhase({
           <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">Частые ошибки</p>
           <ul className="space-y-1.5">
             {lesson.common_mistakes.map((m, i) => (
-              <li key={i} className="text-yellow-100/85 text-sm">• {m}</li>
+              <li key={i} className="text-yellow-100/85 text-sm">• <MathText>{m}</MathText></li>
             ))}
           </ul>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LEARNING_PATH_URL, Lesson, Task } from "@/components/journey/journeyData";
+import { MathText } from "@/lib/mathFormat";
 
 interface Props {
   open: boolean;
@@ -183,8 +184,8 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                     </span>
                   )}
                 </div>
-                <h2 className="font-montserrat font-black text-2xl text-white mb-1.5">{lesson.title}</h2>
-                <p className="text-white/55 text-sm">{lesson.subtitle} · ≈ {lesson.duration_minutes} мин</p>
+                <h2 className="font-montserrat font-black text-2xl text-white mb-1.5"><MathText>{lesson.title}</MathText></h2>
+                <p className="text-white/55 text-sm"><MathText>{lesson.subtitle}</MathText> · ≈ {lesson.duration_minutes} мин</p>
               </div>
 
               {/* Tabs */}
@@ -216,7 +217,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                           {lesson.objectives.map((o, i) => (
                             <li key={i} className="flex items-start gap-2 text-white/80 text-sm">
                               <span style={{ color: accent }} className="font-bold mt-0.5">✓</span>
-                              <span>{o}</span>
+                              <MathText>{o}</MathText>
                             </li>
                           ))}
                         </ul>
@@ -227,9 +228,9 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}>
                         {theoryIdx + 1}
                       </div>
-                      <h3 className="font-montserrat font-black text-lg text-white">{block.heading}</h3>
+                      <h3 className="font-montserrat font-black text-lg text-white"><MathText>{block.heading}</MathText></h3>
                     </div>
-                    <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4">{block.content}</p>
+                    <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4"><MathText>{block.content}</MathText></p>
 
                     {block.key_points?.length > 0 && (
                       <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
@@ -238,7 +239,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                           {block.key_points.map((p, i) => (
                             <li key={i} className="flex items-start gap-2 text-white/85 text-sm">
                               <Icon name="Sparkle" size={12} style={{ color: accent }} className="mt-1 flex-shrink-0" />
-                              <span>{p}</span>
+                              <MathText>{p}</MathText>
                             </li>
                           ))}
                         </ul>
@@ -274,12 +275,12 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}>
                         <Icon name="Lightbulb" size={16} />
                       </div>
-                      <h3 className="font-montserrat font-black text-lg text-white">{ex.title}</h3>
+                      <h3 className="font-montserrat font-black text-lg text-white"><MathText>{ex.title}</MathText></h3>
                     </div>
 
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
                       <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5">Задача</p>
-                      <p className="text-white/85 text-[15px] leading-relaxed">{ex.problem}</p>
+                      <p className="text-white/85 text-[15px] leading-relaxed"><MathText>{ex.problem}</MathText></p>
                     </div>
 
                     <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Решение по шагам</p>
@@ -289,7 +290,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                           <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ background: accent }}>
                             {i + 1}
                           </div>
-                          <p className="text-white/80 text-sm leading-relaxed">{step}</p>
+                          <p className="text-white/80 text-sm leading-relaxed"><MathText>{step}</MathText></p>
                         </div>
                       ))}
                     </div>
@@ -305,11 +306,11 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                       <>
                         <div className="rounded-2xl p-4 mb-3" style={{ background: `${accent}15`, border: `1px solid ${accent}40` }}>
                           <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: accent }}>Ответ</p>
-                          <p className="text-white font-bold text-base">{ex.answer}</p>
+                          <p className="text-white font-bold text-base"><MathText>{ex.answer}</MathText></p>
                         </div>
                         {ex.note && (
                           <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-3 mb-2">
-                            <p className="text-yellow-200/90 text-xs leading-relaxed">💡 {ex.note}</p>
+                            <p className="text-yellow-200/90 text-xs leading-relaxed">💡 <MathText>{ex.note}</MathText></p>
                           </div>
                         )}
                       </>
@@ -353,7 +354,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                   </div>
 
                   <h3 className="font-montserrat font-black text-lg text-white mb-6 leading-snug">
-                    {currentTask.question}
+                    <MathText>{currentTask.question}</MathText>
                   </h3>
 
                   {currentTask.type === "multiple_choice" ? (
@@ -383,7 +384,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                             }`}>
                               {showRight ? <Icon name="Check" size={14} /> : showWrong ? <Icon name="X" size={14} /> : String.fromCharCode(65 + idx)}
                             </div>
-                            <span className="text-sm text-white">{opt}</span>
+                            <span className="text-sm text-white"><MathText>{opt}</MathText></span>
                           </button>
                         );
                       })}
@@ -400,7 +401,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                       />
                       {showResult && (
                         <div className={`mt-3 p-3 rounded-xl border text-sm ${isAnswerCorrect() ? "border-green-500/40 bg-green-500/10 text-green-300" : "border-red-500/40 bg-red-500/10 text-red-300"}`}>
-                          <strong>Правильный ответ:</strong> {String(currentTask.correct_answer)}
+                          <strong>Правильный ответ:</strong> <MathText>{String(currentTask.correct_answer)}</MathText>
                         </div>
                       )}
                     </div>
@@ -414,7 +415,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                   {hintsShown > 0 && (
                     <div className="mt-3 space-y-2">
                       {currentTask.hints.slice(0, hintsShown).map((h, i) => (
-                        <div key={i} className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-purple-200 text-xs">💡 {h}</div>
+                        <div key={i} className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-purple-200 text-xs">💡 <MathText>{h}</MathText></div>
                       ))}
                     </div>
                   )}
@@ -425,9 +426,9 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                         <Icon name={isAnswerCorrect() ? "Check" : "X"} size={16} />
                         {isAnswerCorrect() ? "Верно!" : "Не совсем"}
                       </p>
-                      <p className="text-white/75 text-sm leading-relaxed">{currentTask.explanation}</p>
+                      <p className="text-white/75 text-sm leading-relaxed"><MathText>{currentTask.explanation}</MathText></p>
                       {currentTask.fun_fact && (
-                        <p className="text-white/45 text-xs mt-3 italic border-t border-white/10 pt-3">💡 {currentTask.fun_fact}</p>
+                        <p className="text-white/45 text-xs mt-3 italic border-t border-white/10 pt-3">💡 <MathText>{currentTask.fun_fact}</MathText></p>
                       )}
                     </div>
                   )}
@@ -465,7 +466,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
 
                   <div className="bg-white/4 border border-white/8 rounded-2xl p-5 text-left mb-4">
                     <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Резюме</p>
-                    <p className="text-white/80 text-sm leading-relaxed">{lesson.summary}</p>
+                    <p className="text-white/80 text-sm leading-relaxed"><MathText>{lesson.summary}</MathText></p>
                   </div>
 
                   {lesson.common_mistakes?.length > 0 && (
@@ -473,7 +474,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                       <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">Чтобы не ошибиться в следующий раз</p>
                       <ul className="space-y-1.5">
                         {lesson.common_mistakes.map((m, i) => (
-                          <li key={i} className="text-yellow-100/85 text-sm">• {m}</li>
+                          <li key={i} className="text-yellow-100/85 text-sm">• <MathText>{m}</MathText></li>
                         ))}
                       </ul>
                     </div>

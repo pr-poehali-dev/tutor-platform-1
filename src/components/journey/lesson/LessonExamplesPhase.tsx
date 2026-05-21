@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "../journeyData";
+import { MathText } from "@/lib/mathFormat";
 
 interface Props {
   lesson: Lesson;
@@ -38,12 +39,16 @@ export default function LessonExamplesPhase({
         >
           <Icon name="Lightbulb" size={16} />
         </div>
-        <h3 className="font-montserrat font-black text-lg md:text-xl text-white">{ex.title}</h3>
+        <h3 className="font-montserrat font-black text-lg md:text-xl text-white">
+          <MathText>{ex.title}</MathText>
+        </h3>
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
         <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5">Задача</p>
-        <p className="text-white/85 text-[15px] leading-relaxed">{ex.problem}</p>
+        <p className="text-white/85 text-[15px] leading-relaxed">
+          <MathText>{ex.problem}</MathText>
+        </p>
       </div>
 
       <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Решение по шагам</p>
@@ -56,7 +61,9 @@ export default function LessonExamplesPhase({
             >
               {i + 1}
             </div>
-            <p className="text-white/80 text-sm leading-relaxed">{step}</p>
+            <p className="text-white/80 text-sm leading-relaxed">
+              <MathText>{step}</MathText>
+            </p>
           </div>
         ))}
       </div>
@@ -78,11 +85,13 @@ export default function LessonExamplesPhase({
             style={{ background: `${accent}15`, border: `1px solid ${accent}40` }}
           >
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: accent }}>Ответ</p>
-            <p className="text-white font-bold text-base">{ex.answer}</p>
+            <p className="text-white font-bold text-base">
+              <MathText>{ex.answer}</MathText>
+            </p>
           </div>
           {ex.note && (
             <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-3 mb-2">
-              <p className="text-yellow-200/90 text-xs leading-relaxed">💡 {ex.note}</p>
+              <p className="text-yellow-200/90 text-xs leading-relaxed">💡 <MathText>{ex.note}</MathText></p>
             </div>
           )}
         </>

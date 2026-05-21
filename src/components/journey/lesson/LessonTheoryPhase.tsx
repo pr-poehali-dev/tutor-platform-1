@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "../journeyData";
+import { MathText } from "@/lib/mathFormat";
 
 interface Props {
   lesson: Lesson;
@@ -26,7 +27,7 @@ export default function LessonTheoryPhase({ lesson, theoryIdx, setTheoryIdx, onG
             {lesson.objectives.map((o, i) => (
               <li key={i} className="flex items-start gap-2 text-white/80 text-sm">
                 <span style={{ color: accent }} className="font-bold mt-0.5">✓</span>
-                <span>{o}</span>
+                <MathText>{o}</MathText>
               </li>
             ))}
           </ul>
@@ -40,9 +41,13 @@ export default function LessonTheoryPhase({ lesson, theoryIdx, setTheoryIdx, onG
         >
           {theoryIdx + 1}
         </div>
-        <h3 className="font-montserrat font-black text-lg md:text-xl text-white">{block.heading}</h3>
+        <h3 className="font-montserrat font-black text-lg md:text-xl text-white">
+          <MathText>{block.heading}</MathText>
+        </h3>
       </div>
-      <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4">{block.content}</p>
+      <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4">
+        <MathText>{block.content}</MathText>
+      </p>
 
       {block.key_points?.length > 0 && (
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-2">
@@ -51,7 +56,7 @@ export default function LessonTheoryPhase({ lesson, theoryIdx, setTheoryIdx, onG
             {block.key_points.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-white/85 text-sm">
                 <Icon name="Sparkle" size={12} style={{ color: accent }} className="mt-1 flex-shrink-0" />
-                <span>{p}</span>
+                <MathText>{p}</MathText>
               </li>
             ))}
           </ul>
