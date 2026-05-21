@@ -43,6 +43,23 @@ export default function LearningJourney() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress.user?.id]);
 
+  // ─── Preselect из CourseCard ("Начать обучение") ───
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("journey_preselect");
+      if (!raw) return;
+      const pre = JSON.parse(raw) as { subject?: string; grade?: string };
+      if (pre.subject) {
+        const found = SUBJECTS.find((s) => s.id === pre.subject);
+        if (found) {
+          setSubject(found);
+          if (pre.grade) setGrade(pre.grade);
+        }
+      }
+      localStorage.removeItem("journey_preselect");
+    } catch { /* empty */ }
+  }, []);
+
   const callAPI = async <T,>(body: Record<string, unknown>): Promise<T> => {
     const res = await fetch(LEARNING_PATH_URL, {
       method: "POST",

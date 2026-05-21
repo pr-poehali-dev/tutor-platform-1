@@ -1,0 +1,45 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Missing user_uid → 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "list_favorites"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Unknown action → 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "x", "user_uid": "test"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Toggle favorite works",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "toggle_favorite", "user_uid": "test_user_xyz", "course_id": 1},
+      "expectedStatus": 200
+    },
+    {
+      "name": "List favorites works",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "list_favorites", "user_uid": "test_user_xyz"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Get stats works",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "get_stats", "user_uid": "test_user_xyz"},
+      "expectedStatus": 200
+    }
+  ]
+}

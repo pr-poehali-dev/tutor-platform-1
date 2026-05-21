@@ -7,6 +7,8 @@ import LessonTasksPhase from "./lesson/LessonTasksPhase";
 import LessonLoadingProgress from "./lesson/LessonLoadingProgress";
 import LessonNarratorBar from "./lesson/LessonNarratorBar";
 import useLessonNarrator from "@/hooks/useLessonNarrator";
+import { useUser } from "@/context/UserDataContext";
+import { BADGES } from "@/lib/badges";
 
 interface Props {
   module: ProgramModule;
@@ -36,6 +38,7 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   const [correctCount, setCorrectCount] = useState(0);
 
   const narrator = useLessonNarrator();
+  const user = useUser();
 
   const loadTasksInBackground = async (lessonRef: Lesson) => {
     try {
@@ -167,10 +170,48 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
     setShowResult(true);
   };
 
-  const nextTask = () => {
+  const nextTask = async () => {
     if (!lesson) return;
     const total = lesson.tasks.length;
     if (taskIdx + 1 >= total) {
+      // Урок завершён — логируем активность и проверяем бейджи
+      try {
+        const xp = 50 + correctCount * 10; // 50 за урок + по 10 за каждый верный
+        await user.logActivity({
+          minutes: 5,
+          lessons: 1,
+          tasks: total,
+          xp,
+        });
+        // Если в работе есть активный курс — увеличим его прогресс
+        try {
+          const raw = localStorage.getItem("journey_active_course");
+          if (raw) {
+            const act = JSON.parse(raw) as { course_id: number };
+            const mc = user.myCourses.find((c) => c.course_id === act.course_id);
+            const newProgress = Math.min(100, (mc?.progress || 0) + 10);
+            await user.updateProgress(act.course_id, newProgress);
+          }
+        } catch { /* empty */ }
+        // Проверяем доступные бейджи (через 300мс чтобы stats успели обновиться)
+        setTimeout(() => {
+          const s = {
+            lessons_completed: (user.stats?.lessons_completed || 0) + 1,
+            tasks_solved: (user.stats?.tasks_solved || 0) + total,
+            streak_days: user.stats?.streak_days || 1,
+            total_xp: (user.stats?.total_xp || 0) + xp,
+            favorites_count: user.favorites.length,
+            my_courses_count: user.myCourses.length,
+            unique_subjects: new Set(user.myCourses.map(c => c.subject)).size,
+          };
+          const earned = new Set(user.badges.map(b => b.id));
+          BADGES.forEach((b) => {
+            if (!earned.has(b.id) && b.check(s)) {
+              user.awardBadge(b.id);
+            }
+          });
+        }, 400);
+      } catch { /* empty */ }
       onModuleComplete();
       return;
     }

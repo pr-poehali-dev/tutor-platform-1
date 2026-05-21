@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
 import CourseVoiceDialog from "./CourseVoiceDialog";
+import { useUser } from "@/context/UserDataContext";
 
 interface CourseCardProps {
   course: Course;
@@ -31,13 +32,65 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
   const [dialogOpen, setDialogOpen] = useState(false);
   const accent = SUBJECT_ACCENTS[course.subject] || "#a855f7";
 
+  const user = useUser();
+  const isFav = user.isFavorite(course.id);
+  const myCourse = user.myCourses.find((c) => c.course_id === course.id);
+  const isStarted = !!myCourse;
+
+  const startLearning = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    user.startCourse(course.id, course.subject, course.grade, course.title);
+    // Сохраняем preselect для LearningJourney + активный курс на время сессии
+    try {
+      localStorage.setItem("journey_preselect", JSON.stringify({
+        subject: course.subject, grade: course.grade, course_id: course.id,
+      }));
+      localStorage.setItem("journey_active_course", JSON.stringify({
+        course_id: course.id, subject: course.subject, grade: course.grade, title: course.title,
+      }));
+    } catch { /* empty */ }
+    // Скроллим к секции с обучением
+    const target = document.getElementById("journey") || document.getElementById("courses");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const toggleFav = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    user.toggleFavorite(course.id);
+  };
+
+  const handleOpenDetail = () => {
+    user.trackView(course.id);
+    onOpenDetail?.();
+  };
+
   return (
     <div
-      onClick={onOpenDetail}
-      className={`bg-card/60 border rounded-2xl overflow-hidden card-hover transition-all duration-300 flex flex-col cursor-pointer ${
+      onClick={handleOpenDetail}
+      className={`relative bg-card/60 border rounded-2xl overflow-hidden card-hover transition-all duration-300 flex flex-col cursor-pointer ${
         isExpanded ? "border-purple-500/50 glow-purple" : "border-white/8 hover:border-white/20"
       }`}
     >
+      {/* Кнопка избранного — поверх карточки */}
+      <button
+        onClick={toggleFav}
+        aria-label={isFav ? "Убрать из избранного" : "Добавить в избранное"}
+        title={isFav ? "В избранном" : "В избранное"}
+        className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full backdrop-blur-md border flex items-center justify-center transition-all ${
+          isFav
+            ? "bg-pink-500/30 border-pink-400/50 text-pink-300 hover:bg-pink-500/40"
+            : "bg-black/40 border-white/15 text-white/55 hover:text-pink-300 hover:bg-pink-500/20 hover:border-pink-400/30"
+        }`}
+      >
+        <Icon name="Heart" size={16} className={isFav ? "fill-current" : ""} />
+      </button>
+      {/* Бейдж «В обучении» если курс уже начат */}
+      {isStarted && (
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-400/40 backdrop-blur-md text-green-300 text-[10px] font-bold uppercase tracking-wider">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+          {myCourse?.status === "completed" ? "Завершён" : `${myCourse?.progress || 0}%`}
+        </div>
+      )}
       {/* Top gradient bar */}
       <div className={`h-1 bg-gradient-to-r ${course.color}`} />
 
@@ -148,7 +201,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
             <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
             <div className="text-white/40 text-xs">за полный курс</div>
           </div>
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex gap-1.5">
             <button
               onClick={e => { e.stopPropagation(); onToggleExpand(); }}
               className="p-2.5 rounded-xl border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
@@ -157,10 +210,18 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
               <Icon name={isExpanded ? "ChevronUp" : "ChevronDown"} size={14} />
             </button>
             <button
-              onClick={e => { e.stopPropagation(); onOpenDetail?.(); }}
-              className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+              onClick={e => { e.stopPropagation(); handleOpenDetail(); }}
+              className="border border-white/15 text-white/75 hover:text-white hover:border-white/30 text-xs font-bold px-3 py-2.5 rounded-xl transition-all"
+              title="Подробнее о курсе"
             >
-              Подробнее
+              <Icon name="Info" size={13} />
+            </button>
+            <button
+              onClick={startLearning}
+              className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-lg"
+            >
+              {isStarted ? "Продолжить" : "Начать"}
+              <Icon name={isStarted ? "Play" : "Rocket"} size={13} />
             </button>
           </div>
         </div>

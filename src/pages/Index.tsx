@@ -8,6 +8,7 @@ import CoursesSection from "@/components/CoursesSection";
 import LeaderboardSection from "@/components/LeaderboardSection";
 import SiteFooter from "@/components/SiteFooter";
 import CookieConsent from "@/components/CookieConsent";
+import MySpaceSection from "@/components/myspace/MySpaceSection";
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState("courses");
@@ -49,6 +50,8 @@ export default function Index() {
       />
 
       <HeroSection />
+
+      <MySpaceSection />
 
       <LearningJourney />
 
