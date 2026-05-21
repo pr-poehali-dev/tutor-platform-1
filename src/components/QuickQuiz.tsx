@@ -1,12 +1,49 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { QUIZ_STEPS, buildResult } from "@/data/quizFlow";
+import {
+  loadQuizState,
+  saveQuizState,
+  clearQuizState,
+  formatRelativeTime,
+} from "@/lib/quizStorage";
 
 export default function QuickQuiz() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [finished, setFinished] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [showResumeBanner, setShowResumeBanner] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // При первом рендере подтягиваем сохранённое состояние из localStorage
+  useEffect(() => {
+    const saved = loadQuizState();
+    if (saved) {
+      setAnswers(saved.answers ?? {});
+      setStepIndex(saved.stepIndex ?? 0);
+      setFinished(!!saved.finished);
+      setSavedAt(saved.savedAt ?? null);
+      // Если уже есть результат — сразу сворачиваем в компактный вид
+      if (saved.finished) {
+        setCollapsed(true);
+      } else if (Object.keys(saved.answers ?? {}).length > 0) {
+        // Если квиз начат, но не закончен — мягкое напоминание
+        setShowResumeBanner(true);
+      }
+    }
+    setHydrated(true);
+  }, []);
+
+  // Автосохранение состояния при каждом изменении
+  useEffect(() => {
+    if (!hydrated) return;
+    if (Object.keys(answers).length === 0 && !finished) return;
+    saveQuizState({ answers, stepIndex, finished });
+    setSavedAt(Date.now());
+  }, [answers, stepIndex, finished, hydrated]);
 
   const totalSteps = QUIZ_STEPS.length;
   const step = QUIZ_STEPS[stepIndex];
@@ -27,6 +64,7 @@ export default function QuickQuiz() {
       }
       return { ...prev, [step.id]: [optId] };
     });
+    setShowResumeBanner(false);
   };
 
   const goNext = () => {
@@ -39,12 +77,82 @@ export default function QuickQuiz() {
   };
 
   const restart = () => {
+    clearQuizState();
     setAnswers({});
     setStepIndex(0);
     setFinished(false);
+    setCollapsed(false);
+    setSavedAt(null);
+    setShowResumeBanner(false);
+  };
+
+  const expandSavedPlan = () => {
+    setCollapsed(false);
   };
 
   const canProceed = currentAnswer.length > 0;
+
+  // КОМПАКТНЫЙ ВИД — пользователь уже проходил квиз
+  if (collapsed && result) {
+    return (
+      <section
+        id="quick-quiz"
+        className="relative px-4 py-10"
+        aria-label="Твой персональный план"
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-500/15 via-pink-500/8 to-cyan-500/10 p-5 md:p-6 backdrop-blur-md">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="text-4xl md:text-5xl flex-shrink-0">{result.emoji}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wide">
+                    <Icon name="BookmarkCheck" size={10} />
+                    Твой план сохранён
+                  </span>
+                  {savedAt && (
+                    <span className="text-white/55 text-xs">
+                      {formatRelativeTime(savedAt)}
+                    </span>
+                  )}
+                </div>
+                <h2 className="font-montserrat font-black text-xl md:text-2xl text-white leading-tight mb-1">
+                  {result.title}
+                </h2>
+                <p className="text-white/75 text-sm leading-relaxed line-clamp-2">
+                  {result.recommendedTrack} · ~{result.estimateMonths} мес. · {result.primarySubjects.join(", ")}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 md:flex-shrink-0">
+                <button
+                  onClick={expandSavedPlan}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/8 hover:bg-white/12 border border-white/15 text-white text-sm font-medium transition-colors"
+                >
+                  <Icon name="Eye" size={14} />
+                  Открыть
+                </button>
+                <Link
+                  to={result.ctaPath}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold hover:scale-[1.03] shadow-lg shadow-purple-500/30 transition-all"
+                >
+                  <Icon name="Rocket" size={14} />
+                  Продолжить
+                </Link>
+                <button
+                  onClick={restart}
+                  aria-label="Пройти квиз заново"
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 text-white/60 hover:text-white hover:border-white/25 transition-all"
+                >
+                  <Icon name="RotateCcw" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -65,6 +173,30 @@ export default function QuickQuiz() {
             Ответь на 4 вопроса — ИИ покажет, какой план обучения подойдёт именно тебе и сколько месяцев нужно до результата.
           </p>
         </div>
+
+        {/* Баннер «продолжить с того же места» */}
+        {showResumeBanner && (
+          <div className="mb-5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-sm p-3 flex items-center gap-3 animate-fade-in">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/25 flex items-center justify-center flex-shrink-0">
+              <Icon name="Clock" size={16} className="text-cyan-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold leading-tight">
+                Продолжаем с шага {stepIndex + 1}
+              </p>
+              <p className="text-white/65 text-xs">
+                {savedAt ? `Прогресс сохранён ${formatRelativeTime(savedAt)}` : "Твои ответы не потерялись"}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowResumeBanner(false)}
+              aria-label="Скрыть подсказку"
+              className="w-7 h-7 rounded-lg hover:bg-white/8 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
+            >
+              <Icon name="X" size={14} />
+            </button>
+          </div>
+        )}
 
         <div className="rounded-3xl border border-white/10 bg-card/50 backdrop-blur-md overflow-hidden shadow-2xl shadow-purple-500/10">
           {/* Прогресс-бар */}
