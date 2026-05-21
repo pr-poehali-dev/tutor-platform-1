@@ -1,6 +1,8 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Lesson, Task } from "../journeyData";
 import { MathText } from "@/lib/mathFormat";
+import TaskReportModal from "./TaskReportModal";
 
 interface Props {
   lesson: Lesson;
@@ -18,6 +20,12 @@ interface Props {
   onCheckAnswer: () => void;
   onNextTask: () => void;
   accent: string;
+  reportContext?: {
+    subject: string;
+    topic: string;
+    grade: string;
+    lessonTitle?: string;
+  };
 }
 
 export default function LessonTasksPhase({
@@ -36,19 +44,34 @@ export default function LessonTasksPhase({
   onCheckAnswer,
   onNextTask,
   accent,
+  reportContext,
 }: Props) {
+  const [reportOpen, setReportOpen] = useState(false);
+
   return (
     <>
-      <div className="bg-card/60 border border-white/10 rounded-3xl p-6 md:p-8 mb-4 animate-fade-in">
+      <div className="bg-white/[0.08] border border-white/15 rounded-3xl p-6 md:p-8 mb-4 animate-fade-in shadow-xl">
         <div className="flex items-center justify-between mb-4 text-xs">
-          <span className="text-white/50">Задача {taskIdx + 1} из {totalTasks}</span>
-          <span
-            className="font-bold px-3 py-1 rounded-full"
-            style={{ background: `${accent}15`, color: accent }}
-          >
-            {currentTask.type === "multiple_choice" ? "Выбери ответ" :
-             currentTask.type === "input" ? "Введи ответ" : "Объясни своими словами"}
-          </span>
+          <span className="text-white/65">Задача {taskIdx + 1} из {totalTasks}</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="font-bold px-3 py-1 rounded-full"
+              style={{ background: `${accent}25`, color: accent }}
+            >
+              {currentTask.type === "multiple_choice" ? "Выбери ответ" :
+               currentTask.type === "input" ? "Введи ответ" : "Объясни своими словами"}
+            </span>
+            {reportContext && (
+              <button
+                onClick={() => setReportOpen(true)}
+                aria-label="Сообщить об ошибке в задаче"
+                title="Сообщить об ошибке"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500/25 border border-white/15 hover:border-red-400/40 flex items-center justify-center transition-all group"
+              >
+                <Icon name="Flag" size={13} className="text-white/55 group-hover:text-red-300 transition-colors" />
+              </button>
+            )}
+          </div>
         </div>
 
         {currentTask.context && (
@@ -74,10 +97,10 @@ export default function LessonTasksPhase({
                   onClick={() => !showResult && setSelectedOption(idx)}
                   disabled={showResult}
                   className={`text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${
-                    showRight ? "border-green-500/60 bg-green-500/10" :
-                    showWrong ? "border-red-500/60 bg-red-500/10" :
-                    isSelected ? "border-purple-500/60 bg-purple-500/10" :
-                    "border-white/10 bg-white/4 hover:border-white/25"
+                    showRight ? "border-green-500/60 bg-green-500/15" :
+                    showWrong ? "border-red-500/60 bg-red-500/15" :
+                    isSelected ? "border-purple-500/60 bg-purple-500/15" :
+                    "border-white/15 bg-white/[0.07] hover:bg-white/[0.11] hover:border-white/30"
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ${
@@ -102,7 +125,7 @@ export default function LessonTasksPhase({
               onChange={e => setUserAnswer(e.target.value)}
               disabled={showResult}
               placeholder={currentTask.type === "explain" ? "Объясни своими словами..." : "Введи ответ..."}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-colors disabled:opacity-60"
+              className="w-full bg-white/[0.09] border border-white/15 rounded-2xl p-4 text-white text-sm placeholder-white/40 focus:outline-none focus:border-purple-500/50 focus:bg-white/[0.12] transition-colors disabled:opacity-60"
               rows={currentTask.type === "explain" ? 4 : 2}
             />
             {showResult && (
@@ -189,6 +212,20 @@ export default function LessonTasksPhase({
             ))}
           </ul>
         </div>
+      )}
+
+      {reportContext && (
+        <TaskReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          task={currentTask}
+          subject={reportContext.subject}
+          topic={reportContext.topic}
+          grade={reportContext.grade}
+          lessonTitle={reportContext.lessonTitle}
+          userAnswer={userAnswer || (selectedOption !== null ? `option_${selectedOption}` : "")}
+          accent={accent}
+        />
       )}
     </>
   );

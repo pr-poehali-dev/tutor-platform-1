@@ -267,6 +267,12 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
           onCheckAnswer={checkAnswer}
           onNextTask={nextTask}
           accent={accent}
+          reportContext={{
+            subject: subject.id,
+            topic: module.topic,
+            grade,
+            lessonTitle: module.title,
+          }}
         />
       )}
 

@@ -283,6 +283,12 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                   checkAnswer={checkAnswer}
                   nextTask={nextTask}
                   accent={accent}
+                  reportContext={{
+                    subject: mapSubject(subjectId),
+                    topic,
+                    grade: mapGrade(grade),
+                    lessonTitle,
+                  }}
                 />
               )}
 

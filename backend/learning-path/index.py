@@ -547,6 +547,54 @@ def action_generate_task(subject, topic, difficulty, completed_tasks):
     return data
 
 
+def action_report_task(body):
+    """Сохранить жалобу пользователя на некорректную задачу"""
+    dsn = os.environ.get('DATABASE_URL', '')
+    if not dsn:
+        raise Exception('DATABASE_URL не настроен')
+
+    import psycopg2
+    subject = str(body.get('subject', ''))[:32]
+    topic = str(body.get('topic', ''))[:255]
+    grade = str(body.get('grade', ''))[:16]
+    lesson_title = str(body.get('lesson_title', ''))[:500]
+    task_id = str(body.get('task_id', ''))[:32]
+    task_type = str(body.get('task_type', ''))[:32]
+    question = str(body.get('question', ''))[:4000]
+    options = body.get('options', [])
+    correct_answer = str(body.get('correct_answer', ''))[:500]
+    user_reason = str(body.get('reason', 'other'))[:64]
+    user_comment = str(body.get('comment', ''))[:2000]
+    user_answer = str(body.get('user_answer', ''))[:500]
+
+    if not question or not subject:
+        raise Exception('question и subject обязательны')
+
+    options_json = json.dumps(options, ensure_ascii=False) if isinstance(options, list) else '[]'
+
+    # экранирование одинарных кавычек для Simple Query Protocol
+    def esc(s):
+        return s.replace("'", "''")
+
+    sql = (
+        "INSERT INTO t_p78828167_tutor_platform_1.task_reports "
+        "(subject, topic, grade, lesson_title, task_id, task_type, question, options_json, correct_answer, user_reason, user_comment, user_answer) "
+        f"VALUES ('{esc(subject)}', '{esc(topic)}', '{esc(grade)}', '{esc(lesson_title)}', '{esc(task_id)}', '{esc(task_type)}', "
+        f"'{esc(question)}', '{esc(options_json)}'::jsonb, '{esc(correct_answer)}', '{esc(user_reason)}', "
+        f"'{esc(user_comment)}', '{esc(user_answer)}') RETURNING id;"
+    )
+
+    conn = psycopg2.connect(dsn)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql)
+            row = cur.fetchone()
+        conn.commit()
+        return {'ok': True, 'report_id': row[0] if row else None}
+    finally:
+        conn.close()
+
+
 def handler(event, context):
     """Главная функция роутинга обучающего маршрута"""
     method = event.get('httpMethod', 'POST')
@@ -638,6 +686,16 @@ def handler(event, context):
                     for k, v in SUBJECT_TOPICS.items()
                 ]
             }
+
+        elif action == 'report_task':
+            try:
+                result = action_report_task(body)
+            except Exception as e:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': str(e)}, ensure_ascii=False),
+                }
         else:
             return {
                 'statusCode': 400,
