@@ -129,11 +129,16 @@ export default function Pricing() {
   const { isAuthenticated, openLogin } = useAuth();
   const navigate = useNavigate();
 
-  const handlePlanClick = () => {
+  const handlePlanClick = (planId: string) => {
     if (!isAuthenticated) {
+      try {
+        sessionStorage.setItem("pending_checkout_plan", planId);
+      } catch {
+        // ignore
+      }
       openLogin();
     } else {
-      navigate("/cabinet");
+      navigate(`/checkout/${planId}`);
     }
   };
 
@@ -251,7 +256,7 @@ export default function Pricing() {
               </ul>
 
               <button
-                onClick={handlePlanClick}
+                onClick={() => handlePlanClick(plan.id)}
                 className={`w-full font-bold text-sm py-3 rounded-2xl transition-all ${
                   plan.highlighted
                     ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"

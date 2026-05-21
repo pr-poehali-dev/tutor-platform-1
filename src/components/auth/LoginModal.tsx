@@ -78,7 +78,18 @@ export default function LoginModal() {
       return;
     }
     closeLogin();
-    navigate("/cabinet");
+    let pendingPlan: string | null = null;
+    try {
+      pendingPlan = sessionStorage.getItem("pending_checkout_plan");
+      if (pendingPlan) sessionStorage.removeItem("pending_checkout_plan");
+    } catch {
+      // ignore
+    }
+    if (pendingPlan) {
+      navigate(`/checkout/${pendingPlan}`);
+    } else {
+      navigate("/cabinet");
+    }
   };
 
   return (
