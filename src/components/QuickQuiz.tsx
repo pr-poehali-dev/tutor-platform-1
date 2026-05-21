@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { QUIZ_STEPS, buildResult } from "@/data/quizFlow";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/lib/quizStorage";
 
 export default function QuickQuiz() {
+  const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [finished, setFinished] = useState(false);
@@ -92,19 +93,42 @@ export default function QuickQuiz() {
 
   const startFreeAction = () => {
     const targetIds = ["myspace", "journey", "courses-library", "courses"];
-    let target: HTMLElement | null = null;
-    for (const id of targetIds) {
-      const el = document.getElementById(id);
-      if (el) {
-        target = el;
-        break;
+    const findTarget = (): HTMLElement | null => {
+      for (const id of targetIds) {
+        const el = document.getElementById(id);
+        if (el) return el;
       }
-    }
-    if (target) {
+      return null;
+    };
+
+    const onHome = window.location.pathname === "/";
+    const target = findTarget();
+
+    if (onHome && target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+
+    // Если мы не на главной — переходим туда и докручиваем к секции
+    if (!onHome) {
+      navigate("/");
+    }
+
+    // Lazy-секции могут ещё не быть в DOM — пробуем найти их с retry
+    let attempts = 0;
+    const maxAttempts = 20;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      const el = findTarget();
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.clearInterval(timer);
+      } else if (attempts >= maxAttempts) {
+        window.clearInterval(timer);
+        // Финальный fallback — ведём на банк заданий, там реальный контент
+        navigate("/exam-bank");
+      }
+    }, 150);
   };
 
   const canProceed = currentAnswer.length > 0;
