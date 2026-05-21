@@ -69,8 +69,15 @@ export default function HeroSection() {
 
             {/* CTA — один главный, один второстепенный */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-fade-in-up animate-delay-300">
-              <button className="group bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple">
-                <span>Начать бесплатно</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("quick-quiz");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="group bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
+              >
+                <span>Подобрать маршрут</span>
                 <Icon
                   name="ArrowRight"
                   size={18}

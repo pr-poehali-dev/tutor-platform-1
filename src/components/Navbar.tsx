@@ -62,12 +62,12 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <button className="text-sm text-white/60 hover:text-white transition-colors px-3 py-2">
-              Войти
-            </button>
-            <button className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple">
-              Начать бесплатно
-            </button>
+            <Link
+              to="/pricing"
+              className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+            >
+              Тарифы
+            </Link>
           </div>
 
           <button
@@ -101,10 +101,12 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               </Link>
             ))}
             <div className="border-t border-white/10 pt-3 mt-1 flex flex-col gap-2">
-              <button className="text-sm text-white/70 py-2">Войти</button>
-              <button className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl">
-                Начать бесплатно
-              </button>
+              <Link
+                to="/pricing"
+                className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
+              >
+                Тарифы
+              </Link>
             </div>
           </div>
         )}
