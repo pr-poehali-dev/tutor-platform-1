@@ -10,6 +10,7 @@ const NAV_ITEMS = [
 ];
 
 const NAV_LINKS = [
+  { label: "ОГЭ и ЕГЭ", icon: "Library", path: "/exam-bank" },
   { label: "Тарифы", icon: "Sparkles", path: "/pricing" },
 ];
 
