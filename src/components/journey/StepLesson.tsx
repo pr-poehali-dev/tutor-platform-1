@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import Icon from "@/components/ui/icon";
 import { Task, SubjectChoice, ProgramModule, Lesson, LEARNING_PATH_URL } from "./journeyData";
 import LessonHeader from "./lesson/LessonHeader";
 import LessonTheoryPhase from "./lesson/LessonTheoryPhase";
 import LessonExamplesPhase from "./lesson/LessonExamplesPhase";
 import LessonTasksPhase from "./lesson/LessonTasksPhase";
+import LessonLoadingProgress from "./lesson/LessonLoadingProgress";
 
 interface Props {
   module: ProgramModule;
@@ -147,11 +147,11 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
   if (isLoading) {
     return (
       <div className="animate-fade-in max-w-3xl mx-auto">
-        <div className="bg-card/60 border border-white/10 rounded-3xl p-12 text-center">
-          <Icon name="Loader2" size={32} className="animate-spin mx-auto mb-3" style={{ color: subject.accent }} />
-          <p className="text-white font-bold mb-1">ИИ-методист готовит урок</p>
-          <p className="text-white/55 text-sm">Подбираю теорию, примеры и задачи именно по теме «{module.topic}»</p>
-        </div>
+        <LessonLoadingProgress
+          topic={module.topic}
+          accent={subject.accent}
+          estimateSeconds={12}
+        />
       </div>
     );
   }
@@ -233,11 +233,12 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
       )}
 
       {phase === "tasks" && !currentTask && (
-        <div className="bg-card/60 border border-white/10 rounded-3xl p-10 text-center animate-fade-in">
-          <Icon name="Loader2" size={28} className="animate-spin mx-auto mb-3" style={{ color: accent }} />
-          <p className="text-white font-bold mb-1">Готовлю задачи для самопроверки</p>
-          <p className="text-white/55 text-sm">Это займёт пару секунд — ИИ-методист подбирает задачи по теме</p>
-        </div>
+        <LessonLoadingProgress
+          topic={module.topic}
+          accent={accent}
+          estimateSeconds={7}
+          title="Готовлю задачи для самопроверки"
+        />
       )}
     </div>
   );

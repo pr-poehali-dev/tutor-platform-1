@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LEARNING_PATH_URL, Lesson, Task } from "@/components/journey/journeyData";
+import LessonLoadingProgress from "@/components/journey/lesson/LessonLoadingProgress";
 import LessonViewerHeader from "./lessonViewer/LessonViewerHeader";
 import LessonViewerTheory from "./lessonViewer/LessonViewerTheory";
 import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
@@ -182,11 +183,11 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
         <div className="p-6 md:p-8 max-h-[90vh] md:max-h-[85vh] overflow-y-auto">
           {/* Loading */}
           {isLoading && (
-            <div className="text-center py-16">
-              <Icon name="Loader2" size={36} className="animate-spin mx-auto mb-3" style={{ color: accent }} />
-              <p className="text-white font-bold mb-1">ИИ-методист готовит урок</p>
-              <p className="text-white/55 text-sm">Подбираю теорию, примеры и задачи по теме «{topic}»</p>
-            </div>
+            <LessonLoadingProgress
+              topic={topic}
+              accent={accent}
+              estimateSeconds={12}
+            />
           )}
 
           {/* Error */}
@@ -245,11 +246,12 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
               )}
 
               {phase === "tasks" && !currentTask && (
-                <div className="bg-white/4 border border-white/8 rounded-2xl p-10 text-center animate-fade-in">
-                  <Icon name="Loader2" size={28} className="animate-spin mx-auto mb-3" style={{ color: accent }} />
-                  <p className="text-white font-bold mb-1">Готовлю задачи для самопроверки</p>
-                  <p className="text-white/55 text-sm">Это займёт пару секунд — ИИ-методист подбирает задачи по теме</p>
-                </div>
+                <LessonLoadingProgress
+                  topic={topic}
+                  accent={accent}
+                  estimateSeconds={7}
+                  title="Готовлю задачи для самопроверки"
+                />
               )}
 
               {phase === "done" && (
