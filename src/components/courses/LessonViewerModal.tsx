@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { LEARNING_PATH_URL, Lesson, Task } from "@/components/journey/journeyData";
-import { MathText } from "@/lib/mathFormat";
+import LessonViewerHeader from "./lessonViewer/LessonViewerHeader";
+import LessonViewerTheory from "./lessonViewer/LessonViewerTheory";
+import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
+import LessonViewerTasks, { LessonViewerDone } from "./lessonViewer/LessonViewerTasks";
 
 interface Props {
   open: boolean;
@@ -171,328 +174,58 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           {/* Content */}
           {lesson && !isLoading && (
             <>
-              {/* Title */}
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white/40 text-xs font-semibold uppercase tracking-widest">{topic}</p>
-                  {lesson._cached && (
-                    <span
-                      className="text-green-300/90 font-medium flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5 text-[10px]"
-                      title="Урок загружен из кэша, без обращения к ИИ"
-                    >
-                      <Icon name="Zap" size={10} /> мгновенно
-                    </span>
-                  )}
-                </div>
-                <h2 className="font-montserrat font-black text-2xl text-white mb-1.5"><MathText>{lesson.title}</MathText></h2>
-                <p className="text-white/55 text-sm"><MathText>{lesson.subtitle}</MathText> · ≈ {lesson.duration_minutes} мин</p>
-              </div>
+              <LessonViewerHeader lesson={lesson} topic={topic} phase={phase} />
 
-              {/* Tabs */}
-              <div className="flex items-center gap-2 mb-6 text-xs">
-                <span className={`flex items-center gap-1 ${phase === "theory" ? "text-white font-bold" : "text-white/40"}`}>
-                  <Icon name="BookOpen" size={12} /> Теория
-                </span>
-                <div className="h-px flex-1 bg-white/10" />
-                <span className={`flex items-center gap-1 ${phase === "examples" ? "text-white font-bold" : "text-white/40"}`}>
-                  <Icon name="Lightbulb" size={12} /> Примеры
-                </span>
-                <div className="h-px flex-1 bg-white/10" />
-                <span className={`flex items-center gap-1 ${phase === "tasks" || phase === "done" ? "text-white font-bold" : "text-white/40"}`}>
-                  <Icon name="Target" size={12} /> Задачи
-                </span>
-              </div>
-
-              {/* THEORY */}
-              {phase === "theory" && lesson.theory_blocks.length > 0 && (() => {
-                const block = lesson.theory_blocks[theoryIdx];
-                const isFirst = theoryIdx === 0;
-                const isLast = theoryIdx === lesson.theory_blocks.length - 1;
-                return (
-                  <div className="animate-fade-in">
-                    {isFirst && lesson.objectives?.length > 0 && (
-                      <div className="mb-5 bg-white/4 border border-white/8 rounded-2xl p-4">
-                        <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Цели урока</p>
-                        <ul className="space-y-1.5">
-                          {lesson.objectives.map((o, i) => (
-                            <li key={i} className="flex items-start gap-2 text-white/80 text-sm">
-                              <span style={{ color: accent }} className="font-bold mt-0.5">✓</span>
-                              <MathText>{o}</MathText>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}>
-                        {theoryIdx + 1}
-                      </div>
-                      <h3 className="font-montserrat font-black text-lg text-white"><MathText>{block.heading}</MathText></h3>
-                    </div>
-                    <p className="text-white/80 text-[15px] leading-relaxed whitespace-pre-line mb-4"><MathText>{block.content}</MathText></p>
-
-                    {block.key_points?.length > 0 && (
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
-                        <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Запомни</p>
-                        <ul className="space-y-1.5">
-                          {block.key_points.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-white/85 text-sm">
-                              <Icon name="Sparkle" size={12} style={{ color: accent }} className="mt-1 flex-shrink-0" />
-                              <MathText>{p}</MathText>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between mt-6">
-                      <button onClick={() => setTheoryIdx(theoryIdx - 1)} disabled={isFirst} className="text-white/50 hover:text-white text-sm flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                        <Icon name="ArrowLeft" size={14} /> Назад
-                      </button>
-                      <span className="text-white/40 text-xs">{theoryIdx + 1} из {lesson.theory_blocks.length}</span>
-                      <button
-                        onClick={() => isLast ? setPhase("examples") : setTheoryIdx(theoryIdx + 1)}
-                        className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                      >
-                        {isLast ? "К примерам" : "Дальше"} <Icon name="ArrowRight" size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* EXAMPLES */}
-              {phase === "examples" && lesson.examples.length > 0 && (() => {
-                const ex = lesson.examples[exampleIdx];
-                const isFirst = exampleIdx === 0;
-                const isLast = exampleIdx === lesson.examples.length - 1;
-                const allRevealed = revealedSteps >= ex.solution_steps.length;
-                return (
-                  <div className="animate-fade-in">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white flex-shrink-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}>
-                        <Icon name="Lightbulb" size={16} />
-                      </div>
-                      <h3 className="font-montserrat font-black text-lg text-white"><MathText>{ex.title}</MathText></h3>
-                    </div>
-
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
-                      <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5">Задача</p>
-                      <p className="text-white/85 text-[15px] leading-relaxed"><MathText>{ex.problem}</MathText></p>
-                    </div>
-
-                    <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Решение по шагам</p>
-                    <div className="flex flex-col gap-2 mb-4">
-                      {ex.solution_steps.slice(0, revealedSteps).map((step, i) => (
-                        <div key={i} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-xl p-3 animate-fade-in">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ background: accent }}>
-                            {i + 1}
-                          </div>
-                          <p className="text-white/80 text-sm leading-relaxed"><MathText>{step}</MathText></p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {!allRevealed && (
-                      <button onClick={() => setRevealedSteps(revealedSteps + 1)} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-3 text-white/80 text-sm font-medium transition-all flex items-center justify-center gap-2">
-                        <Icon name="ChevronDown" size={14} />
-                        {revealedSteps === 0 ? "Показать первый шаг" : `Показать шаг ${revealedSteps + 1}`}
-                      </button>
-                    )}
-
-                    {allRevealed && (
-                      <>
-                        <div className="rounded-2xl p-4 mb-3" style={{ background: `${accent}15`, border: `1px solid ${accent}40` }}>
-                          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: accent }}>Ответ</p>
-                          <p className="text-white font-bold text-base"><MathText>{ex.answer}</MathText></p>
-                        </div>
-                        {ex.note && (
-                          <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-3 mb-2">
-                            <p className="text-yellow-200/90 text-xs leading-relaxed">💡 <MathText>{ex.note}</MathText></p>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    <div className="flex items-center justify-between mt-6">
-                      <button
-                        onClick={() => {
-                          if (isFirst) { setPhase("theory"); setTheoryIdx(lesson.theory_blocks.length - 1); }
-                          else { setExampleIdx(exampleIdx - 1); setRevealedSteps(0); }
-                        }}
-                        className="text-white/50 hover:text-white text-sm flex items-center gap-1.5 transition-colors"
-                      >
-                        <Icon name="ArrowLeft" size={14} /> {isFirst ? "К теории" : "Назад"}
-                      </button>
-                      <span className="text-white/40 text-xs">Пример {exampleIdx + 1} из {lesson.examples.length}</span>
-                      <button
-                        onClick={() => {
-                          if (isLast) setPhase("tasks");
-                          else { setExampleIdx(exampleIdx + 1); setRevealedSteps(0); }
-                        }}
-                        disabled={!allRevealed}
-                        className="text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                      >
-                        {isLast ? "К задачам" : "Следующий"} <Icon name="ArrowRight" size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* TASKS */}
-              {phase === "tasks" && currentTask && (
-                <div className="animate-fade-in">
-                  <div className="flex items-center justify-between mb-4 text-xs">
-                    <span className="text-white/50">Задача {taskIdx + 1} из {lesson.tasks.length}</span>
-                    <span className="font-bold px-3 py-1 rounded-full" style={{ background: `${accent}15`, color: accent }}>
-                      {currentTask.type === "multiple_choice" ? "Выбери ответ" : currentTask.type === "input" ? "Введи ответ" : "Объясни"}
-                    </span>
-                  </div>
-
-                  <h3 className="font-montserrat font-black text-lg text-white mb-6 leading-snug">
-                    <MathText>{currentTask.question}</MathText>
-                  </h3>
-
-                  {currentTask.type === "multiple_choice" ? (
-                    <div className="flex flex-col gap-2.5">
-                      {currentTask.options.map((opt, idx) => {
-                        const isSelected = selectedOption === idx;
-                        const correctIdx = Number(currentTask.correct_answer);
-                        const showRight = showResult && idx === correctIdx;
-                        const showWrong = showResult && isSelected && idx !== correctIdx;
-                        return (
-                          <button
-                            key={idx}
-                            onClick={() => !showResult && setSelectedOption(idx)}
-                            disabled={showResult}
-                            className={`text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-3 ${
-                              showRight ? "border-green-500/60 bg-green-500/10" :
-                              showWrong ? "border-red-500/60 bg-red-500/10" :
-                              isSelected ? "border-purple-500/60 bg-purple-500/10" :
-                              "border-white/10 bg-white/4 hover:border-white/25"
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0 ${
-                              showRight ? "bg-green-500 text-white" :
-                              showWrong ? "bg-red-500 text-white" :
-                              isSelected ? "bg-purple-500 text-white" :
-                              "bg-white/10 text-white/60"
-                            }`}>
-                              {showRight ? <Icon name="Check" size={14} /> : showWrong ? <Icon name="X" size={14} /> : String.fromCharCode(65 + idx)}
-                            </div>
-                            <span className="text-sm text-white"><MathText>{opt}</MathText></span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div>
-                      <textarea
-                        value={userAnswer}
-                        onChange={e => setUserAnswer(e.target.value)}
-                        disabled={showResult}
-                        placeholder="Введи ответ..."
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-500/50 transition-colors disabled:opacity-60"
-                        rows={2}
-                      />
-                      {showResult && (
-                        <div className={`mt-3 p-3 rounded-xl border text-sm ${isAnswerCorrect() ? "border-green-500/40 bg-green-500/10 text-green-300" : "border-red-500/40 bg-red-500/10 text-red-300"}`}>
-                          <strong>Правильный ответ:</strong> <MathText>{String(currentTask.correct_answer)}</MathText>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {!showResult && hintsShown < currentTask.hints.length && (
-                    <button onClick={() => setHintsShown(hintsShown + 1)} className="mt-4 text-purple-300 hover:text-purple-200 text-xs flex items-center gap-1.5 transition-colors">
-                      <Icon name="Lightbulb" size={12} /> Показать подсказку ({hintsShown + 1}/{currentTask.hints.length})
-                    </button>
-                  )}
-                  {hintsShown > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {currentTask.hints.slice(0, hintsShown).map((h, i) => (
-                        <div key={i} className="bg-purple-500/10 border border-purple-500/25 rounded-xl p-3 text-purple-200 text-xs">💡 <MathText>{h}</MathText></div>
-                      ))}
-                    </div>
-                  )}
-
-                  {showResult && (
-                    <div className={`mt-5 p-4 rounded-2xl border ${isAnswerCorrect() ? "border-green-500/40 bg-green-500/8" : "border-red-500/40 bg-red-500/8"}`}>
-                      <p className={`font-bold mb-2 flex items-center gap-2 ${isAnswerCorrect() ? "text-green-300" : "text-red-300"}`}>
-                        <Icon name={isAnswerCorrect() ? "Check" : "X"} size={16} />
-                        {isAnswerCorrect() ? "Верно!" : "Не совсем"}
-                      </p>
-                      <p className="text-white/75 text-sm leading-relaxed"><MathText>{currentTask.explanation}</MathText></p>
-                      {currentTask.fun_fact && (
-                        <p className="text-white/45 text-xs mt-3 italic border-t border-white/10 pt-3">💡 <MathText>{currentTask.fun_fact}</MathText></p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-6 flex justify-end">
-                    {!showResult ? (
-                      <button
-                        onClick={checkAnswer}
-                        disabled={currentTask.type === "multiple_choice" ? selectedOption === null : !userAnswer.trim()}
-                        className="text-white font-bold px-6 py-3 rounded-2xl text-sm hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                      >
-                        Проверить
-                      </button>
-                    ) : (
-                      <button
-                        onClick={nextTask}
-                        className="text-white font-bold px-6 py-3 rounded-2xl text-sm hover:opacity-90 transition-all flex items-center gap-2"
-                        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                      >
-                        {taskIdx + 1 >= lesson.tasks.length ? "Завершить урок" : "Следующая задача"}
-                        <Icon name="ArrowRight" size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {phase === "theory" && (
+                <LessonViewerTheory
+                  lesson={lesson}
+                  theoryIdx={theoryIdx}
+                  setTheoryIdx={setTheoryIdx}
+                  setPhase={setPhase}
+                  accent={accent}
+                />
               )}
 
-              {/* DONE */}
+              {phase === "examples" && (
+                <LessonViewerExamples
+                  lesson={lesson}
+                  exampleIdx={exampleIdx}
+                  setExampleIdx={setExampleIdx}
+                  revealedSteps={revealedSteps}
+                  setRevealedSteps={setRevealedSteps}
+                  setPhase={setPhase}
+                  setTheoryIdx={setTheoryIdx}
+                  accent={accent}
+                />
+              )}
+
+              {phase === "tasks" && currentTask && (
+                <LessonViewerTasks
+                  lesson={lesson}
+                  currentTask={currentTask}
+                  taskIdx={taskIdx}
+                  selectedOption={selectedOption}
+                  setSelectedOption={setSelectedOption}
+                  userAnswer={userAnswer}
+                  setUserAnswer={setUserAnswer}
+                  showResult={showResult}
+                  hintsShown={hintsShown}
+                  setHintsShown={setHintsShown}
+                  isAnswerCorrect={isAnswerCorrect}
+                  checkAnswer={checkAnswer}
+                  nextTask={nextTask}
+                  accent={accent}
+                />
+              )}
+
               {phase === "done" && (
-                <div className="text-center py-6 animate-fade-in">
-                  <div className="text-6xl mb-3">🎯</div>
-                  <h3 className="font-montserrat font-black text-2xl text-white mb-2">Урок пройден!</h3>
-                  <p className="text-white/70 mb-4">Правильных ответов: <span className="font-bold text-white">{correctCount} из {lesson.tasks.length}</span></p>
-
-                  <div className="bg-white/4 border border-white/8 rounded-2xl p-5 text-left mb-4">
-                    <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Резюме</p>
-                    <p className="text-white/80 text-sm leading-relaxed"><MathText>{lesson.summary}</MathText></p>
-                  </div>
-
-                  {lesson.common_mistakes?.length > 0 && (
-                    <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-2xl p-4 text-left mb-5">
-                      <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest mb-2">Чтобы не ошибиться в следующий раз</p>
-                      <ul className="space-y-1.5">
-                        {lesson.common_mistakes.map((m, i) => (
-                          <li key={i} className="text-yellow-100/85 text-sm">• <MathText>{m}</MathText></li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                    <button onClick={loadLesson} className="bg-white/8 hover:bg-white/12 border border-white/10 text-white font-bold px-5 py-3 rounded-2xl text-sm transition-all flex items-center justify-center gap-2">
-                      <Icon name="RotateCcw" size={14} /> Пройти ещё раз
-                    </button>
-                    <button
-                      onClick={onClose}
-                      className="text-white font-bold px-6 py-3 rounded-2xl text-sm hover:opacity-90 transition-all"
-                      style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
-                    >
-                      Закрыть
-                    </button>
-                  </div>
-                </div>
+                <LessonViewerDone
+                  lesson={lesson}
+                  correctCount={correctCount}
+                  accent={accent}
+                  onRetry={loadLesson}
+                  onClose={onClose}
+                />
               )}
             </>
           )}
