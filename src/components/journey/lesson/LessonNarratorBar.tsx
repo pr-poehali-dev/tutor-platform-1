@@ -19,6 +19,8 @@ interface Props {
   accent?: string;
 }
 
+type ViewMode = "mini" | "full";
+
 /**
  * Плавающая панель «Говорящий преподаватель» — версия для слабовидящих.
  * Большие кнопки, высокий контраст, ARIA-метки, клавиатурная навигация.
@@ -40,119 +42,191 @@ export default function LessonNarratorBar({
   accent = "#a855f7",
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<ViewMode>("mini"); // по умолчанию компактный режим
 
   const isActive = status === "playing" || status === "paused" || status === "loading";
   const voice = NARRATOR_VOICES.find((v) => v.id === voiceId) || NARRATOR_VOICES[0];
 
-  // Свернутая «таблетка» если выключено
+  // Свернутая «таблетка» если выключено — маленькая
   if (!enabled) {
     return (
-      <div className="fixed bottom-5 right-5 z-50 animate-fade-in">
+      <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
         <button
           onClick={() => setEnabled(true)}
           aria-label="Включить голосового преподавателя"
-          className="flex items-center gap-2 bg-card/95 backdrop-blur-xl border border-white/15 hover:border-white/30 rounded-full px-5 py-3 shadow-2xl transition-all"
+          title="Включить голос преподавателя"
+          className="w-11 h-11 rounded-full bg-card/85 backdrop-blur-xl border border-white/15 hover:bg-card/95 hover:border-white/30 flex items-center justify-center shadow-xl transition-all"
         >
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
-          >
-            <Icon name="VolumeX" size={18} className="text-white" />
-          </div>
-          <span className="text-white font-bold text-sm">Включить голос</span>
+          <Icon name="VolumeX" size={16} className="text-white/70" />
         </button>
       </div>
     );
   }
 
+  // ─── КОМПАКТНЫЙ РЕЖИМ — маленькая плавающая кнопка, не перекрывает контент ───
+  if (mode === "mini") {
+    return (
+      <div
+        className="fixed bottom-4 right-4 z-50 animate-fade-in"
+        role="region"
+        aria-label="Голосовой преподаватель (свёрнут)"
+      >
+        <div
+          className="flex items-center gap-1 bg-card/85 backdrop-blur-xl border border-white/15 rounded-full shadow-xl p-1 hover:bg-card/95 transition-colors"
+        >
+          {/* Главная кнопка play/pause */}
+          {status === "playing" ? (
+            <button
+              onClick={onPause}
+              aria-label="Пауза"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90 relative"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              <Icon name="Pause" size={16} className="text-white" />
+              <span
+                className="absolute -inset-0.5 rounded-full border-2 animate-ping pointer-events-none"
+                style={{ borderColor: accent }}
+              />
+            </button>
+          ) : status === "paused" ? (
+            <button
+              onClick={onResume}
+              aria-label="Продолжить"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              <Icon name="Play" size={16} className="text-white ml-0.5" />
+            </button>
+          ) : status === "loading" ? (
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              <Icon name="Loader2" size={16} className="text-white animate-spin" />
+            </div>
+          ) : (
+            <button
+              onClick={onReplay}
+              aria-label="Озвучить заново"
+              title="Озвучить заново"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              <Icon name="Volume2" size={15} className="text-white" />
+            </button>
+          )}
+
+          {/* Кнопка развернуть */}
+          <button
+            onClick={() => setMode("full")}
+            aria-label="Развернуть панель преподавателя"
+            title={`Преподаватель ${voice.name}`}
+            className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <Icon name="ChevronUp" size={14} className="text-white/65" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── ПОЛНЫЙ РЕЖИМ ───
   return (
     <div
-      className="fixed bottom-5 right-5 z-50 animate-fade-in"
+      className="fixed bottom-4 right-4 z-50 animate-fade-in"
       role="region"
       aria-label="Голосовой преподаватель"
     >
-      <div className="bg-card/95 backdrop-blur-xl border-2 border-white/15 rounded-3xl shadow-2xl overflow-hidden w-[340px] max-w-[calc(100vw-2.5rem)]">
+      <div className="bg-card/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl overflow-hidden w-[280px] max-w-[calc(100vw-2rem)]">
         {/* Header */}
         <div
-          className="px-4 py-3 flex items-center gap-3 border-b border-white/10"
+          className="px-3 py-2 flex items-center gap-2 border-b border-white/10"
           style={{ background: `linear-gradient(135deg, ${accent}25, transparent)` }}
         >
           <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 relative"
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 relative"
             style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
           >
             <Icon
               name={status === "playing" ? "Volume2" : status === "loading" ? "Loader2" : "Mic"}
-              size={20}
+              size={16}
               className={`text-white ${status === "loading" ? "animate-spin" : ""}`}
             />
             {status === "playing" && (
               <span
-                className="absolute -inset-1 rounded-2xl border-2 animate-ping"
+                className="absolute -inset-0.5 rounded-xl border-2 animate-ping"
                 style={{ borderColor: accent }}
               />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm leading-tight">Преподаватель {voice.name}</p>
-            <p className="text-white/55 text-[11px] leading-tight mt-0.5">
+            <p className="text-white font-bold text-xs leading-tight truncate">Преп. {voice.name}</p>
+            <p className="text-white/55 text-[10px] leading-tight mt-0.5 truncate">
               {status === "playing" && "говорит…"}
               {status === "paused" && "пауза"}
               {status === "loading" && "готовлю голос…"}
-              {status === "idle" && "готов читать урок"}
-              {status === "error" && (error || "ошибка озвучки")}
+              {status === "idle" && "готов"}
+              {status === "error" && (error || "ошибка")}
             </p>
           </div>
           <button
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Свернуть настройки" : "Развернуть настройки"}
             aria-expanded={expanded}
-            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
-            <Icon name={expanded ? "ChevronDown" : "Settings2"} size={16} className="text-white/70" />
+            <Icon name={expanded ? "ChevronDown" : "Settings2"} size={14} className="text-white/70" />
+          </button>
+          <button
+            onClick={() => setMode("mini")}
+            aria-label="Свернуть панель"
+            title="Свернуть"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <Icon name="Minus" size={14} className="text-white/70" />
           </button>
         </div>
 
-        {/* Текущая фраза (для слабовидящих — большой текст) */}
-        {currentText && isActive && (
-          <div className="px-4 py-3 bg-white/4 border-b border-white/10 max-h-24 overflow-y-auto">
-            <p className="text-white/85 text-sm leading-relaxed" aria-live="polite">
-              {currentText.length > 220 ? currentText.slice(0, 220) + "…" : currentText}
+        {/* Текущая фраза — компактнее */}
+        {currentText && isActive && expanded && (
+          <div className="px-3 py-2 bg-white/4 border-b border-white/10 max-h-16 overflow-y-auto">
+            <p className="text-white/85 text-xs leading-relaxed" aria-live="polite">
+              {currentText.length > 140 ? currentText.slice(0, 140) + "…" : currentText}
             </p>
           </div>
         )}
 
-        {/* Большие кнопки управления */}
-        <div className="px-4 py-3 flex items-center gap-2">
+        {/* Компактные кнопки управления */}
+        <div className="px-3 py-2 flex items-center gap-1.5">
           {status === "playing" ? (
             <button
               onClick={onPause}
               aria-label="Пауза"
-              className="flex-1 h-12 rounded-2xl font-bold text-white flex items-center justify-center gap-2 transition-transform active:scale-95"
+              className="flex-1 h-9 rounded-xl font-bold text-white text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
               style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
             >
-              <Icon name="Pause" size={20} />
+              <Icon name="Pause" size={14} />
               <span>Пауза</span>
             </button>
           ) : status === "paused" ? (
             <button
               onClick={onResume}
               aria-label="Продолжить"
-              className="flex-1 h-12 rounded-2xl font-bold text-white flex items-center justify-center gap-2 transition-transform active:scale-95"
+              className="flex-1 h-9 rounded-xl font-bold text-white text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95"
               style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
             >
-              <Icon name="Play" size={20} />
-              <span>Продолжить</span>
+              <Icon name="Play" size={14} />
+              <span>Дальше</span>
             </button>
           ) : (
             <button
               onClick={onReplay}
               aria-label="Озвучить заново"
               disabled={status === "loading"}
-              className="flex-1 h-12 rounded-2xl font-bold text-white flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-50"
+              className="flex-1 h-9 rounded-xl font-bold text-white text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 disabled:opacity-50"
               style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
             >
-              <Icon name="RotateCcw" size={18} />
+              <Icon name="RotateCcw" size={13} />
               <span>Повторить</span>
             </button>
           )}
@@ -161,9 +235,9 @@ export default function LessonNarratorBar({
             onClick={onStop}
             aria-label="Остановить озвучку"
             disabled={!isActive}
-            className="w-12 h-12 rounded-2xl bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors disabled:opacity-40"
+            className="w-9 h-9 rounded-xl bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors disabled:opacity-40"
           >
-            <Icon name="Square" size={16} className="text-white" />
+            <Icon name="Square" size={12} className="text-white" />
           </button>
         </div>
 
