@@ -26,6 +26,13 @@
       "path": "/",
       "body": {"action": "generate_lesson", "subject": "math"},
       "expectedStatus": 400
+    },
+    {
+      "name": "generate_lesson_tasks требует topic",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "generate_lesson_tasks", "subject": "math"},
+      "expectedStatus": 400
     }
   ]
 }

@@ -1,10 +1,11 @@
 """
-Business: Адаптивный обучающий маршрут — генерирует диагностические тесты, выявляет пробелы, формирует программу обучения и уникальные задания через polza.ai (методики Bloom + Mastery Learning + Spaced Repetition).
+Business: Адаптивный обучающий маршрут — генерирует диагностические тесты, выявляет пробелы, формирует программу обучения и уникальные задания через polza.ai (методики Bloom + Mastery Learning + Spaced Repetition). Версия с валидацией задач.
 Args: event с httpMethod, body (action, subject, grade, answers, weak_topics, completed_tasks); context с request_id
 Returns: HTTP-ответ с JSON в зависимости от action
 """
 import json
 import os
+import re
 import hashlib
 import urllib.request
 import urllib.error
@@ -282,9 +283,25 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
             pass
 
 
-def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty):
-    """Генерирует только задачи к уроку (быстро, отдельным запросом)"""
-    prompt = f"""Ты — школьный преподаватель по "{subject_name}". Сгенерируй 5 задач для самопроверки по теме "{topic}" (уровень {grade}, сложность {difficulty}).
+TASK_GEN_PROMPT_TEMPLATE = """Ты — ОЧЕНЬ ВНИМАТЕЛЬНЫЙ школьный преподаватель по "{subject_name}". Сгенерируй {n} ЗАДАЧ для самопроверки по теме "{topic}" (уровень {grade}, сложность {difficulty}).
+
+⚠️ КРИТИЧЕСКИ ВАЖНО — ЧАЩЕ ВСЕГО ОШИБАЮТСЯ ИМЕННО ТУТ:
+1. РЕШИ задачу САМ перед тем как писать варианты. Запиши верный ответ.
+2. Один из вариантов ОБЯЗАТЕЛЬНО должен быть РАВЕН верному ответу — буква в букву, цифра в цифру.
+3. correct_answer — это ИНДЕКС (0,1,2,3) того варианта в options, который СОВПАДАЕТ с верным ответом.
+4. correct_answer_text — это ТЕКСТ верного ответа (дубликат options[correct_answer]). Двойная проверка.
+5. Три остальных варианта — правдоподобные неправильные ответы (типичные ошибки учеников), но НЕ равные правильному.
+6. ПРОВЕРЬ ЕЩЁ РАЗ: подставь correct_answer обратно в задачу — действительно ли это ответ?
+
+ПРИМЕР ПРАВИЛЬНОЙ ЗАДАЧИ:
+question: "Сколько будет 8 + 9?"
+options: ["15", "16", "17", "18"]
+correct_answer: 2          ← индекс
+correct_answer_text: "17"  ← должен совпадать с options[2]
+
+ПРИМЕР НЕПРАВИЛЬНОЙ ЗАДАЧИ (так делать НЕЛЬЗЯ):
+question: "Сколько будет 8 + 9?"
+options: ["11","12","13","14"]   ← среди вариантов НЕТ правильного 17 — ЭТО ОШИБКА!
 
 ВЕРНИ строго JSON:
 {{
@@ -292,70 +309,134 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty):
     {{
       "task_id": "t1",
       "type": "multiple_choice",
-      "question": "задача 1 (простая, закрепление)",
+      "question": "формулировка задачи",
       "context": "",
-      "options": ["A", "B", "C", "D"],
-      "correct_answer": 0,
-      "hints": ["общая подсказка", "более конкретная", "почти решение"],
-      "explanation": "разбор решения 3-4 предложения с шагами",
-      "fun_fact": ""
-    }},
-    {{
-      "task_id": "t2",
-      "type": "multiple_choice",
-      "question": "задача 2 (среднее)",
-      "context": "",
-      "options": ["A","B","C","D"],
-      "correct_answer": 1,
-      "hints": ["...","...","..."],
-      "explanation": "...",
-      "fun_fact": ""
-    }},
-    {{
-      "task_id": "t3",
-      "type": "input",
-      "question": "задача 3 (ввод короткого ответа)",
-      "context": "",
-      "options": [],
-      "correct_answer": "ответ",
-      "hints": ["...","...","..."],
-      "explanation": "...",
-      "fun_fact": ""
-    }},
-    {{
-      "task_id": "t4",
-      "type": "multiple_choice",
-      "question": "задача 4 (применение)",
-      "context": "",
-      "options": ["A","B","C","D"],
+      "options": ["вариант 0","вариант 1","вариант 2","вариант 3"],
       "correct_answer": 2,
-      "hints": ["...","...","..."],
-      "explanation": "...",
+      "correct_answer_text": "вариант 2 (текстом)",
+      "hints": ["общая подсказка","более конкретная","почти решение"],
+      "explanation": "разбор решения с шагами и итоговым ответом",
       "fun_fact": ""
-    }},
-    {{
-      "task_id": "t5",
-      "type": "multiple_choice",
-      "question": "задача 5 (сложная)",
-      "context": "",
-      "options": ["A","B","C","D"],
-      "correct_answer": 3,
-      "hints": ["...","...","..."],
-      "explanation": "...",
-      "fun_fact": "интересный факт"
     }}
+    /* ... всего {n} задач */
   ]
 }}
 
-ТРЕБОВАНИЯ:
-- РОВНО 5 задач: 4 multiple_choice + 1 input
-- correct_answer для multiple_choice — индекс 0..3
-- Без LaTeX, обычным текстом (используй ^, /, * для формул)
-- Русский язык, обращение на "ты"
-- Каждая задача с 3 подсказками от общей к конкретной"""
+ТИПЫ ЗАДАЧ В НАБОРЕ:
+- Большинство (4 из 5) — type "multiple_choice" с 4 вариантами
+- Одна (5-я) — type "input" с короткой строкой ответа: options: [], correct_answer: "ответ строкой", correct_answer_text: "тот же ответ"
 
-    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2200, temperature=0.7, timeout=50, retries=1)
-    return data.get('tasks', []) if isinstance(data, dict) else []
+ОБЩИЕ ТРЕБОВАНИЯ:
+- РОВНО {n} задач от простого к сложному
+- Без LaTeX. Формулы обычным текстом (используй ^, /, *)
+- Русский язык, обращение на "ты"
+- 3 подсказки в каждой — от общей к конкретной
+- В explanation — обязательно итоговый ответ совпадающий с correct_answer_text"""
+
+
+def _validate_task(task):
+    """Проверяет одну задачу. Возвращает (is_valid, reason)."""
+    if not isinstance(task, dict):
+        return False, 'not a dict'
+    ttype = task.get('type', '')
+    question = str(task.get('question', '')).strip()
+    if not question:
+        return False, 'empty question'
+
+    if ttype == 'multiple_choice':
+        options = task.get('options', [])
+        if not isinstance(options, list) or len(options) < 2:
+            return False, 'options must be list of 2+'
+        try:
+            ci = int(task.get('correct_answer'))
+        except (TypeError, ValueError):
+            return False, 'correct_answer must be int'
+        if ci < 0 or ci >= len(options):
+            return False, f'correct_answer index {ci} out of range'
+
+        ans_text = str(task.get('correct_answer_text', '')).strip()
+        opt_at_idx = str(options[ci]).strip()
+
+        # если ИИ дал correct_answer_text — он должен совпадать с options[correct_answer]
+        if ans_text and ans_text.lower() != opt_at_idx.lower():
+            # попробуем найти ans_text среди options и поправить индекс
+            for i, opt in enumerate(options):
+                if str(opt).strip().lower() == ans_text.lower():
+                    task['correct_answer'] = i
+                    return True, 'fixed index by text match'
+            return False, f'correct_answer_text "{ans_text}" не совпадает с options[{ci}]="{opt_at_idx}"'
+
+        # доп. проверка: для простой арифметики ("X + Y" / "X * Y" / "X - Y") — вычислим сами
+        m = re.search(r'(\d{1,4})\s*([+\-*/×÷])\s*(\d{1,4})', question.replace('×','*').replace('÷','/'))
+        if m:
+            a, op, b = int(m.group(1)), m.group(2), int(m.group(3))
+            try:
+                if op == '+': real = a + b
+                elif op == '-': real = a - b
+                elif op == '*': real = a * b
+                elif op == '/': real = a / b if b else None
+                else: real = None
+            except Exception:
+                real = None
+            if real is not None:
+                real_str = str(int(real)) if isinstance(real, float) and real.is_integer() else str(real)
+                # ищем правильный ответ среди options
+                normalized = [str(o).strip() for o in options]
+                if real_str not in normalized:
+                    return False, f'правильный ответ {real_str} отсутствует в options {normalized}'
+                # поправим индекс если ИИ ошибся индексом
+                if normalized[ci].strip() != real_str:
+                    task['correct_answer'] = normalized.index(real_str)
+                    task['correct_answer_text'] = real_str
+                    return True, 'fixed index by arithmetic'
+
+        return True, 'ok'
+
+    elif ttype == 'input':
+        ca = task.get('correct_answer')
+        if ca is None or str(ca).strip() == '':
+            return False, 'empty correct_answer'
+        return True, 'ok'
+
+    return False, f'unknown type "{ttype}"'
+
+
+def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty):
+    """Генерирует и ВАЛИДИРУЕТ задачи к уроку. Битые задачи перегенерируются."""
+    prompt = TASK_GEN_PROMPT_TEMPLATE.format(
+        subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=5
+    )
+    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2600, temperature=0.5, timeout=50, retries=1)
+    raw_tasks = data.get('tasks', []) if isinstance(data, dict) else []
+
+    valid_tasks = []
+    bad_count = 0
+    for t in raw_tasks:
+        ok, _reason = _validate_task(t)
+        if ok:
+            valid_tasks.append(t)
+        else:
+            bad_count += 1
+
+    # Если хоть одна задача битая — добиваем недостающие отдельным запросом
+    if bad_count > 0 and len(valid_tasks) < 5:
+        need = 5 - len(valid_tasks)
+        try:
+            prompt2 = TASK_GEN_PROMPT_TEMPLATE.format(
+                subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=need
+            ) + f"\n\nДОПОЛНИТЕЛЬНО: {need} новых задач, отличающихся от ранее данных. ОСОБЕННО внимательно с правильными ответами!"
+            data2 = call_polza([{'role': 'user', 'content': prompt2}], max_tokens=1800, temperature=0.4, timeout=45, retries=1)
+            extra = data2.get('tasks', []) if isinstance(data2, dict) else []
+            for t in extra:
+                if len(valid_tasks) >= 5:
+                    break
+                ok, _ = _validate_task(t)
+                if ok:
+                    valid_tasks.append(t)
+        except Exception:
+            pass
+
+    return valid_tasks[:5]
 
 
 def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True):
