@@ -23,6 +23,21 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
 
   const start = async () => {
     setVoiceError(null);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setVoiceError(
+        "Голосовой ввод не поддерживается этим браузером. Открой сайт в Chrome, Safari, Яндекс.Браузере или Edge.",
+      );
+      return;
+    }
+
+    if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+      setVoiceError(
+        "Голос работает только по защищённому соединению (https). Открой сайт по адресу https://учисьпро.рф",
+      );
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -82,8 +97,26 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
       recorder.start();
       setIsRecording(true);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Нет доступа к микрофону";
-      setVoiceError(`Микрофон недоступен: ${msg}`);
+      const err = e as { name?: string; message?: string };
+      const name = err?.name || "";
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+
+      if (name === "NotAllowedError" || name === "SecurityError" || /denied/i.test(err?.message || "")) {
+        const howTo = isIOS
+          ? "На iPhone: Настройки → Safari → Микрофон → разрешить для учисьпро.рф. Затем обнови страницу."
+          : isAndroid
+            ? "На Android: нажми на замочек слева от адреса → Разрешения → Микрофон → Разрешить. Затем обнови страницу."
+            : "Нажми на замочек слева от адреса сайта → Разрешения → Микрофон → Разрешить. Затем обнови страницу.";
+        setVoiceError(`Доступ к микрофону запрещён. ${howTo}`);
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setVoiceError("Микрофон не найден. Подключи микрофон или гарнитуру и попробуй ещё раз.");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        setVoiceError("Микрофон занят другим приложением. Закрой Zoom, Discord, Skype и другие программы со звонками.");
+      } else {
+        const msg = err?.message || "Нет доступа к микрофону";
+        setVoiceError(`Не удалось включить микрофон: ${msg}`);
+      }
     }
   };
 

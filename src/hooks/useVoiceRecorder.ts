@@ -37,6 +37,19 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
 
   const start = useCallback(async () => {
     setError(null);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError("Голосовой ввод не поддерживается этим браузером. Открой сайт в Chrome, Safari, Яндекс.Браузере или Edge.");
+      setState("error");
+      return;
+    }
+
+    if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+      setError("Голос работает только по защищённому соединению (https). Открой сайт по адресу https://учисьпро.рф");
+      setState("error");
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -105,10 +118,26 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
       setState("recording");
     } catch (e) {
       cleanup();
-      const msg = e instanceof Error ? e.message : "Микрофон недоступен";
-      setError(msg.includes("Permission") || msg.includes("denied")
-        ? "Разреши доступ к микрофону в браузере"
-        : msg);
+      const err = e as { name?: string; message?: string };
+      const name = err?.name || "";
+      const msg = err?.message || "";
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+
+      if (name === "NotAllowedError" || name === "SecurityError" || /denied|permission/i.test(msg)) {
+        const howTo = isIOS
+          ? "На iPhone: Настройки → Safari → Микрофон → разрешить для учисьпро.рф, затем обнови страницу."
+          : isAndroid
+            ? "На Android: нажми на замочек слева от адреса → Разрешения → Микрофон → Разрешить, затем обнови страницу."
+            : "Нажми на замочек слева от адреса сайта → Разрешения → Микрофон → Разрешить, затем обнови страницу.";
+        setError(`Доступ к микрофону запрещён. ${howTo}`);
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setError("Микрофон не найден. Подключи микрофон или гарнитуру и попробуй ещё раз.");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        setError("Микрофон занят другим приложением. Закрой Zoom, Discord, Skype и попробуй снова.");
+      } else {
+        setError(msg || "Не удалось включить микрофон");
+      }
       setState("error");
     }
   }, [onTranscribed, cleanup]);
