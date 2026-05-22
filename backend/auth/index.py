@@ -1,23 +1,28 @@
 """
-Авторизация пользователей по телефону через SMS-код.
-POST /?action=send_code  body: {"phone": "+79991234567"}
-POST /?action=verify_code body: {"phone": "+79991234567", "code": "1234"}
-GET  /?action=me  header: X-Auth-Token
+Авторизация по email + пароль.
+POST /?action=register  body: {"email","password","name"}
+POST /?action=login     body: {"email","password"}
+POST /?action=logout    header: X-Auth-Token
+GET  /?action=me        header: X-Auth-Token
 """
 import json
 import os
 import re
 import secrets
-import random
+import hashlib
+import base64
 from datetime import datetime, timedelta, timezone
 import psycopg2
 
 
 SESSION_TTL_DAYS = 30
-CODE_TTL_MIN = 10
-MAX_ATTEMPTS = 5
-TEST_PHONE_PREFIX = "+7000"
-TEST_CODE = "1234"
+PBKDF2_ITERATIONS = 200_000
+SALT_BYTES = 16
+HASH_ALGO = "sha256"
+
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
+MIN_PASSWORD_LEN = 6
+MAX_PASSWORD_LEN = 128
 
 
 def cors_headers() -> dict:
@@ -38,123 +43,128 @@ def err(message: str, status: int = 400) -> dict:
     return ok({'error': message}, status)
 
 
-def normalize_phone(raw: str) -> str:
-    digits = re.sub(r'\D', '', raw or '')
-    if len(digits) == 11 and digits.startswith('8'):
-        digits = '7' + digits[1:]
-    if len(digits) == 10:
-        digits = '7' + digits
-    if not digits.startswith('7') or len(digits) != 11:
-        return ''
-    return '+' + digits
+def normalize_email(raw: str) -> str:
+    return (raw or '').strip().lower()
+
+
+def is_valid_email(email: str) -> bool:
+    return bool(EMAIL_RE.match(email or ''))
+
+
+def hash_password(password: str) -> str:
+    """Возвращает строку вида pbkdf2_sha256$iterations$salt_b64$hash_b64"""
+    salt = secrets.token_bytes(SALT_BYTES)
+    digest = hashlib.pbkdf2_hmac(HASH_ALGO, password.encode('utf-8'), salt, PBKDF2_ITERATIONS)
+    return "pbkdf2_{algo}${iters}${salt}${hash}".format(
+        algo=HASH_ALGO,
+        iters=PBKDF2_ITERATIONS,
+        salt=base64.b64encode(salt).decode('ascii'),
+        hash=base64.b64encode(digest).decode('ascii'),
+    )
+
+
+def verify_password(password: str, stored: str) -> bool:
+    if not stored or not password:
+        return False
+    try:
+        scheme, iters_str, salt_b64, hash_b64 = stored.split('$')
+        if not scheme.startswith('pbkdf2_'):
+            return False
+        algo = scheme.split('_', 1)[1]
+        iters = int(iters_str)
+        salt = base64.b64decode(salt_b64)
+        expected = base64.b64decode(hash_b64)
+        actual = hashlib.pbkdf2_hmac(algo, password.encode('utf-8'), salt, iters)
+        return secrets.compare_digest(actual, expected)
+    except Exception:
+        return False
 
 
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
 
-def generate_code(phone: str) -> str:
-    if phone.startswith(TEST_PHONE_PREFIX):
-        return TEST_CODE
-    return f"{random.randint(0, 9999):04d}"
+def create_session(cur, user_id: int, user_agent: str, ip: str) -> str:
+    token = secrets.token_urlsafe(48)
+    session_expires = datetime.now(timezone.utc) + timedelta(days=SESSION_TTL_DAYS)
+    cur.execute(
+        "INSERT INTO auth_sessions (user_id, token, user_agent, ip, expires_at) "
+        "VALUES (%s, %s, %s, %s, %s)",
+        (user_id, token, user_agent[:500], ip[:50], session_expires)
+    )
+    return token
 
 
-def handle_send_code(body: dict) -> dict:
-    phone = normalize_phone(body.get('phone', ''))
-    if not phone:
-        return err('Неверный формат телефона. Пример: +79991234567')
+def handle_register(body: dict, user_agent: str, ip: str) -> dict:
+    email = normalize_email(body.get('email', ''))
+    password = (body.get('password') or '').strip()
+    name = (body.get('name') or '').strip()[:120]
 
-    code = generate_code(phone)
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=CODE_TTL_MIN)
+    if not is_valid_email(email):
+        return err('Введи корректный email')
+    if len(password) < MIN_PASSWORD_LEN:
+        return err(f'Пароль должен быть минимум {MIN_PASSWORD_LEN} символов')
+    if len(password) > MAX_PASSWORD_LEN:
+        return err('Пароль слишком длинный')
 
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT COUNT(*) FROM sms_codes WHERE phone = %s AND created_at > NOW() - INTERVAL '1 minute'",
-                (phone,)
-            )
-            recent = cur.fetchone()[0]
-            if recent >= 1:
-                return err('Подожди минуту перед повторной отправкой кода', 429)
-
-            cur.execute(
-                "INSERT INTO sms_codes (phone, code, expires_at) VALUES (%s, %s, %s)",
-                (phone, code, expires_at)
-            )
-            conn.commit()
-    finally:
-        conn.close()
-
-    # TODO: интегрировать SMS.RU/smsc.ru. Пока возвращаем флаг для тестовых номеров.
-    response = {'success': True, 'phone': phone, 'expires_in': CODE_TTL_MIN * 60}
-    if phone.startswith(TEST_PHONE_PREFIX):
-        response['test_mode'] = True
-        response['hint'] = f'Тестовый номер. Код: {TEST_CODE}'
-    return ok(response)
-
-
-def handle_verify_code(body: dict, user_agent: str, ip: str) -> dict:
-    phone = normalize_phone(body.get('phone', ''))
-    code = (body.get('code') or '').strip()
-    if not phone or not re.fullmatch(r'\d{4,6}', code):
-        return err('Неверный телефон или код')
+    pwd_hash = hash_password(password)
 
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            cur.execute("SELECT id FROM auth_users WHERE LOWER(email) = %s LIMIT 1", (email,))
+            if cur.fetchone():
+                return err('Пользователь с таким email уже существует', 409)
+
             cur.execute(
-                "SELECT id, code, attempts, expires_at, used_at FROM sms_codes "
-                "WHERE phone = %s ORDER BY created_at DESC LIMIT 1",
-                (phone,)
+                "INSERT INTO auth_users (email, name, password_hash, phone, last_login_at) "
+                "VALUES (%s, %s, %s, '', NOW()) RETURNING id",
+                (email, name or None, pwd_hash)
             )
-            row = cur.fetchone()
-            if not row:
-                return err('Сначала запроси код', 404)
-
-            code_id, real_code, attempts, expires_at, used_at = row
-            if used_at is not None:
-                return err('Этот код уже использован', 410)
-            if attempts >= MAX_ATTEMPTS:
-                return err('Превышено количество попыток. Запроси новый код', 429)
-            if expires_at < datetime.now(timezone.utc):
-                return err('Срок действия кода истёк', 410)
-
-            if code != real_code:
-                cur.execute("UPDATE sms_codes SET attempts = attempts + 1 WHERE id = %s", (code_id,))
-                conn.commit()
-                return err('Неверный код', 400)
-
-            cur.execute("UPDATE sms_codes SET used_at = NOW() WHERE id = %s", (code_id,))
-
-            cur.execute("SELECT id, name FROM auth_users WHERE phone = %s", (phone,))
-            user_row = cur.fetchone()
-            if user_row:
-                user_id, name = user_row
-                cur.execute("UPDATE auth_users SET last_login_at = NOW() WHERE id = %s", (user_id,))
-                is_new = False
-            else:
-                cur.execute(
-                    "INSERT INTO auth_users (phone, last_login_at) VALUES (%s, NOW()) RETURNING id, name",
-                    (phone,)
-                )
-                user_id, name = cur.fetchone()
-                is_new = True
-
-            token = secrets.token_urlsafe(48)
-            session_expires = datetime.now(timezone.utc) + timedelta(days=SESSION_TTL_DAYS)
-            cur.execute(
-                "INSERT INTO auth_sessions (user_id, token, user_agent, ip, expires_at) "
-                "VALUES (%s, %s, %s, %s, %s)",
-                (user_id, token, user_agent[:500], ip[:50], session_expires)
-            )
+            user_id = cur.fetchone()[0]
+            token = create_session(cur, user_id, user_agent, ip)
             conn.commit()
 
             return ok({
                 'success': True,
                 'token': token,
-                'is_new': is_new,
-                'user': {'id': user_id, 'phone': phone, 'name': name}
+                'is_new': True,
+                'user': {'id': user_id, 'email': email, 'name': name or None, 'phone': None}
+            })
+    finally:
+        conn.close()
+
+
+def handle_login(body: dict, user_agent: str, ip: str) -> dict:
+    email = normalize_email(body.get('email', ''))
+    password = (body.get('password') or '').strip()
+
+    if not is_valid_email(email) or not password:
+        return err('Введи email и пароль')
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, name, password_hash, phone FROM auth_users WHERE LOWER(email) = %s LIMIT 1",
+                (email,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return err('Неверный email или пароль', 401)
+            user_id, name, pwd_hash, phone = row
+            if not pwd_hash or not verify_password(password, pwd_hash):
+                return err('Неверный email или пароль', 401)
+
+            cur.execute("UPDATE auth_users SET last_login_at = NOW() WHERE id = %s", (user_id,))
+            token = create_session(cur, user_id, user_agent, ip)
+            conn.commit()
+
+            return ok({
+                'success': True,
+                'token': token,
+                'is_new': False,
+                'user': {'id': user_id, 'email': email, 'name': name, 'phone': phone or None}
             })
     finally:
         conn.close()
@@ -198,7 +208,7 @@ def handle_me(token: str) -> dict:
             return ok({
                 'user': {
                     'id': user_id,
-                    'phone': phone,
+                    'phone': phone or None,
                     'name': name,
                     'email': email,
                     'created_at': created_at.isoformat() if created_at else None
@@ -223,7 +233,7 @@ def handle_logout(token: str) -> dict:
 
 
 def handler(event: dict, context) -> dict:
-    """Авторизация по SMS: отправка кода, проверка, профиль, выход"""
+    """Авторизация по email и паролю: регистрация, вход, профиль, выход"""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': cors_headers(), 'body': ''}
@@ -240,15 +250,19 @@ def handler(event: dict, context) -> dict:
         try:
             body = json.loads(event['body'])
         except Exception:
-            return err('Невалидный JSON')
+            body = {}
 
-    if action == 'send_code':
-        return handle_send_code(body)
-    if action == 'verify_code':
-        return handle_verify_code(body, user_agent, ip)
-    if action == 'me':
-        return handle_me(token)
-    if action == 'logout':
-        return handle_logout(token)
-
-    return err('Неизвестное действие', 404)
+    try:
+        if action == 'register' and method == 'POST':
+            return handle_register(body, user_agent, ip)
+        if action == 'login' and method == 'POST':
+            return handle_login(body, user_agent, ip)
+        if action == 'logout' and method == 'POST':
+            return handle_logout(token)
+        if action == 'me' and method == 'GET':
+            return handle_me(token)
+        return err('Unknown action', 404)
+    except psycopg2.Error as e:
+        return err(f'DB error: {str(e)[:200]}', 500)
+    except Exception as e:
+        return err(f'Server error: {str(e)[:200]}', 500)

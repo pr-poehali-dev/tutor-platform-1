@@ -1,80 +1,52 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 
-type Step = "phone" | "code";
+type Mode = "login" | "register";
 
-function formatPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "").replace(/^8/, "7").slice(0, 11);
-  if (!digits) return "";
-  const parts = ["+7"];
-  if (digits.length > 1) parts.push(" (" + digits.slice(1, 4));
-  if (digits.length >= 4) parts.push(") " + digits.slice(4, 7));
-  if (digits.length >= 7) parts.push("-" + digits.slice(7, 9));
-  if (digits.length >= 9) parts.push("-" + digits.slice(9, 11));
-  return parts.join("");
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginModal() {
-  const { isModalOpen, closeLogin, sendCode, verifyCode } = useAuth();
+  const { isModalOpen, closeLogin, register, login } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
+
+  const [mode, setMode] = useState<Mode>("register");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [testMode, setTestMode] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
-  const codeRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isModalOpen) {
-      setStep("phone");
-      setCode("");
+      setMode("register");
+      setEmail("");
+      setPassword("");
+      setName("");
+      setShowPassword(false);
       setError(null);
-      setTestMode(false);
-      setResendIn(0);
     }
   }, [isModalOpen]);
 
-  useEffect(() => {
-    if (step === "code" && codeRef.current) codeRef.current.focus();
-  }, [step]);
-
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const t = window.setInterval(() => setResendIn((s) => Math.max(0, s - 1)), 1000);
-    return () => window.clearInterval(t);
-  }, [resendIn]);
-
   if (!isModalOpen) return null;
 
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneReady = phoneDigits.length === 11;
-  const codeReady = /^\d{4}$/.test(code);
+  const emailReady = EMAIL_RE.test(email.trim());
+  const passwordReady = password.length >= 6;
+  const ready = emailReady && passwordReady;
 
-  const handleSendCode = async () => {
+  const handleSubmit = async () => {
+    if (!ready || loading) return;
     setError(null);
     setLoading(true);
-    const res = await sendCode("+" + phoneDigits);
+    const res =
+      mode === "register"
+        ? await register(email.trim(), password, name.trim() || undefined)
+        : await login(email.trim(), password);
     setLoading(false);
     if (!res.ok) {
-      setError(res.message ?? "Ошибка отправки");
-      return;
-    }
-    setTestMode(!!res.testMode);
-    setResendIn(60);
-    setStep("code");
-  };
-
-  const handleVerify = async () => {
-    setError(null);
-    setLoading(true);
-    const res = await verifyCode("+" + phoneDigits, code);
-    setLoading(false);
-    if (!res.ok) {
-      setError(res.message ?? "Неверный код");
+      setError(res.message ?? "Не получилось");
       return;
     }
     closeLogin();
@@ -85,11 +57,8 @@ export default function LoginModal() {
     } catch {
       // ignore
     }
-    if (pendingPlan) {
-      navigate(`/checkout/${pendingPlan}`);
-    } else {
-      navigate("/cabinet");
-    }
+    if (pendingPlan) navigate(`/checkout/${pendingPlan}`);
+    else navigate("/cabinet");
   };
 
   return (
@@ -106,8 +75,12 @@ export default function LoginModal() {
               🚀
             </div>
             <div>
-              <p className="text-white font-montserrat font-black text-base leading-tight">Вход в УЧИСЬПРО</p>
-              <p className="text-white/55 text-xs">Личный кабинет ученика</p>
+              <p className="text-white font-montserrat font-black text-base leading-tight">
+                {mode === "register" ? "Регистрация" : "Вход в УЧИСЬПРО"}
+              </p>
+              <p className="text-white/55 text-xs">
+                {mode === "register" ? "Создай аккаунт за полминуты" : "Личный кабинет ученика"}
+              </p>
             </div>
           </div>
           <button
@@ -120,145 +93,131 @@ export default function LoginModal() {
         </div>
 
         <div className="px-5 pb-5">
-          {step === "phone" ? (
-            <>
-              <p className="text-white/75 text-sm leading-relaxed mb-4">
-                Введи номер телефона — пришлём SMS с кодом. Это и регистрация, и вход одновременно.
-              </p>
-              <label className="block">
-                <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
-                  Телефон
-                </span>
-                <input
-                  inputMode="tel"
-                  autoFocus
-                  value={phone}
-                  onChange={(e) => setPhone(formatPhone(e.target.value))}
-                  placeholder="+7 (999) 123-45-67"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors text-base"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && phoneReady && !loading) handleSendCode();
-                  }}
-                />
-              </label>
-              {error && (
-                <p className="mt-2 text-rose-300 text-xs flex items-center gap-1.5">
-                  <Icon name="AlertCircle" size={12} />
-                  {error}
-                </p>
-              )}
+          <div className="grid grid-cols-2 gap-1 mb-4 p-1 rounded-2xl bg-white/5 border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("register");
+                setError(null);
+              }}
+              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                mode === "register"
+                  ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/20"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              Регистрация
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("login");
+                setError(null);
+              }}
+              className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                mode === "login"
+                  ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/20"
+                  : "text-white/65 hover:text-white"
+              }`}
+            >
+              У меня есть аккаунт
+            </button>
+          </div>
 
-              <button
-                onClick={handleSendCode}
-                disabled={!phoneReady || loading}
-                className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
-                  phoneReady && !loading
-                    ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:scale-[1.01] shadow-lg shadow-purple-500/30"
-                    : "bg-white/8 text-white/40 cursor-not-allowed"
-                }`}
-              >
-                {loading ? (
-                  <Icon name="Loader2" size={16} className="animate-spin" />
-                ) : (
-                  <Icon name="Send" size={14} />
-                )}
-                Получить код
-              </button>
-
-              <p className="text-white/45 text-[11px] text-center mt-3 leading-relaxed">
-                Нажимая кнопку, ты соглашаешься с{" "}
-                <a href="/legal/terms" className="text-purple-300 hover:text-purple-200 underline">
-                  условиями
-                </a>{" "}
-                и{" "}
-                <a href="/legal/privacy" className="text-purple-300 hover:text-purple-200 underline">
-                  политикой обработки данных
-                </a>
-              </p>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setStep("phone");
-                  setCode("");
-                  setError(null);
-                }}
-                className="inline-flex items-center gap-1.5 text-white/60 hover:text-white text-xs mb-3 transition-colors"
-              >
-                <Icon name="ArrowLeft" size={12} />
-                Изменить номер
-              </button>
-
-              <p className="text-white/75 text-sm leading-relaxed mb-1">
-                Код отправлен на <span className="text-white font-semibold">{phone}</span>
-              </p>
-              {testMode && (
-                <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-200 text-xs">
-                  <Icon name="Info" size={12} className="inline mr-1" />
-                  Тестовый режим. Используй код <span className="font-mono font-bold">1234</span>
-                </div>
-              )}
-
-              <label className="block mt-3">
-                <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
-                  Код из SMS
-                </span>
-                <input
-                  ref={codeRef}
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={4}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                  placeholder="••••"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors text-2xl tracking-[0.5em] text-center font-mono"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && codeReady && !loading) handleVerify();
-                  }}
-                />
-              </label>
-              {error && (
-                <p className="mt-2 text-rose-300 text-xs flex items-center gap-1.5">
-                  <Icon name="AlertCircle" size={12} />
-                  {error}
-                </p>
-              )}
-
-              <button
-                onClick={handleVerify}
-                disabled={!codeReady || loading}
-                className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
-                  codeReady && !loading
-                    ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:scale-[1.01] shadow-lg shadow-purple-500/30"
-                    : "bg-white/8 text-white/40 cursor-not-allowed"
-                }`}
-              >
-                {loading ? (
-                  <Icon name="Loader2" size={16} className="animate-spin" />
-                ) : (
-                  <Icon name="Check" size={14} />
-                )}
-                Войти
-              </button>
-
-              <div className="mt-3 text-center">
-                {resendIn > 0 ? (
-                  <p className="text-white/50 text-xs">
-                    Запросить новый код можно через {resendIn} сек
-                  </p>
-                ) : (
-                  <button
-                    onClick={handleSendCode}
-                    disabled={loading}
-                    className="text-purple-300 hover:text-purple-200 text-xs font-medium"
-                  >
-                    Отправить код повторно
-                  </button>
-                )}
-              </div>
-            </>
+          {mode === "register" && (
+            <label className="block mb-3">
+              <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
+                Имя <span className="text-white/30 normal-case font-normal">(необязательно)</span>
+              </span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 80))}
+                placeholder="Как тебя зовут"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors text-base"
+              />
+            </label>
           )}
+
+          <label className="block mb-3">
+            <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
+              Email
+            </span>
+            <input
+              type="email"
+              inputMode="email"
+              autoFocus
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value.slice(0, 120))}
+              placeholder="example@mail.ru"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors text-base"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && ready && !loading) handleSubmit();
+              }}
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
+              Пароль <span className="text-white/30 normal-case font-normal">(минимум 6 символов)</span>
+            </span>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete={mode === "register" ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value.slice(0, 128))}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 pr-12 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors text-base"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && ready && !loading) handleSubmit();
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-white/45 hover:text-white hover:bg-white/8 flex items-center justify-center transition-colors"
+              >
+                <Icon name={showPassword ? "EyeOff" : "Eye"} size={16} />
+              </button>
+            </div>
+          </label>
+
+          {error && (
+            <p className="mt-3 text-rose-300 text-xs flex items-center gap-1.5">
+              <Icon name="AlertCircle" size={12} />
+              {error}
+            </p>
+          )}
+
+          <button
+            onClick={handleSubmit}
+            disabled={!ready || loading}
+            className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm transition-all ${
+              ready && !loading
+                ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:scale-[1.01] shadow-lg shadow-purple-500/30"
+                : "bg-white/8 text-white/40 cursor-not-allowed"
+            }`}
+          >
+            {loading ? (
+              <Icon name="Loader2" size={16} className="animate-spin" />
+            ) : (
+              <Icon name={mode === "register" ? "UserPlus" : "LogIn"} size={14} />
+            )}
+            {mode === "register" ? "Создать аккаунт" : "Войти"}
+          </button>
+
+          <p className="text-white/45 text-[11px] text-center mt-3 leading-relaxed">
+            Продолжая, ты соглашаешься с{" "}
+            <a href="/legal/terms" className="text-purple-300 hover:text-purple-200 underline">
+              условиями
+            </a>{" "}
+            и{" "}
+            <a href="/legal/privacy" className="text-purple-300 hover:text-purple-200 underline">
+              политикой обработки данных
+            </a>
+          </p>
         </div>
       </div>
     </div>

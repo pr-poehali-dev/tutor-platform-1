@@ -7,25 +7,49 @@
       "expectedStatus": 200
     },
     {
-      "name": "Отправка кода на тестовый номер",
-      "method": "POST",
-      "path": "/?action=send_code",
-      "body": {"phone": "+70001112233"},
-      "expectedStatus": 200,
-      "expectedBody": {"success": true, "test_mode": true},
-      "bodyMatcher": "partial"
+      "name": "Unknown action returns 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404
     },
     {
-      "name": "Неверный формат телефона",
+      "name": "Login без тела возвращает 400",
       "method": "POST",
-      "path": "/?action=send_code",
-      "body": {"phone": "abc"},
+      "path": "/?action=login",
+      "body": {},
       "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },
     {
-      "name": "Без токена /me возвращает 401",
+      "name": "Register с невалидным email",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {"email": "not-an-email", "password": "12345678"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Register с коротким паролем",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {"email": "test@example.com", "password": "1"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login с несуществующим email",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"email": "nobody@example.com", "password": "wrongpass123"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Me без токена возвращает 401",
       "method": "GET",
       "path": "/?action=me",
       "expectedStatus": 401,

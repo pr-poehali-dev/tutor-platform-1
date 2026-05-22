@@ -6,7 +6,7 @@ const TOKEN_KEY = "uchispro_auth_token_v1";
 
 export interface AuthUser {
   id: number;
-  phone: string;
+  phone?: string | null;
   name?: string | null;
   email?: string | null;
   created_at?: string | null;
@@ -27,8 +27,8 @@ interface AuthState {
   isModalOpen: boolean;
   openLogin: () => void;
   closeLogin: () => void;
-  sendCode: (phone: string) => Promise<{ ok: boolean; message?: string; testMode?: boolean }>;
-  verifyCode: (phone: string, code: string) => Promise<{ ok: boolean; message?: string; isNew?: boolean }>;
+  register: (email: string, password: string, name?: string) => Promise<{ ok: boolean; message?: string; isNew?: boolean }>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -93,37 +93,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const sendCode = useCallback(async (phone: string) => {
+  const register = useCallback(async (email: string, password: string, name?: string) => {
     try {
-      const res = await fetch(`${AUTH_URL}?action=send_code`, {
+      const res = await fetch(`${AUTH_URL}?action=register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (!res.ok) return { ok: false, message: data.error || "Не удалось отправить код" };
-      return { ok: true, testMode: !!data.test_mode };
-    } catch {
-      return { ok: false, message: "Нет связи с сервером" };
-    }
-  }, []);
-
-  const verifyCode = useCallback(async (phone: string, code: string) => {
-    try {
-      const res = await fetch(`${AUTH_URL}?action=verify_code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code }),
+        body: JSON.stringify({ email, password, name }),
       });
       const data = await res.json();
       if (!res.ok || !data.token) {
-        return { ok: false, message: data.error || "Не удалось проверить код" };
+        return { ok: false, message: data.error || "Не удалось зарегистрироваться" };
       }
       saveToken(data.token);
       setToken(data.token);
       setUser(data.user ?? null);
       await refresh();
       return { ok: true, isNew: !!data.is_new };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [refresh]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const res = await fetch(`${AUTH_URL}?action=login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) {
+        return { ok: false, message: data.error || "Не удалось войти" };
+      }
+      saveToken(data.token);
+      setToken(data.token);
+      setUser(data.user ?? null);
+      await refresh();
+      return { ok: true };
     } catch {
       return { ok: false, message: "Нет связи с сервером" };
     }
@@ -157,8 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isModalOpen,
     openLogin: () => setIsModalOpen(true),
     closeLogin: () => setIsModalOpen(false),
-    sendCode,
-    verifyCode,
+    register,
+    login,
     logout,
     refresh,
   };
