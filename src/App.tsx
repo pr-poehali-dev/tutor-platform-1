@@ -12,6 +12,7 @@ import { UserDataProvider } from "@/context/UserDataContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AccessProvider } from "@/context/AccessContext";
 import LoginModal from "@/components/auth/LoginModal";
+import YandexMetrika from "@/components/analytics/YandexMetrika";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -43,6 +44,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <YandexMetrika />
             <AuthProvider>
               <AccessProvider>
                 <Suspense fallback={<PageSkeleton />}>
