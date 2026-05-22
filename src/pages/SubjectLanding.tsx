@@ -62,6 +62,7 @@ export default function SubjectLanding() {
         description={seo.description}
         canonical={canonical}
         keywords={seo.keywords}
+        image={seo.ogImage}
         jsonLd={jsonLd}
       />
 
@@ -114,7 +115,7 @@ export default function SubjectLanding() {
           Все курсы
         </Link>
 
-        <div className="grid md:grid-cols-[1fr_auto] gap-8 items-center">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <div className={`inline-flex items-center gap-2 bg-gradient-to-r ${seo.color} rounded-full px-4 py-1.5 mb-5 shadow-lg`}>
               <span className="text-xl">{seo.emoji}</span>
@@ -141,8 +142,28 @@ export default function SubjectLanding() {
               </a>
             </div>
           </div>
-          <div className={`hidden md:flex w-48 h-48 rounded-[2rem] bg-gradient-to-br ${seo.color} items-center justify-center text-9xl shadow-2xl`}>
-            {seo.emoji}
+
+          {/* Космическая обложка предмета */}
+          <div className="relative aspect-square max-w-md mx-auto md:mx-0 md:ml-auto w-full">
+            <div className={`absolute -inset-4 bg-gradient-to-br ${seo.color} opacity-30 blur-3xl rounded-full`} />
+            <div className="relative rounded-[2rem] overflow-hidden border border-white/15 shadow-2xl group">
+              <img
+                src={seo.ogImage}
+                alt={`${seo.name} — космическая обложка курса УЧИСЬПРО`}
+                loading="eager"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${seo.color} flex items-center justify-center text-2xl shadow-xl`}>
+                  {seo.emoji}
+                </div>
+                <div className="bg-background/60 backdrop-blur-md border border-white/15 rounded-xl px-3 py-1.5">
+                  <p className="text-[10px] uppercase tracking-wider text-white/55 font-bold">УЧИСЬПРО</p>
+                  <p className="text-sm text-white font-black -mt-0.5">{seo.name}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -251,12 +272,23 @@ export default function SubjectLanding() {
             <Link
               key={s.slug}
               to={`/courses/${s.slug}`}
-              className="group bg-card border border-white/10 rounded-2xl p-4 hover:border-white/25 hover:translate-y-[-2px] transition-all text-center"
+              className="group relative bg-card border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 hover:translate-y-[-2px] transition-all"
             >
-              <div className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-2xl mb-2`}>
-                {s.emoji}
+              <div className="relative aspect-square overflow-hidden">
+                <img
+                  src={s.ogImage}
+                  alt={`${s.name} — курсы УЧИСЬПРО`}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                <div className={`absolute top-2 right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-lg`}>
+                  {s.emoji}
+                </div>
+                <div className="absolute bottom-2 left-2 right-2">
+                  <p className="font-montserrat font-black text-white text-sm leading-tight drop-shadow-lg">{s.name}</p>
+                </div>
               </div>
-              <p className="font-montserrat font-bold text-white text-sm leading-tight">{s.name}</p>
             </Link>
           ))}
         </div>

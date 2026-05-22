@@ -333,16 +333,26 @@ export default function CoursesPage() {
               <Link
                 key={s.slug}
                 to={`/courses/${s.slug}`}
-                className="group relative bg-card border border-white/10 rounded-2xl p-4 hover:border-white/25 hover:translate-y-[-2px] transition-all text-center overflow-hidden"
+                className="group relative bg-card border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 hover:translate-y-[-2px] transition-all"
               >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.color} opacity-70`} />
-                <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-3xl mb-3`}>
-                  {s.emoji}
+                <div className="relative aspect-square overflow-hidden">
+                  <img
+                    src={s.ogImage}
+                    alt={`${s.name} — курсы УЧИСЬПРО`}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                  <div className={`absolute top-2 right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-lg`}>
+                    {s.emoji}
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <p className="font-montserrat font-black text-white text-sm leading-tight mb-0.5 drop-shadow-lg">{s.name}</p>
+                    <p className="text-white/70 text-[10px] font-medium">
+                      {COURSES.filter((c) => c.subject === s.subjectId).length} курсов
+                    </p>
+                  </div>
                 </div>
-                <p className="font-montserrat font-bold text-white text-sm leading-tight mb-1">{s.name}</p>
-                <p className="text-white/40 text-[11px]">
-                  {COURSES.filter((c) => c.subject === s.subjectId).length} курсов
-                </p>
               </Link>
             ))}
           </div>
