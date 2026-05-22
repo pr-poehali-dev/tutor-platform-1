@@ -1,11 +1,16 @@
 """
-Контроль доступа к платному контенту.
-GET  /?action=check&course_id=N   header: X-Auth-Token  -> { has_subscription, purchased_course_ids, course_access }
-POST /?action=buy_course          body: {course_id}     -> создаёт запись course_purchases (pending) и возвращает её id
+Контроль доступа к платному контенту + создание платежа в ЮKassa за разовую покупку курса.
+GET  /?action=check[&course_id=N]   header: X-Auth-Token  -> { has_subscription, purchased_course_ids, course_access }
+POST /?action=buy_course            body: {course_id, grade, title, return_url} -> создаёт платёж ЮKassa, возвращает payment_url
+POST /?action=confirm_demo          body: {purchase_id} -> демо-активация без оплаты (для тестов)
 """
 import json
 import os
+import uuid
+import base64
 from datetime import datetime, timezone
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 import psycopg2
 
 
@@ -17,6 +22,8 @@ GRADE_PRICE_KOPECKS = {
     "ege": 129000,
     "all": 59000,
 }
+
+YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
 
 
 def cors_headers() -> dict:
@@ -58,6 +65,14 @@ def resolve_user(cur, token: str):
     if expires_at and expires_at < datetime.now(timezone.utc):
         return None
     return user_id
+
+
+def get_user_email(cur, user_id: int) -> str | None:
+    cur.execute("SELECT email FROM auth_users WHERE id = %s LIMIT 1", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        return None
+    return row[0]
 
 
 def get_subscription_active(cur, user_id: int) -> bool:
@@ -104,17 +119,65 @@ def handle_check(token: str, course_id: int | None) -> dict:
         conn.close()
 
 
+def create_yookassa_payment(shop_id: str, secret_key: str, amount_rub: float,
+                             description: str, return_url: str,
+                             customer_email: str, metadata: dict) -> dict:
+    """Создаёт платёж в ЮKassa и возвращает ответ API."""
+    auth = base64.b64encode(f"{shop_id}:{secret_key}".encode()).decode()
+    idempotence_key = str(uuid.uuid4())
+
+    payload = {
+        "amount": {"value": f"{amount_rub:.2f}", "currency": "RUB"},
+        "capture": True,
+        "confirmation": {"type": "redirect", "return_url": return_url},
+        "description": description[:128],
+        "metadata": metadata,
+        "receipt": {
+            "customer": {"email": customer_email},
+            "items": [{
+                "description": description[:128],
+                "quantity": "1.000",
+                "amount": {"value": f"{amount_rub:.2f}", "currency": "RUB"},
+                "vat_code": 1,
+                "payment_subject": "service",
+                "payment_mode": "full_payment",
+            }],
+        },
+    }
+    request = Request(
+        YOOKASSA_API_URL,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Authorization': f'Basic {auth}',
+            'Idempotence-Key': idempotence_key,
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+    with urlopen(request, timeout=20) as response:
+        return json.loads(response.read().decode())
+
+
 def handle_buy_course(token: str, body: dict) -> dict:
     course_id = body.get('course_id')
     grade = (body.get('grade') or 'all').strip()
     title = (body.get('title') or 'Курс').strip()[:200]
+    return_url = (body.get('return_url') or '').strip()
+    customer_email_override = (body.get('email') or '').strip()
 
     try:
         course_id = int(course_id)
     except (TypeError, ValueError):
         return err('Не указан курс', 400)
 
-    amount = GRADE_PRICE_KOPECKS.get(grade, GRADE_PRICE_KOPECKS['all'])
+    if not return_url.startswith('https://'):
+        return err('return_url должен быть https', 400)
+
+    amount_kopecks = GRADE_PRICE_KOPECKS.get(grade, GRADE_PRICE_KOPECKS['all'])
+    amount_rub = amount_kopecks / 100
+
+    shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
+    secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
 
     conn = get_db()
     try:
@@ -130,20 +193,80 @@ def handle_buy_course(token: str, body: dict) -> dict:
             if cur.fetchone():
                 return ok({'already_purchased': True, 'course_id': course_id})
 
+            email = customer_email_override or get_user_email(cur, user_id) or ''
+            if not email or '@' not in email:
+                return err('Не найден email пользователя — укажи его при покупке', 400)
+
             cur.execute(
-                "INSERT INTO course_purchases (user_id, course_id, amount_kopecks, status) "
-                "VALUES (%s, %s, %s, 'pending') RETURNING id",
-                (user_id, course_id, amount)
+                "INSERT INTO course_purchases (user_id, course_id, amount_kopecks, status, payment_provider) "
+                "VALUES (%s, %s, %s, 'pending', 'yookassa') RETURNING id",
+                (user_id, course_id, amount_kopecks)
             )
             purchase_id = cur.fetchone()[0]
+            conn.commit()
+
+            if not shop_id or not secret_key:
+                return ok({
+                    'purchase_id': purchase_id,
+                    'course_id': course_id,
+                    'amount_rub': amount_kopecks // 100,
+                    'title': title,
+                    'status': 'pending',
+                    'demo_mode': True,
+                    'message': 'YooKassa не настроена (нет YOOKASSA_SECRET_KEY). Используй confirm_demo для активации.',
+                })
+
+            try:
+                metadata = {
+                    'kind': 'course_purchase',
+                    'purchase_id': str(purchase_id),
+                    'user_id': str(user_id),
+                    'course_id': str(course_id),
+                }
+                yk = create_yookassa_payment(
+                    shop_id=shop_id,
+                    secret_key=secret_key,
+                    amount_rub=amount_rub,
+                    description=f"Курс «{title}»",
+                    return_url=return_url,
+                    customer_email=email,
+                    metadata=metadata,
+                )
+            except HTTPError as e:
+                detail = ''
+                try:
+                    detail = e.read().decode()[:400]
+                except Exception:
+                    pass
+                cur.execute(
+                    "UPDATE course_purchases SET status = 'failed', updated_at = NOW() WHERE id = %s",
+                    (purchase_id,)
+                )
+                conn.commit()
+                return err(f'Ошибка ЮKassa ({e.code}): {detail}', 502)
+            except (URLError, Exception) as e:
+                cur.execute(
+                    "UPDATE course_purchases SET status = 'failed', updated_at = NOW() WHERE id = %s",
+                    (purchase_id,)
+                )
+                conn.commit()
+                return err(f'Не удалось создать платёж: {str(e)[:200]}', 502)
+
+            payment_id = yk.get('id', '')
+            confirmation_url = (yk.get('confirmation') or {}).get('confirmation_url', '')
+
+            cur.execute(
+                "UPDATE course_purchases SET payment_id = %s, updated_at = NOW() WHERE id = %s",
+                (payment_id, purchase_id)
+            )
             conn.commit()
 
             return ok({
                 'purchase_id': purchase_id,
                 'course_id': course_id,
-                'amount_kopecks': amount,
-                'amount_rub': amount // 100,
-                'title': title,
+                'amount_rub': amount_kopecks // 100,
+                'payment_id': payment_id,
+                'payment_url': confirmation_url,
                 'status': 'pending',
             })
     finally:
@@ -151,8 +274,10 @@ def handle_buy_course(token: str, body: dict) -> dict:
 
 
 def handle_confirm_demo(token: str, body: dict) -> dict:
-    """Демо-подтверждение покупки курса БЕЗ оплаты (для тестов / промо).
-    В проде должно вызываться только webhook'ом ЮKassa."""
+    """Демо-подтверждение покупки курса БЕЗ оплаты — работает только если YooKassa не настроена."""
+    if os.environ.get('YOOKASSA_SECRET_KEY'):
+        return err('Демо-режим отключён — настроена реальная оплата', 403)
+
     purchase_id = body.get('purchase_id')
     try:
         purchase_id = int(purchase_id)
@@ -180,7 +305,7 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
 
 
 def handler(event: dict, context) -> dict:
-    """Доступ к платным курсам: проверка подписки/покупки и инициация разовой покупки курса"""
+    """Доступ к платным курсам: проверка подписки/покупки и создание платежа ЮKassa"""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': cors_headers(), 'body': ''}

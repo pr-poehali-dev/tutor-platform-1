@@ -27,8 +27,17 @@
       "name": "Buy без токена - 401",
       "method": "POST",
       "path": "/?action=buy_course",
-      "body": {"course_id": 1, "grade": "ege"},
+      "body": {"course_id": 1, "grade": "ege", "return_url": "https://example.com/ok"},
       "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Buy с невалидным return_url - 400",
+      "method": "POST",
+      "path": "/?action=buy_course",
+      "body": {"course_id": 1, "grade": "ege", "return_url": "http://example.com/ok"},
+      "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },

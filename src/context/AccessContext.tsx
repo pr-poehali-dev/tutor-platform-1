@@ -5,13 +5,23 @@ import { useAuth } from "@/context/AuthContext";
 const ACCESS_URL = (func2url as Record<string, string>).access;
 const TOKEN_KEY = "uchispro_auth_token_v1";
 
+export interface BuyCourseResult {
+  ok: boolean;
+  purchaseId?: number;
+  amount?: number;
+  message?: string;
+  alreadyPurchased?: boolean;
+  paymentUrl?: string;
+  demoMode?: boolean;
+}
+
 interface AccessState {
   loading: boolean;
   hasSubscription: boolean;
   purchasedCourseIds: number[];
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
-  buyCourse: (courseId: number, grade: string, title: string) => Promise<{ ok: boolean; purchaseId?: number; amount?: number; message?: string; alreadyPurchased?: boolean }>;
+  buyCourse: (courseId: number, grade: string, title: string, returnUrl: string) => Promise<BuyCourseResult>;
   confirmDemoPurchase: (purchaseId: number) => Promise<{ ok: boolean; courseId?: number; message?: string }>;
 }
 
@@ -66,19 +76,25 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     [hasSubscription, purchasedCourseIds]
   );
 
-  const buyCourse = useCallback(async (courseId: number, grade: string, title: string) => {
+  const buyCourse = useCallback(async (courseId: number, grade: string, title: string, returnUrl: string): Promise<BuyCourseResult> => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Сначала войди в аккаунт" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=buy_course`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
-        body: JSON.stringify({ course_id: courseId, grade, title }),
+        body: JSON.stringify({ course_id: courseId, grade, title, return_url: returnUrl }),
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, message: data.error || "Не получилось оформить покупку" };
       if (data.already_purchased) return { ok: true, alreadyPurchased: true };
-      return { ok: true, purchaseId: data.purchase_id, amount: data.amount_rub };
+      return {
+        ok: true,
+        purchaseId: data.purchase_id,
+        amount: data.amount_rub,
+        paymentUrl: data.payment_url,
+        demoMode: !!data.demo_mode,
+      };
     } catch {
       return { ok: false, message: "Нет связи с сервером" };
     }

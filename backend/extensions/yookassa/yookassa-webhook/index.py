@@ -128,6 +128,43 @@ def handler(event, context):
         cur = conn.cursor()
         now = datetime.utcnow().isoformat()
 
+        # ── Branch A: разовая покупка курса (course_purchases) ──
+        if metadata.get('kind') == 'course_purchase':
+            purchase_id_raw = metadata.get('purchase_id')
+            try:
+                purchase_id = int(purchase_id_raw) if purchase_id_raw is not None else None
+            except (TypeError, ValueError):
+                purchase_id = None
+
+            if not purchase_id:
+                return {
+                    'statusCode': 400,
+                    'headers': HEADERS,
+                    'body': json.dumps({'error': 'Missing purchase_id in metadata'})
+                }
+
+            if payment_status == 'succeeded':
+                cur.execute(f"""
+                    UPDATE {S}course_purchases
+                    SET status = 'paid', payment_id = %s, purchased_at = NOW(), updated_at = NOW()
+                    WHERE id = %s AND status <> 'paid'
+                """, (payment_id, purchase_id))
+                conn.commit()
+            elif payment_status == 'canceled':
+                cur.execute(f"""
+                    UPDATE {S}course_purchases
+                    SET status = 'canceled', updated_at = NOW()
+                    WHERE id = %s AND status = 'pending'
+                """, (purchase_id,))
+                conn.commit()
+
+            return {
+                'statusCode': 200,
+                'headers': HEADERS,
+                'body': json.dumps({'status': 'ok', 'kind': 'course_purchase'})
+            }
+
+        # ── Branch B: обычный заказ из orders (магазин) ──
         # Find order by payment_id
         cur.execute(f"""
             SELECT id, status FROM {S}orders
