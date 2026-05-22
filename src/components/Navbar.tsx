@@ -5,13 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 const NAV_ITEMS = [
   { label: "Маршрут", icon: "Compass", section: "journey" },
   { label: "ИИ-учитель", icon: "Bot", section: "ai-teacher" },
-  { label: "Каталог", icon: "Library", section: "library" },
   { label: "Прогресс", icon: "TrendingUp", section: "progress" },
   { label: "Рейтинг", icon: "BarChart2", section: "leaderboard" },
 ];
 
 const NAV_LINKS = [
-  { label: "ОГЭ и ЕГЭ", icon: "Library", path: "/exam-bank" },
+  { label: "Курсы", icon: "Library", path: "/courses" },
+  { label: "ОГЭ и ЕГЭ", icon: "GraduationCap", path: "/exam-bank" },
   { label: "Калькулятор", icon: "Calculator", path: "/score-calculator" },
   { label: "Тарифы", icon: "Sparkles", path: "/pricing" },
 ];

@@ -7,11 +7,10 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SocialProofStrip from "@/components/SocialProofStrip";
 import QuickQuiz from "@/components/QuickQuiz";
+import CoursesTeaser from "@/components/CoursesTeaser";
 
 const AITeacher = lazy(() => import("@/components/AITeacher"));
 const LearningJourney = lazy(() => import("@/components/LearningJourney"));
-const CoursesLibrary = lazy(() => import("@/components/CoursesLibrary"));
-const CoursesSection = lazy(() => import("@/components/CoursesSection"));
 const LeaderboardSection = lazy(() => import("@/components/LeaderboardSection"));
 const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
 
@@ -25,7 +24,6 @@ const SECTION_LABELS: Record<string, string> = {
   hero: "Главная",
   journey: "Маршрут обучения",
   ai: "ИИ-преподаватель",
-  courses: "Каталог курсов",
   leaderboard: "Рейтинг учеников",
   myspace: "Моё обучение",
 };
@@ -72,8 +70,7 @@ const HOME_JSON_LD = [
 ];
 
 export default function Index() {
-  const [activeSection, setActiveSection] = useState("courses");
-  const [activeCourse, setActiveCourse] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState("hero");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollTo = (section: string) => {
@@ -84,7 +81,7 @@ export default function Index() {
 
   // Автообновление activeSection при скролле
   useEffect(() => {
-    const ids = ["myspace", "journey", "ai", "courses", "leaderboard"];
+    const ids = ["myspace", "journey", "ai", "leaderboard"];
     const observers: IntersectionObserver[] = [];
     ids.forEach((id) => {
       const el = document.getElementById(id);
@@ -172,16 +169,7 @@ export default function Index() {
         <AITeacher />
       </Suspense>
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <CoursesLibrary />
-      </Suspense>
-
-      <Suspense fallback={<SectionSkeleton />}>
-        <CoursesSection
-          activeCourse={activeCourse}
-          onSetActiveCourse={setActiveCourse}
-        />
-      </Suspense>
+      <CoursesTeaser />
 
       <Suspense fallback={<SectionSkeleton />}>
         <LeaderboardSection />
