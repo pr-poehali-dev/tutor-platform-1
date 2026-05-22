@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import StepSubject from "./journey/StepSubject";
 import StepTest from "./journey/StepTest";
@@ -7,6 +8,8 @@ import StepProgram from "./journey/StepProgram";
 import StepLesson from "./journey/StepLesson";
 import UserLoginPanel from "./journey/UserLoginPanel";
 import { useUserProgress, SavedJourney } from "./journey/useUserProgress";
+import { useAuth } from "@/context/AuthContext";
+import { useAccess } from "@/context/AccessContext";
 import {
   LEARNING_PATH_URL,
   SUBJECTS,
@@ -34,6 +37,9 @@ export default function LearningJourney() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const progress = useUserProgress();
+  const navigate = useNavigate();
+  const { isAuthenticated, openLogin } = useAuth();
+  const { hasSubscription } = useAccess();
 
   // Load journeys when user logs in
   useEffect(() => {
@@ -146,6 +152,15 @@ export default function LearningJourney() {
   // ─── Build personal program (+ save to DB if logged in) ───
   const buildProgram = async () => {
     if (!subject || !analysis) return;
+    // Пейволл: индивидуальный маршрут — только для подписчиков
+    if (!isAuthenticated) {
+      openLogin();
+      return;
+    }
+    if (!hasSubscription) {
+      setStep("paywall");
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await callAPI<Program>({
@@ -366,6 +381,57 @@ export default function LearningJourney() {
             onNext={buildProgram}
             isLoading={isLoading}
           />
+        )}
+
+        {step === "paywall" && subject && analysis && (
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <div className="bg-gradient-to-br from-purple-500/15 to-cyan-500/10 border border-purple-500/30 rounded-3xl p-6 md:p-10 text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 text-4xl mb-5 shadow-lg shadow-purple-500/30">
+                🗺️
+              </div>
+              <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-3">
+                Твой персональный маршрут готов
+              </h2>
+              <p className="text-white/65 text-sm md:text-base leading-relaxed mb-6 max-w-md mx-auto">
+                Диагностику ты прошёл бесплатно. <strong className="text-white">Индивидуальный маршрут с трекингом прогресса и адаптивными модулями</strong> доступен по подписке.
+              </p>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 text-left max-w-md mx-auto">
+                <p className="text-white/85 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="Sparkles" size={14} className="text-purple-300" />
+                  Что входит в подписку
+                </p>
+                <ul className="space-y-2 text-sm text-white/70">
+                  <li className="flex items-start gap-2"><Icon name="Check" size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> Персональный маршрут под твой уровень</li>
+                  <li className="flex items-start gap-2"><Icon name="Check" size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> Все 39 курсов в каталоге</li>
+                  <li className="flex items-start gap-2"><Icon name="Check" size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> Трекинг прогресса и интервальное повторение</li>
+                  <li className="flex items-start gap-2"><Icon name="Check" size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> Безлимит сообщений ИИ-методисту</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-7 py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
+                >
+                  <Icon name="Sparkles" size={16} />
+                  Посмотреть тарифы
+                </button>
+                <button
+                  onClick={() => setStep("results")}
+                  className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white/75 text-sm font-medium px-5 py-3.5 rounded-2xl hover:bg-white/12 transition-colors"
+                >
+                  <Icon name="ArrowLeft" size={14} />
+                  Вернуться к анализу
+                </button>
+              </div>
+
+              <p className="text-white/40 text-xs mt-5">
+                Уже есть подписка?{" "}
+                <Link to="/cabinet" className="text-purple-300 underline">Войти в кабинет</Link>
+              </p>
+            </div>
+          </div>
         )}
 
         {step === "program" && program && subject && (

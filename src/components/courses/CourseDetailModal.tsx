@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
+import { useAuth } from "@/context/AuthContext";
+import { useAccess } from "@/context/AccessContext";
 
 interface Props {
   course: Course | null;
@@ -12,6 +14,9 @@ interface Props {
 }
 
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
+  const navigate = useNavigate();
+  const { isAuthenticated, openLogin } = useAuth();
+  const { canAccessCourse, hasSubscription } = useAccess();
   const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
   const [openLesson, setOpenLesson] = useState<{ title: string; topic: string } | null>(null);
@@ -201,24 +206,63 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
                         <div className="px-4 pb-4 pl-16 flex flex-col gap-2 animate-fade-in">
                           {m.lessons.map(l => {
                             const topicFromTags = l.topics?.[0] || course.tags[0] || course.title;
+                            const isFirstLesson = m.id === 1 && l.num === 1;
+                            const userHasAccess = canAccessCourse(course.id);
+                            const isFree = isFirstLesson || userHasAccess;
+
+                            const handleLessonClick = () => {
+                              if (isFree) {
+                                setOpenLesson({ title: l.title, topic: topicFromTags });
+                                return;
+                              }
+                              if (!isAuthenticated) {
+                                openLogin();
+                                return;
+                              }
+                              navigate(`/course-checkout/${course.id}`);
+                            };
+
                             return (
                               <button
                                 key={l.num}
-                                onClick={() => setOpenLesson({ title: l.title, topic: topicFromTags })}
-                                className="flex items-start gap-3 py-2.5 px-2 -mx-2 rounded-xl border-t border-white/5 first:border-t-0 hover:bg-white/5 transition-colors text-left group"
+                                onClick={handleLessonClick}
+                                className={`flex items-start gap-3 py-2.5 px-2 -mx-2 rounded-xl border-t border-white/5 first:border-t-0 transition-colors text-left group ${
+                                  isFree ? "hover:bg-white/5" : "hover:bg-amber-500/5"
+                                }`}
                               >
-                                <div className="w-7 h-7 rounded-lg bg-white/5 group-hover:bg-purple-500/30 flex items-center justify-center text-white/60 group-hover:text-white text-xs font-bold flex-shrink-0 transition-colors">
-                                  {l.num}
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
+                                  isFree
+                                    ? "bg-white/5 group-hover:bg-purple-500/30 text-white/60 group-hover:text-white"
+                                    : "bg-amber-500/10 text-amber-300/80"
+                                }`}>
+                                  {isFree ? l.num : <Icon name="Lock" size={12} />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-white/85 group-hover:text-white text-sm transition-colors">{l.title}</p>
-                                  <div className="flex items-center gap-3 mt-1">
+                                  <p className={`text-sm transition-colors ${isFree ? "text-white/85 group-hover:text-white" : "text-white/55"}`}>{l.title}</p>
+                                  <div className="flex items-center gap-3 mt-1 flex-wrap">
                                     <span className="text-white/35 text-xs flex items-center gap-1">
                                       <Icon name="Clock" size={11} /> {l.duration}
                                     </span>
-                                    <span className="text-purple-300/70 group-hover:text-purple-200 text-xs flex items-center gap-1 transition-colors">
-                                      <Icon name="Play" size={11} /> Открыть урок
-                                    </span>
+                                    {isFirstLesson && !userHasAccess && (
+                                      <span className="text-green-400 text-xs flex items-center gap-1 font-semibold">
+                                        <Icon name="Gift" size={11} /> Бесплатно
+                                      </span>
+                                    )}
+                                    {!isFree && (
+                                      <span className="text-amber-300/80 group-hover:text-amber-200 text-xs flex items-center gap-1 transition-colors">
+                                        <Icon name="Lock" size={11} /> Открыть после оплаты
+                                      </span>
+                                    )}
+                                    {isFree && !isFirstLesson && userHasAccess && (
+                                      <span className="text-green-400/80 text-xs flex items-center gap-1">
+                                        {hasSubscription ? "По подписке" : "Курс куплен"}
+                                      </span>
+                                    )}
+                                    {isFree && (
+                                      <span className="text-purple-300/70 group-hover:text-purple-200 text-xs flex items-center gap-1 transition-colors">
+                                        <Icon name="Play" size={11} /> Открыть урок
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </button>
@@ -286,27 +330,66 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
         {/* Sticky footer with CTA */}
         <div className="border-t border-white/10 bg-card/95 backdrop-blur-md p-4 md:p-5 flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-montserrat font-black text-2xl text-white">
-                {getCoursePrice(course).toLocaleString("ru-RU")} ₽
-              </span>
-              <span className="text-white/45 text-xs">за полный курс</span>
-            </div>
-            {course.trialAvailable && (
-              <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
-                Первый урок без оплаты
-              </p>
+            {canAccessCourse(course.id) ? (
+              <>
+                <p className="text-green-300 text-sm font-bold flex items-center gap-1.5">
+                  <Icon name="CheckCircle2" size={14} />
+                  {hasSubscription ? "Открыто по подписке" : "Курс куплен"}
+                </p>
+                <p className="text-white/45 text-xs mt-0.5">Все уроки доступны во вкладке «Программа»</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-montserrat font-black text-2xl text-white">
+                    {getCoursePrice(course).toLocaleString("ru-RU")} ₽
+                  </span>
+                  <span className="text-white/45 text-xs">за полный курс</span>
+                </div>
+                <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
+                  Первый урок без оплаты
+                </p>
+              </>
             )}
           </div>
-          <button
-            onClick={() => onStartWithAI(course)}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
-          >
-            <Icon name="Bot" size={16} />
-            <span className="hidden sm:inline">Начать с ИИ-учителем</span>
-            <span className="sm:hidden">Начать</span>
-          </button>
+          {canAccessCourse(course.id) ? (
+            <button
+              onClick={() => {
+                setActiveTab("program");
+                setExpandedModule(1);
+              }}
+              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity"
+            >
+              <Icon name="Play" size={16} />
+              <span className="hidden sm:inline">К программе</span>
+              <span className="sm:hidden">Учить</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onStartWithAI(course)}
+                className="hidden md:flex items-center gap-2 bg-white/8 border border-white/15 text-white text-sm font-medium px-4 py-3 rounded-2xl hover:bg-white/12 transition-colors"
+              >
+                <Icon name="Gift" size={14} />
+                Пробный урок
+              </button>
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    openLogin();
+                    return;
+                  }
+                  navigate(`/course-checkout/${course.id}`);
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
+              >
+                <Icon name="CreditCard" size={16} />
+                <span className="hidden sm:inline">Купить курс</span>
+                <span className="sm:hidden">Купить</span>
+              </button>
+            </div>
+          )}
         </div>
 
       </div>

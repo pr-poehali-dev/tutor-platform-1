@@ -145,4 +145,4 @@ export interface Lesson {
   _cached?: boolean;
 }
 
-export type JourneyStep = "subject" | "test" | "analyzing" | "results" | "program" | "lesson" | "complete";
+export type JourneyStep = "subject" | "test" | "analyzing" | "results" | "paywall" | "program" | "lesson" | "complete";

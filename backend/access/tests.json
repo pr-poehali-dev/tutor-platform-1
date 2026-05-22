@@ -1,0 +1,42 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Check без токена - анонимный гость",
+      "method": "GET",
+      "path": "/?action=check&course_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {"authenticated": false, "has_subscription": false, "course_access": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Check с невалидным токеном - тоже гость",
+      "method": "GET",
+      "path": "/?action=check",
+      "headers": {"X-Auth-Token": "invalid-token-xxx"},
+      "expectedStatus": 200,
+      "expectedBody": {"authenticated": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Buy без токена - 401",
+      "method": "POST",
+      "path": "/?action=buy_course",
+      "body": {"course_id": 1, "grade": "ege"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Unknown action - 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404
+    }
+  ]
+}
