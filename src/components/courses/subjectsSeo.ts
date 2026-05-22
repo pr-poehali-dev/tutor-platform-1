@@ -5,6 +5,7 @@ export interface SubjectSeo {
   nameGenitive: string;
   emoji: string;
   color: string;
+  ogImage: string;
   title: string;
   description: string;
   keywords: string;
