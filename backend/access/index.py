@@ -203,7 +203,15 @@ def handle_buy_course(token: str, body: dict) -> dict:
 
             email = customer_email_override or get_user_email(cur, user_id) or ''
             if not email or '@' not in email:
-                return err('Не найден email пользователя — укажи его при покупке', 400)
+                return err('Укажи email — на него придёт чек по 54-ФЗ', 400)
+
+            # Сохраняем email в профиле, чтобы не спрашивать повторно
+            if customer_email_override and '@' in customer_email_override:
+                cur.execute(
+                    "UPDATE auth_users SET email = %s WHERE id = %s AND (email IS NULL OR email = '' OR email <> %s)",
+                    (customer_email_override, user_id, customer_email_override)
+                )
+                conn.commit()
 
             cur.execute(
                 "INSERT INTO course_purchases (user_id, course_id, amount_kopecks, status, payment_provider) "
@@ -322,7 +330,15 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
 
             email = customer_email_override or get_user_email(cur, user_id) or ''
             if not email or '@' not in email:
-                return err('Не найден email пользователя — укажи его при покупке', 400)
+                return err('Укажи email — на него придёт чек по 54-ФЗ', 400)
+
+            # Сохраняем email в профиле, чтобы не спрашивать повторно
+            if customer_email_override and '@' in customer_email_override:
+                cur.execute(
+                    "UPDATE auth_users SET email = %s WHERE id = %s AND (email IS NULL OR email = '' OR email <> %s)",
+                    (customer_email_override, user_id, customer_email_override)
+                )
+                conn.commit()
 
             cur.execute(
                 "INSERT INTO subscriptions (user_id, plan_id, status, amount_kopecks, payment_provider) "

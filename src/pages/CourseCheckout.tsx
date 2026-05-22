@@ -17,7 +17,7 @@ export default function CourseCheckout() {
   const { courseId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, openLogin, loading: authLoading } = useAuth();
+  const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
   const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess } = useAccess();
 
   const course = useMemo(
@@ -32,6 +32,11 @@ export default function CourseCheckout() {
   const [done, setDone] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [checkingReturn, setCheckingReturn] = useState(false);
+  const [email, setEmail] = useState<string>(user?.email ?? "");
+
+  useEffect(() => {
+    if (user?.email && !email) setEmail(user.email);
+  }, [user?.email]);
 
   const returnedFromPayment = searchParams.get("paid") === "1";
 
@@ -79,11 +84,17 @@ export default function CourseCheckout() {
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label || course.grade;
   const alreadyHasAccess = canAccessCourse(course.id);
 
+  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
   const handlePay = async () => {
     setError(null);
+    if (!isValidEmail(email)) {
+      setError("Укажи действующий email — на него придёт чек по 54-ФЗ");
+      return;
+    }
     setProcessing(true);
     const returnUrl = `${window.location.origin}/course-checkout/${course.id}?paid=1`;
-    const res = await buyCourse(course.id, course.grade, course.title, returnUrl);
+    const res = await buyCourse(course.id, course.grade, course.title, returnUrl, email.trim());
     setProcessing(false);
     if (!res.ok) {
       setError(res.message || "Не получилось оформить покупку");
@@ -217,6 +228,26 @@ export default function CourseCheckout() {
                   </div>
                   <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
                 </div>
+
+                {/* Email для чека 54-ФЗ */}
+                {isAuthenticated && (
+                  <div className="mb-4">
+                    <label className="text-white/55 text-xs uppercase tracking-wider font-semibold flex items-center gap-1.5 mb-2">
+                      <Icon name="Mail" size={12} />
+                      Email для чека
+                    </label>
+                    <input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ivan@example.ru"
+                      className="w-full bg-white/5 border border-white/12 rounded-2xl px-4 py-3.5 text-white placeholder:text-white/35 focus:outline-none focus:border-purple-500/50 focus:bg-white/8 transition-colors"
+                    />
+                    <p className="text-white/40 text-[11px] mt-1.5">На него придёт электронный чек после оплаты (закон 54-ФЗ).</p>
+                  </div>
+                )}
 
                 {/* Гарантия возврата */}
                 <MoneyBackGuarantee />
