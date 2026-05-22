@@ -4,6 +4,14 @@ import Icon from "@/components/ui/icon";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import {
+  SocialProof,
+  DiscountTimer,
+  MoneyBackGuarantee,
+  TrustBadges,
+} from "@/components/courses/CheckoutBoosters";
+
+const DISCOUNT_PERCENT = 15;
 
 export default function CourseCheckout() {
   const { courseId } = useParams();
@@ -182,14 +190,38 @@ export default function CourseCheckout() {
               </div>
             ) : (
               <>
-                <div className="bg-white/4 border border-white/10 rounded-2xl p-5 mb-5">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-white/55 text-sm">Стоимость</span>
-                    <span className="font-montserrat font-black text-3xl text-white">{(amount ?? price).toLocaleString("ru-RU")} ₽</span>
+                {/* Социальное доказательство */}
+                <SocialProof courseId={course.id} popularity={course.students} />
+
+                {/* Таймер скидки */}
+                <DiscountTimer percent={DISCOUNT_PERCENT} />
+
+                {/* Цена со скидкой */}
+                <div className="bg-white/4 border border-white/10 rounded-2xl p-5 mb-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="inline-flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 text-rose-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                      −{DISCOUNT_PERCENT}% сегодня
+                    </span>
+                    <span className="text-white/45 text-xs">экономия {Math.round((amount ?? price) * DISCOUNT_PERCENT / 100 / (1 - DISCOUNT_PERCENT / 100)).toLocaleString("ru-RU")} ₽</span>
                   </div>
-                  <p className="text-white/45 text-xs">Разовая оплата · доступ навсегда</p>
+                  <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                    <span className="text-white/55 text-sm">К оплате сейчас</span>
+                    <div className="flex items-baseline gap-2.5">
+                      <span className="text-white/35 text-lg line-through tabular-nums">
+                        {Math.round((amount ?? price) / (1 - DISCOUNT_PERCENT / 100)).toLocaleString("ru-RU")} ₽
+                      </span>
+                      <span className="font-montserrat font-black text-3xl md:text-4xl gradient-text-purple tabular-nums">
+                        {(amount ?? price).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
                 </div>
 
+                {/* Гарантия возврата */}
+                <MoneyBackGuarantee />
+
+                {/* Подписка-альтернатива */}
                 <div className="bg-purple-500/10 border border-purple-500/25 rounded-2xl p-4 mb-5 flex items-start gap-3">
                   <Icon name="Sparkles" size={16} className="text-purple-300 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
@@ -211,10 +243,11 @@ export default function CourseCheckout() {
                 {!isAuthenticated ? (
                   <button
                     onClick={openLogin}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-4 rounded-2xl hover:opacity-90 transition-opacity"
+                    className="group w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-purple-500 to-cyan-500 text-white text-base font-black px-5 py-5 rounded-2xl hover:scale-[1.01] hover:shadow-2xl hover:shadow-purple-500/30 transition-all glow-purple"
                   >
-                    <Icon name="LogIn" size={16} />
-                    Войти, чтобы купить
+                    <Icon name="LogIn" size={18} />
+                    Войти и купить за {(amount ?? price).toLocaleString("ru-RU")} ₽
+                    <Icon name="ArrowRight" size={18} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                 ) : demoMode && purchaseId ? (
                   <div className="space-y-3">
@@ -237,17 +270,21 @@ export default function CourseCheckout() {
                   <button
                     onClick={handlePay}
                     disabled={processing}
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-4 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-60"
+                    className="group w-full relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-purple-500 to-cyan-500 text-white text-base font-black px-5 py-5 rounded-2xl hover:scale-[1.01] hover:shadow-2xl hover:shadow-purple-500/30 transition-all disabled:opacity-60 disabled:hover:scale-100 glow-purple"
                   >
-                    {processing ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="CreditCard" size={16} />}
-                    Перейти к оплате
+                    {processing ? (
+                      <Icon name="Loader2" size={18} className="animate-spin" />
+                    ) : (
+                      <>
+                        <Icon name="CreditCard" size={18} />
+                        Купить за {(amount ?? price).toLocaleString("ru-RU")} ₽
+                        <Icon name="ArrowRight" size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </button>
                 )}
 
-                <div className="flex items-center justify-center gap-4 mt-5 text-white/40 text-xs">
-                  <span className="flex items-center gap-1.5"><Icon name="ShieldCheck" size={12} /> Безопасная оплата ЮKassa</span>
-                  <span className="flex items-center gap-1.5"><Icon name="RefreshCw" size={12} /> Возврат по 152-ФЗ</span>
-                </div>
+                <TrustBadges />
 
                 <p className="text-white/35 text-[11px] text-center mt-4 leading-relaxed">
                   Оплачивая, ты соглашаешься с{" "}
