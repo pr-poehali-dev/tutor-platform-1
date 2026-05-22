@@ -1,8 +1,9 @@
 """
-Контроль доступа к платному контенту + создание платежа в ЮKassa за разовую покупку курса.
+Контроль доступа к платному контенту + создание платежей в ЮKassa.
 GET  /?action=check[&course_id=N]   header: X-Auth-Token  -> { has_subscription, purchased_course_ids, course_access }
-POST /?action=buy_course            body: {course_id, grade, title, return_url} -> создаёт платёж ЮKassa, возвращает payment_url
-POST /?action=confirm_demo          body: {purchase_id} -> демо-активация без оплаты (для тестов)
+POST /?action=buy_course            body: {course_id, grade, title, return_url} -> создаёт платёж ЮKassa за курс
+POST /?action=buy_subscription      body: {plan_id, return_url, email?} -> создаёт платёж ЮKassa за подписку
+POST /?action=confirm_demo          body: {purchase_id, kind?} -> демо-активация без оплаты (для тестов)
 """
 import json
 import os
@@ -21,6 +22,13 @@ GRADE_PRICE_KOPECKS = {
     "oge": 99000,
     "ege": 129000,
     "all": 59000,
+}
+
+# Тарифы подписки (server-side, нельзя подделать с клиента)
+SUBSCRIPTION_PLANS = {
+    "base":   {"name": "Базовый",  "price_kopecks":  59000, "period_days": 30},
+    "pro":    {"name": "Профи",    "price_kopecks": 129000, "period_days": 30},
+    "family": {"name": "Семейный", "price_kopecks": 199000, "period_days": 30},
 }
 
 YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
@@ -273,11 +281,132 @@ def handle_buy_course(token: str, body: dict) -> dict:
         conn.close()
 
 
+def handle_buy_subscription(token: str, body: dict) -> dict:
+    """Создаёт pending-подписку и платёж ЮKassa. Возвращает payment_url."""
+    plan_id = (body.get('plan_id') or '').strip()
+    return_url = (body.get('return_url') or '').strip()
+    customer_email_override = (body.get('email') or '').strip()
+
+    plan = SUBSCRIPTION_PLANS.get(plan_id)
+    if not plan:
+        return err('Неизвестный тариф', 400)
+    if not return_url.startswith('https://'):
+        return err('return_url должен быть https', 400)
+
+    amount_kopecks = plan['price_kopecks']
+    amount_rub = amount_kopecks / 100
+
+    shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
+    secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+
+            # Если уже есть активная — сообщаем
+            cur.execute(
+                "SELECT id, expires_at FROM subscriptions WHERE user_id = %s AND status = 'active' "
+                "AND (expires_at IS NULL OR expires_at > NOW()) ORDER BY id DESC LIMIT 1",
+                (user_id,)
+            )
+            row = cur.fetchone()
+            if row:
+                return ok({
+                    'already_subscribed': True,
+                    'subscription_id': row[0],
+                    'expires_at': row[1].isoformat() if row[1] else None,
+                })
+
+            email = customer_email_override or get_user_email(cur, user_id) or ''
+            if not email or '@' not in email:
+                return err('Не найден email пользователя — укажи его при покупке', 400)
+
+            cur.execute(
+                "INSERT INTO subscriptions (user_id, plan_id, status, amount_kopecks, payment_provider) "
+                "VALUES (%s, %s, 'pending', %s, 'yookassa') RETURNING id",
+                (user_id, plan_id, amount_kopecks)
+            )
+            subscription_id = cur.fetchone()[0]
+            conn.commit()
+
+            if not shop_id or not secret_key:
+                return ok({
+                    'subscription_id': subscription_id,
+                    'plan_id': plan_id,
+                    'amount_rub': amount_kopecks // 100,
+                    'status': 'pending',
+                    'demo_mode': True,
+                    'message': 'YooKassa не настроена. Используй confirm_demo для активации.',
+                })
+
+            try:
+                metadata = {
+                    'kind': 'subscription',
+                    'subscription_id': str(subscription_id),
+                    'user_id': str(user_id),
+                    'plan_id': plan_id,
+                    'period_days': str(plan['period_days']),
+                }
+                yk = create_yookassa_payment(
+                    shop_id=shop_id,
+                    secret_key=secret_key,
+                    amount_rub=amount_rub,
+                    description=f"Подписка «{plan['name']}» на {plan['period_days']} дн.",
+                    return_url=return_url,
+                    customer_email=email,
+                    metadata=metadata,
+                )
+            except HTTPError as e:
+                detail = ''
+                try:
+                    detail = e.read().decode()[:400]
+                except Exception:
+                    pass
+                cur.execute(
+                    "UPDATE subscriptions SET status = 'failed', updated_at = NOW() WHERE id = %s",
+                    (subscription_id,)
+                )
+                conn.commit()
+                return err(f'Ошибка ЮKassa ({e.code}): {detail}', 502)
+            except (URLError, Exception) as e:
+                cur.execute(
+                    "UPDATE subscriptions SET status = 'failed', updated_at = NOW() WHERE id = %s",
+                    (subscription_id,)
+                )
+                conn.commit()
+                return err(f'Не удалось создать платёж: {str(e)[:200]}', 502)
+
+            payment_id = yk.get('id', '')
+            confirmation_url = (yk.get('confirmation') or {}).get('confirmation_url', '')
+
+            cur.execute(
+                "UPDATE subscriptions SET payment_id = %s, updated_at = NOW() WHERE id = %s",
+                (payment_id, subscription_id)
+            )
+            conn.commit()
+
+            return ok({
+                'subscription_id': subscription_id,
+                'plan_id': plan_id,
+                'amount_rub': amount_kopecks // 100,
+                'payment_id': payment_id,
+                'payment_url': confirmation_url,
+                'status': 'pending',
+            })
+    finally:
+        conn.close()
+
+
 def handle_confirm_demo(token: str, body: dict) -> dict:
-    """Демо-подтверждение покупки курса БЕЗ оплаты — работает только если YooKassa не настроена."""
+    """Демо-подтверждение покупки БЕЗ оплаты — только если YooKassa не настроена.
+    kind='course' (по умолчанию) или 'subscription'."""
     if os.environ.get('YOOKASSA_SECRET_KEY'):
         return err('Демо-режим отключён — настроена реальная оплата', 403)
 
+    kind = (body.get('kind') or 'course').strip()
     purchase_id = body.get('purchase_id')
     try:
         purchase_id = int(purchase_id)
@@ -290,6 +419,28 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
             user_id = resolve_user(cur, token)
             if not user_id:
                 return err('Требуется вход', 401)
+
+            if kind == 'subscription':
+                cur.execute(
+                    "SELECT plan_id FROM subscriptions WHERE id = %s AND user_id = %s AND status = 'pending'",
+                    (purchase_id, user_id)
+                )
+                row = cur.fetchone()
+                if not row:
+                    return err('Подписка не найдена', 404)
+                plan_id = row[0]
+                period_days = SUBSCRIPTION_PLANS.get(plan_id, {}).get('period_days', 30)
+                cur.execute(
+                    "UPDATE subscriptions SET status = 'active', started_at = NOW(), "
+                    "expires_at = NOW() + (%s || ' days')::interval, updated_at = NOW() "
+                    "WHERE id = %s RETURNING expires_at",
+                    (str(period_days), purchase_id)
+                )
+                conn.commit()
+                expires_at = cur.fetchone()[0]
+                return ok({'success': True, 'subscription_id': purchase_id,
+                          'expires_at': expires_at.isoformat() if expires_at else None})
+
             cur.execute(
                 "UPDATE course_purchases SET status = 'paid', purchased_at = NOW(), updated_at = NOW() "
                 "WHERE id = %s AND user_id = %s AND status = 'pending' RETURNING course_id",
@@ -334,6 +485,8 @@ def handler(event: dict, context) -> dict:
             return handle_check(token, course_id)
         if action == 'buy_course' and method == 'POST':
             return handle_buy_course(token, body)
+        if action == 'buy_subscription' and method == 'POST':
+            return handle_buy_subscription(token, body)
         if action == 'confirm_demo' and method == 'POST':
             return handle_confirm_demo(token, body)
         return err('Unknown action', 404)

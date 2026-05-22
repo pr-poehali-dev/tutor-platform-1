@@ -15,6 +15,17 @@ export interface BuyCourseResult {
   demoMode?: boolean;
 }
 
+export interface BuySubscriptionResult {
+  ok: boolean;
+  subscriptionId?: number;
+  amount?: number;
+  message?: string;
+  alreadySubscribed?: boolean;
+  expiresAt?: string;
+  paymentUrl?: string;
+  demoMode?: boolean;
+}
+
 interface AccessState {
   loading: boolean;
   hasSubscription: boolean;
@@ -22,7 +33,8 @@ interface AccessState {
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
   buyCourse: (courseId: number, grade: string, title: string, returnUrl: string) => Promise<BuyCourseResult>;
-  confirmDemoPurchase: (purchaseId: number) => Promise<{ ok: boolean; courseId?: number; message?: string }>;
+  buySubscription: (planId: string, returnUrl: string, email?: string) => Promise<BuySubscriptionResult>;
+  confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
 }
 
 const AccessContext = createContext<AccessState | null>(null);
@@ -100,19 +112,46 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  const confirmDemoPurchase = useCallback(async (purchaseId: number) => {
+  const buySubscription = useCallback(async (planId: string, returnUrl: string, email?: string): Promise<BuySubscriptionResult> => {
+    const authToken = token || readToken();
+    if (!authToken) return { ok: false, message: "Сначала войди в аккаунт" };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=buy_subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: JSON.stringify({ plan_id: planId, return_url: returnUrl, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, message: data.error || "Не получилось оформить подписку" };
+      if (data.already_subscribed) {
+        await refreshAccess();
+        return { ok: true, alreadySubscribed: true, expiresAt: data.expires_at };
+      }
+      return {
+        ok: true,
+        subscriptionId: data.subscription_id,
+        amount: data.amount_rub,
+        paymentUrl: data.payment_url,
+        demoMode: !!data.demo_mode,
+      };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [token, refreshAccess]);
+
+  const confirmDemoPurchase = useCallback(async (purchaseId: number, kind: "course" | "subscription" = "course") => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Требуется вход" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=confirm_demo`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
-        body: JSON.stringify({ purchase_id: purchaseId }),
+        body: JSON.stringify({ purchase_id: purchaseId, kind }),
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, message: data.error || "Не удалось подтвердить" };
       await refreshAccess();
-      return { ok: true, courseId: data.course_id };
+      return { ok: true, courseId: data.course_id, subscriptionId: data.subscription_id };
     } catch {
       return { ok: false, message: "Нет связи с сервером" };
     }
@@ -125,6 +164,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     canAccessCourse,
     refreshAccess,
     buyCourse,
+    buySubscription,
     confirmDemoPurchase,
   };
 

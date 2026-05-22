@@ -3,10 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
-import { useYookassa, openPaymentPage, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
-import func2url from "../../backend/func2url.json";
-
-const YOOKASSA_URL = (func2url as Record<string, string>)["yookassa-yookassa"];
+import { useAccess } from "@/context/AccessContext";
+import { isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 
 type PlanId = "trial" | "base" | "pro" | "family";
 
@@ -65,10 +63,12 @@ export default function Checkout() {
   const navigate = useNavigate();
   const plan = useMemo<PlanDef | null>(() => (planId && (planId in PLANS) ? PLANS[planId as PlanId] : null), [planId]);
 
+  const { buySubscription } = useAccess();
   const [email, setEmail] = useState<string>(user?.email ?? "");
   const [name, setName] = useState<string>(user?.name ?? "");
   const [agree, setAgree] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -78,11 +78,6 @@ export default function Checkout() {
   useEffect(() => {
     if (!loading && !isAuthenticated) openLogin();
   }, [loading, isAuthenticated, openLogin]);
-
-  const { createPayment, isLoading, error } = useYookassa({
-    apiUrl: YOOKASSA_URL,
-    onError: (e) => setLocalError(e.message),
-  });
 
   if (loading) {
     return (
@@ -125,29 +120,29 @@ export default function Checkout() {
     }
 
     const returnUrl = `${window.location.origin}/checkout/success?plan=${plan.id}`;
-    const response = await createPayment({
-      amount: plan.price,
-      userEmail: email,
-      userName: name || user?.name || "",
-      userPhone: user?.phone || "",
-      description: `Подписка «${plan.name}» (${plan.period}) — УЧИСЬПРО`,
-      returnUrl,
-      cartItems: [
-        {
-          id: plan.id,
-          name: `Подписка «${plan.name}»`,
-          price: plan.price,
-          quantity: 1,
-        },
-      ],
-    });
+    setIsLoading(true);
+    const res = await buySubscription(plan.id, returnUrl, email);
+    setIsLoading(false);
 
-    if (response?.payment_url) {
-      openPaymentPage(response.payment_url);
+    if (!res.ok) {
+      setLocalError(res.message || "Не получилось оформить подписку");
+      return;
+    }
+    if (res.alreadySubscribed) {
+      navigate(`/checkout/success?plan=${plan.id}`);
+      return;
+    }
+    if (res.paymentUrl) {
+      window.location.href = res.paymentUrl;
+      return;
+    }
+    if (res.demoMode) {
+      // ЮKassa не настроена — отправляем на success, там есть демо-активация
+      navigate(`/checkout/success?plan=${plan.id}&demo=${res.subscriptionId}`);
     }
   };
 
-  const displayError = localError || error?.message || null;
+  const displayError = localError;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white pb-16">

@@ -128,6 +128,47 @@ def handler(event, context):
         cur = conn.cursor()
         now = datetime.utcnow().isoformat()
 
+        # ── Branch S: подписка (subscriptions) ──
+        if metadata.get('kind') == 'subscription':
+            sub_id_raw = metadata.get('subscription_id')
+            try:
+                sub_id = int(sub_id_raw) if sub_id_raw is not None else None
+            except (TypeError, ValueError):
+                sub_id = None
+            try:
+                period_days = int(metadata.get('period_days') or 30)
+            except (TypeError, ValueError):
+                period_days = 30
+            if not sub_id:
+                return {
+                    'statusCode': 400,
+                    'headers': HEADERS,
+                    'body': json.dumps({'error': 'Missing subscription_id in metadata'})
+                }
+            if payment_status == 'succeeded':
+                cur.execute(f"""
+                    UPDATE {S}subscriptions
+                    SET status = 'active',
+                        payment_id = %s,
+                        started_at = COALESCE(started_at, NOW()),
+                        expires_at = NOW() + (%s || ' days')::interval,
+                        updated_at = NOW()
+                    WHERE id = %s AND status <> 'active'
+                """, (payment_id, str(period_days), sub_id))
+                conn.commit()
+            elif payment_status == 'canceled':
+                cur.execute(f"""
+                    UPDATE {S}subscriptions
+                    SET status = 'canceled', updated_at = NOW()
+                    WHERE id = %s AND status = 'pending'
+                """, (sub_id,))
+                conn.commit()
+            return {
+                'statusCode': 200,
+                'headers': HEADERS,
+                'body': json.dumps({'status': 'ok', 'kind': 'subscription'})
+            }
+
         # ── Branch A: разовая покупка курса (course_purchases) ──
         if metadata.get('kind') == 'course_purchase':
             purchase_id_raw = metadata.get('purchase_id')
