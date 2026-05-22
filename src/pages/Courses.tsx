@@ -14,6 +14,7 @@ import {
   SortKey,
   getCoursePrice,
 } from "@/components/courses/coursesData";
+import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
 
 type BadgeFilter = "all" | "new" | "hit" | "sale" | "trial";
 
@@ -182,7 +183,18 @@ export default function CoursesPage() {
 
         {/* Subjects chips */}
         <div className="mb-4">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider font-semibold mb-2">Предмет</p>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-white/40 text-[11px] uppercase tracking-wider font-semibold">Предмет</p>
+            {subject !== "all" && SUBJECTS_SEO.some((s) => s.subjectId === subject) && (
+              <Link
+                to={`/courses/${SUBJECTS_SEO.find((s) => s.subjectId === subject)?.slug}`}
+                className="inline-flex items-center gap-1 text-xs text-purple-300 hover:text-purple-200 font-medium transition-colors"
+              >
+                Открыть страницу предмета
+                <Icon name="ArrowUpRight" size={12} />
+              </Link>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {SUBJECTS.map((s) => (
               <button
@@ -306,9 +318,39 @@ export default function CoursesPage() {
         )}
       </div>
 
+      {/* SEO-перелинковка: предметные лендинги */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
+          <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Предметные подборки</p>
+          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white text-center mb-2">
+            Курсы по предметам
+          </h2>
+          <p className="text-white/55 text-sm md:text-base text-center max-w-2xl mx-auto mb-8">
+            Подробные страницы по каждому предмету: программа, темы, FAQ, подготовка к ЕГЭ и ОГЭ.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {SUBJECTS_SEO.map((s) => (
+              <Link
+                key={s.slug}
+                to={`/courses/${s.slug}`}
+                className="group relative bg-card border border-white/10 rounded-2xl p-4 hover:border-white/25 hover:translate-y-[-2px] transition-all text-center overflow-hidden"
+              >
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.color} opacity-70`} />
+                <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-3xl mb-3`}>
+                  {s.emoji}
+                </div>
+                <p className="font-montserrat font-bold text-white text-sm leading-tight mb-1">{s.name}</p>
+                <p className="text-white/40 text-[11px]">
+                  {COURSES.filter((c) => c.subject === s.subjectId).length} курсов
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <SiteFooter />
 
-      {/* Mobile filters FAB (для совсем маленьких — оставлю заглушку для скрытия) */}
       {showMobileFilters && <div onClick={() => setShowMobileFilters(false)} />}
     </div>
   );

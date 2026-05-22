@@ -19,6 +19,7 @@ const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Courses = lazy(() => import("./pages/Courses"));
+const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
@@ -51,6 +52,7 @@ const App = () => (
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/exam-bank" element={<ExamBank />} />
                     <Route path="/score-calculator" element={<ScoreCalculator />} />
                     <Route path="/cabinet" element={<Cabinet />} />
