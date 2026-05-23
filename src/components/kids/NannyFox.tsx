@@ -356,7 +356,12 @@ export default function NannyFox({ ageContext }: Props) {
       });
       const data = await res.json();
       const reply = data.reply || "Извините, я не смогла придумать ответ. Попробуйте спросить иначе.";
-      const finalMessages: Message[] = [...newHistory, { role: "assistant", content: reply }];
+      const sources = Array.isArray(data.sources) ? data.sources : [];
+      const usedSearch = !!data.used_search;
+      const finalMessages: Message[] = [
+        ...newHistory,
+        { role: "assistant", content: reply, sources, usedSearch },
+      ];
       setMessages(finalMessages);
 
       if (autoPlay) {

@@ -4,10 +4,17 @@ export const AI_CHAT_URL = (func2url as Record<string, string>)["ai-chat"];
 export const TTS_URL = (func2url as Record<string, string>)["tts"];
 export const STT_URL = (func2url as Record<string, string>)["stt"];
 
+export interface MessageSource {
+  title: string;
+  url: string;
+}
+
 export interface Message {
   role: "user" | "assistant";
   content: string;
   audio?: string; // base64 mp3
+  sources?: MessageSource[];
+  usedSearch?: boolean;
 }
 
 export type RecordingFormat = "oggopus" | "lpcm";

@@ -42,17 +42,48 @@ export default function NannyFoxMessages({
                 {m.content}
               </div>
               {!isUser && (
-                <button
-                  onClick={() => isPlaying ? onStopAudio() : onPlay(m.content, i)}
-                  className={`mt-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors ${
-                    isPlaying
-                      ? "bg-pink-500/20 text-pink-200"
-                      : "text-white/45 hover:text-pink-200 hover:bg-pink-500/10"
-                  }`}
-                >
-                  <Icon name={isPlaying ? "PauseCircle" : "PlayCircle"} size={12} />
-                  {isPlaying ? "Остановить" : "Озвучить"}
-                </button>
+                <>
+                  {/* Бейдж «искала в интернете» */}
+                  {m.usedSearch && (
+                    <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 px-2 py-0.5 rounded-md">
+                      <Icon name="Globe" size={10} />
+                      Искала в интернете
+                    </div>
+                  )}
+                  {/* Источники */}
+                  {m.sources && m.sources.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {m.sources.slice(0, 4).map((src, sidx) => {
+                        let host = "";
+                        try { host = new URL(src.url).hostname.replace("www.", ""); } catch { host = ""; }
+                        return (
+                          <a
+                            key={sidx}
+                            href={src.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={src.title}
+                            className="inline-flex items-center gap-1 text-[10px] text-cyan-200 bg-cyan-500/8 hover:bg-cyan-500/15 border border-cyan-500/20 hover:border-cyan-500/40 px-2 py-0.5 rounded-md transition-colors"
+                          >
+                            <Icon name="ExternalLink" size={10} />
+                            {host || `Источник ${sidx + 1}`}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => isPlaying ? onStopAudio() : onPlay(m.content, i)}
+                    className={`mt-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors ${
+                      isPlaying
+                        ? "bg-pink-500/20 text-pink-200"
+                        : "text-white/45 hover:text-pink-200 hover:bg-pink-500/10"
+                    }`}
+                  >
+                    <Icon name={isPlaying ? "PauseCircle" : "PlayCircle"} size={12} />
+                    {isPlaying ? "Остановить" : "Озвучить"}
+                  </button>
+                </>
               )}
             </div>
           </div>

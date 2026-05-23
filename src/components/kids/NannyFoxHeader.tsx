@@ -17,7 +17,10 @@ export default function NannyFoxHeader({ autoPlay, onToggleAutoPlay, onClose }: 
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-montserrat font-black text-white text-base leading-tight">Няня Лиса</p>
-        <p className="text-white/60 text-[11px]">ИИ-помощник для родителей · с озвучкой</p>
+        <p className="text-white/60 text-[11px] flex items-center gap-1">
+          ИИ-эксперт · ищет в интернете
+          <Icon name="Globe" size={10} className="text-cyan-300" />
+        </p>
       </div>
       <button
         onClick={onToggleAutoPlay}
