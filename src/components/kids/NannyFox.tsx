@@ -4,6 +4,36 @@ import func2url from "../../../backend/func2url.json";
 
 const AI_CHAT_URL = (func2url as Record<string, string>)["ai-chat"];
 const TTS_URL = (func2url as Record<string, string>)["tts"];
+const STT_URL = (func2url as Record<string, string>)["stt"];
+
+/** Кодировать Blob в base64 без префикса data: */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const str = (reader.result as string) ?? "";
+      const idx = str.indexOf(",");
+      resolve(idx >= 0 ? str.substring(idx + 1) : str);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Подобрать поддерживаемый MIME-тип записи */
+function pickMimeType(): { mime: string; format: "oggopus" | "lpcm" } {
+  if (typeof MediaRecorder === "undefined") return { mime: "", format: "oggopus" };
+  const candidates: { mime: string; format: "oggopus" | "lpcm" }[] = [
+    { mime: "audio/ogg;codecs=opus", format: "oggopus" },
+    { mime: "audio/webm;codecs=opus", format: "oggopus" },
+    { mime: "audio/webm", format: "oggopus" },
+    { mime: "audio/mp4", format: "oggopus" },
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c.mime)) return c;
+  }
+  return { mime: "", format: "oggopus" };
+}
 
 interface Message {
   role: "user" | "assistant";
@@ -55,6 +85,17 @@ export default function NannyFox({ ageContext }: Props) {
   const [loading, setLoading] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
   const [playingIdx, setPlayingIdx] = useState<number | null>(null);
+
+  // Запись с микрофона
+  const [recording, setRecording] = useState(false);
+  const [recognizing, setRecognizing] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [micSeconds, setMicSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const micTimerRef = useRef<number | null>(null);
+  const mimeInfoRef = useRef<{ mime: string; format: "oggopus" | "lpcm" }>({ mime: "", format: "oggopus" });
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -113,6 +154,154 @@ export default function NannyFox({ ageContext }: Props) {
     }
     setPlayingIdx(null);
   };
+
+  // ── ЗАПИСЬ С МИКРОФОНА ──────────────────────────────────────────────────
+  const stopMicStream = () => {
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((t) => t.stop());
+      audioStreamRef.current = null;
+    }
+    if (micTimerRef.current !== null) {
+      window.clearInterval(micTimerRef.current);
+      micTimerRef.current = null;
+    }
+  };
+
+  const recognizeAndSend = async (blob: Blob, format: "oggopus" | "lpcm") => {
+    if (blob.size === 0) {
+      setMicError("Ничего не записалось — попробуй ещё раз");
+      return;
+    }
+    setRecognizing(true);
+    try {
+      const audioBase64 = await blobToBase64(blob);
+      const res = await fetch(STT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio_base64: audioBase64, format }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMicError(data.error || "Не получилось распознать речь");
+        return;
+      }
+      const text = (data.text || "").trim();
+      if (!text) {
+        setMicError("Не услышала. Говорите ближе к микрофону");
+        return;
+      }
+      await send(text);
+    } catch {
+      setMicError("Нет связи с сервером распознавания");
+    } finally {
+      setRecognizing(false);
+    }
+  };
+
+  const startRecording = async () => {
+    setMicError(null);
+    if (recording || recognizing) return;
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setMicError("Браузер не поддерживает запись с микрофона");
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setMicError("Браузер не поддерживает MediaRecorder");
+      return;
+    }
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setMicError("Микрофон работает только на HTTPS — откройте сайт по защищённой ссылке");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      audioStreamRef.current = stream;
+
+      const mimeInfo = pickMimeType();
+      mimeInfoRef.current = mimeInfo;
+      const recorder = mimeInfo.mime
+        ? new MediaRecorder(stream, { mimeType: mimeInfo.mime })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        const usedMime = mimeInfoRef.current.mime || recorder.mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: usedMime });
+        stopMicStream();
+        await recognizeAndSend(blob, mimeInfoRef.current.format);
+      };
+      recorder.onerror = () => {
+        setMicError("Ошибка записи");
+        stopMicStream();
+        setRecording(false);
+      };
+
+      recorder.start();
+      setRecording(true);
+      setMicSeconds(0);
+      micTimerRef.current = window.setInterval(() => {
+        setMicSeconds((s) => {
+          const next = s + 1;
+          // авто-стоп через 20 секунд
+          if (next >= 20) {
+            stopRecording();
+          }
+          return next;
+        });
+      }, 1000);
+    } catch (e) {
+      const err = e as DOMException;
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        setMicError("Доступ к микрофону запрещён. Разрешите в настройках браузера");
+      } else if (err.name === "NotFoundError") {
+        setMicError("Микрофон не найден — проверьте подключение");
+      } else {
+        setMicError("Не удалось включить микрофон");
+      }
+      stopMicStream();
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      try { mediaRecorderRef.current.stop(); } catch { /* noop */ }
+      setRecording(false);
+    }
+    if (micTimerRef.current !== null) {
+      window.clearInterval(micTimerRef.current);
+      micTimerRef.current = null;
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      // отключаем обработчик чтобы не отправлять
+      mediaRecorderRef.current.onstop = null;
+      try { mediaRecorderRef.current.stop(); } catch { /* noop */ }
+    }
+    stopMicStream();
+    setRecording(false);
+    audioChunksRef.current = [];
+    setMicSeconds(0);
+  };
+
+  // Очистка при размонтировании
+  useEffect(() => {
+    return () => {
+      stopMicStream();
+      if (mediaRecorderRef.current) {
+        try { mediaRecorderRef.current.stop(); } catch { /* noop */ }
+      }
+    };
+  }, []);
 
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
@@ -268,23 +457,84 @@ export default function NannyFox({ ageContext }: Props) {
             </div>
 
             {/* Поле ввода */}
-            <div className="p-3 border-t border-white/10 flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-                placeholder="Напишите Лисе..."
-                disabled={loading}
-                className="flex-1 bg-white/5 border border-white/12 rounded-2xl px-4 py-2.5 text-white text-sm placeholder:text-white/35 focus:outline-none focus:border-pink-500/45 focus:bg-white/8 transition-colors"
-              />
-              <button
-                onClick={() => send()}
-                disabled={!input.trim() || loading}
-                className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"
-              >
-                <Icon name="Send" size={16} />
-              </button>
+            {/* Ошибка микрофона */}
+            {micError && (
+              <div className="mx-3 mb-2 bg-rose-500/12 border border-rose-500/35 rounded-2xl px-3 py-2 flex items-start gap-2 animate-fadeIn">
+                <Icon name="MicOff" size={14} className="text-rose-300 flex-shrink-0 mt-0.5" />
+                <p className="text-rose-200 text-xs flex-1">{micError}</p>
+                <button
+                  onClick={() => setMicError(null)}
+                  className="text-rose-300/70 hover:text-rose-200"
+                  aria-label="Закрыть"
+                >
+                  <Icon name="X" size={12} />
+                </button>
+              </div>
+            )}
+
+            {/* Идёт распознавание */}
+            {recognizing && (
+              <div className="mx-3 mb-2 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl px-3 py-2 flex items-center gap-2 animate-fadeIn">
+                <Icon name="Loader2" size={14} className="text-cyan-300 animate-spin" />
+                <p className="text-cyan-200 text-xs">Распознаю речь...</p>
+              </div>
+            )}
+
+            {/* Поле ввода или состояние записи */}
+            <div className="p-3 border-t border-white/10">
+              {recording ? (
+                <div className="flex items-center gap-2 bg-rose-500/12 border border-rose-500/35 rounded-2xl px-4 py-2.5 animate-fadeIn">
+                  <span className="relative flex w-3 h-3 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500" />
+                  </span>
+                  <p className="text-white text-sm font-semibold flex-1">
+                    Говорите... <span className="text-white/55 text-xs tabular-nums">{micSeconds}с / 20с</span>
+                  </p>
+                  <button
+                    onClick={cancelRecording}
+                    title="Отменить"
+                    className="w-9 h-9 flex items-center justify-center bg-white/10 hover:bg-white/15 text-white/75 rounded-xl transition-colors"
+                  >
+                    <Icon name="X" size={14} />
+                  </button>
+                  <button
+                    onClick={stopRecording}
+                    title="Готово — отправить"
+                    className="w-9 h-9 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-xl hover:scale-105 transition-transform"
+                  >
+                    <Icon name="Check" size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                    placeholder="Напишите или нажмите 🎤"
+                    disabled={loading || recognizing}
+                    className="flex-1 bg-white/5 border border-white/12 rounded-2xl px-4 py-2.5 text-white text-sm placeholder:text-white/35 focus:outline-none focus:border-pink-500/45 focus:bg-white/8 transition-colors disabled:opacity-60"
+                  />
+                  <button
+                    onClick={startRecording}
+                    disabled={loading || recognizing}
+                    title="Сказать голосом"
+                    className="w-10 h-10 flex items-center justify-center bg-white/8 hover:bg-pink-500/20 border border-white/15 hover:border-pink-500/45 text-white/85 hover:text-pink-200 rounded-2xl transition-all disabled:opacity-40"
+                  >
+                    <Icon name="Mic" size={16} />
+                  </button>
+                  <button
+                    onClick={() => send()}
+                    disabled={!input.trim() || loading || recognizing}
+                    title="Отправить"
+                    className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+                  >
+                    <Icon name="Send" size={16} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
