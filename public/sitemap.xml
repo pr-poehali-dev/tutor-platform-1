@@ -1,84 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
+  <!-- Главная -->
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>УЧИСЬПРО — ИИ-репетитор 24/7</image:title>
+    </image:image>
   </url>
 
+  <!-- Якорные секции главной -->
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/#journey</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/#ai</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/#courses</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/#myspace</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/#leaderboard</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
+  <!-- Основные продуктовые страницы -->
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/pricing</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/exam-bank</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
-
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/score-calculator</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
-
+  <url>
+    <loc>https://xn--h1agdcde2c.xn--p1ai/math-problems</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
   <url>
     <loc>https://xn--h1agdcde2c.xn--p1ai/courses</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
 
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/math</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/russian</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/english</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/physics</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/chemistry</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/cs</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/biology</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/history</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/society</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/literature</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/geography</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/logic</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-
-  <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/math-problems</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
+  <!-- Предметные лендинги -->
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/math</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/russian</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/english</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/physics</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/chemistry</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/cs</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/biology</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/history</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/society</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/literature</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/geography</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/logic</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 
 </urlset>

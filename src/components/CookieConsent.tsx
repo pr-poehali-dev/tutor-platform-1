@@ -32,24 +32,29 @@ export default function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[110] p-3 md:p-5 pointer-events-none animate-fade-in">
+    <div
+      className="fixed inset-x-0 bottom-0 z-[110] p-3 md:p-5 pointer-events-none animate-fade-in"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="cookie-consent-title"
+    >
       <div className="max-w-4xl mx-auto pointer-events-auto">
         <div className="bg-card/95 backdrop-blur-xl border border-white/15 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden">
 
           {/* Top gradient */}
-          <div className="h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500" />
+          <div className="h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500" aria-hidden="true" />
 
           <div className="p-5 md:p-6">
             <div className="flex flex-col md:flex-row gap-4 md:gap-5 md:items-start">
 
               {/* Icon */}
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-white/10 flex items-center justify-center text-2xl flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-white/10 flex items-center justify-center text-2xl flex-shrink-0" aria-hidden="true">
                 🍪
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-montserrat font-black text-white text-base md:text-lg mb-1.5">
+                <h3 id="cookie-consent-title" className="font-montserrat font-black text-white text-base md:text-lg mb-1.5">
                   Мы используем cookie
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
@@ -84,10 +89,12 @@ export default function CookieConsent() {
 
                 <button
                   onClick={() => setExpanded(!expanded)}
+                  aria-expanded={expanded}
+                  aria-label={expanded ? "Свернуть подробности о cookie" : "Показать подробности о cookie"}
                   className="mt-2 text-white/45 hover:text-white text-xs flex items-center gap-1 transition-colors"
                 >
                   {expanded ? "Свернуть" : "Подробнее о cookie"}
-                  <Icon name={expanded ? "ChevronUp" : "ChevronDown"} size={12} />
+                  <Icon name={expanded ? "ChevronUp" : "ChevronDown"} size={12} aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -96,13 +103,15 @@ export default function CookieConsent() {
             <div className="flex flex-col sm:flex-row gap-2.5 mt-5">
               <button
                 onClick={() => save("accepted")}
+                aria-label="Принять все cookie"
                 className="flex-1 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
-                <Icon name="Check" size={15} />
+                <Icon name="Check" size={15} aria-hidden="true" />
                 Принять все
               </button>
               <button
                 onClick={() => save("rejected")}
+                aria-label="Принять только необходимые cookie"
                 className="flex-1 bg-white/8 border border-white/15 text-white/85 hover:bg-white/12 text-sm font-bold py-3 rounded-xl transition-colors"
               >
                 Только необходимые

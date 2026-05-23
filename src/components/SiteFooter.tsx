@@ -3,14 +3,14 @@ import Icon from "@/components/ui/icon";
 
 export default function SiteFooter() {
   return (
-    <footer className="relative z-10 mt-20 border-t border-white/8 bg-card/30 backdrop-blur-sm">
+    <footer className="relative z-10 mt-20 border-t border-white/8 bg-card/30 backdrop-blur-sm" aria-label="Подвал сайта">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
-          <div className="md:col-span-2">
+          <section className="md:col-span-2" aria-label="О проекте УЧИСЬПРО">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg" aria-hidden="true">
                 🚀
               </div>
               <span className="font-montserrat font-black text-white text-lg">УЧИСЬПРО</span>
@@ -19,20 +19,20 @@ export default function SiteFooter() {
               Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ. Учись когда удобно — на учисьпро.рф.
             </p>
             <p className="text-white/55 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
-          </div>
+          </section>
 
           {/* Tools */}
-          <div>
+          <nav aria-label="Полезные ссылки">
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
               <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
               <li><Link to="/pricing" className="text-white/70 hover:text-white transition-colors">Тарифы и оплата</Link></li>
             </ul>
-          </div>
+          </nav>
 
           {/* Legal */}
-          <div>
+          <nav aria-label="Правовые документы">
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Документы</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/legal/offer" className="text-white/70 hover:text-white transition-colors">Публичная оферта</Link></li>
@@ -40,10 +40,10 @@ export default function SiteFooter() {
               <li><Link to="/legal/terms" className="text-white/70 hover:text-white transition-colors">Пользовательское соглашение</Link></li>
             </ul>
             <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5 text-xs">
-              <p className="text-white/70 flex items-center gap-1.5"><Icon name="ShieldCheck" size={12} className="text-green-400" /> Серверы в РФ</p>
-              <p className="text-white/70 flex items-center gap-1.5"><Icon name="Lock" size={12} className="text-cyan-400" /> Шифрование HTTPS</p>
+              <p className="text-white/70 flex items-center gap-1.5"><Icon name="ShieldCheck" size={12} className="text-green-400" aria-hidden="true" /> Серверы в РФ</p>
+              <p className="text-white/70 flex items-center gap-1.5"><Icon name="Lock" size={12} className="text-cyan-400" aria-hidden="true" /> Шифрование HTTPS</p>
             </div>
-          </div>
+          </nav>
         </div>
 
         {/* Bottom */}

@@ -26,11 +26,11 @@ interface NavbarProps {
 export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onToggleMobile }: NavbarProps) {
   const { isAuthenticated, openLogin } = useAuth();
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3" aria-label="Главная навигация">
       <div className="max-w-6xl mx-auto">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg animate-pulse-glow">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg animate-pulse-glow" aria-hidden="true">
               🚀
             </div>
             <span className="font-montserrat font-black text-lg gradient-text-purple tracking-wide">УЧИСЬПРО</span>
@@ -41,13 +41,15 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               <button
                 key={item.section}
                 onClick={() => onScrollTo(item.section)}
+                aria-label={`Перейти к разделу ${item.label}`}
+                aria-current={activeSection === item.section ? "page" : undefined}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeSection === item.section
                     ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                     : "text-white/60 hover:text-white hover:bg-white/8"
                 }`}
               >
-                <Icon name={item.icon} size={15} />
+                <Icon name={item.icon} size={15} aria-hidden="true" />
                 {item.label}
               </button>
             ))}
@@ -55,9 +57,10 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               <Link
                 key={link.path}
                 to={link.path}
+                aria-label={`Открыть страницу: ${link.label}`}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-300 hover:text-white hover:bg-purple-500/15 transition-all duration-200 border border-purple-500/25"
               >
-                <Icon name={link.icon} size={15} />
+                <Icon name={link.icon} size={15} aria-hidden="true" />
                 {link.label}
               </Link>
             ))}
@@ -67,21 +70,24 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             {isAuthenticated ? (
               <Link
                 to="/cabinet"
+                aria-label="Открыть личный кабинет"
                 className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
               >
-                <Icon name="User" size={14} />
+                <Icon name="User" size={14} aria-hidden="true" />
                 Кабинет
               </Link>
             ) : (
               <>
                 <button
                   onClick={openLogin}
+                  aria-label="Войти в аккаунт"
                   className="text-sm text-white/70 hover:text-white transition-colors px-3 py-2"
                 >
                   Войти
                 </button>
                 <Link
                   to="/pricing"
+                  aria-label="Посмотреть тарифы"
                   className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
                 >
                   Тарифы
@@ -93,20 +99,27 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
           <button
             className="md:hidden text-white/70 hover:text-white"
             onClick={onToggleMobile}
+            aria-label={mobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav"
           >
-            <Icon name={mobileMenuOpen ? "X" : "Menu"} size={22} />
+            <Icon name={mobileMenuOpen ? "X" : "Menu"} size={22} aria-hidden="true" />
           </button>
         </div>
 
         {mobileMenuOpen && (
-          <div className="mt-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 animate-fade-in">
+          <div
+            id="mobile-nav"
+            className="mt-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 animate-fade-in"
+          >
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.section}
                 onClick={() => onScrollTo(item.section)}
+                aria-label={`Перейти к разделу ${item.label}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 transition-all"
               >
-                <Icon name={item.icon} size={18} />
+                <Icon name={item.icon} size={18} aria-hidden="true" />
                 {item.label}
               </button>
             ))}
@@ -114,9 +127,10 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               <Link
                 key={link.path}
                 to={link.path}
+                aria-label={`Открыть страницу: ${link.label}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-300 hover:bg-purple-500/15 transition-all border border-purple-500/25"
               >
-                <Icon name={link.icon} size={18} />
+                <Icon name={link.icon} size={18} aria-hidden="true" />
                 {link.label}
               </Link>
             ))}
@@ -124,21 +138,24 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               {isAuthenticated ? (
                 <Link
                   to="/cabinet"
+                  aria-label="Открыть личный кабинет"
                   className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
                 >
-                  <Icon name="User" size={16} />
+                  <Icon name="User" size={16} aria-hidden="true" />
                   Личный кабинет
                 </Link>
               ) : (
                 <>
                   <button
                     onClick={openLogin}
+                    aria-label="Войти в аккаунт"
                     className="text-sm text-white/75 py-2 border border-white/15 rounded-xl"
                   >
                     Войти
                   </button>
                   <Link
                     to="/pricing"
+                    aria-label="Посмотреть тарифы"
                     className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
                   >
                     Тарифы

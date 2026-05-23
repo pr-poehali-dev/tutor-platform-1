@@ -26,6 +26,72 @@ const BADGES: { id: BadgeFilter; label: string; icon: string }[] = [
   { id: "trial", label: "Есть пробный", icon: "Gift" },
 ];
 
+const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+
+// JSON-LD: каталог курсов как ItemList со вложенными Course schema.org
+// Это даёт rich snippets в Google: список курсов с рейтингом, провайдером, описанием
+const COURSES_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Каталог онлайн-курсов УЧИСЬПРО",
+    description: "Полный каталог онлайн-курсов для школьников 1–11 классов и подготовки к ОГЭ/ЕГЭ",
+    numberOfItems: COURSES.length,
+    itemListElement: COURSES.slice(0, 20).map((c, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      item: {
+        "@type": "Course",
+        "@id": `${SITE_URL}/course-checkout/${c.id}`,
+        name: c.title,
+        description: c.description,
+        url: `${SITE_URL}/course-checkout/${c.id}`,
+        provider: {
+          "@type": "EducationalOrganization",
+          name: "УЧИСЬПРО",
+          sameAs: SITE_URL,
+        },
+        educationalLevel:
+          c.grade === "ege" ? "ЕГЭ" :
+          c.grade === "oge" ? "ОГЭ" :
+          c.grade === "1-4" ? "1–4 класс" :
+          c.grade === "5-9" ? "5–9 класс" :
+          c.grade === "10-11" ? "10–11 класс" : c.grade,
+        teaches: c.tags.join(", "),
+        inLanguage: "ru-RU",
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: c.rating,
+          reviewCount: c.reviews,
+          bestRating: 5,
+          worstRating: 1,
+        },
+        offers: {
+          "@type": "Offer",
+          price: getCoursePrice(c),
+          priceCurrency: "RUB",
+          availability: "https://schema.org/InStock",
+          category: c.trialAvailable ? "Подписка с пробным периодом" : "Подписка",
+          url: `${SITE_URL}/course-checkout/${c.id}`,
+        },
+        hasCourseInstance: {
+          "@type": "CourseInstance",
+          courseMode: c.format === "online" ? "online" : c.format === "offline" ? "onsite" : "online",
+          courseWorkload: `PT${c.lessons * 30}M`,
+        },
+      },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Каталог курсов", item: `${SITE_URL}/courses` },
+    ],
+  },
+];
+
 export default function CoursesPage() {
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("all");
@@ -102,6 +168,7 @@ export default function CoursesPage() {
         description="Полный каталог онлайн-курсов УЧИСЬПРО: математика, физика, русский, английский и другие предметы для 1–11 классов, подготовка к ОГЭ и ЕГЭ. Поиск, фильтры по классам и предметам."
         canonical="https://xn--h1agdcde2c.xn--p1ai/courses"
         keywords="каталог курсов, онлайн курсы школьникам, курсы 1-11 классы, подготовка к егэ курсы, подготовка к огэ курсы, математика онлайн, физика онлайн, английский онлайн"
+        jsonLd={COURSES_JSON_LD}
       />
 
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -121,10 +188,10 @@ export default function CoursesPage() {
       </div>
 
       {/* Header bar */}
-      <div className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">🚀</div>
+      <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
+        <nav className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4" aria-label="Шапка сайта">
+          <Link to="/" className="flex items-center gap-2.5 group" aria-label="На главную УЧИСЬПРО">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg" aria-hidden="true">🚀</div>
             <span className="font-montserrat font-black text-base gradient-text-purple tracking-wide group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
           <div className="hidden md:block">
@@ -132,16 +199,18 @@ export default function CoursesPage() {
           </div>
           <Link
             to="/pricing"
+            aria-label="Посмотреть тарифы"
             className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
-            <Icon name="Sparkles" size={14} />
+            <Icon name="Sparkles" size={14} aria-hidden="true" />
             Тарифы
           </Link>
-        </div>
-      </div>
+        </nav>
+      </header>
 
+      <main>
       {/* Hero */}
-      <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-4">
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-4" aria-labelledby="courses-hero-title">
         <Link to="/" className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-5 transition-colors">
           <Icon name="ArrowLeft" size={14} />
           На главную
@@ -151,32 +220,34 @@ export default function CoursesPage() {
           <Icon name="Library" size={13} className="text-purple-300" />
           <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">Каталог · {COURSES.length} курсов</span>
         </div>
-        <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-3 leading-tight">
+        <h1 id="courses-hero-title" className="font-montserrat font-black text-3xl md:text-5xl text-white mb-3 leading-tight">
           Все курсы <span className="gradient-text-purple">УЧИСЬПРО</span>
         </h1>
         <p className="text-white/55 text-base md:text-lg max-w-2xl">
           Школьная программа 1–11 классов и подготовка к ОГЭ/ЕГЭ. Найди свой курс — поиском, по предмету или классу.
         </p>
-      </div>
+      </section>
 
       {/* Search + Filters */}
-      <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-6">
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-6" aria-label="Поиск и фильтрация курсов">
         {/* Search */}
         <div className="relative mb-5">
-          <Icon name="Search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+          <Icon name="Search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Поиск по названию, теме или преподавателю..."
+            aria-label="Поиск курсов"
             className="w-full bg-white/5 border border-white/12 rounded-2xl pl-12 pr-12 py-4 text-white placeholder:text-white/35 focus:outline-none focus:border-purple-500/50 focus:bg-white/8 transition-colors"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
+              aria-label="Очистить поиск"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-white/45 hover:text-white p-1.5 rounded-lg hover:bg-white/8 transition-colors"
             >
-              <Icon name="X" size={16} />
+              <Icon name="X" size={16} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -290,49 +361,53 @@ export default function CoursesPage() {
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16">
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16" aria-label="Результаты поиска курсов">
         {filtered.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center">
-            <div className="text-6xl mb-4">🔍</div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center" role="status">
+            <div className="text-6xl mb-4" aria-hidden="true">🔍</div>
             <h3 className="font-montserrat font-black text-xl text-white mb-2">Ничего не нашлось</h3>
             <p className="text-white/55 text-sm mb-5 max-w-md mx-auto">
               Попробуй другой поисковый запрос или сбрось фильтры — у нас 39 курсов, что-то точно подойдёт.
             </p>
             <button
               onClick={resetAll}
+              aria-label="Сбросить все фильтры"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity"
             >
-              <Icon name="RefreshCw" size={14} />
+              <Icon name="RefreshCw" size={14} aria-hidden="true" />
               Сбросить фильтры
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 list-none p-0 m-0">
             {filtered.map((c) => (
-              <CourseCardCompact key={c.id} course={c} />
+              <li key={c.id}>
+                <CourseCardCompact course={c} />
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
 
       {/* SEO-перелинковка: предметные лендинги */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16" aria-labelledby="subjects-heading">
+        <article className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
           <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Предметные подборки</p>
-          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white text-center mb-2">
+          <h2 id="subjects-heading" className="font-montserrat font-black text-2xl md:text-3xl text-white text-center mb-2">
             Курсы по предметам
           </h2>
           <p className="text-white/55 text-sm md:text-base text-center max-w-2xl mx-auto mb-8">
             Подробные страницы по каждому предмету: программа, темы, FAQ, подготовка к ЕГЭ и ОГЭ.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" aria-label="Каталог предметов">
             {SUBJECTS_SEO.map((s) => (
               <Link
                 key={s.slug}
                 to={`/courses/${s.slug}`}
+                aria-label={`Открыть страницу предмета: ${s.name}`}
                 className="group relative bg-card border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 hover:translate-y-[-2px] transition-all"
               >
                 <div className="relative aspect-square overflow-hidden">
@@ -342,8 +417,8 @@ export default function CoursesPage() {
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                  <div className={`absolute top-2 right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-lg`}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" aria-hidden="true" />
+                  <div className={`absolute top-2 right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-lg`} aria-hidden="true">
                     {s.emoji}
                   </div>
                   <div className="absolute bottom-2 left-2 right-2">
@@ -355,9 +430,10 @@ export default function CoursesPage() {
                 </div>
               </Link>
             ))}
-          </div>
-        </div>
+          </nav>
+        </article>
       </section>
+      </main>
 
       <SiteFooter />
 

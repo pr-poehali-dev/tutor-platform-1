@@ -120,7 +120,7 @@ export default function Index() {
       />
 
       {/* Stars */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         {[...Array(25)].map((_, i) => (
           <div
             key={i}
@@ -151,29 +151,31 @@ export default function Index() {
         </div>
       </div>
 
-      <HeroSection />
+      <main id="main-content">
+        <HeroSection />
 
-      <SocialProofStrip />
+        <SocialProofStrip />
 
-      <QuickQuiz />
+        <QuickQuiz />
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <MySpaceSection />
-      </Suspense>
+        <Suspense fallback={<SectionSkeleton />}>
+          <MySpaceSection />
+        </Suspense>
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <LearningJourney />
-      </Suspense>
+        <Suspense fallback={<SectionSkeleton />}>
+          <LearningJourney />
+        </Suspense>
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <AITeacher />
-      </Suspense>
+        <Suspense fallback={<SectionSkeleton />}>
+          <AITeacher />
+        </Suspense>
 
-      <CoursesTeaser />
+        <CoursesTeaser />
 
-      <Suspense fallback={<SectionSkeleton />}>
-        <LeaderboardSection />
-      </Suspense>
+        <Suspense fallback={<SectionSkeleton />}>
+          <LeaderboardSection />
+        </Suspense>
+      </main>
 
       <SiteFooter />
 

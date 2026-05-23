@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import Seo from "@/components/seo/Seo";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
@@ -71,12 +72,19 @@ export default function CourseCheckout() {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="text-center text-white/70">
-          <p className="text-2xl mb-3">Курс не найден</p>
-          <Link to="/" className="text-purple-300 underline">Вернуться в каталог</Link>
-        </div>
-      </div>
+      <>
+        <Seo
+          title="Курс не найден"
+          description="Запрошенный курс не найден. Вернись в каталог онлайн-курсов УЧИСЬПРО и выбери подходящий."
+          noindex
+        />
+        <main className="min-h-screen bg-background flex items-center justify-center p-6">
+          <section className="text-center text-white/70">
+            <p className="text-2xl mb-3">Курс не найден</p>
+            <Link to="/" className="text-purple-300 underline">Вернуться в каталог</Link>
+          </section>
+        </main>
+      </>
     );
   }
 
@@ -131,8 +139,54 @@ export default function CourseCheckout() {
     setDone(true);
   };
 
+  const courseJsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "@id": `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+      name: course.title,
+      description: course.description,
+      url: `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+      provider: {
+        "@type": "EducationalOrganization",
+        name: "УЧИСЬПРО",
+        sameAs: "https://xn--h1agdcde2c.xn--p1ai",
+      },
+      educationalLevel: gradeLabel,
+      inLanguage: "ru-RU",
+      teaches: course.tags.join(", "),
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: course.rating,
+        reviewCount: course.reviews,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      offers: {
+        "@type": "Offer",
+        price: price,
+        priceCurrency: "RUB",
+        availability: "https://schema.org/InStock",
+        url: `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+      },
+      hasCourseInstance: {
+        "@type": "CourseInstance",
+        courseMode: course.format === "online" ? "online" : course.format === "offline" ? "onsite" : "online",
+        courseWorkload: `PT${course.lessons * 30}M`,
+      },
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background py-10 px-4">
+    <main className="min-h-screen bg-background py-10 px-4">
+      <Seo
+        title={`Оплата курса «${course.title}» — УЧИСЬПРО`}
+        description={`Покупка онлайн-курса «${course.title}» для ${gradeLabel}: ${course.lessons} уроков, доступ навсегда. Безопасная оплата через ЮKassa, чек по 54-ФЗ.`}
+        canonical={`https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`}
+        type="product"
+        noindex
+        jsonLd={courseJsonLd}
+      />
       <div className="max-w-2xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-1.5 text-white/55 hover:text-white text-sm mb-6 transition-colors">
           <Icon name="ArrowLeft" size={14} />
@@ -328,6 +382,6 @@ export default function CourseCheckout() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
