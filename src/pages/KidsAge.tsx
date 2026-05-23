@@ -134,6 +134,27 @@ export default function KidsAge() {
         </div>
       </section>
 
+      {/* CTA на диагностику */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-6">
+        <Link
+          to="/kids/test"
+          className="group flex items-center gap-4 bg-gradient-to-br from-pink-500/15 to-rose-500/15 hover:from-pink-500/25 hover:to-rose-500/25 border border-pink-500/35 rounded-2xl p-4 md:p-5 transition-all"
+        >
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center flex-shrink-0">
+            <Icon name="Stethoscope" size={22} className="text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-montserrat font-black text-white text-base md:text-lg leading-tight">
+              Хотите персональный план под вашего ребёнка?
+            </p>
+            <p className="text-white/65 text-xs md:text-sm mt-0.5">
+              Пройдите бесплатную диагностику из 6 вопросов — мы подберём занятия именно под зоны роста
+            </p>
+          </div>
+          <Icon name="ArrowRight" size={20} className="text-pink-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+        </Link>
+      </section>
+
       {/* Подсказки родителю + экранное время */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-6">
         <div className="grid md:grid-cols-2 gap-4">

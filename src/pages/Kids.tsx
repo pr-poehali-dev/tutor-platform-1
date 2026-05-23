@@ -154,22 +154,27 @@ export default function KidsLanding() {
             <p className="text-white/55 text-base md:text-lg leading-relaxed max-w-xl mb-7">
               По методикам Монтессори, Никитиных и Домана. Без рекламы, с контролем экранного времени и подробными подсказками для родителя.
             </p>
-            <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <Link
+                to="/kids/test"
+                className="group inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-base font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl shadow-pink-500/30"
+              >
+                <Icon name="Stethoscope" size={16} />
+                Пройти диагностику развития
+                <Icon name="ArrowRight" size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
               <a
                 href="#ages"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-base font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl shadow-pink-500/20"
-              >
-                <Icon name="Rocket" size={16} />
-                Выбрать возраст
-              </a>
-              <Link
-                to="/pricing"
                 className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white text-base font-semibold px-6 py-3.5 rounded-2xl transition-colors"
               >
-                <Icon name="Sparkles" size={16} />
-                Тарифы
-              </Link>
+                <Icon name="Library" size={16} />
+                Выбрать возраст
+              </a>
             </div>
+            <p className="text-pink-200/80 text-sm mb-6 inline-flex items-center gap-1.5">
+              <Icon name="Sparkles" size={13} />
+              Бесплатно · 2 минуты · персональный план занятий
+            </p>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-white/55 text-sm">
               <span className="flex items-center gap-1.5"><Icon name="CheckCircle2" size={14} className="text-emerald-400" /> {totalActivities}+ занятий</span>
               <span className="flex items-center gap-1.5"><Icon name="CheckCircle2" size={14} className="text-emerald-400" /> 5 возрастов</span>
