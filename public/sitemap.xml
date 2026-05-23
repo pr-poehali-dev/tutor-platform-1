@@ -98,4 +98,12 @@
   <url><loc>https://xn--h1agdcde2c.xn--p1ai/biology-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://xn--h1agdcde2c.xn--p1ai/chemistry-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
 
+  <!-- УЧИСЬПРО Малыш — модуль для дошкольников -->
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/1-2</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/2-3</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/3-4</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/4-5</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/5-6</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+
 </urlset>

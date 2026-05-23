@@ -25,6 +25,8 @@ const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
 const BiologyProblems = lazy(() => import("./pages/BiologyProblems"));
 const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
+const KidsLanding = lazy(() => import("./pages/Kids"));
+const KidsAge = lazy(() => import("./pages/KidsAge"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
@@ -63,6 +65,8 @@ const App = () => (
                     <Route path="/math-problems" element={<MathProblems />} />
                     <Route path="/biology-problems" element={<BiologyProblems />} />
                     <Route path="/chemistry-problems" element={<ChemistryProblems />} />
+                    <Route path="/kids" element={<KidsLanding />} />
+                    <Route path="/kids/:age" element={<KidsAge />} />
                     <Route path="/exam-bank" element={<ExamBank />} />
                     <Route path="/score-calculator" element={<ScoreCalculator />} />
                     <Route path="/cabinet" element={<Cabinet />} />

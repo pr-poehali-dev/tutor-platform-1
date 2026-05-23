@@ -11,8 +11,8 @@ const NAV_ITEMS = [
 
 const NAV_LINKS = [
   { label: "Курсы", icon: "Library", path: "/courses" },
+  { label: "Малыш 1+", icon: "Baby", path: "/kids" },
   { label: "ОГЭ и ЕГЭ", icon: "GraduationCap", path: "/exam-bank" },
-  { label: "Калькулятор", icon: "Calculator", path: "/score-calculator" },
   { label: "Тарифы", icon: "Sparkles", path: "/pricing" },
 ];
 
