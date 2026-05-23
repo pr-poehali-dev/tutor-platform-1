@@ -142,22 +142,31 @@ export default function SubjectLanding() {
               </a>
             </div>
 
-            {/* Спецблок для математики: ссылка на текстовые задачи с разбором */}
-            {seo.slug === "math" && (
-              <Link
-                to="/math-problems"
-                className="group mt-5 inline-flex items-center gap-3 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 hover:from-purple-500/25 hover:to-cyan-500/25 border border-purple-500/35 rounded-2xl px-4 py-3 transition-all max-w-md"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                  <Icon name="Brain" size={18} className="text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-montserrat font-black text-white text-sm">Текстовые задачи с разбором →</p>
-                  <p className="text-white/55 text-xs">Пошаговое решение, план, ключевая идея</p>
-                </div>
-                <Icon name="ArrowRight" size={16} className="text-purple-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-              </Link>
-            )}
+            {/* Тренажёр задач — для предметов, где он есть */}
+            {(() => {
+              const TRAINER: Record<string, { href: string; title: string; subtitle: string }> = {
+                math: { href: "/math-problems", title: "Текстовые задачи с разбором →", subtitle: "Пошаговое решение, план, проверка ответа" },
+                biology: { href: "/biology-problems", title: "Задачи по биологии с разбором →", subtitle: "Клетка, генетика, анатомия — с проверкой" },
+                chemistry: { href: "/chemistry-problems", title: "Задачи по химии с разбором →", subtitle: "Моль, растворы, реакции — с проверкой" },
+              };
+              const trainer = TRAINER[seo.slug];
+              if (!trainer) return null;
+              return (
+                <Link
+                  to={trainer.href}
+                  className="group mt-5 inline-flex items-center gap-3 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 hover:from-purple-500/25 hover:to-cyan-500/25 border border-purple-500/35 rounded-2xl px-4 py-3 transition-all max-w-md"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Brain" size={18} className="text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-montserrat font-black text-white text-sm">{trainer.title}</p>
+                    <p className="text-white/55 text-xs">{trainer.subtitle}</p>
+                  </div>
+                  <Icon name="ArrowRight" size={16} className="text-purple-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </Link>
+              );
+            })()}
           </div>
 
           {/* Космическая обложка предмета */}
