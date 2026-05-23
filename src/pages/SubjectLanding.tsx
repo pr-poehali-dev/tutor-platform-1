@@ -141,6 +141,23 @@ export default function SubjectLanding() {
                 {courses.length} {courses.length === 1 ? "курс" : courses.length >= 2 && courses.length <= 4 ? "курса" : "курсов"}
               </a>
             </div>
+
+            {/* Спецблок для математики: ссылка на текстовые задачи с разбором */}
+            {seo.slug === "math" && (
+              <Link
+                to="/math-problems"
+                className="group mt-5 inline-flex items-center gap-3 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 hover:from-purple-500/25 hover:to-cyan-500/25 border border-purple-500/35 rounded-2xl px-4 py-3 transition-all max-w-md"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                  <Icon name="Brain" size={18} className="text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-montserrat font-black text-white text-sm">Текстовые задачи с разбором →</p>
+                  <p className="text-white/55 text-xs">Пошаговое решение, план, ключевая идея</p>
+                </div>
+                <Icon name="ArrowRight" size={16} className="text-purple-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+              </Link>
+            )}
           </div>
 
           {/* Космическая обложка предмета */}
