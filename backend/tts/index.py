@@ -16,6 +16,8 @@ VOICE_MAP = {
     'sofia': {'voice': 'jane', 'emotion': 'good', 'speed': '1.15'},
     'dmitry': {'voice': 'ermil', 'emotion': 'neutral', 'speed': '1.0'},
     'nika': {'voice': 'alena', 'emotion': 'good', 'speed': '1.05'},
+    # Няня Лиса — тёплый, медленный, для малышей и родителей
+    'fox': {'voice': 'alena', 'emotion': 'good', 'speed': '0.95'},
 }
 
 

@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
+import NannyFox from "@/components/kids/NannyFox";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -363,6 +364,8 @@ export default function KidsLanding() {
       </section>
 
       <SiteFooter />
+
+      <NannyFox />
     </div>
   );
 }

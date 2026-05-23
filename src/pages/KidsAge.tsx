@@ -12,6 +12,7 @@ import {
   getAge,
   getActivitiesForAge,
 } from "@/components/kids/kidsData";
+import NannyFox from "@/components/kids/NannyFox";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -357,6 +358,8 @@ export default function KidsAge() {
       </section>
 
       <SiteFooter />
+
+      <NannyFox ageContext={stage.slug} />
     </div>
   );
 }
