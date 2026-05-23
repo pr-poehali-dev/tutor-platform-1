@@ -12,8 +12,19 @@ interface SeoProps {
   noindex?: boolean;
 }
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+// Кириллический домен — отображается красиво в адресной строке и поиске.
+// Punycode-зеркало (xn--h1agdcde2c.xn--p1ai) остаётся валидным,
+// но мы нормализуем все URL к кириллице автоматически.
+const SITE_URL = "https://учисьпро.рф";
+const PUNYCODE_HOST = "xn--h1agdcde2c.xn--p1ai";
+const CYRILLIC_HOST = "учисьпро.рф";
 const DEFAULT_IMG = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg";
+
+/** Привести любой URL проекта к кириллическому домену */
+function normalizeUrl(url: string): string {
+  if (!url) return SITE_URL;
+  return url.replace(PUNYCODE_HOST, CYRILLIC_HOST);
+}
 
 /**
  * Универсальный SEO-компонент: title, description, canonical, OG, Twitter, JSON-LD.
@@ -30,7 +41,8 @@ export default function Seo({
   noindex = false,
 }: SeoProps) {
   const fullTitle = title.includes("УЧИСЬПРО") ? title : `${title} — УЧИСЬПРО`;
-  const url = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
+  const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
+  const url = normalizeUrl(rawUrl);
 
   return (
     <Helmet>

@@ -5,7 +5,7 @@
 
   <!-- Главная -->
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/</loc>
+    <loc>https://учисьпро.рф/</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -17,31 +17,31 @@
 
   <!-- Якорные секции главной -->
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/#journey</loc>
+    <loc>https://учисьпро.рф/#journey</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/#ai</loc>
+    <loc>https://учисьпро.рф/#ai</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/#courses</loc>
+    <loc>https://учисьпро.рф/#courses</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/#myspace</loc>
+    <loc>https://учисьпро.рф/#myspace</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/#leaderboard</loc>
+    <loc>https://учисьпро.рф/#leaderboard</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -49,62 +49,62 @@
 
   <!-- Основные продуктовые страницы -->
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/pricing</loc>
+    <loc>https://учисьпро.рф/pricing</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/exam-bank</loc>
+    <loc>https://учисьпро.рф/exam-bank</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/score-calculator</loc>
+    <loc>https://учисьпро.рф/score-calculator</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/math-problems</loc>
+    <loc>https://учисьпро.рф/math-problems</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://xn--h1agdcde2c.xn--p1ai/courses</loc>
+    <loc>https://учисьпро.рф/courses</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
 
   <!-- Предметные лендинги -->
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/math</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/russian</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/english</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/physics</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/chemistry</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/cs</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/biology</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/history</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/society</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/literature</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/geography</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/courses/logic</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/courses/math</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/russian</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/english</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/physics</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/chemistry</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/cs</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/biology</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/history</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/society</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/literature</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/geography</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/courses/logic</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 
   <!-- Тренажёры задач -->
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/math-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/biology-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/chemistry-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/math-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/biology-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/chemistry-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
 
   <!-- УЧИСЬПРО Малыш — модуль для дошкольников -->
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/test</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/1-2</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/2-3</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/3-4</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/4-5</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://xn--h1agdcde2c.xn--p1ai/kids/5-6</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/kids/test</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/kids/1-2</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids/2-3</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids/3-4</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids/4-5</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids/5-6</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
 
 </urlset>
