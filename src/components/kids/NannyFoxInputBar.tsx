@@ -62,9 +62,12 @@ export default function NannyFoxInputBar({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500" />
             </span>
-            <p className="text-white text-sm font-semibold flex-1">
-              Говорите... <span className="text-white/55 text-xs tabular-nums">{micSeconds}с / 20с</span>
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold leading-tight">
+                Говорите... <span className="text-white/55 text-xs tabular-nums">{micSeconds}с</span>
+              </p>
+              <p className="text-white/45 text-[10px] leading-tight mt-0.5">Авто-стоп после 1,5с тишины</p>
+            </div>
             <button
               onClick={onCancelRecording}
               title="Отменить"

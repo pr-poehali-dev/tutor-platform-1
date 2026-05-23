@@ -12,6 +12,7 @@ import {
   blobToBase64,
   pickMimeType,
 } from "@/components/kids/nannyFoxUtils";
+import { findReadyAnswer } from "@/components/kids/nannyFoxAnswers";
 
 interface Props {
   ageContext?: string; // "1-2" | "2-3" | ... | undefined
@@ -37,6 +38,13 @@ export default function NannyFox({ ageContext }: Props) {
   const mimeInfoRef = useRef<{ mime: string; format: RecordingFormat }>({ mime: "", format: "oggopus" });
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // VAD: авто-стоп по тишине
+  const vadAudioCtxRef = useRef<AudioContext | null>(null);
+  const vadAnalyserRef = useRef<AnalyserNode | null>(null);
+  const vadRafRef = useRef<number | null>(null);
+  const vadSpokeRef = useRef<boolean>(false); // была ли вообще речь
+  const vadLastVoiceRef = useRef<number>(0); // timestamp последнего голоса
 
   const suggested = SUGGESTED[ageContext ?? "default"] ?? SUGGESTED.default;
 
@@ -95,7 +103,74 @@ export default function NannyFox({ ageContext }: Props) {
   };
 
   // ── ЗАПИСЬ С МИКРОФОНА ──────────────────────────────────────────────────
+  const stopVAD = () => {
+    if (vadRafRef.current !== null) {
+      cancelAnimationFrame(vadRafRef.current);
+      vadRafRef.current = null;
+    }
+    if (vadAnalyserRef.current) {
+      try { vadAnalyserRef.current.disconnect(); } catch { /* noop */ }
+      vadAnalyserRef.current = null;
+    }
+    if (vadAudioCtxRef.current) {
+      try { vadAudioCtxRef.current.close(); } catch { /* noop */ }
+      vadAudioCtxRef.current = null;
+    }
+    vadSpokeRef.current = false;
+    vadLastVoiceRef.current = 0;
+  };
+
+  /** Запускает VAD: следит за громкостью, при 1.5с тишины после речи — авто-стоп. */
+  const startVAD = (stream: MediaStream) => {
+    const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtor) return; // не поддерживается — fallback на ручную остановку
+    try {
+      const ctx = new AudioCtor();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.6;
+      source.connect(analyser);
+      vadAudioCtxRef.current = ctx;
+      vadAnalyserRef.current = analyser;
+      vadSpokeRef.current = false;
+      vadLastVoiceRef.current = performance.now();
+
+      const buffer = new Uint8Array(analyser.fftSize);
+      // Пороги: говорит, если RMS > 0.015 (для нормализованного PCM)
+      const VOICE_THRESHOLD = 0.015;
+      const SILENCE_MS = 1500; // 1.5 секунды тишины
+
+      const tick = () => {
+        const an = vadAnalyserRef.current;
+        if (!an) return;
+        an.getByteTimeDomainData(buffer);
+        // RMS из PCM (диапазон 0..255, центр 128)
+        let sum = 0;
+        for (let i = 0; i < buffer.length; i++) {
+          const v = (buffer[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / buffer.length);
+        const now = performance.now();
+        if (rms > VOICE_THRESHOLD) {
+          vadSpokeRef.current = true;
+          vadLastVoiceRef.current = now;
+        } else if (vadSpokeRef.current && now - vadLastVoiceRef.current > SILENCE_MS) {
+          // Тишина после речи — авто-стоп
+          stopRecording();
+          return;
+        }
+        vadRafRef.current = requestAnimationFrame(tick);
+      };
+      vadRafRef.current = requestAnimationFrame(tick);
+    } catch {
+      stopVAD();
+    }
+  };
+
   const stopMicStream = () => {
+    stopVAD();
     if (audioStreamRef.current) {
       audioStreamRef.current.getTracks().forEach((t) => t.stop());
       audioStreamRef.current = null;
@@ -186,10 +261,12 @@ export default function NannyFox({ ageContext }: Props) {
       recorder.start();
       setRecording(true);
       setMicSeconds(0);
+      // Запускаем VAD: авто-стоп при 1.5с тишины после речи
+      startVAD(stream);
       micTimerRef.current = window.setInterval(() => {
         setMicSeconds((s) => {
           const next = s + 1;
-          // авто-стоп через 20 секунд
+          // Жёсткий авто-стоп через 20 секунд
           if (next >= 20) {
             stopRecording();
           }
@@ -248,8 +325,24 @@ export default function NannyFox({ ageContext }: Props) {
     const newHistory: Message[] = [...messages, { role: "user", content: msg }];
     setMessages(newHistory);
     setInput("");
-    setLoading(true);
 
+    // 1) Проверка: если вопрос совпадает с подсказкой — отвечаем мгновенно из базы
+    const readyReply = findReadyAnswer(msg);
+    if (readyReply) {
+      // Лёгкая задержка для естественности (как будто Лиса «думает»)
+      setLoading(true);
+      await new Promise((r) => setTimeout(r, 300));
+      const finalMessages: Message[] = [...newHistory, { role: "assistant", content: readyReply }];
+      setMessages(finalMessages);
+      setLoading(false);
+      if (autoPlay) {
+        setTimeout(() => playAudio(readyReply, finalMessages.length - 1), 150);
+      }
+      return;
+    }
+
+    // 2) Иначе — обращаемся к ИИ
+    setLoading(true);
     try {
       const ageLine = ageContext ? `Контекст: родитель уточнил возраст ребёнка — ${ageContext} лет. ` : "";
       const res = await fetch(AI_CHAT_URL, {
