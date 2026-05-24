@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import func2url from "../../../backend/func2url.json";
 import { LibraryItem } from "@/components/kids/libraryData";
@@ -8,7 +9,12 @@ const TTS_URL = (func2url as Record<string, string>)["tts"];
 
 interface Props {
   item: LibraryItem;
+  /** Следующее произведение для авто-перехода в конце текущего. */
+  nextItem?: LibraryItem | null;
 }
+
+const AUTOPLAY_KEY = "uchispro_kids_autoplay_v1";
+const AUTOPLAY_COUNTDOWN_SEC = 6;
 
 /** Разбивает текст на короткие фрагменты для последовательного озвучивания. */
 function splitToChunks(text: string, maxLen = 600): string[] {
@@ -36,7 +42,8 @@ function splitToChunks(text: string, maxLen = 600): string[] {
   return chunks;
 }
 
-export default function TalePlayer({ item }: Props) {
+export default function TalePlayer({ item, nextItem }: Props) {
+  const navigate = useNavigate();
   const [chunks] = useState<string[]>(() => splitToChunks(item.text));
   const [currentChunk, setCurrentChunk] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -44,9 +51,18 @@ export default function TalePlayer({ item }: Props) {
   const [progress, setProgress] = useState(0); // 0..1 внутри текущего фрагмента
   const [speed, setSpeed] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
+  const [autoplayEnabled, setAutoplayEnabled] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem(AUTOPLAY_KEY);
+      return v === null ? true : v === "1";
+    } catch { return true; }
+  });
+  const [countdown, setCountdown] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<number, string>>(new Map());
   const cancelledRef = useRef(false);
+  const countdownTimerRef = useRef<number | null>(null);
 
   // Фоновая амбиентная музыка
   const ambient = useAmbientMusic();
@@ -59,12 +75,43 @@ export default function TalePlayer({ item }: Props) {
     }
   };
 
+  const clearCountdown = () => {
+    if (countdownTimerRef.current !== null) {
+      window.clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setCountdown(null);
+  };
+
   useEffect(() => {
     return () => {
       cancelledRef.current = true;
       stopAudio();
+      clearCountdown();
     };
   }, []);
+
+  // При смене произведения — полный сброс состояния плеера
+  useEffect(() => {
+    cancelledRef.current = false;
+    setCurrentChunk(0);
+    setProgress(0);
+    setPlaying(false);
+    setLoading(false);
+    setError(null);
+    setFinished(false);
+    audioCacheRef.current.clear();
+    clearCountdown();
+    stopAudio();
+     
+  }, [item.id]);
+
+  // Сохраняем настройку автоплея
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTOPLAY_KEY, autoplayEnabled ? "1" : "0");
+    } catch { /* noop */ }
+  }, [autoplayEnabled]);
 
   const fetchAudio = async (idx: number): Promise<string | null> => {
     if (audioCacheRef.current.has(idx)) return audioCacheRef.current.get(idx)!;
@@ -88,11 +135,35 @@ export default function TalePlayer({ item }: Props) {
     }
   };
 
+  const startCountdownToNext = () => {
+    if (!nextItem) return;
+    clearCountdown();
+    setCountdown(AUTOPLAY_COUNTDOWN_SEC);
+    countdownTimerRef.current = window.setInterval(() => {
+      setCountdown((c) => {
+        if (c === null) return null;
+        if (c <= 1) {
+          clearCountdown();
+          // Переходим на следующее произведение
+          cancelledRef.current = true;
+          stopAudio();
+          navigate(`/kids/library/${nextItem.id}`);
+          return null;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  };
+
   const playChunk = async (idx: number) => {
     if (idx >= chunks.length) {
       setPlaying(false);
-      setCurrentChunk(0);
       setProgress(0);
+      setFinished(true);
+      // Запускаем обратный отсчёт, если есть следующее произведение и автоплей включён
+      if (autoplayEnabled && nextItem) {
+        startCountdownToNext();
+      }
       return;
     }
     setError(null);
@@ -144,6 +215,16 @@ export default function TalePlayer({ item }: Props) {
       setPlaying(false);
       return;
     }
+    // Если уже дослушали до конца — перезапускаем с начала
+    if (finished) {
+      clearCountdown();
+      setFinished(false);
+      setCurrentChunk(0);
+      setProgress(0);
+      cancelledRef.current = false;
+      playChunk(0);
+      return;
+    }
     if (audioRef.current && audioRef.current.src) {
       try {
         await audioRef.current.play();
@@ -157,21 +238,39 @@ export default function TalePlayer({ item }: Props) {
 
   const reset = () => {
     stopAudio();
+    clearCountdown();
     setCurrentChunk(0);
     setProgress(0);
     setPlaying(false);
+    setFinished(false);
   };
 
   const skipPrev = () => {
+    clearCountdown();
+    setFinished(false);
     const target = Math.max(0, currentChunk - 1);
     if (playing) playChunk(target);
     else { setCurrentChunk(target); setProgress(0); }
   };
 
   const skipNext = () => {
+    clearCountdown();
+    setFinished(false);
     const target = Math.min(chunks.length - 1, currentChunk + 1);
     if (playing) playChunk(target);
     else { setCurrentChunk(target); setProgress(0); }
+  };
+
+  const cancelAutoplay = () => {
+    clearCountdown();
+  };
+
+  const goNextNow = () => {
+    if (!nextItem) return;
+    clearCountdown();
+    cancelledRef.current = true;
+    stopAudio();
+    navigate(`/kids/library/${nextItem.id}`);
   };
 
   const changeSpeed = () => {
@@ -317,8 +416,109 @@ export default function TalePlayer({ item }: Props) {
               {error}
             </p>
           )}
+
+          {/* Переключатель автоплея */}
+          {nextItem && (
+            <div className="mt-3 pt-3 border-t border-white/8 flex items-center justify-between gap-3">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autoplayEnabled}
+                  onChange={(e) => setAutoplayEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-pink-500 cursor-pointer"
+                />
+                <span className="text-white/75 text-xs">Автопереход к следующему</span>
+              </label>
+              <Icon name="ListMusic" size={14} className="text-white/35" />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ─── Плашка завершения и автоперехода ─── */}
+      {finished && nextItem && (
+        <div className="mx-5 mt-4 rounded-2xl border border-emerald-500/35 bg-gradient-to-br from-emerald-500/15 to-teal-500/15 p-4 animate-fadeIn">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
+              <Icon name="CheckCircle2" size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-montserrat font-black text-white text-sm leading-tight mb-0.5">Произведение закончилось 👏</p>
+              <p className="text-white/70 text-xs">
+                Дальше:{" "}
+                <span className="text-emerald-200 font-semibold">{nextItem.title}</span>
+                <span className="text-white/45"> · {nextItem.author}</span>
+              </p>
+            </div>
+            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${nextItem.color} flex items-center justify-center text-2xl flex-shrink-0`}>
+              {nextItem.emoji}
+            </div>
+          </div>
+
+          {countdown !== null ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-white/70">Включаю через <span className="font-bold text-white tabular-nums">{countdown}</span> с</span>
+                <span className="text-white/45">авто-переход</span>
+              </div>
+              <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-1000"
+                  style={{ width: `${((AUTOPLAY_COUNTDOWN_SEC - countdown) / AUTOPLAY_COUNTDOWN_SEC) * 100}%` }}
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={goNextNow}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-br from-emerald-500 to-teal-500 hover:scale-[1.01] text-white text-xs font-bold px-3 py-2 rounded-xl transition-transform"
+                >
+                  <Icon name="Play" size={12} />
+                  Включить сейчас
+                </button>
+                <button
+                  onClick={cancelAutoplay}
+                  className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 border border-white/15 text-white/85 text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+                >
+                  <Icon name="X" size={12} />
+                  Отмена
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={goNextNow}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-br from-emerald-500 to-teal-500 hover:scale-[1.01] text-white text-xs font-bold px-3 py-2 rounded-xl transition-transform"
+              >
+                <Icon name="SkipForward" size={12} />
+                Следующее произведение
+              </button>
+              <button
+                onClick={reset}
+                className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 border border-white/15 text-white/85 text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+              >
+                <Icon name="RotateCcw" size={12} />
+                Заново
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Плашка финиша когда нет следующего */}
+      {finished && !nextItem && (
+        <div className="mx-5 mt-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/12 to-pink-500/12 p-4 flex items-center gap-3 animate-fadeIn">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white flex-shrink-0">
+            <Icon name="Sparkles" size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-montserrat font-black text-white text-sm">Это было последнее произведение в подборке!</p>
+            <Link to="/kids/library" className="text-purple-200 hover:text-white text-xs underline underline-offset-2">
+              Вернуться в библиотеку
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Сам текст с подсветкой текущего фрагмента */}
       <div className="p-5 pt-6 text-white/85 text-base leading-relaxed space-y-3">

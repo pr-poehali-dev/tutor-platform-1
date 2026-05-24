@@ -19,6 +19,30 @@ export default function KidsLibraryItem() {
     return LIBRARY.filter((it) => it.id !== item.id && it.category === item.category).slice(0, 3);
   }, [item]);
 
+  // Следующее произведение для авто-перехода:
+  //  1) приоритет — следующее в той же категории (по порядку в LIBRARY);
+  //  2) если в категории больше нет — следующее по общему списку;
+  //  3) циклически — если мы в самом конце, берём первое в той же категории.
+  const nextItem = useMemo(() => {
+    if (!item) return null;
+    const sameCategory = LIBRARY.filter((it) => it.category === item.category);
+    const sameIdx = sameCategory.findIndex((it) => it.id === item.id);
+    if (sameIdx !== -1 && sameIdx + 1 < sameCategory.length) {
+      return sameCategory[sameIdx + 1];
+    }
+    // Следующее по общему порядку
+    const globalIdx = LIBRARY.findIndex((it) => it.id === item.id);
+    if (globalIdx !== -1 && globalIdx + 1 < LIBRARY.length) {
+      return LIBRARY[globalIdx + 1];
+    }
+    // Циклически — возвращаемся к первому в той же категории (но не к самому себе)
+    if (sameCategory.length > 1) {
+      return sameCategory[0].id === item.id ? sameCategory[1] : sameCategory[0];
+    }
+    // Совсем последний — возвращаем самое первое произведение всей библиотеки (если не сами)
+    return LIBRARY[0] && LIBRARY[0].id !== item.id ? LIBRARY[0] : null;
+  }, [item]);
+
   if (!item) return <Navigate to="/kids/library" replace />;
 
   const canonical = `${SITE_URL}/kids/library/${item.id}`;
@@ -85,7 +109,7 @@ export default function KidsLibraryItem() {
           К библиотеке
         </Link>
 
-        <TalePlayer item={item} />
+        <TalePlayer item={item} nextItem={nextItem} />
 
         {/* Похожие */}
         {similar.length > 0 && (
