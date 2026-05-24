@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
+import { useKidsProgress } from "@/components/kids/useKidsProgress";
 import NannyFox from "@/components/kids/NannyFox";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -55,6 +56,7 @@ const REVIEWS = [
 
 export default function KidsLanding() {
   const totalActivities = ACTIVITIES.length;
+  const { progress } = useKidsProgress();
 
   const jsonLd = [
     {
@@ -211,6 +213,45 @@ export default function KidsLanding() {
           </div>
         </div>
       </section>
+
+      {/* Прогресс ребёнка — если уже что-то прошёл */}
+      {progress.completedActivities.length > 0 && (
+        <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-6">
+          <div className="bg-gradient-to-br from-pink-500/12 to-rose-500/12 border border-pink-500/30 rounded-3xl p-5 md:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-2xl">🌟</div>
+              <div className="min-w-0 flex-1">
+                <p className="font-montserrat font-black text-white text-base md:text-lg leading-tight">Твой прогресс</p>
+                <p className="text-white/65 text-xs md:text-sm">Растём каждый день — продолжаем!</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="bg-background/40 border border-white/10 rounded-2xl p-3 text-center">
+                <p className="text-2xl">⭐</p>
+                <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.stars}</p>
+                <p className="text-white/45 text-[10px]">Звёзд</p>
+              </div>
+              <div className="bg-background/40 border border-white/10 rounded-2xl p-3 text-center">
+                <p className="text-2xl">🔥</p>
+                <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.streakDays}</p>
+                <p className="text-white/45 text-[10px]">Дней подряд</p>
+              </div>
+              <div className="bg-background/40 border border-white/10 rounded-2xl p-3 text-center">
+                <p className="text-2xl">✅</p>
+                <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.completedActivities.length}</p>
+                <p className="text-white/45 text-[10px]">Занятий</p>
+              </div>
+              <div className="bg-background/40 border border-white/10 rounded-2xl p-3 text-center">
+                <p className="text-2xl">🎯</p>
+                <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">
+                  {progress.totalAnswers > 0 ? Math.round((progress.correctAnswers / progress.totalAnswers) * 100) : 0}%
+                </p>
+                <p className="text-white/45 text-[10px]">Точность</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Возрастные ступени */}
       <section id="ages" className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-12">

@@ -9,9 +9,13 @@ import {
   AREAS,
   ACTIVITIES,
   AgeSlug,
+  Activity,
   getAge,
   getActivitiesForAge,
 } from "@/components/kids/kidsData";
+import { hasInteractive } from "@/components/kids/interactiveData";
+import { useKidsProgress } from "@/components/kids/useKidsProgress";
+import ActivityRunner from "@/components/kids/ActivityRunner";
 import NannyFox from "@/components/kids/NannyFox";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -21,6 +25,8 @@ export default function KidsAge() {
   const stage = getAge(age as AgeSlug);
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [openedActivity, setOpenedActivity] = useState<number | null>(null);
+  const [runningActivity, setRunningActivity] = useState<Activity | null>(null);
+  const { progress } = useKidsProgress();
 
   const activities = useMemo(() => (stage ? getActivitiesForAge(stage.slug) : []), [stage]);
   const filtered = useMemo(
@@ -126,11 +132,47 @@ export default function KidsAge() {
             </div>
           </div>
 
-          {/* Карточка возраста */}
-          <div className={`hidden md:flex flex-col items-center bg-gradient-to-br ${stage.color} rounded-3xl p-8 min-w-[200px] shadow-2xl`}>
-            <div className="text-8xl mb-3">{stage.emoji}</div>
-            <p className="font-montserrat font-black text-white text-3xl mb-1">{stage.shortLabel}</p>
-            <p className="text-white/85 text-xs uppercase tracking-wider">{activities.length} занятий</p>
+          {/* Карточка возраста + прогресс ребёнка */}
+          <div className={`hidden md:flex flex-col items-center bg-gradient-to-br ${stage.color} rounded-3xl p-6 min-w-[220px] shadow-2xl`}>
+            <div className="text-6xl mb-2">{stage.emoji}</div>
+            <p className="font-montserrat font-black text-white text-2xl mb-1">{stage.shortLabel}</p>
+            <p className="text-white/85 text-[11px] uppercase tracking-wider mb-4">{activities.length} занятий</p>
+            {/* Звёзды и серия */}
+            <div className="w-full bg-black/20 backdrop-blur rounded-2xl p-3 space-y-2">
+              <div className="flex items-center justify-between text-white">
+                <span className="text-xs flex items-center gap-1"><span>⭐</span> Звёзды</span>
+                <span className="font-montserrat font-black text-base tabular-nums">{progress.stars}</span>
+              </div>
+              <div className="flex items-center justify-between text-white">
+                <span className="text-xs flex items-center gap-1"><span>🔥</span> Серия</span>
+                <span className="font-montserrat font-black text-base tabular-nums">{progress.streakDays} дн.</span>
+              </div>
+              <div className="flex items-center justify-between text-white">
+                <span className="text-xs">✅ Пройдено</span>
+                <span className="font-montserrat font-black text-base tabular-nums">{progress.completedActivities.length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Мобильный прогресс */}
+      <section className="md:hidden relative z-10 max-w-7xl mx-auto px-5 pb-4">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-card border border-white/10 rounded-2xl p-3 text-center">
+            <p className="text-2xl">⭐</p>
+            <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.stars}</p>
+            <p className="text-white/45 text-[10px]">Звёзды</p>
+          </div>
+          <div className="bg-card border border-white/10 rounded-2xl p-3 text-center">
+            <p className="text-2xl">🔥</p>
+            <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.streakDays}</p>
+            <p className="text-white/45 text-[10px]">Дней подряд</p>
+          </div>
+          <div className="bg-card border border-white/10 rounded-2xl p-3 text-center">
+            <p className="text-2xl">✅</p>
+            <p className="font-montserrat font-black text-white text-lg tabular-nums leading-none mt-1">{progress.completedActivities.length}</p>
+            <p className="text-white/45 text-[10px]">Пройдено</p>
           </div>
         </div>
       </section>
@@ -302,22 +344,38 @@ export default function KidsAge() {
                       </div>
                     )}
 
-                    <button
-                      onClick={() => setOpenedActivity(isOpen ? null : act.id)}
-                      className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-                    >
-                      {isOpen ? (
-                        <>
-                          <Icon name="ChevronUp" size={14} />
-                          Свернуть
-                        </>
+                    {/* Кнопки: Играть онлайн / Как играть с родителем */}
+                    <div className="mt-4 flex gap-2">
+                      {hasInteractive(act.id) ? (
+                        <button
+                          onClick={() => setRunningActivity(act)}
+                          className={`flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-br ${area.color} text-white text-sm font-bold py-2.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg`}
+                        >
+                          <Icon name="Play" size={14} />
+                          {progress.completedActivities.includes(act.id) ? "Повторить" : "Играть"}
+                        </button>
                       ) : (
-                        <>
-                          <Icon name="ChevronDown" size={14} />
-                          Как играть
-                        </>
+                        <div className="flex-1 inline-flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white/45 text-xs py-2.5 rounded-xl">
+                          <Icon name="Clock" size={12} />
+                          Скоро онлайн
+                        </div>
                       )}
-                    </button>
+                      <button
+                        onClick={() => setOpenedActivity(isOpen ? null : act.id)}
+                        title={isOpen ? "Свернуть инструкцию" : "Как играть дома"}
+                        className="inline-flex items-center justify-center gap-1 bg-white/8 hover:bg-white/12 border border-white/15 text-white/85 text-xs font-semibold px-3 py-2.5 rounded-xl transition-colors"
+                      >
+                        <Icon name={isOpen ? "ChevronUp" : "BookOpen"} size={14} />
+                        <span className="hidden sm:inline">{isOpen ? "Свернуть" : "Дома"}</span>
+                      </button>
+                    </div>
+
+                    {/* Бейдж завершено */}
+                    {progress.completedActivities.includes(act.id) && (
+                      <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-emerald-300 font-semibold">
+                        <Icon name="CheckCircle2" size={11} /> Пройдено
+                      </p>
+                    )}
                   </div>
                 </div>
               );
@@ -360,6 +418,14 @@ export default function KidsAge() {
       <SiteFooter />
 
       <NannyFox ageContext={stage.slug} />
+
+      {/* Модалка интерактивного занятия */}
+      {runningActivity && (
+        <ActivityRunner
+          activity={runningActivity}
+          onClose={() => setRunningActivity(null)}
+        />
+      )}
     </div>
   );
 }
