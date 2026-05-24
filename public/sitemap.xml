@@ -101,6 +101,20 @@
   <!-- УЧИСЬПРО Малыш — модуль для дошкольников -->
   <url><loc>https://учисьпро.рф/kids</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
   <url><loc>https://учисьпро.рф/kids/test</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library</loc><lastmod>2026-05-24</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/kolobok</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/repka</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/teremok</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/mashenka-medved</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/lisa-zhuravl</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/pushkin-uzhlukar</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/pushkin-zima</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/krylov-vorona</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/tolstoy-kotenok</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/tolstoy-tri-medvedya</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/tolstoy-filipok</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/ushinsky-utro</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/kids/library/prishvin-ezhik</loc><lastmod>2026-05-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://учисьпро.рф/kids/1-2</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/kids/2-3</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/kids/3-4</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>

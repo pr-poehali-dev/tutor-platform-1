@@ -28,6 +28,8 @@ const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
+const KidsLibrary = lazy(() => import("./pages/KidsLibrary"));
+const KidsLibraryItem = lazy(() => import("./pages/KidsLibraryItem"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
@@ -68,6 +70,8 @@ const App = () => (
                     <Route path="/chemistry-problems" element={<ChemistryProblems />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
+                    <Route path="/kids/library" element={<KidsLibrary />} />
+                    <Route path="/kids/library/:id" element={<KidsLibraryItem />} />
                     <Route path="/kids/:age" element={<KidsAge />} />
                     <Route path="/exam-bank" element={<ExamBank />} />
                     <Route path="/score-calculator" element={<ScoreCalculator />} />

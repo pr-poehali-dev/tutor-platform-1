@@ -164,6 +164,13 @@ export default function KidsLanding() {
                 Пройти диагностику развития
                 <Icon name="ArrowRight" size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
+              <Link
+                to="/kids/library"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/35 text-white text-base font-semibold px-6 py-3.5 rounded-2xl transition-all"
+              >
+                <Icon name="BookOpen" size={16} />
+                Библиотека сказок
+              </Link>
               <a
                 href="#ages"
                 className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white text-base font-semibold px-6 py-3.5 rounded-2xl transition-colors"
