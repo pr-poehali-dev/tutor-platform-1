@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import func2url from "../../../backend/func2url.json";
 import { LibraryItem } from "@/components/kids/libraryData";
+import { useAmbientMusic } from "@/components/kids/useAmbientMusic";
 
 const TTS_URL = (func2url as Record<string, string>)["tts"];
 
@@ -46,6 +47,9 @@ export default function TalePlayer({ item }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<number, string>>(new Map());
   const cancelledRef = useRef(false);
+
+  // Фоновая амбиентная музыка
+  const ambient = useAmbientMusic();
 
   const stopAudio = () => {
     if (audioRef.current) {
@@ -266,6 +270,45 @@ export default function TalePlayer({ item }: Props) {
             >
               {speed.toFixed(2)}x
             </button>
+          </div>
+
+          {/* Фоновая музыка */}
+          <div className="mt-3 pt-3 border-t border-white/8 flex items-center justify-between gap-3 flex-wrap">
+            <button
+              onClick={ambient.toggle}
+              title={ambient.enabled ? "Выключить фоновую музыку" : "Включить мягкую мелодию"}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                ambient.enabled
+                  ? "bg-gradient-to-r from-purple-500/25 to-pink-500/25 border border-purple-500/40 text-white"
+                  : "bg-white/5 border border-white/10 text-white/55 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Icon name={ambient.enabled ? "Music" : "Music2"} size={12} />
+              {ambient.enabled ? "Музыка играет" : "Фоновая музыка"}
+              {ambient.enabled && (
+                <span className="flex items-center gap-0.5 ml-1">
+                  <span className="w-0.5 h-2.5 bg-pink-300 rounded-full animate-pulse" style={{ animationDelay: "0ms" }} />
+                  <span className="w-0.5 h-3.5 bg-pink-300 rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+                  <span className="w-0.5 h-2 bg-pink-300 rounded-full animate-pulse" style={{ animationDelay: "300ms" }} />
+                </span>
+              )}
+            </button>
+            {ambient.enabled && (
+              <div className="flex items-center gap-2 flex-1 min-w-[160px] max-w-[260px]">
+                <Icon name="Volume1" size={12} className="text-white/45 flex-shrink-0" />
+                <input
+                  type="range"
+                  min={0}
+                  max={0.4}
+                  step={0.01}
+                  value={ambient.volume}
+                  onChange={(e) => ambient.setVolume(parseFloat(e.target.value))}
+                  className="flex-1 h-1 accent-pink-400 cursor-pointer"
+                  title="Громкость музыки"
+                />
+                <Icon name="Volume2" size={12} className="text-white/45 flex-shrink-0" />
+              </div>
+            )}
           </div>
 
           {error && (
