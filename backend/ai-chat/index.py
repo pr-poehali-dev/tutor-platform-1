@@ -8,6 +8,7 @@ import json
 import os
 import re
 import urllib.request
+import urllib.parse
 import urllib.error
 from datetime import datetime
 
@@ -98,8 +99,135 @@ def need_web_search(message: str) -> bool:
     return False
 
 
-def tavily_search(query: str, api_key: str, max_results: int = 4) -> dict | None:
-    """Поиск через Tavily — простой REST-вызов, возвращает топ результатов."""
+USER_AGENT = 'Mozilla/5.0 (compatible; UchispriBot/1.0; +https://учисьпро.рф)'
+
+
+def _http_json(url: str, *, method: str = 'GET', data: bytes | None = None, headers: dict | None = None, timeout: int = 10) -> dict | None:
+    """Универсальный GET/POST JSON-вызов."""
+    try:
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={'User-Agent': USER_AGENT, 'Accept': 'application/json', **(headers or {})},
+            method=method,
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode('utf-8'))
+    except Exception:
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ПОИСКОВИКИ — РАБОТАЮТ БЕЗ КЛЮЧЕЙ
+# ─────────────────────────────────────────────────────────────────────────────
+
+def search_wikipedia(query: str, max_results: int = 3) -> dict | None:
+    """Поиск по русской Википедии (без ключей). Лучше всего для энциклопедических запросов."""
+    try:
+        # 1) ищем подходящие статьи
+        srch_url = 'https://ru.wikipedia.org/w/api.php?' + urllib.parse.urlencode({
+            'action': 'query',
+            'list': 'search',
+            'srsearch': query,
+            'srlimit': max_results,
+            'format': 'json',
+            'utf8': 1,
+        })
+        data = _http_json(srch_url, timeout=8)
+        if not data:
+            return None
+        hits = (data.get('query') or {}).get('search') or []
+        if not hits:
+            return None
+
+        results = []
+        for h in hits[:max_results]:
+            title = h.get('title') or ''
+            # 2) подтягиваем краткое описание (extract)
+            ext_url = 'https://ru.wikipedia.org/w/api.php?' + urllib.parse.urlencode({
+                'action': 'query',
+                'prop': 'extracts',
+                'exintro': 1,
+                'explaintext': 1,
+                'titles': title,
+                'format': 'json',
+                'utf8': 1,
+            })
+            ext_data = _http_json(ext_url, timeout=8)
+            pages = ((ext_data or {}).get('query') or {}).get('pages') or {}
+            content = ''
+            for _, page in pages.items():
+                content = (page.get('extract') or '').strip()
+                break
+            if not content:
+                # fallback: используем сниппет из поиска (с HTML-тегами — почистим)
+                content = re.sub(r'<[^>]+>', '', h.get('snippet') or '').strip()
+            url_safe = urllib.parse.quote(title.replace(' ', '_'))
+            results.append({
+                'title': title,
+                'content': content[:600],
+                'url': f'https://ru.wikipedia.org/wiki/{url_safe}',
+            })
+        return {'results': results, 'answer': '', 'source': 'wikipedia'}
+    except Exception:
+        return None
+
+
+def search_duckduckgo(query: str) -> dict | None:
+    """Поиск через DuckDuckGo Instant Answer API (без ключей).
+    Хорошо работает для энциклопедических запросов и определений.
+    """
+    try:
+        url = 'https://api.duckduckgo.com/?' + urllib.parse.urlencode({
+            'q': query,
+            'format': 'json',
+            'no_html': 1,
+            'skip_disambig': 1,
+            'kl': 'ru-ru',
+        })
+        data = _http_json(url, timeout=8)
+        if not data:
+            return None
+
+        results = []
+        answer = ''
+
+        # Главный ответ
+        abstract = (data.get('AbstractText') or '').strip()
+        abstract_url = data.get('AbstractURL') or ''
+        abstract_source = data.get('AbstractSource') or ''
+        if abstract:
+            answer = abstract
+            if abstract_url:
+                results.append({
+                    'title': abstract_source or 'DuckDuckGo',
+                    'content': abstract[:600],
+                    'url': abstract_url,
+                })
+
+        # Связанные темы
+        related = data.get('RelatedTopics') or []
+        for r in related[:4]:
+            if 'FirstURL' not in r:
+                continue
+            text = (r.get('Text') or '').strip()
+            if not text:
+                continue
+            results.append({
+                'title': text.split(' - ')[0][:120] or 'DuckDuckGo',
+                'content': text[:400],
+                'url': r.get('FirstURL') or '',
+            })
+
+        if not results:
+            return None
+        return {'results': results, 'answer': answer, 'source': 'duckduckgo'}
+    except Exception:
+        return None
+
+
+def search_tavily(query: str, api_key: str, max_results: int = 4) -> dict | None:
+    """Поиск через Tavily — если есть ключ. Самое качественное LLM-saturated решение."""
     try:
         payload = json.dumps({
             'api_key': api_key,
@@ -109,31 +237,62 @@ def tavily_search(query: str, api_key: str, max_results: int = 4) -> dict | None
             'include_answer': True,
             'topic': 'general',
         }).encode('utf-8')
-        req = urllib.request.Request(
+        data = _http_json(
             'https://api.tavily.com/search',
+            method='POST',
             data=payload,
             headers={'Content-Type': 'application/json'},
-            method='POST',
+            timeout=12,
         )
-        with urllib.request.urlopen(req, timeout=12) as response:
-            return json.loads(response.read().decode('utf-8'))
+        if not data:
+            return None
+        # Нормализуем формат — добавим тег источника
+        return {**data, 'source': 'tavily'}
     except Exception:
         return None
 
 
+def web_search(query: str) -> dict | None:
+    """Каскадный поиск: Tavily → DuckDuckGo → Wikipedia. Работает без ключей.
+
+    Tavily опциональный (если есть ключ — пробуем сначала),
+    DuckDuckGo и Wikipedia всегда доступны без регистрации.
+    """
+    # 1) Tavily — если настроен
+    tavily_key = os.environ.get('TAVILY_API_KEY', '').strip()
+    if tavily_key:
+        result = search_tavily(query, tavily_key)
+        if result and (result.get('results') or result.get('answer')):
+            return result
+
+    # 2) DuckDuckGo — без ключей
+    result = search_duckduckgo(query)
+    if result and result.get('results'):
+        return result
+
+    # 3) Wikipedia (русская) — без ключей
+    return search_wikipedia(query)
+
+
 def format_search_context(search_result: dict) -> tuple[str, list]:
-    """Превращает результат Tavily в текстовый контекст и список источников."""
+    """Превращает результат любого поисковика в текстовый контекст и список источников."""
     if not search_result:
         return '', []
     parts = []
     sources = []
+    src_label = {
+        'tavily': 'из интернета',
+        'duckduckgo': 'из DuckDuckGo',
+        'wikipedia': 'из Википедии',
+    }.get(search_result.get('source', ''), 'из интернета')
+
     answer = search_result.get('answer')
     if answer:
-        parts.append(f"Краткая сводка из интернета: {answer}")
+        parts.append(f"Краткая сводка {src_label}: {answer}")
     results = search_result.get('results') or []
     for i, r in enumerate(results[:4]):
         title = (r.get('title') or '').strip()
-        content = (r.get('content') or '').strip()[:400]
+        content = (r.get('content') or '').strip()[:500]
         url = r.get('url') or ''
         if title and content:
             parts.append(f"[Источник {i+1}] {title}\n{content}")
@@ -199,14 +358,14 @@ def handler(event, context):
         base_prompt = TEACHER_PROMPTS.get(teacher_id, TEACHER_PROMPTS['alex'])
 
         # ─────────────────────────────────────────────────────────────────
-        # ВЕБ-ПОИСК ЧЕРЕЗ TAVILY — если запрос требует свежих данных
+        # ВЕБ-ПОИСК — каскад: Tavily (если есть ключ) → DuckDuckGo → Wikipedia
+        # Работает БЕЗ ключей — DuckDuckGo и Wikipedia всегда доступны.
         # ─────────────────────────────────────────────────────────────────
         search_context_text = ''
         sources: list = []
         used_search = False
-        tavily_key = os.environ.get('TAVILY_API_KEY', '').strip()
-        if tavily_key and (force_search or need_web_search(user_message)):
-            search_data = tavily_search(user_message, tavily_key)
+        if force_search or need_web_search(user_message):
+            search_data = web_search(user_message)
             if search_data:
                 search_context_text, sources = format_search_context(search_data)
                 used_search = bool(search_context_text)
