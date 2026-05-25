@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import func2url from "../../../backend/func2url.json";
 import VideoStudioPlayer, { VideoScene } from "@/components/video/VideoStudioPlayer";
+import Mp4ExportPanel from "@/components/video/Mp4ExportPanel";
 
 const STORYBOARD_URL = (func2url as Record<string, string>)["video-storyboard"];
 const RENDER_URL = (func2url as Record<string, string>)["video-render"];
@@ -448,6 +449,11 @@ export default function VideoStudio() {
                 </button>
               )}
             </div>
+
+            {/* Экспорт MP4 — появляется когда есть сцены */}
+            {scenes.length > 0 && (
+              <Mp4ExportPanel scenes={scenes} title={title || topic} voiceId={voice} />
+            )}
 
             {/* Сохранённые проекты */}
             {projects.length > 0 && (

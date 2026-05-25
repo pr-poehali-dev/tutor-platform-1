@@ -19,39 +19,34 @@ def slugify(text: str) -> str:
     return s.strip('-')[:50] or 'scene'
 
 
-def generate_flux_image(prompt: str, api_key: str) -> bytes | None:
-    """Генерирует картинку через polza.ai (FLUX), возвращает байты PNG."""
+def generate_flux_image(prompt: str, seed: int = 42) -> tuple[bytes | None, str | None]:
+    """Генерирует картинку через Pollinations.ai (бесплатный FLUX).
+    Возвращает (bytes_or_none, error_message_or_none).
+    """
     try:
-        payload = json.dumps({
-            'model': 'black-forest-labs/flux-schnell',
-            'prompt': prompt[:600],
-            'n': 1,
-            'size': '1024x576',
-            'response_format': 'b64_json',
-        }).encode('utf-8')
-        req = urllib.request.Request(
-            'https://api.polza.ai/api/v1/images/generations',
-            data=payload,
-            headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json',
-            },
-            method='POST',
+        # Pollinations: бесплатный публичный FLUX. Кириллицу принимает.
+        # Делаем уникальный seed чтобы каждая сцена была отдельной картинкой.
+        encoded = urllib.parse.quote(prompt[:1500])
+        url = (
+            f"https://image.pollinations.ai/prompt/{encoded}"
+            f"?width=1024&height=576&seed={seed}&nologo=true&enhance=true&model=flux"
         )
-        with urllib.request.urlopen(req, timeout=90) as response:
-            result = json.loads(response.read().decode('utf-8'))
-            b64 = result['data'][0].get('b64_json')
-            if b64:
-                import base64
-                return base64.b64decode(b64)
-            # Fallback на URL
-            url = result['data'][0].get('url')
-            if url:
-                with urllib.request.urlopen(url, timeout=30) as r2:
-                    return r2.read()
-        return None
-    except Exception:
-        return None
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'UchispriBot/1.0 (+https://учисьпро.рф)'},
+            method='GET',
+        )
+        with urllib.request.urlopen(req, timeout=120) as response:
+            data = response.read()
+            if len(data) < 2000:
+                return None, f'pollinations returned too small response: {len(data)} bytes'
+            return data, None
+    except urllib.error.HTTPError as e:
+        return None, f'pollinations HTTP {e.code}: {e.reason}'
+    except urllib.error.URLError as e:
+        return None, f'pollinations network error: {str(e)[:120]}'
+    except Exception as e:
+        return None, f'pollinations exception: {str(e)[:120]}'
 
 
 def upload_to_s3(image_bytes: bytes, key: str) -> str | None:
@@ -116,14 +111,6 @@ def handler(event, context):
                 'body': json.dumps({'error': 'Не указаны сцены (scenes)'}, ensure_ascii=False),
             }
 
-        api_key = os.environ.get('POLZA_API_KEY', '')
-        if not api_key:
-            return {
-                'statusCode': 500,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'POLZA_API_KEY не настроен'}, ensure_ascii=False),
-            }
-
         project_slug = slugify(title)
         ts = datetime.now().strftime('%Y%m%d-%H%M%S')
 
@@ -136,15 +123,19 @@ def handler(event, context):
                 rendered.append(scene)  # оставляем как есть
                 continue
 
-            prompt = scene.get('image_prompt') or ''
+            prompt = (scene.get('image_prompt') or '').strip()
             if not prompt:
+                errors.append(f'{sid}: пустой промпт')
                 rendered.append({**scene, 'image_url': None, 'error': 'no prompt'})
                 continue
 
-            img_bytes = generate_flux_image(prompt, api_key)
+            # Уникальный seed для каждой сцены — иначе все картинки одинаковые
+            seed = abs(hash(f'{project_slug}-{sid}-{ts}')) % 1000000
+            img_bytes, gen_err = generate_flux_image(prompt, seed=seed)
             if not img_bytes:
-                errors.append(f'{sid}: ошибка генерации FLUX')
-                rendered.append({**scene, 'image_url': None, 'error': 'flux failed'})
+                err_msg = f'{sid}: {gen_err or "генерация не удалась"}'
+                errors.append(err_msg)
+                rendered.append({**scene, 'image_url': None, 'error': gen_err or 'flux failed'})
                 continue
 
             key = f"videos/{project_slug}/{ts}/{sid}.png"
