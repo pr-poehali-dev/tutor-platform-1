@@ -26,6 +26,7 @@ const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
 const AdLanding = lazy(() => import("./pages/ads/AdLanding"));
 const SiteHealth = lazy(() => import("./pages/admin/SiteHealth"));
+const VideoStudio = lazy(() => import("./pages/admin/VideoStudio"));
 const DrawLanding = lazy(() => import("./pages/DrawLanding"));
 const DrawLesson = lazy(() => import("./pages/DrawLesson"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
@@ -74,6 +75,7 @@ const App = () => (
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
                     <Route path="/admin/ads" element={<AdsManager />} />
                     <Route path="/admin/site-health" element={<SiteHealth />} />
+                    <Route path="/admin/video-studio" element={<VideoStudio />} />
                     <Route path="/ads/:slug" element={<AdLanding />} />
                     <Route path="/math-problems" element={<MathProblems />} />
                     <Route path="/biology-problems" element={<BiologyProblems />} />

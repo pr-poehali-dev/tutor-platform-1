@@ -13,9 +13,59 @@
   }
 }
 
+/* Ken Burns эффекты для VideoStudioPlayer */
+@keyframes kb-zoom-in {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.18);
+  }
+}
+@keyframes kb-zoom-out {
+  from {
+    transform: scale(1.18);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes kb-pan-left {
+  from {
+    transform: scale(1.12) translateX(4%);
+  }
+  to {
+    transform: scale(1.12) translateX(-4%);
+  }
+}
+@keyframes kb-pan-right {
+  from {
+    transform: scale(1.12) translateX(-4%);
+  }
+  to {
+    transform: scale(1.12) translateX(4%);
+  }
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.35s ease-out;
+  }
+  .kenburns-zoom-in {
+    animation-name: kb-zoom-in;
+    animation-timing-function: ease-out;
+  }
+  .kenburns-zoom-out {
+    animation-name: kb-zoom-out;
+    animation-timing-function: ease-out;
+  }
+  .kenburns-pan-left {
+    animation-name: kb-pan-left;
+    animation-timing-function: linear;
+  }
+  .kenburns-pan-right {
+    animation-name: kb-pan-right;
+    animation-timing-function: linear;
   }
   .scrollbar-hide {
     -ms-overflow-style: none;
