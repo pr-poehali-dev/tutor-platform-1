@@ -13,6 +13,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AccessProvider } from "@/context/AccessContext";
 import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
+import UtmTracker from "@/components/ads/UtmTracker";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -22,6 +23,8 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const Courses = lazy(() => import("./pages/Courses"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
+const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
+const AdLanding = lazy(() => import("./pages/ads/AdLanding"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
 const BiologyProblems = lazy(() => import("./pages/BiologyProblems"));
 const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
@@ -53,6 +56,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <YandexMetrika />
+            <UtmTracker />
             <AuthProvider>
               <AccessProvider>
                 <Suspense fallback={<PageSkeleton />}>
@@ -65,6 +69,8 @@ const App = () => (
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
+                    <Route path="/admin/ads" element={<AdsManager />} />
+                    <Route path="/ads/:slug" element={<AdLanding />} />
                     <Route path="/math-problems" element={<MathProblems />} />
                     <Route path="/biology-problems" element={<BiologyProblems />} />
                     <Route path="/chemistry-problems" element={<ChemistryProblems />} />

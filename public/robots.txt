@@ -6,6 +6,7 @@ Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
 Disallow: /admin/
+Disallow: /ads/
 Disallow: /*.json$
 Disallow: /*?paid=
 Disallow: /*?utm_
@@ -17,6 +18,7 @@ Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
 Disallow: /admin/
+Disallow: /ads/
 
 User-agent: Yandex
 Allow: /
@@ -25,7 +27,8 @@ Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
 Disallow: /admin/
-Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&paid
+Disallow: /ads/
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&paid
 
 User-agent: Bingbot
 Allow: /
