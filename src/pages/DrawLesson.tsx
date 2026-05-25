@@ -26,13 +26,16 @@ export default function DrawLesson() {
   // Образец «делай как я» — для beginner-уроков всегда виден,
   // на остальных можно включать/выключать. Пользователь решает.
   const [templateVisible, setTemplateVisible] = useState(true);
+  // Счётчик повторов анимации «как рисовать» — увеличивается по кнопке «Показать ещё раз»
+  const [animReplayCount, setAnimReplayCount] = useState(0);
   const { add: addToGallery } = useDrawGallery();
 
   const isBeginner = lesson?.level === "beginner";
 
-  // На каждом новом шаге автовключаем образец для beginner — чтобы помогал «делай как я»
+  // На каждом новом шаге автовключаем образец для beginner и перезапускаем анимацию
   useEffect(() => {
     if (isBeginner) setTemplateVisible(true);
+    setAnimReplayCount(0); // при смене шага — анимация заново
      
   }, [currentStep, isBeginner]);
 
@@ -130,6 +133,7 @@ export default function DrawLesson() {
               tool={tool}
               template={currentTemplate}
               templateVisible={templateVisible}
+              templateAnimKey={`${currentStep}-${animReplayCount}`}
               onChange={() => { /* можно потом отметить «не пустой» */ }}
             />
 
@@ -149,17 +153,30 @@ export default function DrawLesson() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setTemplateVisible((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
-                    templateVisible
-                      ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-200"
-                      : "bg-white/8 border border-white/15 text-white/75 hover:bg-white/12"
-                  }`}
-                >
-                  <Icon name={templateVisible ? "Eye" : "EyeOff"} size={12} />
-                  {templateVisible ? "Виден" : "Скрыт"}
-                </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setTemplateVisible(true);
+                      setAnimReplayCount((n) => n + 1);
+                    }}
+                    title="Показать как рисовать ещё раз"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-br from-pink-500 to-rose-500 text-white hover:scale-[1.04] transition-transform"
+                  >
+                    <Icon name="Play" size={12} />
+                    Показать как
+                  </button>
+                  <button
+                    onClick={() => setTemplateVisible((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      templateVisible
+                        ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-200"
+                        : "bg-white/8 border border-white/15 text-white/75 hover:bg-white/12"
+                    }`}
+                  >
+                    <Icon name={templateVisible ? "Eye" : "EyeOff"} size={12} />
+                    {templateVisible ? "Виден" : "Скрыт"}
+                  </button>
+                </div>
               </div>
             )}
             {/* Под холстом — мобильный toolbar и действия */}

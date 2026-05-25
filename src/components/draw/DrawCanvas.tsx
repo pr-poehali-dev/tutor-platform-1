@@ -24,6 +24,12 @@ interface Props {
   templateVisible?: boolean;
   /** Цвет трафарета (по умолчанию синий) */
   templateColor?: string;
+  /**
+   * Ключ для рестарта анимации «рисующейся руки».
+   * При смене ключа (например — currentStep + replayCounter) фигуры
+   * перерисовываются с эффектом stroke-dashoffset → 0 (как пишет художник).
+   */
+  templateAnimKey?: string | number;
 }
 
 interface Stroke {
@@ -34,7 +40,7 @@ interface Stroke {
 }
 
 const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
-  { color, size, tool, onChange, template, templateVisible = true, templateColor = "#0ea5e9" },
+  { color, size, tool, onChange, template, templateVisible = true, templateColor = "#0ea5e9", templateAnimKey },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -195,55 +201,13 @@ const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
         style={{ aspectRatio: `${canvasSize.w} / ${canvasSize.h}` }}
       />
 
-      {/* Трафарет «делай как я» — полупрозрачный поверх холста */}
+      {/* Трафарет «делай как я» — полупрозрачный, с анимацией «рисующейся руки» */}
       {showTemplate && (
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none rounded-2xl"
-          viewBox={`0 0 ${TEMPLATE_VIEW_W} ${TEMPLATE_VIEW_H}`}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          <g
-            stroke={templateColor}
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="6 5"
-            fill="none"
-            opacity={0.55}
-            style={{ filter: "drop-shadow(0 0 1px rgba(14,165,233,0.4))" }}
-          >
-            {template!.map((shape, i) => {
-              switch (shape.kind) {
-                case "circle":
-                  return <circle key={i} cx={shape.cx} cy={shape.cy} r={shape.r} />;
-                case "ellipse":
-                  return <ellipse key={i} cx={shape.cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} />;
-                case "rect":
-                  return <rect key={i} x={shape.x} y={shape.y} width={shape.w} height={shape.h} />;
-                case "line":
-                  return <line key={i} x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} />;
-                case "polyline":
-                  return <polyline key={i} points={shape.points.map((p) => p.join(",")).join(" ")} />;
-                case "polygon":
-                  return <polygon key={i} points={shape.points.map((p) => p.join(",")).join(" ")} />;
-                case "path":
-                  return <path key={i} d={shape.d} />;
-                case "arc": {
-                  const { cx, cy, r, start, end } = shape;
-                  const x1 = cx + r * Math.cos(start);
-                  const y1 = cy + r * Math.sin(start);
-                  const x2 = cx + r * Math.cos(end);
-                  const y2 = cy + r * Math.sin(end);
-                  const large = end - start > Math.PI ? 1 : 0;
-                  return <path key={i} d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`} />;
-                }
-                default:
-                  return null;
-              }
-            })}
-          </g>
-        </svg>
+        <TemplateOverlay
+          key={templateAnimKey ?? "tpl"}
+          template={template!}
+          color={templateColor}
+        />
       )}
 
       {strokesRef.current.length === 0 && !showTemplate && (
@@ -267,3 +231,105 @@ const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
 });
 
 export default DrawCanvas;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Overlay-компонент трафарета с анимацией «рисующейся руки»
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface TemplateOverlayProps {
+  template: TemplateShape[];
+  color: string;
+}
+
+const DRAW_DURATION_PER_SHAPE_MS = 700; // время на одну фигуру
+const SHAPE_GAP_MS = 150; // пауза между фигурами
+
+function TemplateOverlay({ template, color }: TemplateOverlayProps) {
+  // refs к каждому SVG-элементу (для измерения длины)
+  const shapeRefs = useRef<(SVGGeometryElement | null)[]>([]);
+  const [phase, setPhase] = useState<"drawing" | "done">("drawing");
+
+  useEffect(() => {
+    // После монтирования — для каждой фигуры устанавливаем dasharray = длине,
+    // dashoffset = длине, потом анимируем offset → 0.
+    const elements = shapeRefs.current;
+    elements.forEach((el, i) => {
+      if (!el) return;
+      try {
+        const len = el.getTotalLength();
+        // Стартовое состояние — фигура «не нарисована»
+        el.style.strokeDasharray = `${len}`;
+        el.style.strokeDashoffset = `${len}`;
+        // Запускаем анимацию с задержкой по индексу
+        const delay = i * (DRAW_DURATION_PER_SHAPE_MS + SHAPE_GAP_MS);
+        el.style.transition = `stroke-dashoffset ${DRAW_DURATION_PER_SHAPE_MS}ms ease-in-out ${delay}ms`;
+        // requestAnimationFrame — чтобы браузер успел применить начальные стили
+        requestAnimationFrame(() => {
+          el.style.strokeDashoffset = "0";
+        });
+      } catch {
+        /* getTotalLength может бросить, если элемент не геометрический — игнорируем */
+      }
+    });
+
+    // По завершении всех анимаций — переключаем стиль на «обычный пунктир»
+    const totalMs = template.length * (DRAW_DURATION_PER_SHAPE_MS + SHAPE_GAP_MS) + 200;
+    const timer = window.setTimeout(() => setPhase("done"), totalMs);
+    return () => window.clearTimeout(timer);
+  }, [template]);
+
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none rounded-2xl"
+      viewBox={`0 0 ${TEMPLATE_VIEW_W} ${TEMPLATE_VIEW_H}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <g
+        stroke={color}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        opacity={0.55}
+        // На фазе done переключаемся на привычный «пунктир-шов», на drawing — solid
+        strokeDasharray={phase === "done" ? "6 5" : undefined}
+        style={{ filter: "drop-shadow(0 0 1px rgba(14,165,233,0.4))" }}
+      >
+        {template.map((shape, i) => {
+          const setRef = (el: SVGGeometryElement | null) => {
+            shapeRefs.current[i] = el;
+          };
+          switch (shape.kind) {
+            case "circle":
+              return <circle key={i} ref={setRef} cx={shape.cx} cy={shape.cy} r={shape.r} />;
+            case "ellipse":
+              return <ellipse key={i} ref={setRef} cx={shape.cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} />;
+            case "rect":
+              return <rect key={i} ref={setRef} x={shape.x} y={shape.y} width={shape.w} height={shape.h} />;
+            case "line":
+              return <line key={i} ref={setRef} x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} />;
+            case "polyline":
+              return <polyline key={i} ref={setRef} points={shape.points.map((p) => p.join(",")).join(" ")} />;
+            case "polygon":
+              return <polygon key={i} ref={setRef} points={shape.points.map((p) => p.join(",")).join(" ")} />;
+            case "path":
+              return <path key={i} ref={setRef} d={shape.d} />;
+            case "arc": {
+              const { cx, cy, r, start, end } = shape;
+              const x1 = cx + r * Math.cos(start);
+              const y1 = cy + r * Math.sin(start);
+              const x2 = cx + r * Math.cos(end);
+              const y2 = cy + r * Math.sin(end);
+              const large = end - start > Math.PI ? 1 : 0;
+              return <path key={i} ref={setRef} d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`} />;
+            }
+            default:
+              return null;
+          }
+        })}
+      </g>
+
+    </svg>
+  );
+}
