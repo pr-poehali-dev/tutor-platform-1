@@ -21,13 +21,33 @@ export default function SiteHealth() {
     const results: CheckResult[] = [];
     const urls = func2url as Record<string, string>;
 
-    // 1) Проверяем backend-функции через OPTIONS (preflight)
+    // 1) Проверяем backend-функции.
+    // Вебхуки (yookassa-yookassa-webhook) принимают только POST от ЮKassa и
+    // не отвечают на OPTIONS. Для них пингуем POST с пустым телом — любой ответ
+    // (включая 400/405) означает «функция жива».
+    const webhookFunctions = new Set(["yookassa-yookassa-webhook"]);
+
     for (const [name, url] of Object.entries(urls)) {
       const started = performance.now();
+      const isWebhook = webhookFunctions.has(name);
+      const method = isWebhook ? "POST" : "OPTIONS";
       try {
-        const res = await fetch(url, { method: "OPTIONS" });
+        const res = await fetch(url, {
+          method,
+          headers: isWebhook ? { "Content-Type": "application/json" } : undefined,
+          body: isWebhook ? "{}" : undefined,
+        });
         const duration = Math.round(performance.now() - started);
-        if (res.ok || res.status === 200 || res.status === 204) {
+
+        if (isWebhook) {
+          // Для вебхука любой HTTP-ответ = функция доступна
+          results.push({
+            name: `backend/${name}`,
+            status: "ok",
+            detail: `webhook жив · HTTP ${res.status}`,
+            durationMs: duration,
+          });
+        } else if (res.ok || res.status === 200 || res.status === 204) {
           results.push({ name: `backend/${name}`, status: "ok", detail: `HTTP ${res.status}`, durationMs: duration });
         } else {
           results.push({ name: `backend/${name}`, status: "warn", detail: `HTTP ${res.status}`, durationMs: duration });
