@@ -430,16 +430,55 @@ export default function ActivityRunner({ activity, onClose }: Props) {
           </div>
         )}
 
-        {/* Кнопка «Дальше» для intro/flashcard/finish */}
-        {(scene.kind === "intro" || scene.kind === "flashcard" || scene.kind === "finish") && (
-          <button
-            onClick={nextScene}
-            className="w-full mt-2 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-base font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.01] transition-transform shadow-lg shadow-pink-500/30"
-          >
-            {scene.kind === "finish" ? "Завершить" : sceneIdx === 0 ? "Начнём!" : "Дальше"}
-            <Icon name="ArrowRight" size={16} />
-          </button>
-        )}
+        {/* Кнопка «Дальше» — показываем для всех сцен БЕЗ интерактива.
+            То есть когда нет options (выбор/сортировка) и нет songSteps (песенка).
+            Сценам с выбором кнопка не нужна — там автопереход после правильного ответа. */}
+        {(() => {
+          const hasInteraction =
+            (scene.kind === "song" && scene.songSteps && scene.songSteps.length > 0) ||
+            (scene.kind === "sort" && scene.options && scene.buckets) ||
+            ((scene.kind === "choose" || scene.kind === "emotion" || scene.kind === "counting") &&
+              scene.options && scene.options.length > 0);
+          if (hasInteraction) return null;
+          const label =
+            scene.kind === "finish"
+              ? "Завершить"
+              : sceneIdx === 0
+              ? "Начнём!"
+              : scene.kind === "letter"
+              ? "Дальше"
+              : scene.kind === "flashcard"
+              ? "Дальше"
+              : "Дальше";
+          return (
+            <button
+              onClick={nextScene}
+              className="w-full mt-2 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-base font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.01] transition-transform shadow-lg shadow-pink-500/30"
+            >
+              {label}
+              <Icon name="ArrowRight" size={16} />
+            </button>
+          );
+        })()}
+
+        {/* Кнопка-фолбэк «Пропустить» для сцен с интерактивом — если ребёнок не справляется */}
+        {(() => {
+          const hasInteraction =
+            (scene.kind === "song" && scene.songSteps && scene.songSteps.length > 0) ||
+            (scene.kind === "sort" && scene.options && scene.buckets) ||
+            ((scene.kind === "choose" || scene.kind === "emotion" || scene.kind === "counting") &&
+              scene.options && scene.options.length > 0);
+          if (!hasInteraction) return null;
+          return (
+            <button
+              onClick={nextScene}
+              className="w-full mt-4 inline-flex items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/55 hover:text-white/85 text-xs font-medium py-2.5 rounded-xl transition-colors"
+            >
+              <Icon name="SkipForward" size={12} />
+              Пропустить шаг
+            </button>
+          );
+        })()}
 
         {/* Подсказка для родителя */}
         {scene.hintForParent && (
