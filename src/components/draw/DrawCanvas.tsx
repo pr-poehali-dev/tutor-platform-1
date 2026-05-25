@@ -1,0 +1,197 @@
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
+import Icon from "@/components/ui/icon";
+
+export interface DrawCanvasRef {
+  clear: () => void;
+  undo: () => void;
+  exportPng: () => string | null;
+}
+
+interface Props {
+  /** Внешнее управление кистью */
+  color: string;
+  size: number;
+  tool: "pencil" | "brush" | "marker" | "eraser";
+  /** Колбэк при изменении (например — отметить, что рисунок не пустой) */
+  onChange?: () => void;
+}
+
+interface Stroke {
+  color: string;
+  size: number;
+  tool: Props["tool"];
+  points: { x: number; y: number }[];
+}
+
+const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
+  { color, size, tool, onChange },
+  ref,
+) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const strokesRef = useRef<Stroke[]>([]);
+  const currentRef = useRef<Stroke | null>(null);
+  const drawingRef = useRef(false);
+  const [canvasSize, setCanvasSize] = useState({ w: 600, h: 450 });
+
+  // Resize observer — холст всегда занимает контейнер
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) {
+        const w = Math.floor(e.contentRect.width);
+        const h = Math.max(300, Math.floor(e.contentRect.width * 0.7));
+        setCanvasSize({ w, h });
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Перерисовка при изменении размера или импертивных операциях
+  const redraw = useCallback(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext("2d");
+    if (!ctx) return;
+    // Заполняем белым фоном (а не прозрачным — чтобы экспорт был не «дырявый»)
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    for (const s of strokesRef.current) {
+      drawStroke(ctx, s);
+    }
+  }, []);
+
+  useEffect(() => {
+    redraw();
+  }, [canvasSize, redraw]);
+
+  function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
+    if (s.points.length === 0) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (s.tool === "eraser") {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = s.size * 2;
+    } else {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.size;
+      if (s.tool === "marker") {
+        ctx.globalAlpha = 0.55;
+      } else if (s.tool === "brush") {
+        ctx.globalAlpha = 0.9;
+      }
+    }
+    ctx.beginPath();
+    ctx.moveTo(s.points[0].x, s.points[0].y);
+    for (let i = 1; i < s.points.length; i++) {
+      ctx.lineTo(s.points[i].x, s.points[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function getPoint(e: PointerEvent | React.PointerEvent): { x: number; y: number } {
+    const cvs = canvasRef.current!;
+    const rect = cvs.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * cvs.width,
+      y: ((e.clientY - rect.top) / rect.height) * cvs.height,
+    };
+  }
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    drawingRef.current = true;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const pt = getPoint(e);
+    currentRef.current = { color, size, tool, points: [pt] };
+    strokesRef.current.push(currentRef.current);
+    redraw();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!drawingRef.current || !currentRef.current) return;
+    const pt = getPoint(e);
+    currentRef.current.points.push(pt);
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx && currentRef.current.points.length >= 2) {
+      const pts = currentRef.current.points;
+      // рисуем только последний отрезок — оптимизация
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      if (currentRef.current.tool === "eraser") {
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = currentRef.current.size * 2;
+      } else {
+        ctx.strokeStyle = currentRef.current.color;
+        ctx.lineWidth = currentRef.current.size;
+        if (currentRef.current.tool === "marker") ctx.globalAlpha = 0.55;
+        if (currentRef.current.tool === "brush") ctx.globalAlpha = 0.9;
+      }
+      ctx.beginPath();
+      ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    currentRef.current = null;
+    onChange?.();
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      clear: () => {
+        strokesRef.current = [];
+        redraw();
+        onChange?.();
+      },
+      undo: () => {
+        strokesRef.current.pop();
+        redraw();
+        onChange?.();
+      },
+      exportPng: () => {
+        const cvs = canvasRef.current;
+        if (!cvs) return null;
+        return cvs.toDataURL("image/png");
+      },
+    }),
+    [redraw, onChange],
+  );
+
+  return (
+    <div ref={containerRef} className="relative w-full" style={{ touchAction: "none" }}>
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.w}
+        height={canvasSize.h}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className="w-full bg-white rounded-2xl cursor-crosshair shadow-inner"
+        style={{ aspectRatio: `${canvasSize.w} / ${canvasSize.h}` }}
+      />
+      {strokesRef.current.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <p className="text-slate-300 text-sm font-medium flex items-center gap-2">
+            <Icon name="Brush" size={16} />
+            Рисуй здесь пальцем или мышью
+          </p>
+        </div>
+      )}
+    </div>
+  );
+});
+
+export default DrawCanvas;

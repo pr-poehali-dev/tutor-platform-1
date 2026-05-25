@@ -26,6 +26,8 @@ const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
 const AdLanding = lazy(() => import("./pages/ads/AdLanding"));
 const SiteHealth = lazy(() => import("./pages/admin/SiteHealth"));
+const DrawLanding = lazy(() => import("./pages/DrawLanding"));
+const DrawLesson = lazy(() => import("./pages/DrawLesson"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
 const BiologyProblems = lazy(() => import("./pages/BiologyProblems"));
 const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
@@ -76,6 +78,8 @@ const App = () => (
                     <Route path="/math-problems" element={<MathProblems />} />
                     <Route path="/biology-problems" element={<BiologyProblems />} />
                     <Route path="/chemistry-problems" element={<ChemistryProblems />} />
+                    <Route path="/draw" element={<DrawLanding />} />
+                    <Route path="/draw/:id" element={<DrawLesson />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />
