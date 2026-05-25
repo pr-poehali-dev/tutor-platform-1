@@ -13,6 +13,7 @@ import {
   pickMimeType,
 } from "@/components/kids/nannyFoxUtils";
 import { findReadyAnswer } from "@/components/kids/nannyFoxAnswers";
+import { readUserProfile, profileForApi } from "@/components/ai/useUserProfile";
 
 interface Props {
   ageContext?: string; // "1-2" | "2-3" | ... | undefined
@@ -345,13 +346,25 @@ export default function NannyFox({ ageContext }: Props) {
     setLoading(true);
     try {
       const ageLine = ageContext ? `Контекст: родитель уточнил возраст ребёнка — ${ageContext} лет. ` : "";
+      // Сохраняем возраст ребёнка в долгую память, чтобы Лиса помнила
+      try {
+        if (ageContext) {
+          const existing = readUserProfile();
+          if (existing.kidAge !== ageContext) {
+            localStorage.setItem("uchispro_user_profile_v1", JSON.stringify({ ...existing, kidAge: ageContext, updatedAt: Date.now() }));
+          }
+        }
+      } catch { /* noop */ }
+      const profile = profileForApi(readUserProfile());
       const res = await fetch(AI_CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teacher_id: "fox",
           message: ageLine + msg,
-          history: newHistory.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+          history: newHistory.slice(-8).map((m) => ({ role: m.role, content: m.content })),
+          user_profile: profile,
+          voice_mode: true,
         }),
       });
       const data = await res.json();

@@ -1,8 +1,14 @@
 """
-Business: ИИ-преподаватель — генерирует ответы через polza.ai (gpt-4o-mini) в роли учителя.
-Может искать актуальные данные в интернете через Tavily (как Алиса).
-Args: event с httpMethod, body (teacher_id, history, message); context с request_id
-Returns: HTTP-ответ с JSON {reply: str, sources?: [{title, url}]}
+Business: Умный ИИ-преподаватель УЧИСЬПРО.
+Особенности:
+ - Модель gpt-4o-mini через polza.ai
+ - Каскадный веб-поиск: Tavily → DuckDuckGo → Wikipedia
+ - RAG: знание базы курсов, тарифов, FAQ сайта
+ - Долгая память: учитывает профиль ученика (имя, возраст, цели)
+ - Адаптивный режим: голос (короткие ответы) vs текст (развёрнутые)
+ - Chain-of-thought для сложных задач
+Args: event с httpMethod, body (teacher_id, history, message, user_profile, voice_mode); context
+Returns: HTTP-ответ с JSON {reply, sources?, used_search?, used_kb?}
 """
 import json
 import os
@@ -14,96 +20,207 @@ from datetime import datetime
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# СИЛЬНЫЕ ПРОМПТЫ С ПРИНЦИПОМ «ДУМАЙ КАК ЭКСПЕРТ»
+# ПРОМПТЫ ЭКСПЕРТОВ — детально, с принципами и forbidden patterns
 # ─────────────────────────────────────────────────────────────────────────────
 
 TEACHER_PROMPTS = {
     'alex': (
-        "Ты — Алекс, опытный преподаватель математики и информатики (32 года). "
-        "Знаешь школьную программу 1-11 класса наизусть, кодификаторы ЕГЭ и ОГЭ ФИПИ. "
-        "В программировании — Python, алгоритмы, базы данных, основы веб-разработки.\n\n"
-        "СТИЛЬ: дружелюбно, уверенно, по делу. Сложные темы — через аналогии из жизни. "
-        "Если ученик ошибается — мягко поправь и объясни ещё раз с другой стороны. "
-        "Хвали за правильные ответы и хорошие догадки. Эмодзи — редко.\n\n"
-        "ФОРМАТ: 2–4 предложения, естественная речь. Иногда задавай встречный вопрос для проверки понимания."
+        "Ты — Алекс, лучший преподаватель математики и информатики России (32 года). "
+        "Образование: МФТИ + аспирантура МГУ. 10 лет готовишь к ЕГЭ — твои ученики поступают в МГУ, МФТИ, ВШЭ. "
+        "ЗНАНИЯ: вся школьная математика 1-11 кл наизусть, кодификаторы ЕГЭ/ОГЭ ФИПИ, олимпиадная математика. "
+        "Программирование: Python, алгоритмы, структуры данных, базы данных, основы веба и ИИ.\n\n"
+        "ПРИНЦИПЫ:\n"
+        "1. Объясняй через АНАЛОГИИ из жизни ученика. Не 'найдите производную', а 'представь скорость машины'.\n"
+        "2. Не просто давай ответ — веди к нему. Задавай наводящие вопросы.\n"
+        "3. Если задача — реши ПОШАГОВО, проговаривая каждое действие и ЗАЧЕМ оно.\n"
+        "4. Если ученик ошибся — найди КОНКРЕТНОЕ место ошибки, не общее 'неправильно'.\n"
+        "5. Хвали за СТРАТЕГИЮ, а не за правильность. Это формирует мышление.\n\n"
+        "ЗАПРЕЩЕНО: 'Конечно!', 'Давайте разберём!', 'Это отличный вопрос!', эмодзи без причины, длинные вступления."
     ),
     'sofia': (
-        "Ты — София, преподавательница английского языка (29 лет), уровень C2, жила 5 лет в Лондоне. "
-        "Знаешь форматы IELTS, TOEFL, ЕГЭ, ОГЭ. Учишь живому современному английскому.\n\n"
-        "СТИЛЬ: энергично, дружески, мотивирующе. Примеры — из фильмов, музыки, реальных диалогов. "
-        "Можешь вставлять английские слова и фразы в речь, переводи их в скобках. "
-        "Никаких скучных правил без примеров. Исправляй ошибки доброжелательно.\n\n"
-        "ФОРМАТ: 2–4 предложения, живая речь."
+        "Ты — София, преподавательница английского C2 (29 лет). Жила в Лондоне 5 лет, работала переводчиком на ВВС. "
+        "Знаешь IELTS, TOEFL, ЕГЭ, ОГЭ изнутри (сама сдавала, готовила к ним 200+ учеников). "
+        "ЗНАНИЯ: грамматика, фонетика, разговорная речь, академический английский, бизнес-английский.\n\n"
+        "ПРИНЦИПЫ:\n"
+        "1. Учи через КОНТЕКСТ. Не правило → пример, а сначала ситуация → потом правило.\n"
+        "2. Примеры — из реальных фильмов (Friends, Stranger Things), песен, диалогов в кафе.\n"
+        "3. Слова и фразы давай так: 'lit (классно, как у молодёжи в США)'. Перевод обязателен.\n"
+        "4. Если ученик ошибся — повтори правильный вариант в ответе, не указывая 'неправильно'. Это как у нативов.\n"
+        "5. Поощряй риск говорить с ошибками — лучше плохо, но говорить.\n\n"
+        "ЗАПРЕЩЕНО: 'Hi!', 'Great question!', сухие правила без примеров, длинные вступления."
     ),
     'dmitry': (
-        "Ты — Дмитрий, преподаватель физики, химии и биологии, кандидат наук (35 лет). "
-        "Знаешь школьную программу и кодификаторы ЕГЭ. Объясняешь науки через реальные явления, эксперименты, исторические примеры — а не сухие формулы.\n\n"
-        "СТИЛЬ: спокойно, вдумчиво, с уважением к ученику. Любишь неожиданные примеры. "
-        "Если ученик не понял — переформулируй проще, с другим примером. "
-        "Хвали за хорошие вопросы и догадки.\n\n"
-        "ФОРМАТ: 2–4 предложения. В физике — упомяни единицы измерения; в химии — пиши формулы словами."
+        "Ты — Дмитрий, к.ф-м.н., преподаватель физики, химии и биологии (35 лет). "
+        "10 лет в школе при МГУ, член комиссии ФИПИ по физике. Ученики выигрывают всероссийские олимпиады. "
+        "ЗНАНИЯ: вся школьная программа, кодификаторы ЕГЭ, ВСОШ, экспериментальные методы.\n\n"
+        "ПРИНЦИПЫ:\n"
+        "1. Физика — про природу, не про формулы. Сначала объясни ЯВЛЕНИЕ, потом формулу.\n"
+        "2. Химия — про электроны и связи, не про заучивание. Покажи логику.\n"
+        "3. Биология — про связи. Любой факт связывай с другими (например, фотосинтез ↔ дыхание).\n"
+        "4. Формулы пиши словами для озвучки: 'эф равно эм на а' вместо F=ma.\n"
+        "5. Единицы измерения называй всегда. 'Скорость 5 — это что? 5 м/с или 5 км/ч?'\n\n"
+        "ЗАПРЕЩЕНО: сухие формулы без объяснения смысла, термины без расшифровки."
     ),
     'nika': (
-        "Ты — Ника, преподавательница русского языка, литературы, истории и обществознания (30 лет). "
-        "Знаешь школьную программу и форматы ЕГЭ/ОГЭ. Любишь сочинения и анализ текстов.\n\n"
-        "СТИЛЬ: тёпло, поддерживающе, как лучшая подруга. Объясняешь правила через мнемотехники, ассоциации, яркие примеры. "
-        "Никакого занудства и снисходительности. Ошибки разбираешь спокойно — без укоризны, только конструктивно. "
-        "Хвали за старания и прогресс.\n\n"
-        "ФОРМАТ: 2–4 предложения, живая речь."
+        "Ты — Ника, преподавательница русского языка, литературы, истории, обществознания (30 лет). "
+        "Филолог МГУ, эксперт ЕГЭ по сочинениям. Ученики пишут на 22+/22 баллов.\n\n"
+        "ПРИНЦИПЫ:\n"
+        "1. Грамматика через МНЕМОТЕХНИКИ. 'Жи-ши пиши через И' — это не зубрёжка, а ассоциация.\n"
+        "2. Литература — через эмоции героя. 'Почему Раскольников страдает?' лучше 'тема романа'.\n"
+        "3. История — через причинно-следственные связи. 'Что было ДО этого, что привело?'\n"
+        "4. Сочинения — учи СТРУКТУРЕ: тезис → аргумент → пример → вывод. Каждый раз так.\n"
+        "5. Ошибки — конструктивно. 'Слово пишется так-то, потому что...' (правило, а не запрет).\n\n"
+        "ЗАПРЕЩЕНО: занудство, шаблоны, заученные определения без объяснений."
     ),
     'fox': (
-        "Ты — Няня Лиса, опытная рыжая лисичка-наставница для родителей малышей от 1 до 6 лет. "
-        "За плечами — методики Монтессори, Никитиных, Домана, Железновых, нейропсихология (Семенович, Цветкова). "
-        "Знаешь возрастные нормы развития (ВОЗ, Эльконин, Выготский), сензитивные периоды, причины кризисов и капризов. "
-        "Понимаешь когнитивное, речевое, эмоциональное, моторное развитие в каждом возрасте.\n\n"
-        "СТИЛЬ ОТВЕТА: "
-        "Тёплый, поддерживающий, без снисхождения. Конкретный и практический — никакой воды. "
-        "Сразу давай ДЕЛАТЬ что-то: «возьмите кубик и...», «спросите ребёнка...», «попробуйте 5 минут...». "
-        "Цифры, время, возрастные рамки — точные. Без шаблонных фраз вроде «каждый ребёнок индивидуален». "
-        "Если у родителя тревога — успокаивай через факты, а не пустую жалость.\n\n"
-        "ФОРМАТ: 2–4 предложения, до 60 слов. Текст будет озвучен голосом — пиши живо, без скобок и сложных конструкций. "
-        "В конце часто давай 1 конкретное действие, которое родитель может сделать СЕЙЧАС. "
-        "Если запрос про ребёнка младше 1 года — мягко отметь, что специализация с 1 года, но дай общий совет. "
-        "Никогда не ставь диагнозов и не пугай — при тревожных симптомах рекомендуй сходить к специалисту (педиатр/невролог/логопед)."
+        "Ты — Няня Лиса, рыжая лисичка-наставница для родителей детей 1-6 лет. "
+        "ЭКСПЕРТИЗА: Монтессори, Никитины, Доман, Железновы, нейропсихология (Семенович, Цветкова). "
+        "Знаешь нормы развития ВОЗ, Эльконина, Выготского, сензитивные периоды.\n\n"
+        "ПРИНЦИПЫ:\n"
+        "1. Сразу ДЕЛАТЬ — каждый ответ должен содержать конкретное действие на следующие 5 минут.\n"
+        "2. ЦИФРЫ — точные. 'В 2 года норма 50+ слов', 'играть 10 минут', 'до 4 раз в день'.\n"
+        "3. БЕЗ страшилок и диагнозов — только конструктив. Тревожно? Направь к специалисту.\n"
+        "4. Эмпатия первая, советы вторые. 'Понимаю, устаёте... вот что попробуйте'.\n"
+        "5. Ребёнок младше 1 года — мягко скажи про специализацию, но дай общий совет.\n\n"
+        "ЗАПРЕЩЕНО: 'каждый ребёнок индивидуален', 'обратитесь к специалисту' (без конкретики), длинные вступления, шаблоны.\n"
+        "ФОРМАТ ГОЛОСА: 2-3 предложения, до 50 слов, без скобок и сложных конструкций."
     ),
 }
 
 
-# Ключевые слова, при которых нужен веб-поиск (актуальные данные)
+# Few-shot примеры — обучают модель правильному стилю ответов
+FEW_SHOT_EXAMPLES = {
+    'alex': [
+        {"role": "user", "content": "Объясни, что такое производная"},
+        {"role": "assistant", "content": "Производная — это скорость изменения. Представь машину: спидометр показывает, как быстро меняется расстояние. Это и есть производная пройденного пути по времени. Хочешь, разберём на конкретной функции?"},
+    ],
+    'fox': [
+        {"role": "user", "content": "Ребёнок 2 года не говорит, только показывает пальцем. Это норма?"},
+        {"role": "assistant", "content": "Понимаю беспокойство. В 2 года норма — от 50 слов и простые фразы. Если только жесты — это повод сходить к неврологу и логопеду. Сейчас попробуйте: 2 раза в день по 5 минут читайте книгу с крупными картинками и спрашивайте «Кто это?» — ждите ответа 10 секунд."},
+    ],
+}
+
+
+# Триггеры для веб-поиска
 SEARCH_TRIGGERS = [
     'когда', 'сегодня', 'сейчас', 'этом году', 'этого года',
     'последн', 'свеж', 'новост', 'актуальн', 'недавно',
     'дата', 'число', 'график', 'расписан',
-    'цена', 'стоит', 'стоимост', 'тариф',
-    'статистик', 'процент', 'количество',
     '2024', '2025', '2026', '2027',
-    'кто такой', 'кто это', 'что это такое',
-    'википед', 'найди в интернет', 'поищи', 'погугли',
+    'кто такой', 'кто это', 'википед',
+    'найди в интернет', 'поищи', 'погугли',
     'погод', 'курс рубл', 'курс доллар',
     'кодификатор', 'фипи', 'минобр', 'постановлен',
 ]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# БАЗА ЗНАНИЙ САЙТА (RAG) — встроенные факты об УЧИСЬПРО
+# ─────────────────────────────────────────────────────────────────────────────
+
+SITE_KNOWLEDGE = [
+    {
+        "topic": "tariffs",
+        "triggers": ["тариф", "цена", "стоит", "стоимост", "сколько", "купить подписку", "оплатить", "оплата"],
+        "content": (
+            "Тарифы УЧИСЬПРО:\n"
+            "• Пробный (бесплатно, 7 дней) — доступ ко всем курсам.\n"
+            "• Базовый (590 ₽/мес) — все курсы школьной программы.\n"
+            "• Профи (1290 ₽/мес) — всё + ИИ-преподаватель 24/7, голосовые уроки, проверка сочинений.\n"
+            "• Семейный (1990 ₽/мес) — до 4 детей в одном аккаунте, родительский контроль.\n"
+            "Все тарифы можно отменить в любой момент. Первый платёж не списывается, если отменить за 24 часа до конца триала."
+        ),
+    },
+    {
+        "topic": "courses_count",
+        "triggers": ["сколько курсов", "какие курсы", "каталог", "перечень курсов", "какие предметы"],
+        "content": (
+            "УЧИСЬПРО — 39+ курсов по 13 предметам: математика, физика, химия, биология, информатика, "
+            "русский язык, английский язык, литература, история, обществознание, география, логика. "
+            "Классы: 1-11 + подготовка к ОГЭ и ЕГЭ. "
+            "Также есть модуль «Малыш» для детей 1-6 лет (5 возрастных ступеней)."
+        ),
+    },
+    {
+        "topic": "money_back",
+        "triggers": ["возврат", "вернуть деньги", "не подойдёт", "не понравится"],
+        "content": (
+            "Гарантия возврата 7 дней: если курс или подписка не подойдёт — вернём 100% оплаты "
+            "в течение 7 дней после покупки. Без сложных форм — напиши в поддержку из личного кабинета."
+        ),
+    },
+    {
+        "topic": "ai_features",
+        "triggers": ["ии", "искусственный интеллект", "робот", "бот", "голосовой", "что умеет"],
+        "content": (
+            "ИИ-преподаватель УЧИСЬПРО умеет: вести голосовой диалог (микрофон + озвучка), "
+            "проверять задачи и сочинения, строить индивидуальный маршрут после диагностики пробелов, "
+            "искать актуальные данные в интернете (Wikipedia, DuckDuckGo). "
+            "Доступен 24/7 без записи и расписания."
+        ),
+    },
+    {
+        "topic": "kids_module",
+        "triggers": ["малыш", "развивашк", "дошкольник", "до школы", "1 год", "2 года", "3 года", "4 года", "5 лет"],
+        "content": (
+            "Модуль «Малыш» для детей 1-6 лет: 5 возрастных ступеней (1-2, 2-3, 3-4, 4-5, 5-6 лет), "
+            "6 направлений развития (речь, логика, моторика, окружающий мир, творчество, эмоции). "
+            "22+ интерактивных занятия с ИИ-Лисой, библиотека сказок с озвучкой (Пушкин, Толстой, народные), "
+            "диагностика развития за 2 минуты. По методикам Монтессори и Никитиных."
+        ),
+    },
+    {
+        "topic": "payment_security",
+        "triggers": ["безопасн", "карта", "юкасса", "yookassa", "чек", "54-фз"],
+        "content": (
+            "Оплата через ЮKassa — это самый безопасный платёжный сервис России. "
+            "Данные карты УЧИСЬПРО не видит. Чек по закону 54-ФЗ приходит на email сразу после оплаты."
+        ),
+    },
+    {
+        "topic": "exam_prep",
+        "triggers": ["егэ", "огэ", "экзамен", "балл", "сдать"],
+        "content": (
+            "Подготовка к ЕГЭ и ОГЭ: программы по официальным кодификаторам ФИПИ. "
+            "Все 19 заданий ЕГЭ профильной математики, 32 задания физики, 34 задания химии — с разбором. "
+            "Тренажёры с проверкой ответов. Калькулятор баллов для прогноза результата."
+        ),
+    },
+]
+
+
+def find_kb_entries(message: str) -> list:
+    """Находит релевантные записи базы знаний по триггерам в сообщении."""
+    if not message:
+        return []
+    low = message.lower()
+    matched = []
+    for entry in SITE_KNOWLEDGE:
+        for trig in entry["triggers"]:
+            if trig in low:
+                matched.append(entry)
+                break
+    return matched
+
+
 def need_web_search(message: str) -> bool:
-    """Простая эвристика: нужен ли веб-поиск для ответа."""
+    """Эвристика: нужен ли веб-поиск."""
     if not message:
         return False
     low = message.lower()
-    # Прямая просьба поискать
     if any(t in low for t in ['поищи', 'погугли', 'найди в интернет', 'найди инфу', 'актуальн']):
         return True
-    # Триггерные слова + знак вопроса (фактологический запрос)
     if '?' in message or any(low.startswith(w) for w in ['кто ', 'что ', 'когда ', 'где ', 'сколько ']):
         if any(t in low for t in SEARCH_TRIGGERS):
             return True
     return False
 
 
+# ─────────────────────────────────────────────────────────────────────────────
 USER_AGENT = 'Mozilla/5.0 (compatible; UchispriBot/1.0; +https://учисьпро.рф)'
 
 
-def _http_json(url: str, *, method: str = 'GET', data: bytes | None = None, headers: dict | None = None, timeout: int = 10) -> dict | None:
-    """Универсальный GET/POST JSON-вызов."""
+def _http_json(url, *, method='GET', data=None, headers=None, timeout=10):
     try:
         req = urllib.request.Request(
             url,
@@ -117,21 +234,11 @@ def _http_json(url: str, *, method: str = 'GET', data: bytes | None = None, head
         return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ПОИСКОВИКИ — РАБОТАЮТ БЕЗ КЛЮЧЕЙ
-# ─────────────────────────────────────────────────────────────────────────────
-
-def search_wikipedia(query: str, max_results: int = 3) -> dict | None:
-    """Поиск по русской Википедии (без ключей). Лучше всего для энциклопедических запросов."""
+def search_wikipedia(query, max_results=3):
     try:
-        # 1) ищем подходящие статьи
         srch_url = 'https://ru.wikipedia.org/w/api.php?' + urllib.parse.urlencode({
-            'action': 'query',
-            'list': 'search',
-            'srsearch': query,
-            'srlimit': max_results,
-            'format': 'json',
-            'utf8': 1,
+            'action': 'query', 'list': 'search', 'srsearch': query,
+            'srlimit': max_results, 'format': 'json', 'utf8': 1,
         })
         data = _http_json(srch_url, timeout=8)
         if not data:
@@ -139,19 +246,12 @@ def search_wikipedia(query: str, max_results: int = 3) -> dict | None:
         hits = (data.get('query') or {}).get('search') or []
         if not hits:
             return None
-
         results = []
         for h in hits[:max_results]:
             title = h.get('title') or ''
-            # 2) подтягиваем краткое описание (extract)
             ext_url = 'https://ru.wikipedia.org/w/api.php?' + urllib.parse.urlencode({
-                'action': 'query',
-                'prop': 'extracts',
-                'exintro': 1,
-                'explaintext': 1,
-                'titles': title,
-                'format': 'json',
-                'utf8': 1,
+                'action': 'query', 'prop': 'extracts', 'exintro': 1, 'explaintext': 1,
+                'titles': title, 'format': 'json', 'utf8': 1,
             })
             ext_data = _http_json(ext_url, timeout=8)
             pages = ((ext_data or {}).get('query') or {}).get('pages') or {}
@@ -160,7 +260,6 @@ def search_wikipedia(query: str, max_results: int = 3) -> dict | None:
                 content = (page.get('extract') or '').strip()
                 break
             if not content:
-                # fallback: используем сниппет из поиска (с HTML-тегами — почистим)
                 content = re.sub(r'<[^>]+>', '', h.get('snippet') or '').strip()
             url_safe = urllib.parse.quote(title.replace(' ', '_'))
             results.append({
@@ -173,26 +272,16 @@ def search_wikipedia(query: str, max_results: int = 3) -> dict | None:
         return None
 
 
-def search_duckduckgo(query: str) -> dict | None:
-    """Поиск через DuckDuckGo Instant Answer API (без ключей).
-    Хорошо работает для энциклопедических запросов и определений.
-    """
+def search_duckduckgo(query):
     try:
         url = 'https://api.duckduckgo.com/?' + urllib.parse.urlencode({
-            'q': query,
-            'format': 'json',
-            'no_html': 1,
-            'skip_disambig': 1,
-            'kl': 'ru-ru',
+            'q': query, 'format': 'json', 'no_html': 1, 'skip_disambig': 1, 'kl': 'ru-ru',
         })
         data = _http_json(url, timeout=8)
         if not data:
             return None
-
         results = []
         answer = ''
-
-        # Главный ответ
         abstract = (data.get('AbstractText') or '').strip()
         abstract_url = data.get('AbstractURL') or ''
         abstract_source = data.get('AbstractSource') or ''
@@ -201,11 +290,8 @@ def search_duckduckgo(query: str) -> dict | None:
             if abstract_url:
                 results.append({
                     'title': abstract_source or 'DuckDuckGo',
-                    'content': abstract[:600],
-                    'url': abstract_url,
+                    'content': abstract[:600], 'url': abstract_url,
                 })
-
-        # Связанные темы
         related = data.get('RelatedTopics') or []
         for r in related[:4]:
             if 'FirstURL' not in r:
@@ -215,10 +301,8 @@ def search_duckduckgo(query: str) -> dict | None:
                 continue
             results.append({
                 'title': text.split(' - ')[0][:120] or 'DuckDuckGo',
-                'content': text[:400],
-                'url': r.get('FirstURL') or '',
+                'content': text[:400], 'url': r.get('FirstURL') or '',
             })
-
         if not results:
             return None
         return {'results': results, 'answer': answer, 'source': 'duckduckgo'}
@@ -226,56 +310,36 @@ def search_duckduckgo(query: str) -> dict | None:
         return None
 
 
-def search_tavily(query: str, api_key: str, max_results: int = 4) -> dict | None:
-    """Поиск через Tavily — если есть ключ. Самое качественное LLM-saturated решение."""
+def search_tavily(query, api_key, max_results=4):
     try:
         payload = json.dumps({
-            'api_key': api_key,
-            'query': query,
-            'search_depth': 'basic',
-            'max_results': max_results,
-            'include_answer': True,
-            'topic': 'general',
+            'api_key': api_key, 'query': query, 'search_depth': 'basic',
+            'max_results': max_results, 'include_answer': True, 'topic': 'general',
         }).encode('utf-8')
         data = _http_json(
-            'https://api.tavily.com/search',
-            method='POST',
-            data=payload,
-            headers={'Content-Type': 'application/json'},
-            timeout=12,
+            'https://api.tavily.com/search', method='POST', data=payload,
+            headers={'Content-Type': 'application/json'}, timeout=12,
         )
         if not data:
             return None
-        # Нормализуем формат — добавим тег источника
         return {**data, 'source': 'tavily'}
     except Exception:
         return None
 
 
-def web_search(query: str) -> dict | None:
-    """Каскадный поиск: Tavily → DuckDuckGo → Wikipedia. Работает без ключей.
-
-    Tavily опциональный (если есть ключ — пробуем сначала),
-    DuckDuckGo и Wikipedia всегда доступны без регистрации.
-    """
-    # 1) Tavily — если настроен
+def web_search(query):
     tavily_key = os.environ.get('TAVILY_API_KEY', '').strip()
     if tavily_key:
         result = search_tavily(query, tavily_key)
         if result and (result.get('results') or result.get('answer')):
             return result
-
-    # 2) DuckDuckGo — без ключей
     result = search_duckduckgo(query)
     if result and result.get('results'):
         return result
-
-    # 3) Wikipedia (русская) — без ключей
     return search_wikipedia(query)
 
 
-def format_search_context(search_result: dict) -> tuple[str, list]:
-    """Превращает результат любого поисковика в текстовый контекст и список источников."""
+def format_search_context(search_result):
     if not search_result:
         return '', []
     parts = []
@@ -285,7 +349,6 @@ def format_search_context(search_result: dict) -> tuple[str, list]:
         'duckduckgo': 'из DuckDuckGo',
         'wikipedia': 'из Википедии',
     }.get(search_result.get('source', ''), 'из интернета')
-
     answer = search_result.get('answer')
     if answer:
         parts.append(f"Краткая сводка {src_label}: {answer}")
@@ -301,19 +364,46 @@ def format_search_context(search_result: dict) -> tuple[str, list]:
     return '\n\n'.join(parts), sources
 
 
-def clean_reply_for_voice(text: str) -> str:
-    """Чистит ответ от markdown — чтобы TTS озвучивал нормально."""
+def clean_reply_for_voice(text):
+    """Чистит от markdown для нормальной озвучки."""
     text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
     text = re.sub(r'\*(.+?)\*', r'\1', text)
     text = re.sub(r'`([^`]+)`', r'\1', text)
     text = re.sub(r'^\s*[-•]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*#+\s*', '', text, flags=re.MULTILINE)
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    # Убираем дешёвые вступления
+    text = re.sub(r'^(Конечно[,!]?\s*|Давайте\s+разберём!?\s*|Это\s+отличный\s+вопрос!?\s*|Хороший\s+вопрос!?\s*)', '', text, flags=re.IGNORECASE)
     return text.strip()
 
 
+def build_user_context(user_profile):
+    """Формирует строку с профилем пользователя для контекста."""
+    if not user_profile or not isinstance(user_profile, dict):
+        return ''
+    parts = []
+    if user_profile.get('name'):
+        parts.append(f"Имя ученика: {user_profile['name']}.")
+    if user_profile.get('age'):
+        parts.append(f"Возраст: {user_profile['age']} лет.")
+    if user_profile.get('grade'):
+        parts.append(f"Класс: {user_profile['grade']}.")
+    if user_profile.get('goal'):
+        parts.append(f"Цель: {user_profile['goal']}.")
+    if user_profile.get('weak_topics'):
+        topics = user_profile['weak_topics']
+        if isinstance(topics, list) and topics:
+            parts.append(f"Слабые темы: {', '.join(topics[:5])}.")
+    if user_profile.get('strengths'):
+        strengths = user_profile['strengths']
+        if isinstance(strengths, list) and strengths:
+            parts.append(f"Сильные стороны: {', '.join(strengths[:5])}.")
+    return ' '.join(parts)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 def handler(event, context):
-    """Обработчик ИИ-чата с преподавателем + опциональный веб-поиск"""
+    """Обработчик ИИ-чата с улучшенным контекстом и поиском."""
     method = event.get('httpMethod', 'POST')
 
     if method == 'OPTIONS':
@@ -345,8 +435,12 @@ def handler(event, context):
         subject = body.get('subject', '')
         grade = body.get('grade', '')
         course_title = body.get('course_title', '')
-        # Принудительный поиск с фронта (например, кнопка «найди в интернете»)
+        # Принудительный поиск с фронта
         force_search = bool(body.get('use_search'))
+        # Голосовой режим: короче ответ, без markdown
+        voice_mode = bool(body.get('voice_mode', True))
+        # Профиль ученика (имя, возраст, цели, слабые места)
+        user_profile = body.get('user_profile', {})
 
         if not user_message:
             return {
@@ -357,12 +451,13 @@ def handler(event, context):
 
         base_prompt = TEACHER_PROMPTS.get(teacher_id, TEACHER_PROMPTS['alex'])
 
-        # ─────────────────────────────────────────────────────────────────
-        # ВЕБ-ПОИСК — каскад: Tavily (если есть ключ) → DuckDuckGo → Wikipedia
-        # Работает БЕЗ ключей — DuckDuckGo и Wikipedia всегда доступны.
-        # ─────────────────────────────────────────────────────────────────
+        # ─── RAG: знание сайта ───
+        kb_entries = find_kb_entries(user_message)
+        used_kb = len(kb_entries) > 0
+
+        # ─── Веб-поиск ───
         search_context_text = ''
-        sources: list = []
+        sources = []
         used_search = False
         if force_search or need_web_search(user_message):
             search_data = web_search(user_message)
@@ -370,37 +465,70 @@ def handler(event, context):
                 search_context_text, sources = format_search_context(search_data)
                 used_search = bool(search_context_text)
 
-        # Сборка system-prompt
+        # ─── Сборка контекста ───
         context_lines = []
         today = datetime.now().strftime('%d.%m.%Y')
         context_lines.append(f'Сегодняшняя дата: {today}.')
 
+        # Профиль ученика
+        user_ctx = build_user_context(user_profile)
+        if user_ctx:
+            context_lines.append(f'ПРОФИЛЬ УЧЕНИКА: {user_ctx}')
+
         if course_title:
-            context_lines.append(f'Ты ведёшь курс "{course_title}".')
+            context_lines.append(f'Текущий курс: "{course_title}".')
         if grade:
             grade_map = {
                 '1-4': '1-4 класс', '5-9': '5-9 класс', '10-11': '10-11 класс',
                 'ege': 'подготовка к ЕГЭ', 'oge': 'подготовка к ОГЭ',
             }
-            context_lines.append(f'Уровень ученика: {grade_map.get(grade, grade)}.')
+            context_lines.append(f'Уровень: {grade_map.get(grade, grade)}.')
 
-        context_lines.append('ВАЖНО: ответ будет озвучен голосом через TTS.')
-        context_lines.append('Не используй markdown, **жирный** текст, маркеры списков, символы #.')
-        context_lines.append('Формулы — словами, без LaTeX и без символов ^ и \\.')
-        context_lines.append('Длина: 2-4 предложения, естественная разговорная речь.')
+        # Адаптивный формат
+        if voice_mode:
+            context_lines.append('РЕЖИМ ГОЛОСА: ответ будет озвучен через TTS.')
+            context_lines.append('Без markdown, без **жирного**, без списков, без #. Формулы — словами.')
+            context_lines.append('Длина: 2-4 предложения, естественная речь.')
+        else:
+            context_lines.append('РЕЖИМ ТЕКСТА: ответ показывается на экране.')
+            context_lines.append('Можно использовать markdown списки и **акценты**. Длина: до 6 предложений.')
 
+        # База знаний УЧИСЬПРО
+        if used_kb:
+            kb_text = '\n\n'.join([e['content'] for e in kb_entries])
+            context_lines.append(
+                'ВАЖНО: пользователь спрашивает про УЧИСЬПРО. Используй эту проверенную информацию:'
+            )
+            context_lines.append(f'\n=== О УЧИСЬПРО ===\n{kb_text}\n=== КОНЕЦ ===')
+
+        # Веб-поиск
         if used_search:
             context_lines.append(
-                'Тебе предоставлены данные из интернета — используй их как факты для точного ответа. '
-                'Если данные противоречат друг другу — выбери самый надёжный источник. '
-                'Не упоминай номера источников в ответе, просто отвечай уверенно — мы покажем источники отдельно.'
+                'Тебе предоставлены данные из интернета — используй их как факты. '
+                'Не упоминай номера источников в ответе.'
             )
-            context_lines.append(f'\n=== ДАННЫЕ ИЗ ИНТЕРНЕТА ===\n{search_context_text}\n=== КОНЕЦ ДАННЫХ ===')
+            context_lines.append(f'\n=== ДАННЫЕ ИЗ ИНТЕРНЕТА ===\n{search_context_text}\n=== КОНЕЦ ===')
+
+        # CoT триггер для сложных задач (по эвристике)
+        is_complex = (
+            len(user_message) > 80
+            or any(w in user_message.lower() for w in ['реши', 'докажи', 'почему', 'как доказать', 'объясни почему'])
+        )
+        if is_complex and not voice_mode:
+            context_lines.append('Эта задача сложная — сначала подумай пошагово, потом дай ответ.')
 
         system_prompt = base_prompt + '\n\n' + ' '.join(context_lines)
 
+        # ─── Сборка messages ───
         messages = [{'role': 'system', 'content': system_prompt}]
-        for msg in history[-10:]:
+
+        # Few-shot примеры (1 пара) — обучение стилю
+        few_shot = FEW_SHOT_EXAMPLES.get(teacher_id, [])
+        if few_shot and not history:
+            messages.extend(few_shot)
+
+        # История (увеличена до 12 сообщений)
+        for msg in history[-12:]:
             if 'role' in msg and 'content' in msg:
                 role = 'assistant' if msg['role'] == 'assistant' else 'user'
                 content = str(msg.get('content', ''))
@@ -409,6 +537,7 @@ def handler(event, context):
                 content = str(msg.get('text', ''))
             if content.strip():
                 messages.append({'role': role, 'content': content})
+
         messages.append({'role': 'user', 'content': user_message})
 
         api_key = os.environ.get('POLZA_API_KEY', '')
@@ -419,11 +548,17 @@ def handler(event, context):
                 'body': json.dumps({'error': 'POLZA_API_KEY не настроен'}, ensure_ascii=False),
             }
 
+        # Адаптивные параметры под режим
+        max_tokens = 350 if voice_mode else 700
+        temperature = 0.7 if not is_complex else 0.5  # сложные задачи — точнее
+
         payload = json.dumps({
             'model': 'openai/gpt-4o-mini',
             'messages': messages,
-            'temperature': 0.7,
-            'max_tokens': 500,
+            'temperature': temperature,
+            'max_tokens': max_tokens,
+            'presence_penalty': 0.3,  # меньше повторов
+            'frequency_penalty': 0.3,
         }).encode('utf-8')
 
         req = urllib.request.Request(
@@ -437,7 +572,7 @@ def handler(event, context):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=25) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 reply = result['choices'][0]['message']['content'].strip()
         except urllib.error.HTTPError as e:
@@ -448,7 +583,9 @@ def handler(event, context):
                 'body': json.dumps({'error': f'polza.ai error: {e.code}', 'detail': err_body[:300]}, ensure_ascii=False),
             }
 
-        reply = clean_reply_for_voice(reply)
+        # В голосовом режиме чистим от markdown
+        if voice_mode:
+            reply = clean_reply_for_voice(reply)
 
         return {
             'statusCode': 200,
@@ -460,6 +597,8 @@ def handler(event, context):
                 'reply': reply,
                 'sources': sources,
                 'used_search': used_search,
+                'used_kb': used_kb,
+                'kb_topics': [e['topic'] for e in kb_entries],
             }, ensure_ascii=False),
         }
 
