@@ -7,6 +7,23 @@
 export type DrawLevel = "beginner" | "easy" | "medium" | "hard";
 export type DrawCategory = "shapes" | "animals" | "people" | "nature" | "objects" | "fantasy";
 
+/**
+ * SVG-элемент трафарета. Координаты — в виртуальной системе 600×450.
+ * DrawCanvas масштабирует под реальный размер холста автоматически.
+ */
+export type TemplateShape =
+  | { kind: "circle"; cx: number; cy: number; r: number }
+  | { kind: "ellipse"; cx: number; cy: number; rx: number; ry: number }
+  | { kind: "rect"; x: number; y: number; w: number; h: number }
+  | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
+  | { kind: "polyline"; points: [number, number][] }
+  | { kind: "polygon"; points: [number, number][] }
+  | { kind: "arc"; cx: number; cy: number; r: number; start: number; end: number };
+
+/** Размер виртуальной системы координат трафарета. */
+export const TEMPLATE_VIEW_W = 600;
+export const TEMPLATE_VIEW_H = 450;
+
 export interface DrawStep {
   /** Название шага: «Шаг 1. Овал» */
   title: string;
@@ -22,6 +39,12 @@ export interface DrawStep {
   suggestSize?: number;
   /** Длительность шага в секундах для оценки */
   estSec?: number;
+  /**
+   * Трафарет-образец «делай как я».
+   * Полупрозрачный контур поверх холста — ребёнок ведёт по нему.
+   * На beginner-уроках включается автоматически и работает как обводка.
+   */
+  template?: TemplateShape[];
 }
 
 export interface DrawLesson {

@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import { TemplateShape, TEMPLATE_VIEW_W, TEMPLATE_VIEW_H } from "@/components/draw/drawData";
 
 export interface DrawCanvasRef {
   clear: () => void;
@@ -14,6 +15,15 @@ interface Props {
   tool: "pencil" | "brush" | "marker" | "eraser";
   /** Колбэк при изменении (например — отметить, что рисунок не пустой) */
   onChange?: () => void;
+  /**
+   * Трафарет «делай как я»: фигуры, которые будут полупрозрачно показаны поверх холста.
+   * Координаты — в виртуальной системе 600×450, масштабируются автоматически.
+   */
+  template?: TemplateShape[];
+  /** Видимость трафарета (можно скрыть/показать кнопкой) */
+  templateVisible?: boolean;
+  /** Цвет трафарета (по умолчанию синий) */
+  templateColor?: string;
 }
 
 interface Stroke {
@@ -24,7 +34,7 @@ interface Stroke {
 }
 
 const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
-  { color, size, tool, onChange },
+  { color, size, tool, onChange, template, templateVisible = true, templateColor = "#0ea5e9" },
   ref,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -168,6 +178,8 @@ const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
     [redraw, onChange],
   );
 
+  const showTemplate = template && template.length > 0 && templateVisible;
+
   return (
     <div ref={containerRef} className="relative w-full" style={{ touchAction: "none" }}>
       <canvas
@@ -182,12 +194,72 @@ const DrawCanvas = forwardRef<DrawCanvasRef, Props>(function DrawCanvas(
         className="w-full bg-white rounded-2xl cursor-crosshair shadow-inner"
         style={{ aspectRatio: `${canvasSize.w} / ${canvasSize.h}` }}
       />
-      {strokesRef.current.length === 0 && (
+
+      {/* Трафарет «делай как я» — полупрозрачный поверх холста */}
+      {showTemplate && (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none rounded-2xl"
+          viewBox={`0 0 ${TEMPLATE_VIEW_W} ${TEMPLATE_VIEW_H}`}
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <g
+            stroke={templateColor}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="6 5"
+            fill="none"
+            opacity={0.55}
+            style={{ filter: "drop-shadow(0 0 1px rgba(14,165,233,0.4))" }}
+          >
+            {template!.map((shape, i) => {
+              switch (shape.kind) {
+                case "circle":
+                  return <circle key={i} cx={shape.cx} cy={shape.cy} r={shape.r} />;
+                case "ellipse":
+                  return <ellipse key={i} cx={shape.cx} cy={shape.cy} rx={shape.rx} ry={shape.ry} />;
+                case "rect":
+                  return <rect key={i} x={shape.x} y={shape.y} width={shape.w} height={shape.h} />;
+                case "line":
+                  return <line key={i} x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} />;
+                case "polyline":
+                  return <polyline key={i} points={shape.points.map((p) => p.join(",")).join(" ")} />;
+                case "polygon":
+                  return <polygon key={i} points={shape.points.map((p) => p.join(",")).join(" ")} />;
+                case "path":
+                  return <path key={i} d={shape.d} />;
+                case "arc": {
+                  const { cx, cy, r, start, end } = shape;
+                  const x1 = cx + r * Math.cos(start);
+                  const y1 = cy + r * Math.sin(start);
+                  const x2 = cx + r * Math.cos(end);
+                  const y2 = cy + r * Math.sin(end);
+                  const large = end - start > Math.PI ? 1 : 0;
+                  return <path key={i} d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`} />;
+                }
+                default:
+                  return null;
+              }
+            })}
+          </g>
+        </svg>
+      )}
+
+      {strokesRef.current.length === 0 && !showTemplate && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <p className="text-slate-300 text-sm font-medium flex items-center gap-2">
             <Icon name="Brush" size={16} />
             Рисуй здесь пальцем или мышью
           </p>
+        </div>
+      )}
+
+      {/* Подсказка для режима «обводки» */}
+      {showTemplate && strokesRef.current.length === 0 && (
+        <div className="absolute top-2 right-2 inline-flex items-center gap-1.5 bg-cyan-500/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg pointer-events-none animate-fadeIn">
+          <Icon name="Sparkles" size={11} />
+          Обводи пунктир!
         </div>
       )}
     </div>

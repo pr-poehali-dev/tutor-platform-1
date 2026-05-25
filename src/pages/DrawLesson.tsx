@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -8,6 +8,7 @@ import DrawCanvas, { DrawCanvasRef } from "@/components/draw/DrawCanvas";
 import DrawToolbar from "@/components/draw/DrawToolbar";
 import DrawMasterClass from "@/components/draw/DrawMasterClass";
 import { getLesson } from "@/components/draw/drawData";
+import { getTemplate } from "@/components/draw/drawTemplates";
 import { useDrawGallery } from "@/components/draw/useDrawGallery";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -22,9 +23,22 @@ export default function DrawLesson() {
   const [currentStep, setCurrentStep] = useState(0);
   const [finished, setFinished] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  // Образец «делай как я» — для beginner-уроков всегда виден,
+  // на остальных можно включать/выключать. Пользователь решает.
+  const [templateVisible, setTemplateVisible] = useState(true);
   const { add: addToGallery } = useDrawGallery();
 
+  const isBeginner = lesson?.level === "beginner";
+
+  // На каждом новом шаге автовключаем образец для beginner — чтобы помогал «делай как я»
+  useEffect(() => {
+    if (isBeginner) setTemplateVisible(true);
+     
+  }, [currentStep, isBeginner]);
+
   if (!lesson) return <Navigate to="/draw" replace />;
+
+  const currentTemplate = getTemplate(lesson.id, currentStep);
 
   const handleSave = () => {
     const dataUrl = canvasRef.current?.exportPng();
@@ -114,8 +128,40 @@ export default function DrawLesson() {
               color={color}
               size={size}
               tool={tool}
+              template={currentTemplate}
+              templateVisible={templateVisible}
               onChange={() => { /* можно потом отметить «не пустой» */ }}
             />
+
+            {/* Переключатель образца — над холстом, чтобы был всегда виден */}
+            {currentTemplate && (
+              <div className="flex items-center justify-between gap-3 bg-card border border-white/10 rounded-2xl p-3">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${templateVisible ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "bg-white/8 text-white/55 border border-white/15"}`}>
+                    <Icon name="LayoutTemplate" size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs font-bold">Образец «делай как я»</p>
+                    <p className="text-white/45 text-[10px] leading-tight mt-0.5">
+                      {isBeginner
+                        ? "На первых уроках обводи пунктир — это поможет."
+                        : "Можно показать или скрыть подсказку."}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTemplateVisible((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
+                    templateVisible
+                      ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-200"
+                      : "bg-white/8 border border-white/15 text-white/75 hover:bg-white/12"
+                  }`}
+                >
+                  <Icon name={templateVisible ? "Eye" : "EyeOff"} size={12} />
+                  {templateVisible ? "Виден" : "Скрыт"}
+                </button>
+              </div>
+            )}
             {/* Под холстом — мобильный toolbar и действия */}
             <div className="lg:hidden">
               <DrawToolbar
