@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "site": "https://учисьпро.рф",
+  "counterId": 109375884,
+  "description": "Полный список целей Яндекс.Метрики для УЧИСЬПРО. Импортируется через интерфейс Метрики (Цели → Импорт) или создаётся вручную по этому списку.",
+  "goals": [
+    {
+      "name": "Регистрация / вход",
+      "id": "auth_register",
+      "type": "JS event",
+      "condition": "reachGoal('auth_register')",
+      "value": 50,
+      "category": "Регистрация",
+      "description": "Пользователь зарегистрировался или вошёл в аккаунт"
+    },
+    {
+      "name": "Открыт каталог курсов",
+      "id": "view_catalog",
+      "type": "URL",
+      "condition": "содержит /courses",
+      "value": 10,
+      "category": "Навигация",
+      "description": "Пользователь зашёл в каталог курсов"
+    },
+    {
+      "name": "Открыты тарифы",
+      "id": "view_pricing",
+      "type": "URL",
+      "condition": "содержит /pricing",
+      "value": 30,
+      "category": "Конверсия",
+      "description": "Просмотр страницы тарифов — высокая ценность"
+    },
+    {
+      "name": "Клик «Купить курс»",
+      "id": "course_buy_click",
+      "type": "JS event",
+      "condition": "reachGoal('course_buy_click')",
+      "value": 100,
+      "category": "Конверсия",
+      "description": "Нажата кнопка покупки конкретного курса"
+    },
+    {
+      "name": "Клик «Оформить тариф»",
+      "id": "subscription_click",
+      "type": "JS event",
+      "condition": "reachGoal('subscription_click')",
+      "value": 100,
+      "category": "Конверсия",
+      "description": "Нажата кнопка оформления подписки"
+    },
+    {
+      "name": "Перешёл к оплате ЮKassa",
+      "id": "payment_started",
+      "type": "JS event",
+      "condition": "reachGoal('payment_started')",
+      "value": 200,
+      "category": "Оплата",
+      "description": "Создан платёж, ушёл на страницу ЮKassa"
+    },
+    {
+      "name": "Оплата успешна",
+      "id": "payment_success",
+      "type": "JS event",
+      "condition": "reachGoal('payment_success')",
+      "value": 1000,
+      "category": "Оплата",
+      "description": "ГЛАВНАЯ КОНВЕРСИЯ — пользователь оплатил курс или тариф"
+    },
+    {
+      "name": "Прохождение диагностики Малыш",
+      "id": "kids_diagnostic_done",
+      "type": "JS event",
+      "condition": "reachGoal('kids_diagnostic_done')",
+      "value": 40,
+      "category": "Малыш",
+      "description": "Родитель прошёл тест диагностики развития ребёнка"
+    },
+    {
+      "name": "Прохождение интерактивного занятия",
+      "id": "kids_activity_done",
+      "type": "JS event",
+      "condition": "reachGoal('kids_activity_done')",
+      "value": 20,
+      "category": "Малыш",
+      "description": "Ребёнок прошёл одно из интерактивных занятий до конца"
+    },
+    {
+      "name": "Прослушал сказку",
+      "id": "kids_tale_play",
+      "type": "JS event",
+      "condition": "reachGoal('kids_tale_play')",
+      "value": 15,
+      "category": "Малыш",
+      "description": "Запущено воспроизведение сказки из библиотеки"
+    },
+    {
+      "name": "Решена задача в тренажёре",
+      "id": "problem_solved",
+      "type": "JS event",
+      "condition": "reachGoal('problem_solved')",
+      "value": 15,
+      "category": "Обучение",
+      "description": "Задача математика/биология/химия решена верно"
+    },
+    {
+      "name": "Диалог с ИИ-агентом",
+      "id": "ai_chat_message",
+      "type": "JS event",
+      "condition": "reachGoal('ai_chat_message')",
+      "value": 5,
+      "category": "ИИ",
+      "description": "Отправлено сообщение ИИ-преподавателю или Лисе"
+    },
+    {
+      "name": "Использован голосовой ввод",
+      "id": "voice_input_used",
+      "type": "JS event",
+      "condition": "reachGoal('voice_input_used')",
+      "value": 10,
+      "category": "ИИ",
+      "description": "Использован микрофон для общения с ИИ"
+    },
+    {
+      "name": "Заход с Яндекс.Директа",
+      "id": "ad_visit_yandex",
+      "type": "JS event",
+      "condition": "reachGoal('ad_visit_yandex')",
+      "value": 1,
+      "category": "Реклама",
+      "description": "Пользователь пришёл с рекламы Яндекс.Директа"
+    },
+    {
+      "name": "Открыт калькулятор баллов",
+      "id": "score_calculator_used",
+      "type": "URL",
+      "condition": "содержит /score-calculator",
+      "value": 25,
+      "category": "Обучение",
+      "description": "Использован калькулятор баллов ЕГЭ/ОГЭ"
+    },
+    {
+      "name": "Прокрутка > 75%",
+      "id": "deep_scroll",
+      "type": "JS event",
+      "condition": "reachGoal('deep_scroll')",
+      "value": 5,
+      "category": "Вовлечённость",
+      "description": "Пользователь прокрутил страницу более чем на 75%"
+    },
+    {
+      "name": "Время на сайте > 3 мин",
+      "id": "engaged_session",
+      "type": "JS event",
+      "condition": "reachGoal('engaged_session')",
+      "value": 15,
+      "category": "Вовлечённость",
+      "description": "Сессия длится более 3 минут — заинтересованный посетитель"
+    }
+  ],
+  "ecommerce": {
+    "enabled": true,
+    "dataLayer": "dataLayer",
+    "events": [
+      {
+        "event": "purchase",
+        "description": "Успешная оплата курса или подписки",
+        "fields": ["transaction_id", "value", "currency", "items"]
+      },
+      {
+        "event": "begin_checkout",
+        "description": "Начало оформления заказа"
+      },
+      {
+        "event": "view_item",
+        "description": "Просмотр страницы курса"
+      }
+    ]
+  },
+  "instruction": "Открой metrika.yandex.ru → Счётчик 109375884 → Цели → 'Добавить цель' → выбери тип (JS event или URL) → введи имя и условие из этого файла. Цели начинаются работать сразу. Для рекламы в Директе выбери цель 'payment_success' как главную."
+}
