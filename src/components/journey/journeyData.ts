@@ -92,10 +92,35 @@ export interface ProgramModule {
   title: string;
   description: string;
   skills: string[];
-  tasks_count: number;
+  tasks_count?: number;
   difficulty: string;
   estimated_minutes: number;
   repeat_after_days: number[];
+  /** Расширенные поля v2: цель модуля и поурочная структура */
+  goal?: string;
+  lessons?: ModuleLesson[];
+  prerequisites?: string[];
+}
+
+export interface ModuleLesson {
+  id: string;
+  type: "theory" | "video" | "practice" | "test";
+  title: string;
+  summary: string;
+  estimated_minutes: number;
+  tasks_count?: number;
+  passing_score?: number;
+}
+
+export interface ProgramMilestone {
+  after_module: number;
+  achievement: string;
+}
+
+export interface WeeklySchedule {
+  days_per_week: number;
+  minutes_per_day: number;
+  best_time?: string;
 }
 
 export interface Program {
@@ -104,6 +129,12 @@ export interface Program {
   total_modules: number;
   modules: ProgramModule[];
   tips: string[];
+  /** Расширенные поля v2 */
+  program_description?: string;
+  estimated_hours_total?: number;
+  methodology?: string;
+  weekly_schedule?: WeeklySchedule;
+  milestones?: ProgramMilestone[];
 }
 
 export interface Task {
