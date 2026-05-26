@@ -206,7 +206,31 @@ def action_feedback(conn, body):
                 WHERE agent_key = %s
             """, (agent_key, agent_key))
     conn.commit()
-    return ok({'feedback_id': fid, 'saved': True})
+
+    # АВТО-ТРИГГЕР: дёргаем автопилот в фоне если фидбэк негативный
+    # Решение принимает автопилот: проверит пороги, кулдаун и эволюционирует если надо
+    auto_triggered = False
+    if rating is not None and rating <= 3:
+        autopilot_url = os.environ.get('AI_AUTOPILOT_URL', '')
+        if autopilot_url:
+            try:
+                payload = json.dumps({
+                    'action': 'check',
+                    'run_type': 'auto_feedback_trigger',
+                }).encode('utf-8')
+                req = urllib.request.Request(
+                    f'{autopilot_url}?action=check',
+                    data=payload,
+                    headers={'Content-Type': 'application/json'},
+                    method='POST',
+                )
+                # Не ждём долго — пусть автопилот работает в фоне
+                urllib.request.urlopen(req, timeout=3)
+                auto_triggered = True
+            except Exception:
+                pass
+
+    return ok({'feedback_id': fid, 'saved': True, 'auto_triggered': auto_triggered})
 
 
 def action_save_pattern(conn, body):

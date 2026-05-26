@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import AutopilotPanel from "@/components/admin/AutopilotPanel";
+import AgentGraph from "@/components/admin/AgentGraph";
 import func2url from "../../../backend/func2url.json";
 
 const EVOLVE_URL = (func2url as Record<string, string>)["ai-evolve"];
@@ -170,6 +172,12 @@ export default function AIEvolutionLab() {
         )}
 
         {loading && <p className="text-white/55 text-sm">Загружаю агентов...</p>}
+
+        {/* Автопилот + Граф связей */}
+        <div className="grid lg:grid-cols-2 gap-5 mb-8">
+          <AutopilotPanel />
+          <AgentGraph />
+        </div>
 
         <div className="grid lg:grid-cols-[1fr_500px] gap-6">
           {/* Список агентов */}

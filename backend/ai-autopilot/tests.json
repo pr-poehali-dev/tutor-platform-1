@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Граф зависимостей агентов",
+      "method": "GET",
+      "path": "/?action=graph",
+      "expectedStatus": 200
+    },
+    {
+      "name": "История запусков",
+      "method": "GET",
+      "path": "/?action=runs&limit=5",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Неизвестное действие → 400",
+      "method": "GET",
+      "path": "/?action=xxx",
+      "expectedStatus": 400
+    }
+  ]
+}
