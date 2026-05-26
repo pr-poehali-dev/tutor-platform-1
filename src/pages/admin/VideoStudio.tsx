@@ -3,56 +3,14 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import func2url from "../../../backend/func2url.json";
-import VideoStudioPlayer, { VideoScene } from "@/components/video/VideoStudioPlayer";
-import Mp4ExportPanel from "@/components/video/Mp4ExportPanel";
+import { VideoScene } from "@/components/video/VideoStudioPlayer";
+import VideoStudioPreview from "@/components/admin/video-studio/VideoStudioPreview";
+import VideoStudioSceneEditor from "@/components/admin/video-studio/VideoStudioSceneEditor";
+import VideoStudioSidebar from "@/components/admin/video-studio/VideoStudioSidebar";
+import { Project, loadProjects, saveProjects } from "@/components/admin/video-studio/types";
 
 const STORYBOARD_URL = (func2url as Record<string, string>)["video-storyboard"];
 const RENDER_URL = (func2url as Record<string, string>)["video-render"];
-
-const PROJECTS_KEY = "uchispro_video_projects_v1";
-
-interface Project {
-  id: string;
-  title: string;
-  topic: string;
-  style: string;
-  duration_sec: number;
-  scenes: VideoScene[];
-  createdAt: number;
-}
-
-const STYLES = [
-  { id: "realistic", label: "Реалистичный", emoji: "📷" },
-  { id: "cartoon", label: "Мультяшный 3D", emoji: "🎨" },
-  { id: "flat", label: "Плоская графика", emoji: "📐" },
-  { id: "sketch", label: "Карандашный набросок", emoji: "✏️" },
-  { id: "cosmic", label: "Космический", emoji: "🌌" },
-];
-
-const VOICES = [
-  { id: "nika", label: "Ника (тёплый ж)" },
-  { id: "sofia", label: "София (живой ж)" },
-  { id: "alex", label: "Алекс (уверенный м)" },
-  { id: "dmitry", label: "Дмитрий (спокойный м)" },
-  { id: "fox", label: "Лиса (ласковый)" },
-];
-
-const DURATIONS = [30, 60, 90, 120, 180];
-
-function loadProjects(): Project[] {
-  try {
-    const raw = localStorage.getItem(PROJECTS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveProjects(projects: Project[]) {
-  try {
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-  } catch { /* noop */ }
-}
 
 export default function VideoStudio() {
   const [topic, setTopic] = useState("");
@@ -246,279 +204,47 @@ export default function VideoStudio() {
         <div className="grid lg:grid-cols-[1fr_400px] gap-6">
           {/* Левая колонка — превью и редактор */}
           <div className="space-y-4">
-            {scenes.length > 0 && phase === "ready" && (
-              <VideoStudioPlayer scenes={scenes} title={title} voiceId={voice} />
-            )}
+            <VideoStudioPreview
+              scenes={scenes}
+              phase={phase}
+              title={title}
+              voice={voice}
+              renderProgress={renderProgress}
+            />
 
-            {phase === "idle" && (
-              <div className="aspect-video bg-card border border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/45 gap-3">
-                <Icon name="Film" size={48} />
-                <p className="text-sm">Заполни форму справа и нажми «Создать сценарий»</p>
-              </div>
-            )}
-
-            {phase === "storyboard" && (
-              <div className="aspect-video bg-card border border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/65 gap-3">
-                <Icon name="Loader2" size={32} className="animate-spin text-pink-300" />
-                <p className="text-sm">ИИ-режиссёр пишет сценарий...</p>
-              </div>
-            )}
-
-            {phase === "rendering" && (
-              <div className="aspect-video bg-card border border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/65 gap-3">
-                <Icon name="Loader2" size={32} className="animate-spin text-pink-300" />
-                <p className="text-sm font-bold">FLUX рисует кадры...</p>
-                {renderProgress && (
-                  <p className="text-xs text-white/45">{renderProgress.done} / {renderProgress.total}</p>
-                )}
-                <p className="text-xs text-white/35 max-w-md text-center">Это занимает 30-90 секунд: каждый кадр генерируется отдельно.</p>
-              </div>
-            )}
-
-            {/* Редактор сцен */}
-            {scenes.length > 0 && (
-              <div className="bg-card border border-white/10 rounded-3xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">Раскадровка ({scenes.length} сцен)</p>
-                  <div className="flex gap-2">
-                    <button onClick={exportJson} className="inline-flex items-center gap-1 text-xs text-white/75 hover:text-white bg-white/8 hover:bg-white/12 border border-white/15 px-2.5 py-1 rounded-lg">
-                      <Icon name="Download" size={11} />
-                      JSON
-                    </button>
-                    <button onClick={saveProject} className="inline-flex items-center gap-1 text-xs bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-200 px-2.5 py-1 rounded-lg">
-                      <Icon name="Save" size={11} />
-                      Сохранить
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-                  {scenes.map((s, i) => (
-                    <div key={s.id} className={`bg-white/[0.03] border rounded-2xl p-3 ${s.error ? "border-rose-500/40" : "border-white/10"}`}>
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className={`w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${s.error ? "bg-rose-500/15" : "bg-white/5"}`}>
-                          {s.image_url ? (
-                            <img src={s.image_url} alt="" className="w-full h-full object-cover" />
-                          ) : s.error ? (
-                            <Icon name="AlertTriangle" size={16} className="text-rose-300" />
-                          ) : (
-                            <Icon name="ImageOff" size={16} className="text-white/30" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-white/45 text-[10px] uppercase tracking-wider">Сцена {i + 1} · {s.duration_sec}с</p>
-                          <textarea
-                            value={s.narration}
-                            onChange={(e) => updateScene(i, { narration: e.target.value })}
-                            rows={2}
-                            className="w-full bg-transparent text-white text-xs mt-0.5 resize-none focus:outline-none focus:bg-white/5 rounded p-1"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1 flex-shrink-0">
-                          <button
-                            onClick={() => renderOneScene(s.id)}
-                            title="Перегенерировать картинку"
-                            className="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-200"
-                          >
-                            <Icon name="RefreshCw" size={11} />
-                          </button>
-                          <button
-                            onClick={() => removeScene(i)}
-                            title="Удалить сцену"
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-200"
-                          >
-                            <Icon name="Trash2" size={11} />
-                          </button>
-                        </div>
-                      </div>
-                      {s.error && (
-                        <div className="mb-2 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2 py-1.5 text-rose-200 text-[10px] flex items-start gap-1.5">
-                          <Icon name="AlertCircle" size={11} className="flex-shrink-0 mt-0.5" />
-                          <span className="break-words">{s.error}</span>
-                        </div>
-                      )}
-                      <details className="text-[10px] text-white/45">
-                        <summary className="cursor-pointer hover:text-white/70">Промпт для картинки</summary>
-                        <textarea
-                          value={s.image_prompt}
-                          onChange={(e) => updateScene(i, { image_prompt: e.target.value })}
-                          rows={2}
-                          className="w-full mt-1 bg-background/40 border border-white/10 rounded p-1.5 text-white/75 text-[10px] font-mono resize-none focus:outline-none"
-                        />
-                      </details>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <VideoStudioSceneEditor
+              scenes={scenes}
+              onExportJson={exportJson}
+              onSaveProject={saveProject}
+              onUpdateScene={updateScene}
+              onRenderOneScene={renderOneScene}
+              onRemoveScene={removeScene}
+            />
           </div>
 
           {/* Правая колонка — настройки */}
-          <div className="space-y-4">
-            <div className="bg-card border border-white/10 rounded-3xl p-5 space-y-4">
-              <p className="font-montserrat font-black text-white text-sm">Параметры ролика</p>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Тема ролика</label>
-                <textarea
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Например: Как работает фотосинтез у растений"
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/12 rounded-2xl px-3 py-2.5 text-white text-sm placeholder:text-white/35 focus:outline-none focus:border-pink-500/50 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Предмет (необязательно)</label>
-                <input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Биология, физика, история..."
-                  className="w-full bg-white/5 border border-white/12 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/35 focus:outline-none focus:border-pink-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Аудитория</label>
-                <input
-                  value={ageGroup}
-                  onChange={(e) => setAgeGroup(e.target.value)}
-                  className="w-full bg-white/5 border border-white/12 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Длительность (сек)</label>
-                <div className="flex gap-1">
-                  {DURATIONS.map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => setDuration(d)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                        duration === d
-                          ? "bg-pink-500/25 border border-pink-500/45 text-white"
-                          : "bg-white/5 border border-white/10 text-white/65 hover:bg-white/10"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Визуальный стиль</label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {STYLES.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setStyle(s.id)}
-                      className={`flex items-center gap-1.5 px-2 py-2 rounded-xl text-xs transition-all ${
-                        style === s.id
-                          ? "bg-pink-500/25 border border-pink-500/45 text-white"
-                          : "bg-white/5 border border-white/10 text-white/65 hover:bg-white/10"
-                      }`}
-                    >
-                      <span>{s.emoji}</span>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-white/45 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">Голос диктора</label>
-                <select
-                  value={voice}
-                  onChange={(e) => setVoice(e.target.value)}
-                  className="w-full bg-white/5 border border-white/12 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500/50"
-                >
-                  {VOICES.map((v) => (
-                    <option key={v.id} value={v.id} className="bg-background">{v.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {error && (
-                <p className="text-rose-300 text-xs flex items-center gap-1.5">
-                  <Icon name="AlertCircle" size={12} />
-                  {error}
-                </p>
-              )}
-
-              <button
-                onClick={generateStoryboard}
-                disabled={phase === "storyboard" || phase === "rendering" || !topic.trim()}
-                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-bold py-3 rounded-2xl hover:scale-[1.01] transition-transform disabled:opacity-50 disabled:hover:scale-100"
-              >
-                {phase === "storyboard" ? (
-                  <>
-                    <Icon name="Loader2" size={14} className="animate-spin" />
-                    Пишу сценарий...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Wand2" size={14} />
-                    1. Создать сценарий
-                  </>
-                )}
-              </button>
-
-              {scenes.length > 0 && (
-                <button
-                  onClick={renderImages}
-                  disabled={phase === "rendering"}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold py-3 rounded-2xl hover:scale-[1.01] transition-transform disabled:opacity-50"
-                >
-                  {phase === "rendering" ? (
-                    <>
-                      <Icon name="Loader2" size={14} className="animate-spin" />
-                      FLUX рисует...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="ImagePlus" size={14} />
-                      2. Сгенерировать кадры FLUX
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* Экспорт MP4 — появляется когда есть сцены */}
-            {scenes.length > 0 && (
-              <Mp4ExportPanel scenes={scenes} title={title || topic} voiceId={voice} />
-            )}
-
-            {/* Сохранённые проекты */}
-            {projects.length > 0 && (
-              <div className="bg-card border border-white/10 rounded-3xl p-4">
-                <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Мои проекты ({projects.length})</p>
-                <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                  {projects.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => loadProject(p)}
-                      className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-2.5 transition-colors"
-                    >
-                      <p className="text-white text-xs font-bold truncate">{p.title}</p>
-                      <p className="text-white/45 text-[10px]">{p.scenes.length} сцен · {p.duration_sec}с · {new Date(p.createdAt).toLocaleDateString("ru-RU")}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Инструкция */}
-            <div className="bg-cyan-500/8 border border-cyan-500/30 rounded-2xl p-4 text-xs text-white/75 space-y-1.5">
-              <p className="font-bold text-cyan-200">Как это работает:</p>
-              <p>1. ИИ-режиссёр (gpt-4o-mini) пишет сценарий из 4-15 сцен.</p>
-              <p>2. FLUX генерирует кадр для каждой сцены (16:9).</p>
-              <p>3. Картинки оживают через Ken Burns (зум/пан).</p>
-              <p>4. TTS озвучивает текст диктора выбранным голосом.</p>
-              <p>5. Всё склеивается в плеере — никаких сторонних подписок.</p>
-            </div>
-          </div>
+          <VideoStudioSidebar
+            topic={topic}
+            setTopic={setTopic}
+            subject={subject}
+            setSubject={setSubject}
+            ageGroup={ageGroup}
+            setAgeGroup={setAgeGroup}
+            duration={duration}
+            setDuration={setDuration}
+            style={style}
+            setStyle={setStyle}
+            voice={voice}
+            setVoice={setVoice}
+            error={error}
+            phase={phase}
+            scenes={scenes}
+            title={title}
+            projects={projects}
+            onGenerateStoryboard={generateStoryboard}
+            onRenderImages={renderImages}
+            onLoadProject={loadProject}
+          />
         </div>
       </div>
     </div>
