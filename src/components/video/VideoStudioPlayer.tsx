@@ -11,6 +11,8 @@ export interface VideoScene {
   image_url?: string | null;
   duration_sec: number;
   transition?: "fade" | "slide" | "zoom" | "none";
+  /** Текст ошибки если не удалось сгенерировать картинку. */
+  error?: string;
 }
 
 interface Props {

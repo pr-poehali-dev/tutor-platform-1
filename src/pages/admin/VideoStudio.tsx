@@ -107,46 +107,73 @@ export default function VideoStudio() {
     }
   };
 
+  /** Рендерим картинку для ОДНОЙ сцены — отдельный вызов бэка. */
+  const renderSingleScene = async (scene: VideoScene): Promise<{ url: string | null; error?: string }> => {
+    try {
+      const res = await fetch(RENDER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: scene.image_prompt,
+          scene_id: scene.id,
+          title: title || topic,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.image_url) {
+        return { url: null, error: data.error || `HTTP ${res.status}` };
+      }
+      return { url: data.image_url };
+    } catch (e) {
+      return { url: null, error: e instanceof Error ? e.message : "network error" };
+    }
+  };
+
   const renderImages = async () => {
     if (scenes.length === 0) return;
     setError(null);
     setPhase("rendering");
     setRenderProgress({ done: 0, total: scenes.length });
-    try {
-      const res = await fetch(RENDER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenes, title }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Не удалось сгенерировать картинки");
-        setPhase("ready");
-        setRenderProgress(null);
-        return;
+
+    // Параллельный пул из 3 одновременных запросов — чтобы не положить Pollinations
+    const POOL_SIZE = 3;
+    const queue = [...scenes.map((s, i) => ({ scene: s, idx: i }))];
+    const errors: string[] = [];
+    let done = 0;
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const task = queue.shift();
+        if (!task) break;
+        const result = await renderSingleScene(task.scene);
+        if (result.url) {
+          setScenes((prev) => prev.map((s, i) => (i === task.idx ? { ...s, image_url: result.url! } : s)));
+        } else {
+          errors.push(`Сцена ${task.idx + 1}: ${result.error}`);
+          setScenes((prev) => prev.map((s, i) => (i === task.idx ? { ...s, image_url: null, error: result.error } : s)));
+        }
+        done += 1;
+        setRenderProgress({ done, total: scenes.length });
       }
-      setScenes(data.scenes || []);
-      setPhase("ready");
-      setRenderProgress({ done: data.total_rendered || 0, total: scenes.length });
-    } catch {
-      setError("Нет связи с сервером");
-      setPhase("ready");
-      setRenderProgress(null);
+    };
+
+    await Promise.all(Array.from({ length: POOL_SIZE }, () => worker()));
+
+    setPhase("ready");
+    if (errors.length > 0) {
+      setError(`Не все картинки сгенерированы (${errors.length} из ${scenes.length}). Попробуйте «🔄» на проблемных сценах. ${errors[0]}`);
     }
   };
 
   const renderOneScene = async (sceneId: string) => {
     const scene = scenes.find((s) => s.id === sceneId);
     if (!scene) return;
-    try {
-      const res = await fetch(RENDER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenes, title, scene_ids: [sceneId] }),
-      });
-      const data = await res.json();
-      if (res.ok) setScenes(data.scenes || []);
-    } catch { /* noop */ }
+    const result = await renderSingleScene(scene);
+    if (result.url) {
+      setScenes((prev) => prev.map((s) => (s.id === sceneId ? { ...s, image_url: result.url!, error: undefined } : s)));
+    } else if (result.error) {
+      setError(`Сцена ${sceneId}: ${result.error}`);
+    }
   };
 
   const updateScene = (idx: number, patch: Partial<VideoScene>) => {
@@ -266,11 +293,13 @@ export default function VideoStudio() {
                 </div>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                   {scenes.map((s, i) => (
-                    <div key={s.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-3">
+                    <div key={s.id} className={`bg-white/[0.03] border rounded-2xl p-3 ${s.error ? "border-rose-500/40" : "border-white/10"}`}>
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 flex items-center justify-center">
+                        <div className={`w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${s.error ? "bg-rose-500/15" : "bg-white/5"}`}>
                           {s.image_url ? (
                             <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                          ) : s.error ? (
+                            <Icon name="AlertTriangle" size={16} className="text-rose-300" />
                           ) : (
                             <Icon name="ImageOff" size={16} className="text-white/30" />
                           )}
@@ -301,6 +330,12 @@ export default function VideoStudio() {
                           </button>
                         </div>
                       </div>
+                      {s.error && (
+                        <div className="mb-2 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2 py-1.5 text-rose-200 text-[10px] flex items-start gap-1.5">
+                          <Icon name="AlertCircle" size={11} className="flex-shrink-0 mt-0.5" />
+                          <span className="break-words">{s.error}</span>
+                        </div>
+                      )}
                       <details className="text-[10px] text-white/45">
                         <summary className="cursor-pointer hover:text-white/70">Промпт для картинки</summary>
                         <textarea

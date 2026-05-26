@@ -1,17 +1,25 @@
 """
-Business: Генерирует картинки FLUX для каждой сцены раскадровки. v1.
-Принимает массив сцен, для каждой генерирует картинку через polza.ai (FLUX),
-сохраняет в S3 и возвращает обновлённый сценарий с image_url.
-Args: event с body {scenes: [{id, image_prompt}]}
-Returns: HTTP 200 с {scenes: [{id, image_url, image_prompt}]}
+Business: Генерирует ОДНУ картинку для сцены через Pollinations.ai и кладёт в S3. v2.
+Принимает {prompt, scene_id, title?, seed?} или {scenes: [{...}]} (legacy).
+Возвращает {image_url, scene_id} или {error}.
+Args: event с body
+Returns: HTTP 200 с {image_url}
 """
 import json
 import os
 import re
+import sys
+import time
 import urllib.request
 import urllib.error
+import urllib.parse
 import boto3
 from datetime import datetime
+
+
+def log(msg: str) -> None:
+    print(f"[video-render] {msg}", flush=True)
+    sys.stdout.flush()
 
 
 def slugify(text: str) -> str:
@@ -19,43 +27,51 @@ def slugify(text: str) -> str:
     return s.strip('-')[:50] or 'scene'
 
 
-def generate_flux_image(prompt: str, seed: int = 42) -> tuple[bytes | None, str | None]:
-    """Генерирует картинку через Pollinations.ai (бесплатный FLUX).
-    Возвращает (bytes_or_none, error_message_or_none).
-    """
+def generate_image_pollinations(prompt: str, seed: int = 42) -> tuple[bytes | None, str | None]:
+    """Pollinations.ai — бесплатный FLUX по GET URL."""
     try:
-        # Pollinations: бесплатный публичный FLUX. Кириллицу принимает.
-        # Делаем уникальный seed чтобы каждая сцена была отдельной картинкой.
-        encoded = urllib.parse.quote(prompt[:1500])
+        clean_prompt = prompt[:800]
+        encoded = urllib.parse.quote(clean_prompt, safe='')
         url = (
             f"https://image.pollinations.ai/prompt/{encoded}"
-            f"?width=1024&height=576&seed={seed}&nologo=true&enhance=true&model=flux"
+            f"?width=1024&height=576&seed={seed}&nologo=true&model=flux"
         )
+        log(f"GET pollinations url_len={len(url)}")
         req = urllib.request.Request(
             url,
-            headers={'User-Agent': 'UchispriBot/1.0 (+https://учисьпро.рф)'},
+            headers={
+                'User-Agent': 'Mozilla/5.0 UchispriBot/1.0',
+                'Accept': 'image/*',
+            },
             method='GET',
         )
-        with urllib.request.urlopen(req, timeout=120) as response:
+        with urllib.request.urlopen(req, timeout=90) as response:
             data = response.read()
-            if len(data) < 2000:
-                return None, f'pollinations returned too small response: {len(data)} bytes'
+            log(f"Pollinations returned {len(data)} bytes, content-type={response.headers.get('Content-Type', '?')}")
+            if len(data) < 1500:
+                preview = data[:200].decode('utf-8', errors='ignore')
+                return None, f'too small: {len(data)}b: {preview[:100]}'
             return data, None
     except urllib.error.HTTPError as e:
-        return None, f'pollinations HTTP {e.code}: {e.reason}'
+        log(f"Pollinations HTTPError: {e.code} {e.reason}")
+        return None, f'HTTP {e.code}: {e.reason}'
     except urllib.error.URLError as e:
-        return None, f'pollinations network error: {str(e)[:120]}'
+        log(f"Pollinations URLError: {e}")
+        return None, f'network error: {str(e)[:120]}'
     except Exception as e:
-        return None, f'pollinations exception: {str(e)[:120]}'
+        log(f"Pollinations exception: {type(e).__name__}: {e}")
+        return None, f'{type(e).__name__}: {str(e)[:120]}'
 
 
-def upload_to_s3(image_bytes: bytes, key: str) -> str | None:
-    """Загружает картинку в S3 и возвращает CDN-URL."""
+def upload_to_s3(image_bytes: bytes, key: str) -> tuple[str | None, str | None]:
+    """Загружает в S3 — возвращает (cdn_url, error_msg)."""
     try:
         access_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
         secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-        if not access_key or not secret_key:
-            return None
+        if not access_key:
+            return None, 'AWS_ACCESS_KEY_ID не настроен'
+        if not secret_key:
+            return None, 'AWS_SECRET_ACCESS_KEY не настроен'
         s3 = boto3.client(
             's3',
             endpoint_url='https://bucket.poehali.dev',
@@ -68,102 +84,126 @@ def upload_to_s3(image_bytes: bytes, key: str) -> str | None:
             Body=image_bytes,
             ContentType='image/png',
         )
-        return f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
-    except Exception:
-        return None
+        url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
+        log(f"Uploaded to S3: {url}")
+        return url, None
+    except Exception as e:
+        log(f"S3 upload error: {type(e).__name__}: {e}")
+        return None, f'S3: {type(e).__name__}: {str(e)[:120]}'
+
+
+CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+}
 
 
 def handler(event, context):
-    """Генерирует картинки для всех сцен раскадровки."""
+    """Генерирует одну картинку для сцены и кладёт в S3."""
     method = event.get('httpMethod', 'POST')
+    log(f"=== method={method}")
 
     if method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Max-Age': '86400',
-            },
-            'body': '',
-        }
+        return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
 
     if method != 'POST':
         return {
             'statusCode': 405,
-            'headers': {'Access-Control-Allow-Origin': '*'},
+            'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
             'body': json.dumps({'error': 'Method not allowed'}),
         }
 
     try:
-        body_str = event.get('body', '{}')
+        body_str = event.get('body') or '{}'
         body = json.loads(body_str) if isinstance(body_str, str) else body_str
 
-        scenes = body.get('scenes') or []
-        title = body.get('title') or 'video'
-        scene_ids = body.get('scene_ids')  # опционально: рендерим только указанные
+        # Поддерживаем 2 формата: одна сцена ИЛИ массив (legacy)
+        if 'scenes' in body and isinstance(body.get('scenes'), list):
+            scenes = body['scenes']
+            if not scenes:
+                return {
+                    'statusCode': 400,
+                    'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'Пустой массив сцен'}, ensure_ascii=False),
+                }
+            scene = scenes[0]
+            prompt = scene.get('image_prompt') or ''
+            scene_id = scene.get('id') or 'scene_1'
+            title = body.get('title') or 'video'
+        else:
+            prompt = body.get('prompt') or body.get('image_prompt') or ''
+            scene_id = body.get('scene_id') or body.get('id') or f'scene_{int(time.time())}'
+            title = body.get('title') or body.get('project_slug') or 'video'
 
-        if not scenes:
+        prompt = prompt.strip()
+        log(f"scene_id={scene_id}, prompt_len={len(prompt)}, title={title}")
+
+        if not prompt:
             return {
                 'statusCode': 400,
-                'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Не указаны сцены (scenes)'}, ensure_ascii=False),
+                'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'Пустой промпт', 'scene_id': scene_id}, ensure_ascii=False),
+            }
+
+        seed_raw = body.get('seed')
+        if seed_raw is None:
+            seed = abs(hash(f'{title}-{scene_id}')) % 1000000
+        else:
+            seed = int(seed_raw)
+
+        t0 = time.time()
+        img_bytes, gen_err = generate_image_pollinations(prompt, seed=seed)
+        log(f"Pollinations took {time.time() - t0:.1f}s")
+
+        if not img_bytes:
+            return {
+                'statusCode': 502,
+                'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+                'body': json.dumps({
+                    'error': f'Pollinations: {gen_err}',
+                    'scene_id': scene_id,
+                }, ensure_ascii=False),
             }
 
         project_slug = slugify(title)
         ts = datetime.now().strftime('%Y%m%d-%H%M%S')
+        key = f"videos/{project_slug}/{ts}-{scene_id}.png"
+        url, upload_err = upload_to_s3(img_bytes, key)
 
-        rendered = []
-        errors = []
-        for i, scene in enumerate(scenes):
-            sid = scene.get('id') or f'scene_{i+1}'
-            # Если указан список — рендерим только их
-            if scene_ids and sid not in scene_ids:
-                rendered.append(scene)  # оставляем как есть
-                continue
-
-            prompt = (scene.get('image_prompt') or '').strip()
-            if not prompt:
-                errors.append(f'{sid}: пустой промпт')
-                rendered.append({**scene, 'image_url': None, 'error': 'no prompt'})
-                continue
-
-            # Уникальный seed для каждой сцены — иначе все картинки одинаковые
-            seed = abs(hash(f'{project_slug}-{sid}-{ts}')) % 1000000
-            img_bytes, gen_err = generate_flux_image(prompt, seed=seed)
-            if not img_bytes:
-                err_msg = f'{sid}: {gen_err or "генерация не удалась"}'
-                errors.append(err_msg)
-                rendered.append({**scene, 'image_url': None, 'error': gen_err or 'flux failed'})
-                continue
-
-            key = f"videos/{project_slug}/{ts}/{sid}.png"
-            url = upload_to_s3(img_bytes, key)
-            if not url:
-                errors.append(f'{sid}: ошибка загрузки в S3')
-                rendered.append({**scene, 'image_url': None, 'error': 's3 failed'})
-                continue
-
-            rendered.append({**scene, 'image_url': url})
+        if not url:
+            return {
+                'statusCode': 502,
+                'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+                'body': json.dumps({
+                    'error': f'S3: {upload_err}',
+                    'scene_id': scene_id,
+                }, ensure_ascii=False),
+            }
 
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-            },
+            'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
             'body': json.dumps({
-                'scenes': rendered,
-                'errors': errors,
-                'project_slug': project_slug,
-                'total_rendered': sum(1 for s in rendered if s.get('image_url')),
+                'image_url': url,
+                'scene_id': scene_id,
+                'seed': seed,
+                'size_bytes': len(img_bytes),
             }, ensure_ascii=False),
         }
 
+    except json.JSONDecodeError as e:
+        log(f"JSONDecodeError: {e}")
+        return {
+            'statusCode': 400,
+            'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+            'body': json.dumps({'error': f'Некорректный JSON: {e}'}, ensure_ascii=False),
+        }
     except Exception as e:
+        log(f"FATAL {type(e).__name__}: {e}")
         return {
             'statusCode': 500,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)}, ensure_ascii=False),
+            'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
+            'body': json.dumps({'error': f'{type(e).__name__}: {str(e)[:200]}'}, ensure_ascii=False),
         }
