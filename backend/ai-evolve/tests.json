@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Список агентов",
+      "method": "GET",
+      "path": "/?action=list_agents",
+      "expectedStatus": 200,
+      "expectedBody": {"agents": "array"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Глобальная статистика",
+      "method": "GET",
+      "path": "/?action=stats",
+      "expectedStatus": 200,
+      "expectedBody": {"platform": "object"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестное действие → 400",
+      "method": "GET",
+      "path": "/?action=xxx",
+      "expectedStatus": 400
+    }
+  ]
+}

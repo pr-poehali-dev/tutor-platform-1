@@ -6,6 +6,7 @@ import LessonExamplesPhase from "./lesson/LessonExamplesPhase";
 import LessonTasksPhase from "./lesson/LessonTasksPhase";
 import LessonLoadingProgress from "./lesson/LessonLoadingProgress";
 import LessonNarratorBar from "./lesson/LessonNarratorBar";
+import ModuleVideoLesson from "./ModuleVideoLesson";
 import useLessonNarrator from "@/hooks/useLessonNarrator";
 import { useUser } from "@/context/UserDataContext";
 import { BADGES } from "@/lib/badges";
@@ -322,13 +323,34 @@ export default function StepLesson({ module, subject, onModuleComplete, onBack, 
       />
 
       {phase === "theory" && (
-        <LessonTheoryPhase
-          lesson={lesson}
-          theoryIdx={theoryIdx}
-          setTheoryIdx={setTheoryIdx}
-          onGoToExamples={() => setPhase("examples")}
-          accent={accent}
-        />
+        <>
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accent}25` }}>
+                <span className="text-sm">🎬</span>
+              </div>
+              <h3 className="font-montserrat font-black text-sm text-white">Видео-разбор темы</h3>
+              <span className="text-[10px] text-white/45 uppercase tracking-wider font-bold">ИИ генерирует</span>
+            </div>
+            <ModuleVideoLesson
+              subject={subject.id}
+              topic={module.topic}
+              grade={grade}
+              moduleId={module.id}
+              lessonId={`module-${module.id}-video`}
+              durationSec={60}
+              voiceId="nika"
+              accent={accent}
+            />
+          </div>
+          <LessonTheoryPhase
+            lesson={lesson}
+            theoryIdx={theoryIdx}
+            setTheoryIdx={setTheoryIdx}
+            onGoToExamples={() => setPhase("examples")}
+            accent={accent}
+          />
+        </>
       )}
 
       {phase === "examples" && (

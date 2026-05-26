@@ -1,4 +1,6 @@
 {
+  "module-video": "https://functions.poehali.dev/4b28b260-164b-4d91-8931-f67671840d5f",
+  "ai-evolve": "https://functions.poehali.dev/b9e1a726-6053-4555-8514-05c4d7dc65e7",
   "video-storyboard": "https://functions.poehali.dev/862db781-7d30-4149-bcda-fb871f21b6a9",
   "video-render": "https://functions.poehali.dev/9e1c3416-62a2-454d-96cc-28a98e3e8bc4",
   "access": "https://functions.poehali.dev/213e0c5d-5d5b-4b9e-83df-83a12e533e2a",

@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Без topic — 400",
+      "method": "POST",
+      "path": "/?action=create",
+      "body": {"subject": "math"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Неизвестное действие → 400",
+      "method": "GET",
+      "path": "/?action=xxx",
+      "expectedStatus": 400
+    }
+  ]
+}
