@@ -64,6 +64,28 @@ const TRACKS: Track[] = [
     badgeColor: "bg-rose-500/20 border-rose-500/40 text-rose-200",
     ctaColor: "from-rose-500 to-purple-600",
   },
+  {
+    to: "/graduate",
+    emoji: "🎓",
+    badgeText: "Модуль · Выпускник 11 класса",
+    badgeIcon: "GraduationCap",
+    title: "Выпускник",
+    subtitle: "Подбор вуза и программа поступления",
+    description:
+      "100 вузов России: МГУ, СПбГУ, МФТИ, Бауман, ВШЭ + военные вузы. 4 шага: регион → вуз → факультет → твоя программа подготовки к ЕГЭ с проходными баллами.",
+    highlights: [
+      { icon: "MapPin", label: "30 регионов" },
+      { icon: "Building2", label: "100 вузов" },
+      { icon: "Shield", label: "Военные вузы" },
+    ],
+    cta: "Подобрать вуз",
+    gradient: "from-purple-900/40 via-pink-900/25 to-rose-900/30",
+    borderColor: "border-purple-500/30",
+    glow1: "bg-purple-500/20",
+    glow2: "bg-pink-500/20",
+    badgeColor: "bg-purple-500/20 border-purple-500/40 text-purple-200",
+    ctaColor: "from-purple-500 to-pink-600",
+  },
 ];
 
 export default function PremiumTracks() {
