@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import TalePlayer from "@/components/kids/TalePlayer";
+import TalePlayerBoundary from "@/components/kids/TalePlayerBoundary";
 import { getLibraryItem, LIBRARY } from "@/components/kids/libraryData";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -109,7 +110,9 @@ export default function KidsLibraryItem() {
           К библиотеке
         </Link>
 
-        <TalePlayer item={item} nextItem={nextItem} />
+        <TalePlayerBoundary>
+          <TalePlayer item={item} nextItem={nextItem} />
+        </TalePlayerBoundary>
 
         {/* Похожие */}
         {similar.length > 0 && (

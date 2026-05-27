@@ -45,8 +45,14 @@ export default function TalePlayer({ item, nextItem }: Props) {
 
   const stopAudio = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
+      try {
+        const a = audioRef.current;
+        a.onended = null;
+        a.ontimeupdate = null;
+        a.onerror = null;
+        a.pause();
+        a.src = "";
+      } catch { /* noop */ }
       audioRef.current = null;
     }
   };
@@ -132,6 +138,7 @@ export default function TalePlayer({ item, nextItem }: Props) {
   };
 
   const playChunk = async (idx: number) => {
+    if (cancelledRef.current) return;
     if (idx >= chunks.length) {
       setPlaying(false);
       setProgress(0);
@@ -155,14 +162,24 @@ export default function TalePlayer({ item, nextItem }: Props) {
     }
 
     stopAudio();
-    const audio = new Audio(url);
-    audio.playbackRate = speed;
+    if (cancelledRef.current) return;
+    let audio: HTMLAudioElement;
+    try {
+      audio = new Audio(url);
+      audio.playbackRate = speed;
+    } catch {
+      setError("Не удалось создать аудио. Попробуйте ещё раз.");
+      setPlaying(false);
+      return;
+    }
     audioRef.current = audio;
 
     audio.ontimeupdate = () => {
+      if (cancelledRef.current || audioRef.current !== audio) return;
       if (audio.duration > 0) setProgress(audio.currentTime / audio.duration);
     };
     audio.onended = () => {
+      if (cancelledRef.current || audioRef.current !== audio) return;
       setProgress(0);
       // Предзагружаем следующий, пока играет
       if (idx + 1 < chunks.length) {
@@ -171,15 +188,18 @@ export default function TalePlayer({ item, nextItem }: Props) {
       playChunk(idx + 1);
     };
     audio.onerror = () => {
+      if (cancelledRef.current || audioRef.current !== audio) return;
       setError("Ошибка воспроизведения. Попробуйте ещё раз.");
       setPlaying(false);
     };
     try {
       await audio.play();
+      if (cancelledRef.current || audioRef.current !== audio) return;
       setPlaying(true);
       // Параллельно подгружаем следующий фрагмент
       if (idx + 1 < chunks.length) fetchAudio(idx + 1);
     } catch {
+      if (cancelledRef.current || audioRef.current !== audio) return;
       setError("Браузер заблокировал автопроигрывание. Нажмите кнопку ещё раз.");
       setPlaying(false);
     }
