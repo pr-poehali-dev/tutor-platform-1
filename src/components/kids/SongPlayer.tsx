@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Song, getTotalSongDuration } from "./songsData";
+import { TTS_URL } from "./talePlayerUtils";
 
 interface Props {
   song: Song;
@@ -8,40 +9,96 @@ interface Props {
   onFinish?: () => void;
 }
 
-/** Плеер песенки: подсвечивает текущую строку и показывает действие к ней.
- *  Озвучку делает встроенный SpeechSynthesis API браузера (offline, бесплатно). */
+/** Плеер песенки с озвучкой Няней Лисой (Yandex SpeechKit Alena, emotion=good, speed=0.95).
+ *  Особенности:
+ *  - Кеш аудио для каждой строки (Map)
+ *  - Прелоад следующей строки во время проигрывания текущей
+ *  - Fallback на браузерный SpeechSynthesis если ИИ-TTS недоступен (offline / нет ключа)
+ *  - Подсветка текущей строки в такт реальной длительности аудио */
 export default function SongPlayer({ song, onClose, onFinish }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentLine, setCurrentLine] = useState(-1);
   const [progress, setProgress] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startTimeRef = useRef<number>(0);
+  const [loading, setLoading] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Map<number, string>>(new Map());
+  const cancelledRef = useRef(false);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accumulatedRef = useRef<number>(0);
 
   const total = getTotalSongDuration(song);
 
-  const stopAll = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
     }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
   };
 
-  const speakLine = (idx: number) => {
-    if (idx >= song.lines.length) {
-      setIsPlaying(false);
-      setCurrentLine(-1);
-      setProgress(100);
-      onFinish?.();
-      return;
-    }
-    const line = song.lines[idx];
-    setCurrentLine(idx);
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      stopAudio();
+    };
+  }, []);
 
-    // Озвучка через браузер
+  // При смене песни — полный сброс
+  useEffect(() => {
+    cancelledRef.current = false;
+    audioCacheRef.current.clear();
+    accumulatedRef.current = 0;
+    setCurrentLine(-1);
+    setProgress(0);
+    setIsPlaying(false);
+    setLoading(false);
+    stopAudio();
+  }, [song.id]);
+
+  /** Запросить TTS для одной строки. Кеширует результат. */
+  const fetchLineAudio = async (idx: number): Promise<string | null> => {
+    if (audioCacheRef.current.has(idx)) return audioCacheRef.current.get(idx)!;
+    const line = song.lines[idx];
+    if (!line) return null;
+    try {
+      const res = await fetch(TTS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: line.text, teacher_id: "fox" }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const audioData = data.audio || data.audio_base64;
+      if (!audioData) return null;
+      const dataUrl = `data:audio/mp3;base64,${audioData}`;
+      audioCacheRef.current.set(idx, dataUrl);
+      return dataUrl;
+    } catch {
+      return null;
+    }
+  };
+
+  /** Прелоад следующей строки в фоне, чтобы между строками не было пауз. */
+  const preloadNext = (idx: number) => {
+    if (idx + 1 < song.lines.length && !audioCacheRef.current.has(idx + 1)) {
+      fetchLineAudio(idx + 1);
+    }
+  };
+
+  /** Браузерный fallback — используется только если ИИ-TTS недоступен. */
+  const speakWithBrowser = (idx: number) => {
+    const line = song.lines[idx];
+    if (!line) return;
+    setUsingFallback(true);
     if (typeof window !== "undefined" && window.speechSynthesis) {
       const utter = new SpeechSynthesisUtterance(line.text);
       utter.lang = "ru-RU";
@@ -49,48 +106,114 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
       utter.pitch = 1.15;
       window.speechSynthesis.speak(utter);
     }
-
     const duration = (line.seconds || 3) * 1000;
-    startTimeRef.current = Date.now();
-
-    timerRef.current = setTimeout(() => {
+    fallbackTimerRef.current = setTimeout(() => {
+      if (cancelledRef.current) return;
       accumulatedRef.current += line.seconds || 3;
       setProgress(Math.min(100, (accumulatedRef.current / total) * 100));
-      speakLine(idx + 1);
+      playLine(idx + 1);
     }, duration);
+  };
+
+  /** Запустить воспроизведение строки idx. */
+  const playLine = async (idx: number) => {
+    if (cancelledRef.current) return;
+    if (idx >= song.lines.length) {
+      setIsPlaying(false);
+      setCurrentLine(-1);
+      setProgress(100);
+      onFinish?.();
+      return;
+    }
+
+    setCurrentLine(idx);
+    setLoading(!audioCacheRef.current.has(idx));
+
+    const dataUrl = await fetchLineAudio(idx);
+    if (cancelledRef.current) return;
+    setLoading(false);
+
+    // Если ИИ-TTS не сработал — fallback на браузер
+    if (!dataUrl) {
+      speakWithBrowser(idx);
+      return;
+    }
+
+    setUsingFallback(false);
+
+    // Прелоадим следующую строку в фоне
+    preloadNext(idx);
+
+    // Создаём audio-элемент
+    const audio = new Audio(dataUrl);
+    audioRef.current = audio;
+
+    audio.onloadedmetadata = () => {
+      // На всякий случай — синхронизируем прогресс с реальной длительностью
+    };
+
+    audio.ontimeupdate = () => {
+      if (!audio.duration || cancelledRef.current) return;
+      // Прогресс в рамках строки + накопленный
+      const lineSecondsActual = audio.duration;
+      const inLine = Math.min(audio.currentTime, lineSecondsActual);
+      const overall = (accumulatedRef.current + inLine) / total;
+      setProgress(Math.min(100, overall * 100));
+    };
+
+    audio.onended = () => {
+      if (cancelledRef.current) return;
+      accumulatedRef.current += audio.duration || (song.lines[idx].seconds || 3);
+      setProgress(Math.min(100, (accumulatedRef.current / total) * 100));
+      playLine(idx + 1);
+    };
+
+    audio.onerror = () => {
+      if (cancelledRef.current) return;
+      // Если воспроизведение упало — используем браузерный fallback
+      speakWithBrowser(idx);
+    };
+
+    try {
+      await audio.play();
+    } catch {
+      // Автоплей может быть заблокирован — fallback
+      speakWithBrowser(idx);
+    }
   };
 
   const play = () => {
     if (currentLine >= song.lines.length - 1 || currentLine === -1) {
       // Старт с начала
+      cancelledRef.current = false;
       accumulatedRef.current = 0;
       setProgress(0);
       setIsPlaying(true);
-      speakLine(0);
+      playLine(0);
     } else {
       // Продолжение
+      cancelledRef.current = false;
       setIsPlaying(true);
-      speakLine(currentLine + 1);
+      playLine(currentLine + 1);
     }
   };
 
   const pause = () => {
-    stopAll();
+    cancelledRef.current = true;
+    stopAudio();
     setIsPlaying(false);
   };
 
   const restart = () => {
-    stopAll();
+    cancelledRef.current = true;
+    stopAudio();
+    cancelledRef.current = false;
     accumulatedRef.current = 0;
     setProgress(0);
     setCurrentLine(-1);
     setIsPlaying(true);
-    speakLine(0);
+    playLine(0);
   };
-
-  useEffect(() => {
-    return () => { stopAll(); };
-  }, []);
 
   return (
     <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
@@ -103,6 +226,13 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
           <div className="flex-1 min-w-0">
             <h2 className="font-montserrat font-black text-white text-xl truncate">{song.title}</h2>
             <p className="text-white/85 text-xs">{song.author}</p>
+            {/* Бейдж голоса */}
+            <div className="inline-flex items-center gap-1 mt-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+              <span className="text-[10px]">🦊</span>
+              <span className="text-white text-[10px] font-bold">
+                {usingFallback ? "Голос браузера" : "Голос Няни Лисы"}
+              </span>
+            </div>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center">
             <Icon name="X" size={18} />
@@ -139,6 +269,9 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className={`text-base md:text-lg leading-relaxed font-medium ${isActive ? "text-white" : "text-white/80"}`}>
                       {line.text}
+                      {isActive && loading && (
+                        <Icon name="Loader2" size={12} className="inline ml-2 animate-spin text-amber-300" />
+                      )}
                     </p>
                     {line.action && (
                       <p className={`text-[11px] mt-0.5 ${isActive ? "text-amber-300" : "text-white/40"}`}>
@@ -186,9 +319,14 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
           </button>
           <button
             onClick={isPlaying ? pause : play}
-            className={`w-16 h-16 rounded-full bg-gradient-to-r ${song.color} text-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform`}
+            disabled={loading && !isPlaying}
+            className={`w-16 h-16 rounded-full bg-gradient-to-r ${song.color} text-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform disabled:opacity-60`}
           >
-            <Icon name={isPlaying ? "Pause" : "Play"} size={26} />
+            {loading && !isPlaying ? (
+              <Icon name="Loader2" size={26} className="animate-spin" />
+            ) : (
+              <Icon name={isPlaying ? "Pause" : "Play"} size={26} />
+            )}
           </button>
           <div className="w-11 h-11" /> {/* spacer */}
         </div>
