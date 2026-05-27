@@ -34,17 +34,49 @@ def humanize_text(text: str) -> str:
 
     result = text.strip()
 
-    # 1. Markdown и спец-символы (Yandex читает звёздочки как «звёздочка»)
+    # 1. Markdown, HTML, код, URL — всё что AI-ответ может приехать с собой,
+    # и что Yandex читает буквально («звёздочка», «слэш», «эйч-ти-ти-пи»).
+
+    # 1a. Кодовые блоки и инлайн-код полностью выкидываем
+    result = re.sub(r'```[\s\S]*?```', ' ', result)
+    result = re.sub(r'`[^`]+`', ' ', result)
+
+    # 1b. Markdown-ссылки [текст](url) → оставляем только текст
+    result = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', result)
+    # Просто URL (http/https/www) выкидываем — синтезатор их читает по буквам
+    result = re.sub(r'https?://\S+', ' ссылка ', result)
+    result = re.sub(r'\bwww\.\S+', ' ссылка ', result)
+    # Email
+    result = re.sub(r'\b[\w\.\-]+@[\w\.\-]+\.\w+', ' электронная почта ', result)
+
+    # 1c. HTML-теги
+    result = re.sub(r'<[^>]+>', ' ', result)
+    # HTML-сущности
+    result = result.replace('&nbsp;', ' ').replace('&amp;', ' и ')
+    result = result.replace('&lt;', ' ').replace('&gt;', ' ').replace('&quot;', '"')
+
+    # 1d. Markdown форматирование
     result = re.sub(r'\*+', '', result)
     result = re.sub(r'_{2,}', '', result)
-    result = re.sub(r'`+', '', result)
+    result = re.sub(r'~~', '', result)
     result = re.sub(r'#{1,6}\s+', '', result)
-    # Эмодзи и пиктограммы выкидываем — синтезатор их пропускает или читает странно
+    # Маркеры списка в начале строки
+    result = re.sub(r'(?m)^\s*[-•·–]\s+', '', result)
+    result = re.sub(r'(?m)^\s*\d+[\.\)]\s+', '', result)
+
+    # 1e. Эмодзи и пиктограммы (расширенный диапазон)
     result = re.sub(
-        r'[\U0001F300-\U0001FAFF\U0001F600-\U0001F64F\U00002600-\U000027BF]',
+        r'[\U0001F000-\U0001FFFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF'
+        r'\U00002700-\U000027BF\U0001F300-\U0001F5FF\U0001F600-\U0001F64F'
+        r'\U0001F680-\U0001F6FF\U0001F900-\U0001F9FF]',
         '',
         result,
     )
+    # Стрелки и спец-символы
+    result = re.sub(r'[→←↑↓⇒⇐↔⇔►◄▲▼■□●○]', ' ', result)
+
+    # 1f. JSON-подобные структуры { "key": "value" } упрощаем до читаемого
+    result = re.sub(r'[{}\[\]]', ' ', result)
 
     # 2. Сокращения и термины → полные русские слова
     # (Yandex иначе читает буквами или путает с английским)
@@ -96,20 +128,76 @@ def humanize_text(text: str) -> str:
     for pattern, replacement in abbreviations.items():
         result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
 
-    # 3. Латинские буквы в русском тексте — самая частая причина «иностранного»
-    # звучания. Yandex видит латиницу и переключается на английский.
-    # Одиночные латинские переменные (x, y, z, n) — заменяем на русские названия
+    # 3. Латинские символы — главная причина «иностранного акцента»:
+    # Yandex видит латиницу и переключается на английский TTS-движок.
+
+    # 3a. Степени и индексы: x^2 → «икс в квадрате», x^3 → «икс в кубе», x^n → «икс в степени эн»
+    result = re.sub(
+        r'([a-zA-Zа-яА-Я0-9])\s*\^\s*2\b',
+        lambda m: f'{m.group(1)} в квадрате',
+        result,
+    )
+    result = re.sub(
+        r'([a-zA-Zа-яА-Я0-9])\s*\^\s*3\b',
+        lambda m: f'{m.group(1)} в кубе',
+        result,
+    )
+    result = re.sub(
+        r'([a-zA-Zа-яА-Я0-9])\s*\^\s*(\d+)',
+        lambda m: f'{m.group(1)} в степени {m.group(2)}',
+        result,
+    )
+
+    # 3b. Математические операторы — только в МАТЕМАТИЧЕСКОМ контексте
+    # (между цифрами/латинскими буквами), не в обычном тексте
+    result = re.sub(r'(?<=[\da-zA-Z])\s*\+\s*(?=[\da-zA-Z])', ' плюс ', result)
+    result = re.sub(r'(?<=[\da-zA-Z])\s*[×∙·]\s*(?=[\da-zA-Z])', ' умножить на ', result)
+    result = re.sub(r'(?<=\d)\s*/\s*(?=\d)', ' делить на ', result)
+    result = re.sub(r'\s*≥\s*', ' больше или равно ', result)
+    result = re.sub(r'\s*≤\s*', ' меньше или равно ', result)
+    result = re.sub(r'\s*≠\s*', ' не равно ', result)
+    result = re.sub(r'\s*±\s*', ' плюс-минус ', result)
+    result = re.sub(r'\s*∞\s*', ' бесконечность ', result)
+    # Знак равенства — только между цифрами (в тексте «=» уже обычно расшифровано)
+    result = re.sub(r'(?<=\d)\s*=\s*(?=\d)', ' равно ', result)
+
+    # 3c. Одиночные латинские переменные → русское произношение
     latin_vars = {
-        r'(?<![a-zA-Z])x(?![a-zA-Z])': ' икс ',
-        r'(?<![a-zA-Z])y(?![a-zA-Z])': ' игрек ',
-        r'(?<![a-zA-Z])z(?![a-zA-Z])': ' зэт ',
-        r'(?<![a-zA-Z])n(?![a-zA-Z])': ' эн ',
-        r'(?<![a-zA-Z])k(?![a-zA-Z])': ' ка ',
-        r'(?<![a-zA-Z])X(?![a-zA-Z])': ' икс ',
-        r'(?<![a-zA-Z])Y(?![a-zA-Z])': ' игрек ',
-        r'(?<![a-zA-Z])Z(?![a-zA-Z])': ' зэт ',
+        'a': 'а', 'b': 'бэ', 'c': 'цэ', 'd': 'дэ', 'e': 'е', 'f': 'эф',
+        'g': 'жэ', 'h': 'аш', 'i': 'и', 'j': 'жи', 'k': 'ка', 'l': 'эль',
+        'm': 'эм', 'n': 'эн', 'o': 'о', 'p': 'пэ', 'q': 'ку', 'r': 'эр',
+        's': 'эс', 't': 'тэ', 'u': 'у', 'v': 'вэ', 'w': 'дубль вэ',
+        'x': 'икс', 'y': 'игрек', 'z': 'зэт',
     }
-    for pattern, replacement in latin_vars.items():
+    def replace_single_latin(match):
+        letter = match.group(0).lower()
+        return ' ' + latin_vars.get(letter, letter) + ' '
+    # Одиночные латинские буквы (не часть слова из 2+ латинских букв)
+    result = re.sub(r'(?<![a-zA-Z])[a-zA-Z](?![a-zA-Z])', replace_single_latin, result)
+
+    # 3d. Многобуквенные английские слова — оставляем как есть только если
+    # это явно термины (программирование/наука), остальное помечаем для Yandex
+    # как иностранное слово, чтобы он читал по-английски осознанно, а не
+    # «русским голосом по буквам».
+    # Популярные технические термины с русским произношением:
+    tech_terms = {
+        r'\bJavaScript\b': 'джава скрипт',
+        r'\bTypeScript\b': 'тайп скрипт',
+        r'\bPython\b': 'питон',
+        r'\bHTML\b': 'эйч-ти-эм-эль',
+        r'\bCSS\b': 'си-эс-эс',
+        r'\bSQL\b': 'эс-кю-эль',
+        r'\bAPI\b': 'эй-пи-ай',
+        r'\bURL\b': 'ю-эр-эль',
+        r'\bJSON\b': 'джейсон',
+        r'\bGitHub\b': 'гитхаб',
+        r'\bReact\b': 'реакт',
+        r'\bNode\b': 'ноуд',
+        r'\bvs\b': 'против',
+        r'\bok\b': 'окей',
+        r'\bOK\b': 'окей',
+    }
+    for pattern, replacement in tech_terms.items():
         result = re.sub(pattern, replacement, result)
 
     # 4. Паузы перед связками — там, где человек обычно делает вдох
