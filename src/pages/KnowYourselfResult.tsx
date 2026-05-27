@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import ScaleBar from "@/components/knowYourself/ScaleBar";
-import { computeResult, loadAnswers, clearAnswers } from "@/components/knowYourself/scoring";
+import { computeResult, loadAnswers, clearAnswers, syncResultToCloud } from "@/components/knowYourself/scoring";
 import {
   RIASEC_LABELS,
   VALUE_LABELS,
@@ -14,6 +14,7 @@ import {
   TestResult,
 } from "@/components/knowYourself/types";
 import { getUniversity, SUBJECTS } from "@/components/graduate/graduateData";
+import { useAuth } from "@/context/AuthContext";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -25,7 +26,9 @@ const OUTLOOK_LABELS = {
 
 export default function KnowYourselfResult() {
   const navigate = useNavigate();
+  const { isAuthenticated, openLogin } = useAuth();
   const [result, setResult] = useState<TestResult | null>(null);
+  const [cloudStatus, setCloudStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   useEffect(() => {
     const saved = loadAnswers();
@@ -33,8 +36,17 @@ export default function KnowYourselfResult() {
       navigate("/know-yourself");
       return;
     }
-    setResult(computeResult(saved));
-  }, [navigate]);
+    const r = computeResult(saved);
+    setResult(r);
+
+    // Автоматически сохраняем результат в личный кабинет (если пользователь вошёл)
+    if (isAuthenticated) {
+      setCloudStatus("saving");
+      syncResultToCloud(saved, r).then((res) => {
+        setCloudStatus(res.saved ? "saved" : "error");
+      });
+    }
+  }, [navigate, isAuthenticated]);
 
   const topRiasecLabel = useMemo(() => {
     if (!result) return null;
@@ -113,6 +125,38 @@ export default function KnowYourselfResult() {
       </div>
 
       <main className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 pt-6 pb-16">
+
+        {/* Плашка статуса синхронизации с личным кабинетом */}
+        {isAuthenticated && cloudStatus !== "idle" && (
+          <div className={`mb-4 flex items-center gap-2 text-xs rounded-2xl px-4 py-2.5 border ${
+            cloudStatus === "saved"  ? "bg-emerald-500/12 border-emerald-500/30 text-emerald-200" :
+            cloudStatus === "saving" ? "bg-cyan-500/12 border-cyan-500/30 text-cyan-200" :
+                                       "bg-rose-500/12 border-rose-500/30 text-rose-200"
+          }`}>
+            <Icon
+              name={cloudStatus === "saved" ? "CloudCheck" : cloudStatus === "saving" ? "Loader2" : "CloudOff"}
+              size={14}
+              className={cloudStatus === "saving" ? "animate-spin" : ""}
+            />
+            <span className="font-bold">
+              {cloudStatus === "saved" && "Результат сохранён в твой личный кабинет"}
+              {cloudStatus === "saving" && "Сохраняю в личный кабинет..."}
+              {cloudStatus === "error" && "Не удалось сохранить — попробуй обновить страницу"}
+            </span>
+          </div>
+        )}
+        {!isAuthenticated && (
+          <div className="mb-4 flex items-center gap-2 text-xs rounded-2xl px-4 py-2.5 border bg-amber-500/12 border-amber-500/30 text-amber-200 flex-wrap">
+            <Icon name="Cloud" size={14} />
+            <span className="font-bold flex-1">Войди в аккаунт, чтобы сохранить результат в личный кабинет</span>
+            <button
+              onClick={openLogin}
+              className="bg-amber-500/30 hover:bg-amber-500/45 text-white text-xs font-bold px-3 py-1 rounded-lg transition-colors"
+            >
+              Войти
+            </button>
+          </div>
+        )}
 
         {/* ─── HERO: ТИП ЛИЧНОСТИ ─────────────────────────────────────────── */}
         <section className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-900/40 via-blue-900/25 to-indigo-900/30 p-6 md:p-8 mb-6">

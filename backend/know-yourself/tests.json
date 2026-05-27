@@ -1,0 +1,37 @@
+{
+  "tests": [
+    {
+      "name": "latest without auth — returns null result",
+      "method": "GET",
+      "path": "/?action=latest",
+      "expectedStatus": 200,
+      "expectedBody": {"authenticated": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "save without auth — 401",
+      "method": "POST",
+      "path": "/?action=save",
+      "body": {"answers": {"i1": 5}, "result": {"topRiasec": ["I"]}},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "history without auth — 401",
+      "method": "GET",
+      "path": "/?action=history",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "unknown action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

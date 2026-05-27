@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
+import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -119,6 +120,9 @@ export default function Cabinet() {
             </Link>
           </div>
         </div>
+
+        {/* Профориентационный виджет «Познай себя» */}
+        <KnowYourselfWidget />
 
         {/* Быстрые карточки */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

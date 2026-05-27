@@ -6,8 +6,9 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import QuestionCard from "@/components/knowYourself/QuestionCard";
 import { QUESTIONS, TEST_BLOCKS } from "@/components/knowYourself/questions";
-import { loadAnswers, saveAnswers, clearAnswers } from "@/components/knowYourself/scoring";
+import { loadAnswers, saveAnswers, clearAnswers, fetchLatestFromCloud } from "@/components/knowYourself/scoring";
 import { Answer, TestBlockCode } from "@/components/knowYourself/types";
+import { useAuth } from "@/context/AuthContext";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -17,7 +18,9 @@ export default function KnowYourself() {
   const [mode, setMode] = useState<Mode>("intro");
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [step, setStep] = useState(0);
+  const [cloudSynced, setCloudSynced] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const saved = loadAnswers();
@@ -25,6 +28,23 @@ export default function KnowYourself() {
       setAnswers(saved);
     }
   }, []);
+
+  // Если пользователь авторизован — пытаемся подтянуть последний результат из ЛК.
+  // Облако имеет приоритет над localStorage (актуальные ответы из любого браузера).
+  useEffect(() => {
+    if (!isAuthenticated || cloudSynced) return;
+    let cancelled = false;
+    fetchLatestFromCloud().then((cloud) => {
+      if (cancelled || !cloud) { setCloudSynced(true); return; }
+      const cloudAnswers = cloud.answers || {};
+      if (Object.keys(cloudAnswers).length > 0) {
+        setAnswers(cloudAnswers);
+        saveAnswers(cloudAnswers);
+      }
+      setCloudSynced(true);
+    }).catch(() => setCloudSynced(true));
+    return () => { cancelled = true; };
+  }, [isAuthenticated, cloudSynced]);
 
   const blockOfStep = QUESTIONS[step]?.block as TestBlockCode | undefined;
   const blockInfo = blockOfStep ? TEST_BLOCKS.find((b) => b.code === blockOfStep) : undefined;

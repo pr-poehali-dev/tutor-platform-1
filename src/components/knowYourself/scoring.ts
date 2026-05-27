@@ -8,6 +8,14 @@ import {
 } from "./types";
 import { QUESTIONS } from "./questions";
 import { PROFESSIONS } from "./professions";
+import func2url from "../../../backend/func2url.json";
+
+const KY_URL = (func2url as Record<string, string>)["know-yourself"];
+const TOKEN_KEY = "uchispro_auth_token_v1";
+
+function getAuthToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
 
 const RIASEC_CODES: RiasecCode[] = ["R", "I", "A", "S", "E", "C"];
 const VALUE_CODES: ValueCode[] = ["stability", "income", "creativity", "service", "science", "power", "freedom", "team"];
@@ -146,4 +154,73 @@ export function clearAnswers() {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch { /* noop */ }
+}
+
+// ─── СИНХРОНИЗАЦИЯ С ЛИЧНЫМ КАБИНЕТОМ ─────────────────────────────────
+
+/** Сохраняет результат теста на бэк (если пользователь авторизован). */
+export async function syncResultToCloud(
+  answers: Record<string, Answer>,
+  result: TestResult,
+): Promise<{ saved: boolean; id?: number }> {
+  const token = getAuthToken();
+  if (!token) return { saved: false };
+  try {
+    const res = await fetch(`${KY_URL}?action=save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Auth-Token": token },
+      body: JSON.stringify({ answers, result }),
+    });
+    if (!res.ok) return { saved: false };
+    const data = await res.json();
+    return { saved: !!data.saved, id: data.id };
+  } catch {
+    return { saved: false };
+  }
+}
+
+export interface CloudResult {
+  id: number;
+  answers: Record<string, Answer>;
+  result: TestResult;
+  top_riasec: string;
+  created_at: string;
+}
+
+/** Достаёт последний результат пользователя из облака. */
+export async function fetchLatestFromCloud(): Promise<CloudResult | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(`${KY_URL}?action=latest`, {
+      headers: { "X-Auth-Token": token },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.result || null;
+  } catch {
+    return null;
+  }
+}
+
+export interface HistoryItem {
+  id: number;
+  top_riasec: string;
+  created_at: string;
+}
+
+/** Список последних 20 прохождений (для ЛК). */
+export async function fetchHistoryFromCloud(): Promise<HistoryItem[]> {
+  const token = getAuthToken();
+  if (!token) return [];
+  try {
+    const res = await fetch(`${KY_URL}?action=history`, {
+      headers: { "X-Auth-Token": token },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.items) ? data.items : [];
+  } catch {
+    return [];
+  }
 }
