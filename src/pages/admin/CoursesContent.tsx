@@ -1,130 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
-import { COURSES, SUBJECTS } from "@/components/courses/coursesData";
-import func2url from "../../../backend/func2url.json";
-
-const COURSE_BUILDER_URL = (func2url as Record<string, string>)["course-builder"];
-const PROGRESS_KEY = "uchispro_courses_gen_progress_v2";
-
-interface CourseStatus {
-  has_curriculum: boolean;
-  total_lessons?: number;
-  total_modules?: number;
-  estimated_hours?: number;
-  version?: number;
-  updated_at?: string;
-}
-
-interface BatchResult {
-  course_id: number;
-  title?: string;
-  generated?: boolean;
-  skipped?: boolean;
-  reason?: string;
-  error?: string;
-  total_lessons?: number;
-  total_modules?: number;
-  version?: number;
-  fallback?: boolean;
-  warning?: boolean;
-  ai_error?: string;
-}
-
-interface PersistedProgress {
-  queue: number[];
-  done: BatchResult[];
-  startedAt: number;
-  total: number;
-}
-
-function loadProgress(): PersistedProgress | null {
-  try {
-    const raw = localStorage.getItem(PROGRESS_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function saveProgress(p: PersistedProgress | null) {
-  try {
-    if (p === null) localStorage.removeItem(PROGRESS_KEY);
-    else localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
-  } catch { /* noop */ }
-}
-
-/** Гарантированная генерация одного курса с ретраями и fallback на последней попытке.
- * @param forceAI — если true: пересоздаёт курс (force) и запрещает fallback (только реальный ИИ) */
-async function generateOneCourse(courseId: number, forceAI = false): Promise<BatchResult> {
-  const course = COURSES.find((c) => c.id === courseId);
-  if (!course) return { course_id: courseId, generated: false, error: "курс не найден" };
-
-  const MAX_ATTEMPTS = forceAI ? 2 : 3;
-  let lastError = "unknown";
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    // Таймаут 22 сек: ИИ на бэке имеет 14 сек, плюс БД+сеть. Если ответа нет — точно беда.
-    const controller = new AbortController();
-    const abortTimer = setTimeout(() => controller.abort(), 22000);
-
-    try {
-      const res = await fetch(`${COURSE_BUILDER_URL}?action=batch_generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          courses: [{
-            id: course.id,
-            title: course.title,
-            subject: course.subject,
-            grade: course.grade,
-            lessons: course.lessons,
-            duration: course.duration,
-            description: course.description,
-            format: course.format,
-            // В forceAI-режиме даём ИИ чуть больше времени (но бэк всё равно ограничит)
-            ai_deadline: forceAI ? 18 : 14,
-          }],
-          limit: 1,
-          // force=true — пересоздать существующий курс
-          force: forceAI,
-          // allow_fallback=false означает «считай это warning'ом если ИИ не успел»;
-          // бэк всё равно сохранит fallback чтобы курс не потерялся
-          allow_fallback: !forceAI,
-        }),
-      });
-      clearTimeout(abortTimer);
-
-      if (!res.ok) {
-        lastError = `HTTP ${res.status}`;
-        if (res.status >= 500 && attempt < MAX_ATTEMPTS) {
-          await new Promise((r) => setTimeout(r, 1500 * attempt));
-          continue;
-        }
-        return { course_id: courseId, title: course.title, generated: false, error: lastError };
-      }
-
-      const data = await res.json();
-      const first = (data.results || [])[0] as BatchResult | undefined;
-      if (first) return first;
-      lastError = data.error || "пустой ответ";
-    } catch (e) {
-      clearTimeout(abortTimer);
-      const isAbort = e instanceof DOMException && e.name === "AbortError";
-      lastError = isAbort ? "превышен таймаут (22с)" : (e instanceof Error ? e.message : "network error");
-      if (attempt < MAX_ATTEMPTS) {
-        await new Promise((r) => setTimeout(r, 1500 * attempt));
-      }
-    }
-  }
-
-  return { course_id: courseId, title: course.title, generated: false, error: `${lastError} (${MAX_ATTEMPTS} попыток)` };
-}
+import { COURSES } from "@/components/courses/coursesData";
+import StatsHeader from "./coursesContent/StatsHeader";
+import GenerationControls from "./coursesContent/GenerationControls";
+import ResultsLog from "./coursesContent/ResultsLog";
+import CoursesList from "./coursesContent/CoursesList";
+import { BatchResult, CourseStatus, FilterKind } from "./coursesContent/types";
+import {
+  COURSE_BUILDER_URL,
+  generateOneCourse,
+  loadProgress,
+  saveProgress,
+} from "./coursesContent/utils";
 
 export default function CoursesContent() {
   const [statuses, setStatuses] = useState<Record<number, CourseStatus>>({});
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "missing" | "ready">("missing");
+  const [filter, setFilter] = useState<FilterKind>("missing");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
 
   // Очередь и результаты — синхронизированы с localStorage
@@ -335,8 +228,6 @@ export default function CoursesContent() {
     saveProgress(null);
   };
 
-  const progressTotal = done.length + queue.length;
-  const progressDone = done.length;
   const failedItems = done.filter((d) => !d.generated && !d.skipped);
 
   const retryFailed = () => {
@@ -363,370 +254,46 @@ export default function CoursesContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
-        <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/35 rounded-full px-4 py-1.5 mb-4">
-          <Icon name="BookOpenCheck" size={14} className="text-emerald-300" />
-          <span className="text-sm text-emerald-200 font-bold uppercase tracking-wider">Контент курсов</span>
-        </div>
-        <h1 className="font-montserrat font-black text-3xl md:text-5xl mb-3">
-          Программы <span className="gradient-text-purple">{COURSES.length} курсов</span>
-        </h1>
-        <p className="text-white/65 text-base md:text-lg max-w-3xl mb-8">
-          Каждый курс получает уникальную программу по ФГОС. Генерация идёт <b>по одному курсу</b>: даже если связь оборвётся — прогресс сохранится в браузере и продолжится автоматически.
-        </p>
+        <StatsHeader stats={stats} fallbackCount={fallbackCourses.length} />
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/15 border-2 border-emerald-500/45 rounded-2xl p-4 relative overflow-hidden">
-            <div className="text-4xl font-montserrat font-black text-emerald-300">
-              {stats.onSale}<span className="text-white/40 text-2xl">/{stats.total}</span>
-            </div>
-            <div className="text-emerald-200 text-[10px] uppercase tracking-wider font-black mt-1">в продаже</div>
-            <Icon name="Store" size={36} className="absolute top-2 right-2 text-emerald-300/15" />
-          </div>
-          <div className="bg-card/60 border border-white/10 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-white">{stats.ready}</div>
-            <div className="text-white/45 text-[10px] uppercase tracking-wider font-bold">всего с программой</div>
-          </div>
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-amber-300">{fallbackCourses.length}</div>
-            <div className="text-amber-200/65 text-[10px] uppercase tracking-wider font-bold">сняты с продажи (шаблон)</div>
-          </div>
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-rose-300">{stats.missing}</div>
-            <div className="text-rose-200/65 text-[10px] uppercase tracking-wider font-bold">нет программы</div>
-          </div>
-        </div>
+        <GenerationControls
+          fallbackCourses={fallbackCourses}
+          running={running}
+          paused={paused}
+          forceAIMode={forceAIMode}
+          queue={queue}
+          done={done}
+          currentCourseId={currentCourseId}
+          stats={stats}
+          error={error}
+          upgradeAllFallback={upgradeAllFallback}
+          regenerateAllFallback={regenerateAllFallback}
+          resumeGeneration={resumeGeneration}
+          clearProgress={clearProgress}
+          startGenerateAllMissing={startGenerateAllMissing}
+          pauseGeneration={pauseGeneration}
+          resumePause={resumePause}
+          stopGeneration={stopGeneration}
+          retryFailed={retryFailed}
+        />
 
-        {/* Главное сообщение: в каталоге сейчас только курсы с реальной ИИ-программой */}
-        {stats.onSale < stats.total && (
-          <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-4 mb-6 flex items-start gap-3">
-            <Icon name="ShieldCheck" size={20} className="text-cyan-300 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-white font-bold text-sm mb-0.5">В каталоге сейчас {stats.onSale} из {stats.total} курсов</p>
-              <p className="text-white/65 text-xs">
-                Курсы без реальной программы автоматически скрыты из продажи. Покупка по прямому URL также заблокирована. Чтобы вернуть курс в продажу — перегенерируй его через ИИ.
-              </p>
-            </div>
-          </div>
-        )}
+        <ResultsLog done={done} running={running} clearProgress={clearProgress} />
 
-        {/* Перегенерация fallback-курсов: 2 кнопки */}
-        {fallbackCourses.length > 0 && !running && (
-          <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border-2 border-emerald-500/40 rounded-3xl p-5 mb-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/25 flex items-center justify-center flex-shrink-0">
-                <Icon name="Rocket" size={18} className="text-emerald-200" />
-              </div>
-              <div className="flex-1">
-                <p className="font-montserrat font-black text-white text-base mb-0.5">
-                  Запусти {fallbackCourses.length} курсов в продажу за 1 клик
-                </p>
-                <p className="text-white/65 text-xs max-w-2xl">
-                  Шаблонные программы получили качественный апгрейд — теперь это реальные темы по ФГОС с разбором, практикой и проектами. Жми «Обновить» — все {fallbackCourses.length} курсов мгновенно станут продающими. Если хочешь идеальное качество — попробуй «Через ИИ» (но требует время и удачу с polza).
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={upgradeAllFallback}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black text-sm px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-emerald-500/25"
-              >
-                <Icon name="Zap" size={16} />
-                Обновить {fallbackCourses.length} курсов и запустить в продажу
-              </button>
-              <button
-                onClick={regenerateAllFallback}
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm px-4 py-3 rounded-xl"
-                title="Только ИИ, без шаблонного fallback. Дольше, может не успеть."
-              >
-                <Icon name="Sparkles" size={14} />
-                Через ИИ
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Возобновление сохранённой сессии */}
-        {!running && queue.length > 0 && (
-          <div className="bg-amber-500/15 border border-amber-500/35 rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
-            <Icon name="History" size={20} className="text-amber-300 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-sm">Найдена незавершённая сессия генерации</p>
-              <p className="text-white/65 text-xs">Сделано {done.length}, осталось {queue.length} курсов. Можно продолжить.</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={resumeGeneration} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl">
-                <Icon name="Play" size={12} className="inline mr-1" />
-                Продолжить
-              </button>
-              <button onClick={clearProgress} className="bg-white/8 hover:bg-white/12 text-white/65 font-bold text-xs px-3 py-2 rounded-xl">
-                Сбросить
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Главная кнопка / прогресс */}
-        <div className="bg-gradient-to-r from-purple-500/15 to-cyan-500/15 border border-purple-500/30 rounded-3xl p-5 mb-6">
-          {!running && queue.length === 0 && (
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <p className="font-montserrat font-black text-white text-base mb-1">Заполнить все курсы программой</p>
-                <p className="text-white/65 text-xs max-w-xl">
-                  Очередь обрабатывается <b>по одному курсу</b>. Прогресс сохраняется после каждого — обрыв связи или закрытие вкладки не потеряют сделанного.
-                </p>
-              </div>
-              <button
-                onClick={startGenerateAllMissing}
-                disabled={stats.missing === 0}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-50"
-              >
-                <Icon name="Sparkles" size={14} />
-                Сгенерировать программы для {stats.missing} курсов
-              </button>
-            </div>
-          )}
-
-          {(running || queue.length > 0) && (
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                <div>
-                  <p className="font-montserrat font-black text-white text-base flex items-center gap-2 flex-wrap">
-                    {running ? (paused ? "⏸ Пауза" : "🤖 Генерирую программы...") : "Очередь готова к продолжению"}
-                    {forceAIMode && (
-                      <span className="inline-flex items-center gap-1 bg-amber-500/25 border border-amber-500/45 text-amber-100 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                        <Icon name="Wand2" size={10} />
-                        Режим ИИ (без fallback)
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-white/65 text-xs">
-                    Сделано {progressDone} из {progressTotal}
-                    {currentCourseId && running && !paused && (
-                      <> · сейчас: курс #{currentCourseId}</>
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {running && !paused && (
-                    <button onClick={pauseGeneration} className="inline-flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/35 text-amber-200 font-bold text-xs px-3 py-2 rounded-xl">
-                      <Icon name="Pause" size={12} />
-                      Пауза
-                    </button>
-                  )}
-                  {running && paused && (
-                    <button onClick={resumePause} className="inline-flex items-center gap-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/35 text-emerald-200 font-bold text-xs px-3 py-2 rounded-xl">
-                      <Icon name="Play" size={12} />
-                      Продолжить
-                    </button>
-                  )}
-                  {running && (
-                    <button onClick={stopGeneration} className="inline-flex items-center gap-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/35 text-rose-200 font-bold text-xs px-3 py-2 rounded-xl">
-                      <Icon name="Square" size={12} />
-                      Остановить
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="h-2 bg-white/8 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 transition-all"
-                  style={{ width: `${progressTotal > 0 ? (progressDone / progressTotal) * 100 : 0}%` }}
-                />
-              </div>
-
-              {failedItems.length > 0 && !running && (
-                <button onClick={retryFailed} className="mt-3 inline-flex items-center gap-1.5 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-200 font-bold text-xs px-3 py-2 rounded-xl">
-                  <Icon name="RefreshCw" size={12} />
-                  Повторить {failedItems.length} провалившихся курсов
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <div className="bg-rose-500/15 border border-rose-500/35 rounded-xl p-3 text-rose-200 text-sm mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* Лента результатов */}
-        {done.length > 0 && (
-          <div className="bg-card/60 border border-white/10 rounded-3xl p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">
-                Результаты ({done.length}: ✓ {done.filter(d => d.generated && !d.fallback).length} ИИ · 🪄 {done.filter(d => d.fallback && !d.warning).length} шаблон · ⚠ {done.filter(d => d.warning).length} ИИ не успел · ✗ {failedItems.length} ошибок · ⏭ {done.filter(d => d.skipped).length} пропущено)
-              </p>
-              {!running && (
-                <button onClick={clearProgress} className="text-white/45 hover:text-white text-[10px] uppercase tracking-wider font-bold">
-                  Очистить лог
-                </button>
-              )}
-            </div>
-            <div className="space-y-1.5 max-h-96 overflow-y-auto">
-              {done.slice().reverse().map((r, i) => (
-                <div key={`${r.course_id}-${i}`} className={`flex items-center gap-2 text-xs rounded-xl p-2 ${
-                  r.generated && !r.fallback ? "bg-emerald-500/10 border border-emerald-500/30" :
-                  r.fallback ? "bg-amber-500/10 border border-amber-500/30" :
-                  r.skipped ? "bg-white/[0.03] border border-white/8" :
-                  "bg-rose-500/10 border border-rose-500/30"
-                }`}>
-                  <Icon
-                    name={
-                      r.generated && !r.fallback ? "CheckCircle2" :
-                      r.fallback ? "Wand2" :
-                      r.skipped ? "SkipForward" : "AlertCircle"
-                    }
-                    size={12}
-                    className={
-                      r.generated && !r.fallback ? "text-emerald-300" :
-                      r.fallback ? "text-amber-300" :
-                      r.skipped ? "text-white/45" : "text-rose-300"
-                    }
-                  />
-                  <span className="text-white/85 font-bold flex-1 truncate">
-                    #{r.course_id} · {r.title || `Курс ${r.course_id}`}
-                  </span>
-                  <span className="text-white/55 text-[10px] truncate max-w-[45%] text-right" title={r.ai_error || r.error || ''}>
-                    {r.generated ? (
-                      r.warning
-                        ? `${r.total_lessons} ур · ⚠ ИИ не успел, шаблон`
-                        : r.fallback
-                          ? `${r.total_lessons} ур · шаблон (ИИ занят)`
-                          : `${r.total_lessons} уроков, ${r.total_modules} модулей`
-                    ) : r.skipped ? r.reason : r.error}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
-            {[
-              { id: "missing", label: `Без программы (${stats.missing})` },
-              { id: "ready", label: `Готовые (${stats.ready})` },
-              { id: "all", label: `Все (${stats.total})` },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id as "all" | "missing" | "ready")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  filter === f.id ? "bg-purple-500/25 text-white" : "text-white/55 hover:text-white"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <select
-            value={subjectFilter}
-            onChange={(e) => setSubjectFilter(e.target.value)}
-            className="bg-white/5 border border-white/12 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500/50"
-          >
-            {SUBJECTS.map((s) => (
-              <option key={s.id} value={s.id} className="bg-background">
-                {s.emoji} {s.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={fetchStatuses}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/75 text-xs px-3 py-2 rounded-xl"
-          >
-            <Icon name="RefreshCw" size={11} className={loading ? "animate-spin" : ""} />
-            Обновить статусы
-          </button>
-        </div>
-
-        {/* Таблица курсов */}
-        {loading && filtered.length === 0 ? (
-          <div className="text-center py-12 text-white/45">
-            <Icon name="Loader2" size={24} className="animate-spin mx-auto mb-3" />
-            <p className="text-sm">Загружаю статусы...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-white/45 bg-card/40 rounded-3xl">
-            <Icon name="Inbox" size={32} className="mx-auto mb-3" />
-            <p className="text-sm">Курсов с такими фильтрами нет</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map((c) => {
-              const status = statuses[c.id];
-              const has = status?.has_curriculum;
-              const isFallback = fallbackCourses.includes(c.id);
-              const subj = SUBJECTS.find((s) => s.id === c.subject);
-              const isCurrent = currentCourseId === c.id;
-              return (
-                <div
-                  key={c.id}
-                  className={`bg-card/60 border rounded-2xl p-4 flex items-center gap-3 transition-all ${
-                    isCurrent ? "border-purple-500/60 bg-purple-500/10 scale-[1.01]" :
-                    isFallback ? "border-amber-500/35 bg-amber-500/[0.04]" :
-                    has ? "border-emerald-500/25" : "border-rose-500/25"
-                  }`}
-                >
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-white/5 relative">
-                    {c.emoji}
-                    {isCurrent && (
-                      <Icon name="Loader2" size={20} className="animate-spin text-purple-300 absolute" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <h3 className="text-white text-sm font-bold truncate">{c.title}</h3>
-                      <span className="text-[10px] bg-white/10 text-white/65 px-1.5 py-0.5 rounded font-bold">#{c.id}</span>
-                      {isFallback && (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold px-1.5 py-0.5 rounded">
-                          <Icon name="Wand2" size={8} />
-                          шаблон
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-white/55 text-[11px]">
-                      {subj?.label} · {c.grade} · {c.lessons} уроков обещано
-                      {has && status.total_lessons !== undefined && (
-                        <span className={isFallback ? "text-amber-300" : "text-emerald-300"}> · {status.total_lessons} в БД, {status.total_modules} модулей, ~{status.estimated_hours}ч</span>
-                      )}
-                    </p>
-                  </div>
-                  {has ? (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${isFallback ? "bg-amber-500/20 text-amber-200" : "bg-emerald-500/20 text-emerald-200"}`}>
-                        v{status.version}
-                      </span>
-                      <button
-                        onClick={() => generateOne(c.id)}
-                        disabled={running}
-                        title={isFallback ? "Перегенерировать через ИИ" : "Пересоздать программу"}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/65 disabled:opacity-50"
-                      >
-                        <Icon name="RefreshCw" size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => generateOne(c.id)}
-                      disabled={running}
-                      className="inline-flex items-center gap-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/35 text-purple-200 text-xs font-bold px-3 py-2 rounded-xl disabled:opacity-50 flex-shrink-0"
-                    >
-                      <Icon name="Wand2" size={12} />
-                      Сгенерировать
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <CoursesList
+          filtered={filtered}
+          statuses={statuses}
+          fallbackCourses={fallbackCourses}
+          loading={loading}
+          filter={filter}
+          subjectFilter={subjectFilter}
+          stats={stats}
+          currentCourseId={currentCourseId}
+          running={running}
+          setFilter={setFilter}
+          setSubjectFilter={setSubjectFilter}
+          fetchStatuses={fetchStatuses}
+          generateOne={generateOne}
+        />
       </div>
     </div>
   );
