@@ -18,6 +18,10 @@ VOICE_MAP = {
     'nika': {'voice': 'alena', 'emotion': 'good', 'speed': '1.05'},
     # Няня Лиса — тёплый, медленный, для малышей и родителей
     'fox': {'voice': 'alena', 'emotion': 'good', 'speed': '0.95'},
+    # Няня Лиса поёт нараспев — для песенок (медленнее, мягче, с эмоцией)
+    'fox_song': {'voice': 'alena', 'emotion': 'good', 'speed': '0.80'},
+    # Колыбельная — самый медленный режим
+    'fox_lullaby': {'voice': 'alena', 'emotion': 'good', 'speed': '0.70'},
 }
 
 
