@@ -45,6 +45,7 @@ const Feed = lazy(() => import("./pages/Feed"));
 const FeedArticle = lazy(() => import("./pages/FeedArticle"));
 const FeedSubmit = lazy(() => import("./pages/FeedSubmit"));
 const AdminFeed = lazy(() => import("./pages/admin/AdminFeed"));
+const SearchResults = lazy(() => import("./pages/SearchResults"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -109,6 +110,7 @@ const App = () => (
                     <Route path="/feed/submit" element={<FeedSubmit />} />
                     <Route path="/feed/:slug" element={<FeedArticle />} />
                     <Route path="/admin/feed" element={<AdminFeed />} />
+                    <Route path="/search" element={<SearchResults />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />

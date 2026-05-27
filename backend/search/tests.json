@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "name": "search empty query — short message",
+      "method": "GET",
+      "path": "/?action=search&q=",
+      "expectedStatus": 200,
+      "expectedBody": {"items": [], "total": 0},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "search 1-char — too short",
+      "method": "GET",
+      "path": "/?action=search&q=a",
+      "expectedStatus": 200,
+      "expectedBody": {"items": [], "total": 0},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "search 'егэ' — finds pages",
+      "method": "GET",
+      "path": "/?action=search&q=%D0%B5%D0%B3%D1%8D",
+      "expectedStatus": 200,
+      "expectedBody": {"q": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "suggest 'курс' — short list",
+      "method": "GET",
+      "path": "/?action=suggest&q=%D0%BA%D1%83%D1%80%D1%81",
+      "expectedStatus": 200,
+      "expectedBody": {"q": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "unknown action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -70,6 +70,17 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
           </div>
 
           <div className="hidden md:flex items-center gap-2">
+            <Link
+              to="/search"
+              aria-label="Поиск по сайту (Ctrl+K)"
+              title="Поиск по сайту (Ctrl+K)"
+              className="flex items-center gap-1.5 text-white/70 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 px-3 py-2 rounded-xl transition-colors"
+            >
+              <Icon name="Search" size={14} aria-hidden="true" />
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 bg-white/8 border border-white/15 text-white/55 font-bold rounded text-[10px] px-1 py-0.5">
+                <Icon name="Command" size={9} />K
+              </kbd>
+            </Link>
             {isAuthenticated ? (
               <Link
                 to="/cabinet"
@@ -99,15 +110,24 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             )}
           </div>
 
-          <button
-            className="md:hidden text-white/70 hover:text-white"
-            onClick={onToggleMobile}
-            aria-label={mobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-nav"
-          >
-            <Icon name={mobileMenuOpen ? "X" : "Menu"} size={22} aria-hidden="true" />
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <Link
+              to="/search"
+              aria-label="Поиск по сайту"
+              className="text-white/70 hover:text-white p-2"
+            >
+              <Icon name="Search" size={20} aria-hidden="true" />
+            </Link>
+            <button
+              className="text-white/70 hover:text-white"
+              onClick={onToggleMobile}
+              aria-label={mobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-nav"
+            >
+              <Icon name={mobileMenuOpen ? "X" : "Menu"} size={22} aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (

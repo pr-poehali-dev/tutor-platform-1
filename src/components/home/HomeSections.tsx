@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
+import HeroSearch from "@/components/home/HeroSearch";
 import SocialProofStrip from "@/components/SocialProofStrip";
 import QuickQuiz from "@/components/QuickQuiz";
 import CoursesTeaser from "@/components/CoursesTeaser";
@@ -15,6 +16,8 @@ export default function HomeSections() {
   return (
     <main id="main-content">
       <HeroSection />
+
+      <HeroSearch />
 
       <SocialProofStrip />
 
