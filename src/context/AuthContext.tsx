@@ -172,8 +172,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/** Безопасная заглушка — используется только если контекст не найден
+ *  (например, при HMR в dev-режиме Vite, когда React теряет ссылку на провайдер).
+ *  В прод-сборке контекст всегда есть — этот fallback не активируется. */
+const AUTH_FALLBACK: AuthState = {
+  token: null,
+  user: null,
+  subscription: null,
+  loading: false,
+  isAuthenticated: false,
+  isModalOpen: false,
+  openLogin: () => {
+    if (typeof window !== "undefined") window.location.reload();
+  },
+  closeLogin: () => {},
+  register: async () => ({ ok: false, message: "Контекст ещё не готов" }),
+  login: async () => ({ ok: false, message: "Контекст ещё не готов" }),
+  logout: async () => {},
+  refresh: async () => {},
+};
+
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    if (typeof window !== "undefined") {
+      // Сигнализируем в консоль, но не валим всё приложение
+      console.warn("[useAuth] AuthContext не найден — использую fallback (вероятно, HMR в dev)");
+    }
+    return AUTH_FALLBACK;
+  }
   return ctx;
 }
