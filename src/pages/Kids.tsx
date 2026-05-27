@@ -209,6 +209,13 @@ export default function KidsLanding() {
                 <Icon name="BookOpen" size={16} />
                 Библиотека сказок
               </Link>
+              <Link
+                to="/kids/songs"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/35 text-white text-base font-semibold px-6 py-3.5 rounded-2xl transition-all"
+              >
+                <Icon name="Music" size={16} />
+                Учим песни и стихи
+              </Link>
               <a
                 href="#ages"
                 className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white text-base font-semibold px-6 py-3.5 rounded-2xl transition-colors"
@@ -288,6 +295,62 @@ export default function KidsLanding() {
           </div>
         </section>
       )}
+
+      {/* Витрина: Песни и стихи + Библиотека */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-8">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Link
+            to="/kids/songs"
+            className="group relative bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 rounded-3xl p-6 md:p-7 overflow-hidden hover:scale-[1.01] transition-transform"
+          >
+            <div className="absolute -right-6 -top-6 text-[140px] opacity-20 group-hover:opacity-30 transition-opacity">🎵</div>
+            <div className="relative">
+              <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 mb-3">
+                <Icon name="Sparkles" size={12} className="text-white" />
+                <span className="text-white text-[10px] font-bold uppercase tracking-wider">Новое</span>
+              </div>
+              <h3 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2 leading-tight">
+                Учим песни и стихи 🚜
+              </h3>
+              <p className="text-white/90 text-sm md:text-base mb-4 leading-relaxed max-w-md">
+                Народные потешки, пальчиковые игры, авторские песенки про красный трактор, машинки, коровку. Считалочки, колыбельные. С подсветкой строк и подсказками родителю.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {["Потешки", "Пальчиковые", "Песенки", "Стихи", "Колыбельные"].map((t) => (
+                  <span key={t} className="text-[11px] font-bold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+              <span className="inline-flex items-center gap-2 bg-white text-orange-600 text-sm font-black px-5 py-2.5 rounded-xl group-hover:gap-3 transition-all">
+                Послушать
+                <Icon name="Play" size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            to="/kids/library"
+            className="group relative bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-3xl p-6 md:p-7 overflow-hidden hover:scale-[1.01] transition-transform"
+          >
+            <div className="absolute -right-6 -top-6 text-[140px] opacity-20 group-hover:opacity-30 transition-opacity">📚</div>
+            <div className="relative">
+              <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 mb-3">
+                <Icon name="BookOpen" size={12} className="text-white" />
+                <span className="text-white text-[10px] font-bold uppercase tracking-wider">Библиотека</span>
+              </div>
+              <h3 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2 leading-tight">
+                Сказки и рассказы 📖
+              </h3>
+              <p className="text-white/90 text-sm md:text-base mb-4 leading-relaxed max-w-md">
+                Народные сказки, Пушкин, Толстой, Крылов, Ушинский. Классика из общественного достояния — слушаем с тёплым голосом ИИ-Лисы.
+              </p>
+              <span className="inline-flex items-center gap-2 bg-white text-pink-600 text-sm font-black px-5 py-2.5 rounded-xl group-hover:gap-3 transition-all">
+                Открыть
+                <Icon name="ArrowRight" size={14} />
+              </span>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* Возрастные ступени */}
       <section id="ages" className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-12">
