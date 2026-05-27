@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/cron",
+  "description": "Расписание автозапусков ИИ-агента «Лента» — парсинг источников + автомодерация",
+  "crons": [
+    {
+      "name": "feed-curator-6h",
+      "description": "Раз в 6 часов: ИИ-куратор парсит RSS-источники и автоматически модерирует все ожидающие статьи пользователей",
+      "schedule": "0 */6 * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/b4aed0e9-e169-4add-b041-36eaab3d44a5?action=cron",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
+    }
+  ]
+}

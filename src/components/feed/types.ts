@@ -20,6 +20,10 @@ export interface FeedArticle {
   published_at: string | null;
   created_at: string;
   rejected_reason?: string | null;
+  auto_moderation_score?: number | null;
+  auto_moderation_verdict?: "approve" | "reject" | "flag" | null;
+  auto_moderation_reasoning?: string | null;
+  auto_moderation_at?: string | null;
 }
 
 export interface FeedListResponse {

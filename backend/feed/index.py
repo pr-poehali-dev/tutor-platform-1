@@ -95,9 +95,7 @@ def unique_slug(cur, base: str) -> str:
 
 
 def serialize_article(row, detail: bool = False) -> dict:
-    """row: (id, slug, title, summary, content, category, cover_url, source_kind,
-            source_name, source_url, author_display_name, status,
-            tags, reading_time_min, views, likes, published_at, created_at)"""
+    """Сериализация согласно ARTICLE_COLS."""
     data = {
         'id': row[0],
         'slug': row[1],
@@ -116,6 +114,10 @@ def serialize_article(row, detail: bool = False) -> dict:
         'likes': row[15] or 0,
         'published_at': row[16].isoformat() if row[16] else None,
         'created_at': row[17].isoformat() if row[17] else None,
+        'auto_moderation_score': row[18] if len(row) > 18 else None,
+        'auto_moderation_verdict': row[19] if len(row) > 19 else None,
+        'auto_moderation_reasoning': row[20] if len(row) > 20 else None,
+        'auto_moderation_at': (row[21].isoformat() if len(row) > 21 and row[21] else None),
     }
     if detail:
         data['content'] = row[4] or ''
@@ -125,7 +127,9 @@ def serialize_article(row, detail: bool = False) -> dict:
 ARTICLE_COLS = (
     "id, slug, title, summary, content, category, cover_url, source_kind, "
     "source_name, source_url, author_display_name, status, tags, "
-    "reading_time_min, views, likes, published_at, created_at"
+    "reading_time_min, views, likes, published_at, created_at, "
+    "auto_moderation_score, auto_moderation_verdict, auto_moderation_reasoning, "
+    "auto_moderation_at"
 )
 
 

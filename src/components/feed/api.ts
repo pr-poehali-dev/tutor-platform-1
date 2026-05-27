@@ -148,3 +148,59 @@ export async function curatorFetchOne(source_code: string, limit = 5):
     return { ok: false };
   }
 }
+
+// ─── Автомодерация (ИИ-агент) ────────────────────────────────────────
+
+export interface AutoModerationResult {
+  ok: boolean;
+  moderated?: number;
+  approved?: number;
+  rejected?: number;
+  flagged?: number;
+  details?: { id: number; title: string; verdict: string; score: number }[];
+}
+
+export async function autoModerate(limit = 20): Promise<AutoModerationResult> {
+  const key = getAdminKey();
+  if (!key) return { ok: false };
+  try {
+    const res = await fetch(`${CURATOR_URL}?action=auto_moderate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Key": key },
+      body: JSON.stringify({ limit }),
+    });
+    if (!res.ok) return { ok: false };
+    return await res.json();
+  } catch {
+    return { ok: false };
+  }
+}
+
+export interface CronRun {
+  id: number;
+  kind: string;
+  status: "ok" | "error" | "running" | string;
+  fetched: number;
+  moderated: number;
+  approved: number;
+  rejected: number;
+  flagged: number;
+  error_message: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+}
+
+export async function fetchCronLog(): Promise<CronRun[]> {
+  const key = getAdminKey();
+  if (!key) return [];
+  try {
+    const res = await fetch(`${CURATOR_URL}?action=cron_log`, {
+      headers: { "X-Admin-Key": key },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.items || [];
+  } catch {
+    return [];
+  }
+}

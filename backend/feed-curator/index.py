@@ -1,10 +1,13 @@
 """
 ИИ-агент «Куратор Ленты» — парсит RSS-источники, рерайтит тексты через polza.ai,
-сохраняет в feed_articles со статусом 'published' (агент сам себе модератор).
+сохраняет в feed_articles. Также ИИ-модератор статей читателей и cron-обработчик.
 
-POST /?action=fetch_all     (X-Admin-Key) body:{limit?:int}     — обход всех включённых источников
-POST /?action=fetch_one     (X-Admin-Key) body:{source_code}    — один источник
-GET  /?action=sources       (X-Admin-Key)                       — список источников и их статус
+POST /?action=fetch_all     (X-Admin-Key)             — обход всех включённых источников
+POST /?action=fetch_one     (X-Admin-Key)             — один источник
+GET  /?action=sources       (X-Admin-Key)             — список источников и их статус
+POST /?action=auto_moderate (X-Admin-Key)             — прогнать pending через ИИ-модератор
+GET  /?action=cron          (Bearer CRON_SECRET)      — полный цикл: парсинг + автомодерация
+GET  /?action=cron_log      (X-Admin-Key)             — последние 20 запусков cron
 """
 import json
 import os
@@ -402,6 +405,290 @@ def handle_sources(headers: dict) -> dict:
         conn.close()
 
 
+# ─── АВТОМОДЕРАЦИЯ ──────────────────────────────────────────────────
+
+def moderate_with_ai(title: str, summary: str, content: str, category: str) -> dict:
+    """ИИ-модератор: анализирует статью пользователя и выносит решение.
+
+    Возвращает {verdict: approve|reject|flag, score: 0..100, reasoning: str}
+    - approve (score >= 70): публикуем сразу
+    - flag    (40-69):       откладываем для ручной проверки (остаётся pending)
+    - reject  (< 40):        отклоняем с указанием причины
+    """
+    cat_label = {
+        'science': 'наука',
+        'culture': 'культура',
+        'education': 'образование',
+        'robots': 'робототехника',
+        'ai': 'ИИ и нейросети',
+    }.get(category, category)
+
+    text_excerpt = content[:4000]
+
+    prompt = (
+        f'Проверь статью читателя для журнала «Хочу всё знать» (раздел: {cat_label}).\n'
+        f'Школьная аудитория 8-11 класс.\n\n'
+        f'ЗАГОЛОВОК: {title}\n'
+        f'ЛИД: {summary}\n'
+        f'ТЕКСТ: {text_excerpt}\n\n'
+        f'Критерии оценки (по 100-балльной шкале):\n'
+        f'- Соответствие категории "{cat_label}" (20 баллов)\n'
+        f'- Образовательная ценность для школьника (25 баллов)\n'
+        f'- Качество русского языка и грамотность (15 баллов)\n'
+        f'- Достоверность фактов / отсутствие явных фейков (20 баллов)\n'
+        f'- Отсутствие рекламы, оскорблений, токсичности, мата (20 баллов)\n\n'
+        f'Если в тексте есть: реклама, мат, призывы к насилию, экстремизм, '
+        f'ненависть к группам людей, явная дезинформация, спам — ставь reject.\n'
+        f'Если статья пустая, бессмысленная или это копипаст без ценности — reject.\n\n'
+        f'Верни строго JSON без markdown:\n'
+        f'{{\n'
+        f'  "score": число 0-100,\n'
+        f'  "verdict": "approve" | "reject" | "flag",\n'
+        f'  "reasoning": "1-2 предложения почему такое решение (для лога админа)"\n'
+        f'}}\n'
+        f'Правила: approve если score >= 70 и нет нарушений; flag если 40-69; reject если < 40 или есть нарушения.'
+    )
+
+    raw = call_polza(prompt, max_tokens=300)
+    if not raw:
+        # Если ИИ недоступен — оставляем на ручную модерацию
+        return {
+            'verdict': 'flag',
+            'score': 50,
+            'reasoning': 'ИИ-модератор недоступен — статья ждёт ручной проверки',
+        }
+
+    raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+    raw = re.sub(r'\s*```$', '', raw)
+
+    try:
+        parsed = json.loads(raw)
+        verdict = str(parsed.get('verdict') or 'flag').lower()
+        if verdict not in ('approve', 'reject', 'flag'):
+            verdict = 'flag'
+        score = int(parsed.get('score') or 50)
+        score = max(0, min(100, score))
+        reasoning = str(parsed.get('reasoning') or '')[:1000]
+        return {'verdict': verdict, 'score': score, 'reasoning': reasoning}
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return {'verdict': 'flag', 'score': 50,
+                'reasoning': f'Не удалось распарсить ответ ИИ: {raw[:200]}'}
+
+
+def auto_moderate_pending(cur, limit: int = 20) -> dict:
+    """Прогоняет все pending-статьи через ИИ-модератора."""
+    cur.execute(
+        "SELECT id, title, summary, content, category FROM feed_articles "
+        "WHERE status = 'pending' AND auto_moderation_at IS NULL "
+        "ORDER BY created_at ASC LIMIT %s",
+        (limit,)
+    )
+    items = cur.fetchall()
+
+    approved = 0
+    rejected = 0
+    flagged = 0
+    details = []
+
+    for art_id, title, summary, content, category in items:
+        decision = moderate_with_ai(title or '', summary or '', content or '', category or '')
+        verdict = decision['verdict']
+        score = decision['score']
+        reasoning = decision['reasoning']
+
+        if verdict == 'approve':
+            cur.execute(
+                "UPDATE feed_articles SET status = 'published', "
+                "published_at = COALESCE(published_at, NOW()), "
+                "moderated_by = 'ai-moderator', moderated_at = NOW(), "
+                "auto_moderation_score = %s, auto_moderation_verdict = %s, "
+                "auto_moderation_reasoning = %s, auto_moderation_at = NOW(), "
+                "updated_at = NOW() WHERE id = %s",
+                (score, verdict, reasoning, art_id)
+            )
+            approved += 1
+        elif verdict == 'reject':
+            cur.execute(
+                "UPDATE feed_articles SET status = 'rejected', "
+                "rejected_reason = %s, moderated_by = 'ai-moderator', "
+                "moderated_at = NOW(), auto_moderation_score = %s, "
+                "auto_moderation_verdict = %s, auto_moderation_reasoning = %s, "
+                "auto_moderation_at = NOW(), updated_at = NOW() WHERE id = %s",
+                (reasoning[:500], score, verdict, reasoning, art_id)
+            )
+            rejected += 1
+        else:
+            # flag — статья остаётся pending, но получает метку для админа
+            cur.execute(
+                "UPDATE feed_articles SET auto_moderation_score = %s, "
+                "auto_moderation_verdict = %s, auto_moderation_reasoning = %s, "
+                "auto_moderation_at = NOW(), updated_at = NOW() WHERE id = %s",
+                (score, verdict, reasoning, art_id)
+            )
+            flagged += 1
+
+        details.append({
+            'id': art_id, 'title': (title or '')[:80],
+            'verdict': verdict, 'score': score,
+        })
+
+    return {
+        'moderated': len(items),
+        'approved': approved,
+        'rejected': rejected,
+        'flagged': flagged,
+        'details': details,
+    }
+
+
+def handle_auto_moderate(headers: dict, body: dict) -> dict:
+    """Ручной запуск автомодерации из админки."""
+    if not is_admin(headers):
+        return err('Требуется админский ключ', 401)
+    limit = max(1, min(50, int(body.get('limit') or 20)))
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            result = auto_moderate_pending(cur, limit=limit)
+            conn.commit()
+            return ok({'ok': True, **result})
+    finally:
+        conn.close()
+
+
+# ─── CRON ────────────────────────────────────────────────────────────
+
+def is_cron_authorized(event: dict, headers: dict) -> bool:
+    """Авторизация cron-вызова: X-Admin-Key ИЛИ x-cron-secret (vercel),
+    либо параметр ?secret=ADMIN_KEY (для GET-триггеров)."""
+    if is_admin(headers):
+        return True
+    # Vercel Cron шлёт заголовок Authorization: Bearer <CRON_SECRET>
+    cron_secret = os.environ.get('CRON_SECRET', '')
+    if cron_secret:
+        auth = headers.get('Authorization') or headers.get('authorization') or ''
+        if auth == f'Bearer {cron_secret}':
+            return True
+    # Fallback: ?secret в query (для cron-triggers, не умеющих заголовки)
+    qs = event.get('queryStringParameters') or {}
+    sec = (qs.get('secret') or '').strip()
+    if ADMIN_KEY and sec == ADMIN_KEY:
+        return True
+    return False
+
+
+def handle_cron(event: dict, headers: dict, body: dict) -> dict:
+    """Полный цикл: парсинг источников + автомодерация pending.
+    Вызывается по расписанию раз в 6 часов."""
+    if not is_cron_authorized(event, headers):
+        return err('Не авторизован для cron', 401)
+
+    limit_per_source = max(1, min(10, int(body.get('limit') or 3)))
+    moderate_limit = max(1, min(50, int(body.get('moderate_limit') or 30)))
+
+    conn = get_db()
+    fetched_total = 0
+    fetch_results = []
+    moderation = {'moderated': 0, 'approved': 0, 'rejected': 0, 'flagged': 0}
+    cron_run_id = None
+    err_msg = None
+
+    try:
+        with conn.cursor() as cur:
+            # Создаём запись запуска
+            cur.execute(
+                "INSERT INTO feed_cron_runs (kind, status) VALUES ('auto_6h', 'running') "
+                "RETURNING id"
+            )
+            cron_run_id = cur.fetchone()[0]
+            conn.commit()
+
+            # 1. Обход источников
+            cur.execute(
+                "SELECT id, code, name, category, rss_url FROM feed_sources "
+                "WHERE enabled = TRUE ORDER BY id"
+            )
+            sources = cur.fetchall()
+            for s in sources:
+                try:
+                    res = process_source(cur, s, limit_per_source=limit_per_source)
+                    conn.commit()
+                    fetch_results.append(res)
+                    fetched_total += res.get('created', 0)
+                except (psycopg2.Error, urllib.error.URLError,
+                        urllib.error.HTTPError, OSError, ValueError) as e:
+                    conn.rollback()
+                    fetch_results.append({'source': s[1], 'error': str(e)[:200]})
+
+            # 2. Автомодерация всех pending (включая статьи юзеров)
+            try:
+                moderation = auto_moderate_pending(cur, limit=moderate_limit)
+                conn.commit()
+            except (psycopg2.Error, urllib.error.URLError, OSError) as e:
+                conn.rollback()
+                err_msg = f'auto_moderate failed: {e}'
+
+            # 3. Финализируем запись запуска
+            cur.execute(
+                "UPDATE feed_cron_runs SET status = %s, fetched = %s, moderated = %s, "
+                "approved = %s, rejected = %s, flagged = %s, error_message = %s, "
+                "payload = %s, finished_at = NOW() WHERE id = %s",
+                ('error' if err_msg else 'ok', fetched_total,
+                 moderation.get('moderated', 0), moderation.get('approved', 0),
+                 moderation.get('rejected', 0), moderation.get('flagged', 0),
+                 err_msg,
+                 json.dumps({'fetch': fetch_results,
+                             'moderation_details': moderation.get('details', [])},
+                            ensure_ascii=False),
+                 cron_run_id)
+            )
+            conn.commit()
+
+            return ok({
+                'ok': True,
+                'cron_run_id': cron_run_id,
+                'fetched_new': fetched_total,
+                'sources_processed': len(fetch_results),
+                'moderation': {
+                    'moderated': moderation.get('moderated', 0),
+                    'approved': moderation.get('approved', 0),
+                    'rejected': moderation.get('rejected', 0),
+                    'flagged': moderation.get('flagged', 0),
+                },
+                'error': err_msg,
+            })
+    finally:
+        conn.close()
+
+
+def handle_cron_log(headers: dict) -> dict:
+    if not is_admin(headers):
+        return err('Требуется админский ключ', 401)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, kind, status, fetched, moderated, approved, rejected, "
+                "flagged, error_message, started_at, finished_at "
+                "FROM feed_cron_runs ORDER BY started_at DESC LIMIT 20"
+            )
+            items = [
+                {
+                    'id': r[0], 'kind': r[1], 'status': r[2],
+                    'fetched': r[3], 'moderated': r[4],
+                    'approved': r[5], 'rejected': r[6], 'flagged': r[7],
+                    'error_message': r[8],
+                    'started_at': r[9].isoformat() if r[9] else None,
+                    'finished_at': r[10].isoformat() if r[10] else None,
+                }
+                for r in cur.fetchall()
+            ]
+            return ok({'items': items})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """ИИ-агент: парсинг RSS и рерайт статей."""
     method = event.get('httpMethod', 'GET')
@@ -424,5 +711,12 @@ def handler(event: dict, context) -> dict:
         return handle_fetch_one(headers, body)
     if action == 'sources':
         return handle_sources(headers)
+    if action == 'auto_moderate' and method == 'POST':
+        return handle_auto_moderate(headers, body)
+    # cron: принимаем GET и POST — некоторые сервисы крон-триггеров умеют только GET
+    if action == 'cron':
+        return handle_cron(event, headers, body)
+    if action == 'cron_log':
+        return handle_cron_log(headers)
 
     return err('Неизвестное действие', 404)

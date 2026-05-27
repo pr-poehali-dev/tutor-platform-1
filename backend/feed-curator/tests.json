@@ -27,6 +27,31 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "auto_moderate without admin key — 401",
+      "method": "POST",
+      "path": "/?action=auto_moderate",
+      "body": {"limit": 5},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "cron without auth — 401",
+      "method": "GET",
+      "path": "/?action=cron",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "cron_log without admin key — 401",
+      "method": "GET",
+      "path": "/?action=cron_log",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "unknown action — 404",
       "method": "GET",
       "path": "/?action=unknown",
