@@ -1,4 +1,7 @@
 {
+  "referrals": "https://functions.poehali.dev/6e1d5e8e-673c-4e52-836d-c24126a54a62",
+  "notifications": "https://functions.poehali.dev/7d5c45d4-dbd2-44ae-b907-4bda81b1a574",
+  "contact": "https://functions.poehali.dev/93207a45-d0b6-4f3b-a734-43503bdc3943",
   "search": "https://functions.poehali.dev/a5071bb6-69dc-4d3a-88bc-c9aa9b35fa0c",
   "feed": "https://functions.poehali.dev/b9f58dbe-702c-46d3-a9b1-02d5076735ef",
   "feed-curator": "https://functions.poehali.dev/b4aed0e9-e169-4add-b041-36eaab3d44a5",

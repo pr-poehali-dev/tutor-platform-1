@@ -1,4 +1,4 @@
-export type FeedCategory = "science" | "culture" | "education" | "robots" | "ai";
+export type FeedCategory = "science" | "culture" | "education" | "robots" | "ai" | "grants";
 
 export interface FeedArticle {
   id: number;
@@ -43,4 +43,5 @@ export const CATEGORY_META: Record<FeedCategory, { label: string; emoji: string;
   education: { label: "Образование",              emoji: "📚", tone: "text-amber-300 bg-amber-500/15 border-amber-500/35", gradient: "from-amber-500/20 to-orange-500/10" },
   robots:    { label: "Роботы",                   emoji: "🤖", tone: "text-emerald-300 bg-emerald-500/15 border-emerald-500/35", gradient: "from-emerald-500/20 to-teal-500/10" },
   ai:        { label: "ИИ и нейросети",           emoji: "🧠", tone: "text-purple-300 bg-purple-500/15 border-purple-500/35", gradient: "from-purple-500/20 to-fuchsia-500/10" },
+  grants:    { label: "Конкурсы и гранты",        emoji: "🏆", tone: "text-yellow-300 bg-yellow-500/15 border-yellow-500/35", gradient: "from-yellow-500/20 to-orange-500/10" },
 };

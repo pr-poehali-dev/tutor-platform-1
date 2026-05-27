@@ -201,7 +201,7 @@
     </image:image>
   </url>
 
-  <!-- Модуль «Лента»: новости науки, культуры, образования, ИИ и роботов -->
+  <!-- Модуль «Лента»: новости науки, культуры, образования, ИИ, роботов и грантов -->
   <url>
     <loc>https://учисьпро.рф/feed</loc>
     <lastmod>2026-05-27</lastmod>
@@ -209,8 +209,48 @@
     <priority>0.96</priority>
     <image:image>
       <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
-      <image:title>Лента УЧИСЬПРО: наука, культура, образование, ИИ и роботы для школьников</image:title>
+      <image:title>Лента УЧИСЬПРО: наука, культура, образование, ИИ, роботы и гранты</image:title>
     </image:image>
+  </url>
+
+  <!-- Поиск по сайту -->
+  <url>
+    <loc>https://учисьпро.рф/search</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Центр помощи и FAQ -->
+  <url>
+    <loc>https://учисьпро.рф/help</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Контакты -->
+  <url>
+    <loc>https://учисьпро.рф/contacts</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Отзывы учеников -->
+  <url>
+    <loc>https://учисьпро.рф/reviews</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Реферальная программа -->
+  <url>
+    <loc>https://учисьпро.рф/referral</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 
 </urlset>

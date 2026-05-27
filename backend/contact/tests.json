@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {"name": "reviews list public ok", "method": "GET", "path": "/?action=reviews_list", "expectedStatus": 200, "expectedBody": {"items": []}, "bodyMatcher": "partial"},
+    {"name": "review_submit without auth", "method": "POST", "path": "/?action=review_submit", "body": {"author_name":"Иван","author_role":"student","rating":5,"text":"Отличная платформа, помогла подготовиться к ЕГЭ."}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "feedback empty name", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"","message":"test","contact_email":"a@b.ru"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "feedback no contacts", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"Алексей","message":"Хочу узнать тарифы подробнее, помогите пожалуйста."}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "feedback valid", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"Алексей","contact_email":"test@example.com","subject":"general","message":"Хочу узнать тарифы подробнее, помогите пожалуйста."}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
+    {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}

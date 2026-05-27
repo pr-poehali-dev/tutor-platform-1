@@ -1,0 +1,55 @@
+{
+  "name": "УЧИСЬПРО — ИИ-репетитор онлайн 24/7",
+  "short_name": "УЧИСЬПРО",
+  "description": "Образовательная платформа с персональным ИИ-репетитором. Курсы, подготовка к ЕГЭ и ОГЭ, профориентация, лента научных новостей.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0118",
+  "theme_color": "#7c3aed",
+  "lang": "ru-RU",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "books"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    },
+    {
+      "src": "/og-image.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Курсы",
+      "short_name": "Курсы",
+      "url": "/courses",
+      "description": "Все курсы по школьным предметам"
+    },
+    {
+      "name": "Лента новостей",
+      "short_name": "Лента",
+      "url": "/feed",
+      "description": "Наука, культура, ИИ и роботы"
+    },
+    {
+      "name": "Чек-лист ЕГЭ",
+      "short_name": "До ЕГЭ",
+      "url": "/exam-checklist",
+      "description": "Пошаговый план подготовки"
+    },
+    {
+      "name": "Поиск",
+      "short_name": "Поиск",
+      "url": "/search",
+      "description": "Поиск по сайту"
+    }
+  ],
+  "prefer_related_applications": false
+}

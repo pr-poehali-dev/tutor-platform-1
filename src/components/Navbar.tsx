@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const NAV_ITEMS = [
   { label: "Маршрут", icon: "Compass", section: "journey" },
@@ -81,6 +82,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
                 <Icon name="Command" size={9} />K
               </kbd>
             </Link>
+            {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
               <Link
                 to="/cabinet"

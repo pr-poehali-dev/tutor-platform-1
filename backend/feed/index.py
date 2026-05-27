@@ -19,7 +19,7 @@ import psycopg2
 
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
-ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai'}
+ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants'}
 
 
 def cors_headers() -> dict:

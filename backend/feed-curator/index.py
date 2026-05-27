@@ -23,7 +23,7 @@ ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
 POLZA_API_KEY = os.environ.get('POLZA_API_KEY', '')
 POLZA_URL = 'https://api.polza.ai/api/v1/chat/completions'
 POLZA_MODEL = 'gpt-4o-mini'
-ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai'}
+ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants'}
 
 
 def cors_headers() -> dict:
@@ -231,6 +231,7 @@ def rewrite_article(title: str, summary: str, category: str,
         'education': 'образование и школа',
         'robots': 'робототехника',
         'ai': 'искусственный интеллект и нейросети',
+        'grants': 'конкурсы, гранты и стипендии для школьников',
     }.get(category, 'наука')
 
     lang_name = LANGUAGE_NAMES.get(language, language)
