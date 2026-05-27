@@ -53,12 +53,12 @@ function saveProgress(p: PersistedProgress | null) {
 }
 
 /** Гарантированная генерация одного курса с ретраями и fallback на последней попытке.
- * Возвращает результат всегда — даже при тотальной недоступности ИИ (тогда generated=false). */
-async function generateOneCourse(courseId: number): Promise<BatchResult> {
+ * @param forceAI — если true: пересоздаёт курс (force) и запрещает fallback (только реальный ИИ) */
+async function generateOneCourse(courseId: number, forceAI = false): Promise<BatchResult> {
   const course = COURSES.find((c) => c.id === courseId);
   if (!course) return { course_id: courseId, generated: false, error: "курс не найден" };
 
-  const MAX_ATTEMPTS = 3;
+  const MAX_ATTEMPTS = forceAI ? 2 : 3;
   let lastError = "unknown";
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -84,8 +84,9 @@ async function generateOneCourse(courseId: number): Promise<BatchResult> {
             format: course.format,
           }],
           limit: 1,
-          // С первой попытки разрешаем fallback — бэк сам решит, нужен ли он
-          allow_fallback: true,
+          // В режиме «принудительно через ИИ» — force=true (пересоздать) и без fallback
+          force: forceAI,
+          allow_fallback: !forceAI,
         }),
       });
       clearTimeout(abortTimer);
@@ -126,12 +127,17 @@ export default function CoursesContent() {
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [currentCourseId, setCurrentCourseId] = useState<number | null>(null);
+  const [forceAIMode, setForceAIMode] = useState(false);
+
+  // Fallback-курсы (которые сгенерены шаблонно, ждут ИИ-обновления)
+  const [fallbackCourses, setFallbackCourses] = useState<number[]>([]);
 
   const [error, setError] = useState<string | null>(null);
 
   // refs для контроля воркера
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
+  const forceAIRef = useRef(false);
 
   const fetchStatuses = async () => {
     setLoading(true);
@@ -154,9 +160,22 @@ export default function CoursesContent() {
     setLoading(false);
   };
 
+  const fetchFallbackList = async () => {
+    try {
+      const res = await fetch(`${COURSE_BUILDER_URL}?action=list_fallback`);
+      const data = await res.json();
+      if (data.course_ids) {
+        // Берём только курсы из активного каталога (исключаем тестовые)
+        const known = new Set(COURSES.map((c) => c.id));
+        setFallbackCourses((data.course_ids as number[]).filter((id) => known.has(id)));
+      }
+    } catch { /* noop */ }
+  };
+
   // Восстанавливаем прогресс при заходе
   useEffect(() => {
     fetchStatuses();
+    fetchFallbackList();
     const saved = loadProgress();
     if (saved && saved.queue.length > 0) {
       setQueue(saved.queue);
@@ -181,11 +200,13 @@ export default function CoursesContent() {
   }, [statuses]);
 
   /** Главный воркер — берёт ID из очереди по одному и обрабатывает. Состояние persists в localStorage. */
-  const processQueue = async (initialQueue: number[]) => {
+  const processQueue = async (initialQueue: number[], forceAI = false) => {
     runningRef.current = true;
     pausedRef.current = false;
+    forceAIRef.current = forceAI;
     setRunning(true);
     setPaused(false);
+    setForceAIMode(forceAI);
 
     const total = initialQueue.length + done.length;
     saveProgress({ queue: initialQueue, done, startedAt: Date.now(), total });
@@ -203,7 +224,7 @@ export default function CoursesContent() {
       const nextId = workingQueue[0];
       setCurrentCourseId(nextId);
 
-      const result = await generateOneCourse(nextId);
+      const result = await generateOneCourse(nextId, forceAIRef.current);
 
       accumDone = [...accumDone, result];
       workingQueue = workingQueue.slice(1);
@@ -216,6 +237,7 @@ export default function CoursesContent() {
       // После каждых 3 курсов обновляем статусы
       if (accumDone.length % 3 === 0) {
         fetchStatuses();
+        fetchFallbackList();
       }
 
       // Небольшая пауза между запросами — не душим бэкенд
@@ -223,12 +245,15 @@ export default function CoursesContent() {
     }
 
     runningRef.current = false;
+    forceAIRef.current = false;
     setRunning(false);
+    setForceAIMode(false);
     setCurrentCourseId(null);
     if (workingQueue.length === 0) {
       saveProgress(null);
     }
     await fetchStatuses();
+    await fetchFallbackList();
   };
 
   const startGenerateAllMissing = () => {
@@ -240,13 +265,25 @@ export default function CoursesContent() {
     setError(null);
     setDone([]);
     setQueue(targets);
-    processQueue(targets);
+    processQueue(targets, false);
+  };
+
+  const regenerateAllFallback = () => {
+    if (fallbackCourses.length === 0) {
+      setError("Нет fallback-курсов для перегенерации");
+      return;
+    }
+    setError(null);
+    setDone([]);
+    setQueue(fallbackCourses);
+    // forceAI=true → бэк пересоздаст с нуля, без fallback (только ИИ)
+    processQueue(fallbackCourses, true);
   };
 
   const resumeGeneration = () => {
     if (queue.length === 0) return;
     setError(null);
-    processQueue(queue);
+    processQueue(queue, forceAIRef.current);
   };
 
   const generateOne = (courseId: number) => {
@@ -312,7 +349,7 @@ export default function CoursesContent() {
         </p>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="bg-card/60 border border-white/10 rounded-2xl p-4">
             <div className="text-3xl font-montserrat font-black text-white">{stats.total}</div>
             <div className="text-white/45 text-[10px] uppercase tracking-wider font-bold">всего курсов</div>
@@ -321,11 +358,43 @@ export default function CoursesContent() {
             <div className="text-3xl font-montserrat font-black text-emerald-300">{stats.ready}</div>
             <div className="text-emerald-200/65 text-[10px] uppercase tracking-wider font-bold">с программой</div>
           </div>
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4">
+            <div className="text-3xl font-montserrat font-black text-rose-300">{stats.missing}</div>
+            <div className="text-rose-200/65 text-[10px] uppercase tracking-wider font-bold">без программы</div>
+          </div>
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-amber-300">{stats.missing}</div>
-            <div className="text-amber-200/65 text-[10px] uppercase tracking-wider font-bold">без программы</div>
+            <div className="text-3xl font-montserrat font-black text-amber-300">{fallbackCourses.length}</div>
+            <div className="text-amber-200/65 text-[10px] uppercase tracking-wider font-bold">шаблонные (без ИИ)</div>
           </div>
         </div>
+
+        {/* Перегенерация fallback-курсов через ИИ */}
+        {fallbackCourses.length > 0 && !running && (
+          <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 rounded-3xl p-5 mb-6">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/25 flex items-center justify-center flex-shrink-0">
+                  <Icon name="Wand2" size={18} className="text-amber-200" />
+                </div>
+                <div>
+                  <p className="font-montserrat font-black text-white text-base mb-0.5">
+                    {fallbackCourses.length} курсов на шаблонной программе
+                  </p>
+                  <p className="text-white/65 text-xs max-w-xl">
+                    Эти курсы получили базовую структуру, потому что ИИ-методист был перегружен. Когда сервис разгрузится — можно перегенерировать их через ИИ для более глубокой программы.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={regenerateAllFallback}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-sm px-4 py-2.5 rounded-xl hover:scale-[1.02] transition-transform"
+              >
+                <Icon name="Sparkles" size={14} />
+                Перегенерировать {fallbackCourses.length} курсов через ИИ
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Возобновление сохранённой сессии */}
         {!running && queue.length > 0 && (
@@ -372,8 +441,14 @@ export default function CoursesContent() {
             <div>
               <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                 <div>
-                  <p className="font-montserrat font-black text-white text-base">
+                  <p className="font-montserrat font-black text-white text-base flex items-center gap-2 flex-wrap">
                     {running ? (paused ? "⏸ Пауза" : "🤖 Генерирую программы...") : "Очередь готова к продолжению"}
+                    {forceAIMode && (
+                      <span className="inline-flex items-center gap-1 bg-amber-500/25 border border-amber-500/45 text-amber-100 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                        <Icon name="Wand2" size={10} />
+                        Режим ИИ (без fallback)
+                      </span>
+                    )}
                   </p>
                   <p className="text-white/65 text-xs">
                     Сделано {progressDone} из {progressTotal}
@@ -533,6 +608,7 @@ export default function CoursesContent() {
             {filtered.map((c) => {
               const status = statuses[c.id];
               const has = status?.has_curriculum;
+              const isFallback = fallbackCourses.includes(c.id);
               const subj = SUBJECTS.find((s) => s.id === c.subject);
               const isCurrent = currentCourseId === c.id;
               return (
@@ -540,7 +616,8 @@ export default function CoursesContent() {
                   key={c.id}
                   className={`bg-card/60 border rounded-2xl p-4 flex items-center gap-3 transition-all ${
                     isCurrent ? "border-purple-500/60 bg-purple-500/10 scale-[1.01]" :
-                    has ? "border-emerald-500/25" : "border-amber-500/20"
+                    isFallback ? "border-amber-500/35 bg-amber-500/[0.04]" :
+                    has ? "border-emerald-500/25" : "border-rose-500/25"
                   }`}
                 >
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-white/5 relative">
@@ -553,23 +630,29 @@ export default function CoursesContent() {
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <h3 className="text-white text-sm font-bold truncate">{c.title}</h3>
                       <span className="text-[10px] bg-white/10 text-white/65 px-1.5 py-0.5 rounded font-bold">#{c.id}</span>
+                      {isFallback && (
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold px-1.5 py-0.5 rounded">
+                          <Icon name="Wand2" size={8} />
+                          шаблон
+                        </span>
+                      )}
                     </div>
                     <p className="text-white/55 text-[11px]">
                       {subj?.label} · {c.grade} · {c.lessons} уроков обещано
                       {has && status.total_lessons !== undefined && (
-                        <span className="text-emerald-300"> · {status.total_lessons} в БД, {status.total_modules} модулей, ~{status.estimated_hours}ч</span>
+                        <span className={isFallback ? "text-amber-300" : "text-emerald-300"}> · {status.total_lessons} в БД, {status.total_modules} модулей, ~{status.estimated_hours}ч</span>
                       )}
                     </p>
                   </div>
                   {has ? (
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-200 font-bold px-2 py-1 rounded-lg">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${isFallback ? "bg-amber-500/20 text-amber-200" : "bg-emerald-500/20 text-emerald-200"}`}>
                         v{status.version}
                       </span>
                       <button
                         onClick={() => generateOne(c.id)}
                         disabled={running}
-                        title="Пересоздать программу"
+                        title={isFallback ? "Перегенерировать через ИИ" : "Пересоздать программу"}
                         className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/65 disabled:opacity-50"
                       >
                         <Icon name="RefreshCw" size={12} />

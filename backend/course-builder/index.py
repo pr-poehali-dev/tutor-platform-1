@@ -342,12 +342,15 @@ def save_curriculum(conn, course_id, course_info, plan):
         total_lessons = sum(len(m.get('lessons') or []) for m in plan.get('modules') or [])
         total_modules = len(plan.get('modules') or [])
 
+        is_fallback = bool(plan.get('_fallback'))
+        ai_error = plan.get('_ai_error')
         cur.execute("""
             INSERT INTO course_curricula
                 (course_id, course_title, subject, grade_band, total_lessons, total_modules,
                  estimated_hours, program_description, learning_outcomes, target_audience,
-                 prerequisites, methodology, final_project, certificate_available, generated_by, version)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 prerequisites, methodology, final_project, certificate_available, generated_by, version,
+                 is_fallback, ai_error)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             course_id,
@@ -364,8 +367,10 @@ def save_curriculum(conn, course_id, course_info, plan):
             (plan.get('methodology') or '')[:1000],
             (plan.get('final_project') or '')[:1000],
             True,
-            'curriculum_designer',
+            'fallback_template' if is_fallback else 'curriculum_designer',
             1,
+            is_fallback,
+            (ai_error or '')[:500] if ai_error else None,
         ))
 
         sort_order = 0
@@ -558,6 +563,7 @@ def action_batch_generate(conn, body):
         # Если ИИ не справился — используем fallback (если разрешено)
         if not plan and allow_fallback:
             plan = build_fallback_curriculum(course_info)
+            plan['_ai_error'] = gen_err  # сохраняем причину для понимания
             used_fallback = True
 
         if not plan:
@@ -619,6 +625,24 @@ def action_list_lessons(conn, qs):
         return err('course_id должен быть числом')
     _, lessons = fetch_existing(conn, course_id)
     return ok({'lessons': lessons, 'total': len(lessons)})
+
+
+def action_list_fallback(conn):
+    """Возвращает id курсов с шаблонной (fallback) программой — кандидаты на перегенерацию через ИИ."""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT course_id, course_title, subject, grade_band, total_lessons, total_modules,
+                   ai_error, updated_at
+            FROM course_curricula
+            WHERE is_fallback = TRUE
+            ORDER BY updated_at DESC
+        """)
+        rows = cur.fetchall()
+    return ok({
+        'fallback_courses': rows,
+        'total': len(rows),
+        'course_ids': [r['course_id'] for r in rows],
+    })
 
 
 def action_mark_progress(conn, body, user_id):
@@ -713,11 +737,13 @@ def handler(event, context):
             return action_batch_generate(conn, body)
         if action == 'list_lessons':
             return action_list_lessons(conn, qs)
+        if action == 'list_fallback':
+            return action_list_fallback(conn)
         if action == 'mark_progress':
             return action_mark_progress(conn, body, user_id)
         if action == 'user_progress':
             return action_user_progress(conn, qs, user_id)
-        return err(f'Неизвестное действие: {action}. Доступно: get, regenerate, list_lessons, mark_progress, user_progress')
+        return err(f'Неизвестное действие: {action}. Доступно: get, regenerate, batch_generate, status_all, list_lessons, list_fallback, mark_progress, user_progress')
     except Exception as e:
         try:
             conn.rollback()
