@@ -86,6 +86,28 @@ const TRACKS: Track[] = [
     badgeColor: "bg-purple-500/20 border-purple-500/40 text-purple-200",
     ctaColor: "from-purple-500 to-pink-600",
   },
+  {
+    to: "/know-yourself",
+    emoji: "🪞",
+    badgeText: "Модуль · Профориентация",
+    badgeIcon: "Compass",
+    title: "Познай себя",
+    subtitle: "Подробный тест: профессия и вуз",
+    description:
+      "61 вопрос по методике Холланда (RIASEC) + анализ способностей и ценностей. Покажет тип личности, топ-10 профессий с зарплатами и конкретные вузы, где учат именно на твою специальность.",
+    highlights: [
+      { icon: "ClipboardList", label: "6 блоков · 61 вопрос" },
+      { icon: "Trophy", label: "Топ-10 профессий" },
+      { icon: "Building2", label: "Подбор вузов" },
+    ],
+    cta: "Пройти тест",
+    gradient: "from-cyan-900/40 via-blue-900/25 to-indigo-900/30",
+    borderColor: "border-cyan-500/30",
+    glow1: "bg-cyan-500/20",
+    glow2: "bg-indigo-500/20",
+    badgeColor: "bg-cyan-500/20 border-cyan-500/40 text-cyan-200",
+    ctaColor: "from-cyan-500 to-blue-600",
+  },
 ];
 
 export default function PremiumTracks() {
