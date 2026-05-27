@@ -317,12 +317,13 @@ def generate_curriculum(conn, course_info):
 
 КРИТИЧНО: ровно {generation_lessons} уроков. Темы РЕАЛЬНЫЕ по ФГОС. Короткие тексты — ВАЖНА СКОРОСТЬ."""
 
-    # deadline 26 сек — даём ИИ максимум возможного времени.
-    # max_tokens=3500 сокращает время генерации vs полные программы.
-    # Если не успел — мгновенный fallback, без ретраев (на ретраи нет времени)
+    # deadline настраиваемый через course_info.ai_deadline (для force-режима — больше).
+    # По умолчанию 14 сек: гарантированно укладываемся в 30-сек лимит Cloud Function
+    # ВКЛЮЧАЯ сохранение в БД и сетевые задержки. Это решает проблему 499 Request Cancelled.
+    deadline = int(course_info.get('ai_deadline') or 14)
     data, gen_err = call_polza(
         [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_msg}],
-        model=model, temperature=temp, max_tokens=3500, deadline_seconds=26,
+        model=model, temperature=temp, max_tokens=3500, deadline_seconds=deadline,
     )
 
     if not data or not data.get('modules'):
@@ -556,34 +557,32 @@ def action_batch_generate(conn, body):
             })
             continue
 
-        # ИИ-генерация с ретраями
+        # ИИ-генерация — единственная попытка с deadline 14 сек
         plan, gen_err = generate_curriculum(conn, course_info)
         used_fallback = False
 
-        # Если ИИ не справился — используем fallback (если разрешено)
-        if not plan and allow_fallback:
-            plan = build_fallback_curriculum(course_info)
-            plan['_ai_error'] = gen_err  # сохраняем причину для понимания
-            used_fallback = True
-
+        # Если ИИ не справился — ВСЕГДА используем fallback (даже при allow_fallback=false).
+        # Это значит: при перегенерации (force=true) старый fallback хотя бы обновится новым,
+        # а курс никогда не остаётся «без программы». Флаг allow_fallback теперь влияет только
+        # на статус ответа (warning=true), чтобы фронт мог запланировать повторную попытку.
         if not plan:
-            results.append({
-                'course_id': course_id,
-                'title': course_info.get('title'),
-                'generated': False,
-                'error': gen_err,
-            })
-            continue
+            plan = build_fallback_curriculum(course_info)
+            plan['_ai_error'] = gen_err
+            used_fallback = True
 
         # Изолированная транзакция: даже если сохранение упадёт — остальные курсы не пострадают
         try:
             save_curriculum(conn, course_id, course_info, plan)
             curr, _ = fetch_existing(conn, course_id)
+            # Если был force-режим и ИИ не дал результата — отмечаем warning,
+            # чтобы фронт знал: курс в БД есть, но качество не улучшилось
+            warning = used_fallback and not allow_fallback
             results.append({
                 'course_id': course_id,
                 'title': course_info.get('title'),
                 'generated': True,
                 'fallback': used_fallback,
+                'warning': warning,
                 'total_lessons': curr['total_lessons'] if curr else None,
                 'total_modules': curr['total_modules'] if curr else None,
                 'ai_error': gen_err if used_fallback else None,

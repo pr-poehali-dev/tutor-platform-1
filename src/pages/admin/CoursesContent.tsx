@@ -28,6 +28,7 @@ interface BatchResult {
   total_modules?: number;
   version?: number;
   fallback?: boolean;
+  warning?: boolean;
   ai_error?: string;
 }
 
@@ -62,10 +63,9 @@ async function generateOneCourse(courseId: number, forceAI = false): Promise<Bat
   let lastError = "unknown";
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    // Жёсткий abort через 32 сек — Cloud Function всё равно убивается на 30 сек,
-    // ждать дольше бессмысленно, провоцируем переход на fallback
+    // Таймаут 22 сек: ИИ на бэке имеет 14 сек, плюс БД+сеть. Если ответа нет — точно беда.
     const controller = new AbortController();
-    const abortTimer = setTimeout(() => controller.abort(), 32000);
+    const abortTimer = setTimeout(() => controller.abort(), 22000);
 
     try {
       const res = await fetch(`${COURSE_BUILDER_URL}?action=batch_generate`, {
@@ -82,10 +82,14 @@ async function generateOneCourse(courseId: number, forceAI = false): Promise<Bat
             duration: course.duration,
             description: course.description,
             format: course.format,
+            // В forceAI-режиме даём ИИ чуть больше времени (но бэк всё равно ограничит)
+            ai_deadline: forceAI ? 18 : 14,
           }],
           limit: 1,
-          // В режиме «принудительно через ИИ» — force=true (пересоздать) и без fallback
+          // force=true — пересоздать существующий курс
           force: forceAI,
+          // allow_fallback=false означает «считай это warning'ом если ИИ не успел»;
+          // бэк всё равно сохранит fallback чтобы курс не потерялся
           allow_fallback: !forceAI,
         }),
       });
@@ -93,7 +97,7 @@ async function generateOneCourse(courseId: number, forceAI = false): Promise<Bat
 
       if (!res.ok) {
         lastError = `HTTP ${res.status}`;
-        if (res.status >= 500) {
+        if (res.status >= 500 && attempt < MAX_ATTEMPTS) {
           await new Promise((r) => setTimeout(r, 1500 * attempt));
           continue;
         }
@@ -107,8 +111,10 @@ async function generateOneCourse(courseId: number, forceAI = false): Promise<Bat
     } catch (e) {
       clearTimeout(abortTimer);
       const isAbort = e instanceof DOMException && e.name === "AbortError";
-      lastError = isAbort ? "превышен таймаут (32с)" : (e instanceof Error ? e.message : "network error");
-      await new Promise((r) => setTimeout(r, 1500 * attempt));
+      lastError = isAbort ? "превышен таймаут (22с)" : (e instanceof Error ? e.message : "network error");
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
     }
   }
 
@@ -507,7 +513,7 @@ export default function CoursesContent() {
           <div className="bg-card/60 border border-white/10 rounded-3xl p-4 mb-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">
-                Результаты ({done.length}: ✓ {done.filter(d => d.generated).length} · ⚠ {done.filter(d => d.fallback).length} fallback · ✗ {failedItems.length} ошибок · ⏭ {done.filter(d => d.skipped).length} пропущено)
+                Результаты ({done.length}: ✓ {done.filter(d => d.generated && !d.fallback).length} ИИ · 🪄 {done.filter(d => d.fallback && !d.warning).length} шаблон · ⚠ {done.filter(d => d.warning).length} ИИ не успел · ✗ {failedItems.length} ошибок · ⏭ {done.filter(d => d.skipped).length} пропущено)
               </p>
               {!running && (
                 <button onClick={clearProgress} className="text-white/45 hover:text-white text-[10px] uppercase tracking-wider font-bold">
@@ -539,10 +545,14 @@ export default function CoursesContent() {
                   <span className="text-white/85 font-bold flex-1 truncate">
                     #{r.course_id} · {r.title || `Курс ${r.course_id}`}
                   </span>
-                  <span className="text-white/55 text-[10px] truncate max-w-[40%] text-right">
-                    {r.generated ? `${r.total_lessons} уроков, ${r.total_modules} модулей${r.fallback ? ' · fallback' : ''}` :
-                     r.skipped ? r.reason :
-                     r.error}
+                  <span className="text-white/55 text-[10px] truncate max-w-[45%] text-right" title={r.ai_error || r.error || ''}>
+                    {r.generated ? (
+                      r.warning
+                        ? `${r.total_lessons} ур · ⚠ ИИ не успел, шаблон`
+                        : r.fallback
+                          ? `${r.total_lessons} ур · шаблон (ИИ занят)`
+                          : `${r.total_lessons} уроков, ${r.total_modules} модулей`
+                    ) : r.skipped ? r.reason : r.error}
                   </span>
                 </div>
               ))}
