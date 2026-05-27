@@ -7,16 +7,18 @@ import SiteFooter from "@/components/SiteFooter";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";
 import { COURSES, getCoursePrice } from "@/components/courses/coursesData";
 import { SUBJECTS_SEO, getSubjectSeo } from "@/components/courses/subjectsSeo";
+import useReadyCourses from "@/hooks/useReadyCourses";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
 export default function SubjectLanding() {
   const { subject = "" } = useParams();
   const seo = getSubjectSeo(subject);
+  const { readyIds, loaded: readyLoaded } = useReadyCourses();
 
   const courses = useMemo(
-    () => (seo ? COURSES.filter((c) => c.subject === seo.subjectId) : []),
-    [seo],
+    () => (seo ? COURSES.filter((c) => c.subject === seo.subjectId && readyIds.has(c.id)) : []),
+    [seo, readyIds],
   );
 
   if (!seo) return <Navigate to="/courses" replace />;

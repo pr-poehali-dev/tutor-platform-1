@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   SocialProof,
   DiscountTimer,
@@ -20,11 +21,16 @@ export default function CourseCheckout() {
   const navigate = useNavigate();
   const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
   const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess } = useAccess();
+  const { isReady, loaded: readyLoaded } = useReadyCourses();
 
   const course = useMemo(
     () => COURSES.find((c) => c.id === Number(courseId)) || null,
     [courseId]
   );
+
+  // Курс не готов к продаже если у него только fallback-программа.
+  // Принцип: не продавать продукт без качества.
+  const courseNotReady = readyLoaded && course && !isReady(course.id);
 
   const [purchaseId, setPurchaseId] = useState<number | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
@@ -96,6 +102,10 @@ export default function CourseCheckout() {
 
   const handlePay = async () => {
     setError(null);
+    if (courseNotReady) {
+      setError("Курс ещё готовится к запуску — оплата временно недоступна");
+      return;
+    }
     if (!isValidEmail(email)) {
       setError("Укажи действующий email — на него придёт чек по 54-ФЗ");
       return;
@@ -166,7 +176,7 @@ export default function CourseCheckout() {
         "@type": "Offer",
         price: price,
         priceCurrency: "RUB",
-        availability: "https://schema.org/InStock",
+        availability: courseNotReady ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
         url: `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
       },
       hasCourseInstance: {
@@ -207,7 +217,38 @@ export default function CourseCheckout() {
               </div>
             </div>
 
-            {alreadyHasAccess || done ? (
+            {!readyLoaded ? (
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-5 mb-5 text-center">
+                <Icon name="Loader2" size={28} className="animate-spin text-cyan-300 mx-auto mb-3" />
+                <p className="text-cyan-200 font-bold text-sm">Проверяем доступность курса...</p>
+              </div>
+            ) : courseNotReady && !alreadyHasAccess ? (
+              <div className="bg-amber-500/10 border border-amber-500/35 rounded-2xl p-5 mb-5">
+                <p className="text-amber-200 font-black text-base flex items-center gap-2 mb-2">
+                  <Icon name="Clock" size={18} />
+                  Курс ещё готовится к запуску
+                </p>
+                <p className="text-white/75 text-sm mb-4">
+                  Наши методисты дорабатывают программу этого курса. Мы не открываем продажи, пока курс не готов на 100% — деньги обратно потом получать никому не хочется. Загляни через пару дней или выбери другой курс из каталога.
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <Link
+                    to="/courses"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+                  >
+                    <Icon name="LayoutGrid" size={14} />
+                    Все доступные курсы
+                  </Link>
+                  <Link
+                    to="/"
+                    className="inline-flex items-center gap-2 bg-white/8 border border-white/15 text-white text-sm px-4 py-2.5 rounded-xl hover:bg-white/12 transition-colors"
+                  >
+                    <Icon name="ArrowLeft" size={14} />
+                    На главную
+                  </Link>
+                </div>
+              </div>
+            ) : alreadyHasAccess || done ? (
               <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-5">
                 <p className="text-green-300 font-bold text-sm flex items-center gap-2 mb-2">
                   <Icon name="CheckCircle2" size={18} />

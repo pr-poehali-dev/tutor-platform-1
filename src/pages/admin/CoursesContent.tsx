@@ -202,8 +202,12 @@ export default function CoursesContent() {
   const stats = useMemo(() => {
     const total = COURSES.length;
     const ready = COURSES.filter((c) => statuses[c.id]?.has_curriculum).length;
-    return { total, ready, missing: total - ready };
-  }, [statuses]);
+    // В продаже = у курса есть программа И она НЕ шаблонная
+    const onSale = COURSES.filter(
+      (c) => statuses[c.id]?.has_curriculum && !fallbackCourses.includes(c.id),
+    ).length;
+    return { total, ready, missing: total - ready, onSale };
+  }, [statuses, fallbackCourses]);
 
   /** Главный воркер — берёт ID из очереди по одному и обрабатывает. Состояние persists в localStorage. */
   const processQueue = async (initialQueue: number[], forceAI = false) => {
@@ -356,23 +360,39 @@ export default function CoursesContent() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="bg-gradient-to-br from-emerald-500/20 to-cyan-500/15 border-2 border-emerald-500/45 rounded-2xl p-4 relative overflow-hidden">
+            <div className="text-4xl font-montserrat font-black text-emerald-300">
+              {stats.onSale}<span className="text-white/40 text-2xl">/{stats.total}</span>
+            </div>
+            <div className="text-emerald-200 text-[10px] uppercase tracking-wider font-black mt-1">в продаже</div>
+            <Icon name="Store" size={36} className="absolute top-2 right-2 text-emerald-300/15" />
+          </div>
           <div className="bg-card/60 border border-white/10 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-white">{stats.total}</div>
-            <div className="text-white/45 text-[10px] uppercase tracking-wider font-bold">всего курсов</div>
-          </div>
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-emerald-300">{stats.ready}</div>
-            <div className="text-emerald-200/65 text-[10px] uppercase tracking-wider font-bold">с программой</div>
-          </div>
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4">
-            <div className="text-3xl font-montserrat font-black text-rose-300">{stats.missing}</div>
-            <div className="text-rose-200/65 text-[10px] uppercase tracking-wider font-bold">без программы</div>
+            <div className="text-3xl font-montserrat font-black text-white">{stats.ready}</div>
+            <div className="text-white/45 text-[10px] uppercase tracking-wider font-bold">всего с программой</div>
           </div>
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
             <div className="text-3xl font-montserrat font-black text-amber-300">{fallbackCourses.length}</div>
-            <div className="text-amber-200/65 text-[10px] uppercase tracking-wider font-bold">шаблонные (без ИИ)</div>
+            <div className="text-amber-200/65 text-[10px] uppercase tracking-wider font-bold">сняты с продажи (шаблон)</div>
+          </div>
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4">
+            <div className="text-3xl font-montserrat font-black text-rose-300">{stats.missing}</div>
+            <div className="text-rose-200/65 text-[10px] uppercase tracking-wider font-bold">нет программы</div>
           </div>
         </div>
+
+        {/* Главное сообщение: в каталоге сейчас только курсы с реальной ИИ-программой */}
+        {stats.onSale < stats.total && (
+          <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-4 mb-6 flex items-start gap-3">
+            <Icon name="ShieldCheck" size={20} className="text-cyan-300 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-white font-bold text-sm mb-0.5">В каталоге сейчас {stats.onSale} из {stats.total} курсов</p>
+              <p className="text-white/65 text-xs">
+                Курсы без реальной программы автоматически скрыты из продажи. Покупка по прямому URL также заблокирована. Чтобы вернуть курс в продажу — перегенерируй его через ИИ.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Перегенерация fallback-курсов через ИИ */}
         {fallbackCourses.length > 0 && !running && (

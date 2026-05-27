@@ -644,6 +644,26 @@ def action_list_fallback(conn):
     })
 
 
+def action_ready_course_ids(conn):
+    """Возвращает id курсов, готовых к ПРОДАЖЕ.
+    Готовый = программа сделана ИИ-методистом (НЕ fallback) И прошла модерацию.
+    Каталог и страница покупки используют этот список.
+    Принцип: если у курса нет качественной программы — продавать его нельзя."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT course_id FROM course_curricula
+            WHERE is_fallback = FALSE
+              AND total_lessons > 0
+              AND total_modules > 0
+            ORDER BY course_id
+        """)
+        ids = [r[0] for r in cur.fetchall()]
+    return ok({
+        'ready_course_ids': ids,
+        'total': len(ids),
+    })
+
+
 def action_mark_progress(conn, body, user_id):
     if not user_id:
         return err('user_id required (X-User-Id header)')
@@ -738,6 +758,8 @@ def handler(event, context):
             return action_list_lessons(conn, qs)
         if action == 'list_fallback':
             return action_list_fallback(conn)
+        if action == 'ready_course_ids':
+            return action_ready_course_ids(conn)
         if action == 'mark_progress':
             return action_mark_progress(conn, body, user_id)
         if action == 'user_progress':

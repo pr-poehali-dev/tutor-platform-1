@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";
+import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   COURSES,
   SUBJECTS,
@@ -101,9 +102,14 @@ export default function CoursesPage() {
   const [sort, setSort] = useState<SortKey>("popular");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // Только курсы с реальной (НЕ шаблонной) программой — нельзя продавать продукт без качества
+  const { readyIds, loaded: readyLoaded } = useReadyCourses();
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = COURSES.filter((c) => {
+      // Главный фильтр: курсы без реальной программы НЕ показываем
+      if (!readyIds.has(c.id)) return false;
       if (subject !== "all" && c.subject !== subject) return false;
       if (grade !== "all" && c.grade !== grade) return false;
       if (format !== "all" && c.format !== format) return false;
@@ -143,7 +149,7 @@ export default function CoursesPage() {
         sorted.sort((a, b) => b.students - a.students);
     }
     return sorted;
-  }, [query, subject, grade, format, badge, sort]);
+  }, [query, subject, grade, format, badge, sort, readyIds]);
 
   const activeFilters =
     (subject !== "all" ? 1 : 0) +
@@ -365,12 +371,25 @@ export default function CoursesPage() {
 
       {/* Grid */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16" aria-label="Результаты поиска курсов">
-        {filtered.length === 0 ? (
+        {!readyLoaded ? (
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center" role="status">
+            <Icon name="Loader2" size={28} className="animate-spin text-purple-300 mx-auto mb-3" />
+            <p className="text-white/55 text-sm">Загружаем актуальный каталог...</p>
+          </div>
+        ) : readyIds.size === 0 ? (
+          <div className="rounded-3xl border border-amber-500/30 bg-amber-500/[0.05] p-12 text-center" role="status">
+            <div className="text-6xl mb-4" aria-hidden="true">🚀</div>
+            <h3 className="font-montserrat font-black text-xl text-white mb-2">Курсы готовятся к запуску</h3>
+            <p className="text-white/65 text-sm mb-5 max-w-md mx-auto">
+              Сейчас наши методисты собирают финальные программы. Подпишись на уведомления — пришлём, как только первые курсы выйдут.
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center" role="status">
             <div className="text-6xl mb-4" aria-hidden="true">🔍</div>
             <h3 className="font-montserrat font-black text-xl text-white mb-2">Ничего не нашлось</h3>
             <p className="text-white/55 text-sm mb-5 max-w-md mx-auto">
-              Попробуй другой поисковый запрос или сбрось фильтры — у нас 39 курсов, что-то точно подойдёт.
+              Попробуй другой поисковый запрос или сбрось фильтры.
             </p>
             <button
               onClick={resetAll}
