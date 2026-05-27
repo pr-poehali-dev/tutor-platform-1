@@ -114,19 +114,22 @@ def build_fallback_curriculum(course_info):
     plan = CURRICULUM_PLANS.get(plan_key) or CURRICULUM_PLANS.get(subject) or build_generic_plan(subject, grade)
 
     modules_template = plan['modules']
-    # Распределяем total_lessons по модулям пропорционально weight
-    total_weight = sum(m['weight'] for m in modules_template)
+    n_modules = len(modules_template)
+    # Равномерное распределение уроков по модулям (без weight, чтобы не падать с KeyError)
+    base_lessons_per_module = max(2, total_lessons // n_modules)
 
     modules = []
     lesson_global = 0
     for m_idx, mod in enumerate(modules_template):
-        # Кол-во уроков в модуле = пропорция от total
-        lessons_in_module = max(2, round(total_lessons * mod['weight'] / total_weight))
-        # Последний модуль добирает остаток
-        if m_idx == len(modules_template) - 1:
+        # Последний модуль добирает остаток, остальные — поровну
+        if m_idx == n_modules - 1:
             lessons_in_module = max(2, total_lessons - lesson_global)
+        else:
+            lessons_in_module = base_lessons_per_module
 
-        topics_pool = mod['topics']
+        topics_pool = mod.get('topics') or [mod.get('title', 'Тема')]
+        if not topics_pool:
+            topics_pool = ['Тема урока']
         lessons = []
         for li in range(lessons_in_module):
             lesson_global += 1
@@ -152,13 +155,18 @@ def build_fallback_curriculum(course_info):
             else:
                 lesson_type = 'theory'
 
+            mod_title_safe = mod.get('title', f'Модуль {m_idx + 1}')
+            try:
+                summary = mod.get('summary_template', 'Изучаем тему «{topic}», разбираем примеры, закрепляем на практике').format(topic=topic)
+            except (KeyError, IndexError, ValueError):
+                summary = f'Изучаем тему «{topic}», разбираем примеры, закрепляем на практике'
             lessons.append({
                 'lesson_index': li + 1,
                 'title': topic,
-                'summary': mod.get('summary_template', 'Изучаем тему, разбираем примеры, закрепляем на практике').format(topic=topic),
+                'summary': summary,
                 'type': lesson_type,
                 'estimated_minutes': 30 if lesson_type == 'theory' else 35 if lesson_type == 'practice' else 45,
-                'topics': [topic, mod['title']],
+                'topics': [topic, mod_title_safe],
                 'skills_acquired': mod.get('skills', ['понимание темы', 'применение на практике']),
                 'homework_description': (
                     f'Решить 5–7 задач по теме «{topic}» из рабочей тетради'
@@ -169,8 +177,8 @@ def build_fallback_curriculum(course_info):
 
         modules.append({
             'module_index': m_idx + 1,
-            'module_title': mod['title'],
-            'module_description': mod['description'],
+            'module_title': mod.get('title', f'Модуль {m_idx + 1}'),
+            'module_description': mod.get('description', ''),
             'lessons': lessons,
         })
 
@@ -818,15 +826,29 @@ def action_batch_generate(conn, body):
             continue
 
         # ИИ-генерация — единственная попытка с deadline 14 сек
-        plan, gen_err = generate_curriculum(conn, course_info)
+        # Защищаемся от любых исключений: даже если генератор упадёт — даём fallback
+        plan = None
+        gen_err = None
+        try:
+            plan, gen_err = generate_curriculum(conn, course_info)
+        except Exception as e:
+            gen_err = f'ai-exception: {type(e).__name__}: {str(e)[:100]}'
+
         used_fallback = False
 
         # Если ИИ не справился — ВСЕГДА используем fallback (даже при allow_fallback=false).
-        # Это значит: при перегенерации (force=true) старый fallback хотя бы обновится новым,
-        # а курс никогда не остаётся «без программы». Флаг allow_fallback теперь влияет только
-        # на статус ответа (warning=true), чтобы фронт мог запланировать повторную попытку.
         if not plan:
-            plan = build_fallback_curriculum(course_info)
+            try:
+                plan = build_fallback_curriculum(course_info)
+            except Exception as e:
+                # Если даже fallback упал (катастрофа) — пишем ошибку, не падаем
+                results.append({
+                    'course_id': course_id,
+                    'title': course_info.get('title'),
+                    'generated': False,
+                    'error': f'fallback-exception: {type(e).__name__}: {str(e)[:120]}',
+                })
+                continue
             plan['_ai_error'] = gen_err
             used_fallback = True
 
