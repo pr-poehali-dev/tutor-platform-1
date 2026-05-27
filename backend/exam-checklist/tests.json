@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "profile without auth — anonymous response",
+      "method": "GET",
+      "path": "/?action=profile",
+      "expectedStatus": 200,
+      "expectedBody": {"authenticated": false},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "save_profile without auth — 401",
+      "method": "POST",
+      "path": "/?action=save_profile",
+      "body": {"subjects": ["math_prof", "physics"], "exam_year": 2026},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "toggle_task without auth — 401",
+      "method": "POST",
+      "path": "/?action=toggle_task",
+      "body": {"task_id": "doc-passport", "done": true},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "unknown action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

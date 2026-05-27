@@ -189,4 +189,16 @@
     </image:image>
   </url>
 
+  <!-- Модуль «До ЕГЭ»: чек-лист выпускника 2026 -->
+  <url>
+    <loc>https://учисьпро.рф/exam-checklist</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.97</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>Чек-лист «До ЕГЭ 2026»: документы, расписание, дедлайны и психология</image:title>
+    </image:image>
+  </url>
+
 </urlset>

@@ -108,6 +108,28 @@ const TRACKS: Track[] = [
     badgeColor: "bg-cyan-500/20 border-cyan-500/40 text-cyan-200",
     ctaColor: "from-cyan-500 to-blue-600",
   },
+  {
+    to: "/exam-checklist",
+    emoji: "⏰",
+    badgeText: "Модуль · До ЕГЭ",
+    badgeIcon: "AlarmClock",
+    title: "До ЕГЭ — чек-лист",
+    subtitle: "Пошаговый план выпускника 2026",
+    description:
+      "Обратный отсчёт по предметам, документы, дедлайны итогового сочинения и подачи в вузы, психологическая подготовка и логистика на день экзамена. Прогресс синхронизируется в личный кабинет.",
+    highlights: [
+      { icon: "CalendarDays", label: "Календарь 2026" },
+      { icon: "ListChecks", label: "30+ задач" },
+      { icon: "AlarmClock", label: "Live countdown" },
+    ],
+    cta: "Создать чек-лист",
+    gradient: "from-rose-900/40 via-amber-900/25 to-orange-900/30",
+    borderColor: "border-rose-500/30",
+    glow1: "bg-rose-500/20",
+    glow2: "bg-amber-500/20",
+    badgeColor: "bg-rose-500/20 border-rose-500/40 text-rose-200",
+    ctaColor: "from-rose-500 to-amber-600",
+  },
 ];
 
 export default function PremiumTracks() {

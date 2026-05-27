@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
 import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
+import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -120,6 +121,9 @@ export default function Cabinet() {
             </Link>
           </div>
         </div>
+
+        {/* Чек-лист «До ЕГЭ» */}
+        <ExamChecklistWidget />
 
         {/* Профориентационный виджет «Познай себя» */}
         <KnowYourselfWidget />

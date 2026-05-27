@@ -27,6 +27,7 @@ export default function SiteFooter() {
             <ul className="space-y-2 text-sm">
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
               <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
+              <li><Link to="/exam-checklist" className="text-rose-200 hover:text-rose-100 transition-colors font-bold">⏰ До ЕГЭ: чек-лист выпускника</Link></li>
               <li><Link to="/know-yourself" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">🪞 Познай себя: профориентация</Link></li>
               <li><Link to="/graduate" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Выпускник: подбор вуза и программа</Link></li>
               <li><Link to="/mgu-track" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">👑 МГУ-трек: поступление в МГУ</Link></li>
