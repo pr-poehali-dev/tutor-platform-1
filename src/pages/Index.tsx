@@ -8,6 +8,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SocialProofStrip from "@/components/SocialProofStrip";
 import QuickQuiz from "@/components/QuickQuiz";
 import CoursesTeaser from "@/components/CoursesTeaser";
+import PremiumTracks from "@/components/PremiumTracks";
 
 const AITeacher = lazy(() => import("@/components/AITeacher"));
 const LearningJourney = lazy(() => import("@/components/LearningJourney"));
@@ -171,6 +172,8 @@ export default function Index() {
         </Suspense>
 
         <CoursesTeaser />
+
+        <PremiumTracks />
 
         <Suspense fallback={<SectionSkeleton />}>
           <LeaderboardSection />
