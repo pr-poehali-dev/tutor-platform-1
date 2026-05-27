@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "get без course_id → 400",
+      "method": "GET",
+      "path": "/?action=get",
+      "expectedStatus": 400
+    },
+    {
+      "name": "list_lessons без course_id → 400",
+      "method": "GET",
+      "path": "/?action=list_lessons",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Неизвестное действие → 400",
+      "method": "GET",
+      "path": "/?action=xxx",
+      "expectedStatus": 400
+    }
+  ]
+}

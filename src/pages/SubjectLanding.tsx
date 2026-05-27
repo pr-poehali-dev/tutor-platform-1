@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";
-import { COURSES } from "@/components/courses/coursesData";
+import { COURSES, getCoursePrice } from "@/components/courses/coursesData";
 import { SUBJECTS_SEO, getSubjectSeo } from "@/components/courses/subjectsSeo";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -53,6 +53,56 @@ export default function SubjectLanding() {
         acceptedAnswer: { "@type": "Answer", text: f.a },
       })),
     },
+    // Course schema по каждому курсу — даёт rich-карточки в выдаче
+    // с ценой, рейтингом и кнопкой "Подробнее"
+    ...courses.map((c) => ({
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "@id": `${SITE_URL}/course-checkout/${c.id}`,
+      name: c.title,
+      description: c.description,
+      url: `${SITE_URL}/course-checkout/${c.id}`,
+      image: seo.ogImage,
+      inLanguage: "ru-RU",
+      educationalLevel:
+        c.grade === "ege" ? "11 класс, подготовка к ЕГЭ" :
+        c.grade === "oge" ? "9 класс, подготовка к ОГЭ" :
+        c.grade === "1-4" ? "1-4 классы" :
+        c.grade === "5-9" ? "5-9 классы" :
+        c.grade === "10-11" ? "10-11 классы" : c.grade,
+      teaches: c.tags?.slice(0, 6) || [],
+      timeRequired: `PT${c.lessons * 25}M`,
+      numberOfCredits: c.lessons,
+      provider: {
+        "@type": "EducationalOrganization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "УЧИСЬПРО",
+        url: SITE_URL,
+      },
+      aggregateRating: c.rating
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: String(c.rating),
+            reviewCount: String(c.reviews || 50),
+            bestRating: "5",
+          }
+        : undefined,
+      offers: {
+        "@type": "Offer",
+        price: String(getCoursePrice(c)),
+        priceCurrency: "RUB",
+        availability: "https://schema.org/InStock",
+        url: `${SITE_URL}/course-checkout/${c.id}`,
+        category: "OnlineEventAttendanceMode",
+        validFrom: new Date().toISOString().slice(0, 10),
+      },
+      hasCourseInstance: {
+        "@type": "CourseInstance",
+        courseMode: "online",
+        courseWorkload: `PT${Math.round(c.lessons * 25 / 60)}H`,
+        inLanguage: "ru-RU",
+      },
+    })),
   ];
 
   return (

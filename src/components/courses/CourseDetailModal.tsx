@@ -6,6 +6,7 @@ import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import useCourseCurriculum from "@/hooks/useCourseCurriculum";
 
 interface Props {
   course: Course | null;
@@ -34,11 +35,38 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
     };
   }, [course]);
 
+  // Подгружаем РЕАЛЬНУЮ программу курса из БД (если уже сгенерирована ИИ-методистом).
+  // Если нет — авто-генерация в фоне через course-builder.
+  // ВАЖНО: хук должен быть до early return — иначе нарушается порядок React-хуков.
+  const real = useCourseCurriculum({
+    id: course?.id ?? 0,
+    title: course?.title ?? "",
+    subject: course?.subject ?? "",
+    grade: course?.grade ?? "",
+    lessons: course?.lessons ?? 0,
+    duration: course?.duration,
+    description: course?.description,
+    format: course?.format,
+  }, true);
+
   if (!course) return null;
 
-  const detail = getCourseDetail(course);
   const fmt = FORMAT_CONFIG[course.format];
   const gradeLabel = GRADES.find(g => g.id === course.grade)?.label || course.grade;
+
+  const template = getCourseDetail(course);
+  const detail = real.modules.length > 0
+    ? {
+        outcomes: real.curriculum?.learning_outcomes && real.curriculum.learning_outcomes.length > 0
+          ? real.curriculum.learning_outcomes
+          : template.outcomes,
+        forWhom: real.curriculum?.target_audience
+          ? [real.curriculum.target_audience, ...template.forWhom.slice(0, 2)]
+          : template.forWhom,
+        modules: real.modules,
+        reviews: template.reviews,
+      }
+    : template;
 
   return (
     <div
@@ -179,8 +207,30 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
           {/* Program tab */}
           {activeTab === "program" && (
             <div className="animate-fade-in">
+              {real.generating && (
+                <div className="mb-4 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 border border-purple-500/30 rounded-2xl p-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/25 flex items-center justify-center flex-shrink-0">
+                    <Icon name="Loader2" size={16} className="animate-spin text-purple-200" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-bold">ИИ-методист готовит программу под тебя</p>
+                    <p className="text-white/55 text-xs">Несколько секунд — собирает темы по ФГОС и расставляет по сложности</p>
+                  </div>
+                </div>
+              )}
+              {real.curriculum && (
+                <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3 flex items-center gap-3">
+                  <Icon name="ShieldCheck" size={16} className="text-emerald-300 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-xs font-bold">Программа курса · версия {real.curriculum.version || 1} · {real.curriculum.estimated_hours}ч общего обучения</p>
+                    {real.curriculum.methodology && (
+                      <p className="text-white/55 text-xs">{real.curriculum.methodology.slice(0, 120)}</p>
+                    )}
+                  </div>
+                </div>
+              )}
               <p className="text-white/50 text-xs mb-4">
-                Программа делится на {detail.modules.length} модуля. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
+                Программа делится на {detail.modules.length} {detail.modules.length === 1 ? "модуль" : "модуля"}. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
               </p>
               <div className="flex flex-col gap-2">
                 {detail.modules.map(m => {
