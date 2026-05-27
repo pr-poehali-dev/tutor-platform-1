@@ -23,6 +23,18 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
       ? "ИИ-куратор"
       : "Редакция";
 
+  // Флаг страны источника (для зарубежных статей с переводом)
+  const countryFlag = !article.source_country || article.source_country === "Россия"
+    ? ""
+    : article.source_country === "Китай" ? "🇨🇳"
+    : article.source_country === "США" ? "🇺🇸"
+    : article.source_country === "Великобритания" ? "🇬🇧"
+    : article.source_country === "Япония" ? "🇯🇵"
+    : article.source_country === "Корея" ? "🇰🇷"
+    : article.source_country === "Индия" ? "🇮🇳"
+    : article.source_country === "ООН" ? "🇺🇳"
+    : "🌐";
+
   if (variant === "wide") {
     return (
       <Link
@@ -47,6 +59,15 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
               <span>{meta.emoji}</span>
               {meta.label}
             </span>
+            {countryFlag && (
+              <span
+                className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/45 backdrop-blur text-white px-2 py-1 rounded-full border border-white/20"
+                title={`Источник: ${article.source_country}`}
+              >
+                <span className="text-sm">{countryFlag}</span>
+                <Icon name="Languages" size={10} />
+              </span>
+            )}
           </div>
           <div className="md:col-span-3 p-5 md:p-6">
             <h2 className="font-montserrat font-black text-white text-xl md:text-2xl leading-tight mb-2 group-hover:text-cyan-200 transition-colors">
@@ -100,8 +121,9 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${meta.tone.split(" ")[0]}`}>
+          <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 flex items-center gap-1 ${meta.tone.split(" ")[0]}`}>
             {meta.label}
+            {countryFlag && <span title={article.source_country || ""}>{countryFlag}</span>}
           </p>
           <p className="font-montserrat font-bold text-white text-sm leading-tight line-clamp-2 group-hover:text-cyan-200 transition-colors">
             {article.title}
@@ -135,6 +157,15 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
           <span>{meta.emoji}</span>
           {meta.label}
         </span>
+        {countryFlag && (
+          <span
+            className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/45 backdrop-blur text-white px-2 py-1 rounded-full border border-white/20"
+            title={`Переведено · ${article.source_country}`}
+          >
+            <span className="text-sm">{countryFlag}</span>
+            <Icon name="Languages" size={10} />
+          </span>
+        )}
       </div>
       <div className="p-4 md:p-5">
         <h3 className="font-montserrat font-black text-white text-base md:text-lg leading-tight mb-2 line-clamp-2 group-hover:text-cyan-200 transition-colors">

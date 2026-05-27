@@ -101,6 +101,10 @@ export interface SourceInfo {
   last_fetched_at: string | null;
   last_fetch_count: number | null;
   last_error: string | null;
+  language?: string;
+  country?: string;
+  country_flag?: string;
+  priority?: number;
 }
 
 export async function fetchSources(): Promise<SourceInfo[]> {

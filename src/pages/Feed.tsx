@@ -109,6 +109,19 @@ export default function Feed() {
           </p>
         </section>
 
+        {/* Глобальный охват с приоритетом на Китай */}
+        <section className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-cyan-500/10 border border-amber-500/25 rounded-2xl p-4 mb-6 flex items-center gap-3 flex-wrap">
+          <div className="text-3xl">🌏</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-montserrat font-black text-sm md:text-base mb-0.5">
+              Глобальный охват · 45 источников из 8 стран
+            </p>
+            <p className="text-white/65 text-xs leading-snug">
+              ИИ-куратор собирает новости со всего мира и переводит на русский. Приоритет: <span className="text-amber-200 font-bold">🇨🇳 Китай</span> и <span className="text-amber-200 font-bold">🇷🇺 Россия</span>. Также: 🇯🇵 Япония, 🇰🇷 Корея, 🇮🇳 Индия, 🇺🇸 США, 🇬🇧 Великобритания, 🇺🇳 ЮНЕСКО.
+            </p>
+          </div>
+        </section>
+
         {/* Фильтры по категориям */}
         <div className="flex flex-wrap gap-2 mb-6">
           <button

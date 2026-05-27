@@ -210,8 +210,21 @@ def call_polza(prompt: str, max_tokens: int = 800) -> str | None:
     return None
 
 
-def rewrite_article(title: str, summary: str, category: str) -> dict:
-    """Делает рерайт через ИИ. Возвращает {title, summary, content, tags, reading_time}."""
+LANGUAGE_NAMES = {
+    'ru': 'русский',
+    'en': 'английский',
+    'zh': 'китайский',
+    'ja': 'японский',
+    'ko': 'корейский',
+    'fr': 'французский',
+    'de': 'немецкий',
+    'es': 'испанский',
+}
+
+
+def rewrite_article(title: str, summary: str, category: str,
+                    language: str = 'ru', country: str = 'Россия') -> dict:
+    """Делает рерайт + ПЕРЕВОД через ИИ. Финальный текст всегда на русском."""
     cat_label = {
         'science': 'наука',
         'culture': 'культура и искусство',
@@ -220,24 +233,59 @@ def rewrite_article(title: str, summary: str, category: str) -> dict:
         'ai': 'искусственный интеллект и нейросети',
     }.get(category, 'наука')
 
+    lang_name = LANGUAGE_NAMES.get(language, language)
+    needs_translation = language != 'ru'
+
+    if needs_translation:
+        translation_directive = (
+            f'ВАЖНО: исходный текст на языке "{lang_name}" из страны "{country}". '
+            f'Сначала переведи смысл на русский, затем перепиши простым языком для школьника.\n'
+            f'Все имена собственные, географические названия и термины адаптируй для русскоязычного читателя '
+            f'(например, китайские города и фамилии давай в общепринятой русской транскрипции). '
+            f'НЕ оставляй фрагменты на исходном языке — итог должен быть полностью на русском.\n'
+        )
+        # Для китайских материалов — особая бережность к контексту
+        if country == 'Китай':
+            translation_directive += (
+                'Это материал из Китая — важный приоритетный источник. '
+                'Сохрани все факты, цифры, имена учёных и названия проектов, '
+                'но объясни их так, чтобы российскому школьнику было понятно. '
+                'Можешь кратко пояснить географические/культурные реалии в скобках.\n'
+            )
+    else:
+        translation_directive = ''
+
     prompt = (
-        f'Раздел: {cat_label}.\n'
+        f'Раздел: {cat_label}. Страна источника: {country}.\n'
+        f'{translation_directive}'
         f'Исходный заголовок: {title}\n'
         f'Исходное описание: {summary}\n\n'
-        f'Задача: переписать для школьного журнала «Хочу всё знать».\n'
+        f'Задача: подготовить материал для школьного журнала «Хочу всё знать».\n'
+        f'Итог СТРОГО НА РУССКОМ ЯЗЫКЕ — это обязательное правило.\n'
         f'Верни строго JSON без markdown:\n'
         f'{{\n'
-        f'  "title": "новый заголовок (до 90 символов, живой, без кликбейта)",\n'
-        f'  "summary": "лид-абзац 1-2 предложения (до 220 символов)",\n'
-        f'  "content": "статья 2-4 абзаца простым языком для школьника. Объясни смысл, '
-        f'значимость, что важно знать. Никаких выдуманных цифр.",\n'
-        f'  "tags": ["3-5 тегов одним словом"]\n'
+        f'  "title": "новый заголовок на русском (до 90 символов, живой, без кликбейта)",\n'
+        f'  "summary": "лид-абзац на русском 1-2 предложения (до 220 символов)",\n'
+        f'  "content": "статья на русском 2-4 абзаца простым языком для школьника. '
+        f'Объясни смысл, значимость, что важно знать. Никаких выдуманных цифр. '
+        f'Если это материал из Китая или другой страны — упомяни этот контекст естественно в тексте.",\n'
+        f'  "tags": ["3-5 тегов на русском одним словом"]\n'
         f'}}'
     )
 
-    raw = call_polza(prompt, max_tokens=900)
+    # Для переводов даём чуть больше токенов
+    max_t = 1200 if needs_translation else 900
+    raw = call_polza(prompt, max_tokens=max_t)
     if not raw:
-        # Fallback — используем оригинальные тексты
+        # Fallback: если ИИ недоступен и язык не русский — НЕ публикуем (нельзя смешивать языки)
+        if needs_translation:
+            return {
+                'title': '',
+                'summary': '',
+                'content': '',
+                'tags': [],
+                'skip_reason': 'AI недоступен, перевод невозможен',
+            }
         return {
             'title': title[:200],
             'summary': summary[:300] if summary else title,
@@ -258,6 +306,9 @@ def rewrite_article(title: str, summary: str, category: str) -> dict:
             'tags': [str(t)[:30] for t in (parsed.get('tags') or [])][:8],
         }
     except json.JSONDecodeError:
+        if needs_translation:
+            return {'title': '', 'summary': '', 'content': '', 'tags': [],
+                    'skip_reason': 'AI вернул некорректный JSON для перевода'}
         return {
             'title': title[:200],
             'summary': summary[:300] if summary else title,
@@ -267,8 +318,16 @@ def rewrite_article(title: str, summary: str, category: str) -> dict:
 
 
 def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
-    """Обрабатывает один источник. source_row: (id, code, name, category, rss_url)."""
-    src_id, code, name, category, rss_url = source_row
+    """Обрабатывает один источник. source_row: (id, code, name, category, rss_url,
+    language, country, country_flag, priority)."""
+    src_id = source_row[0]
+    code = source_row[1]
+    name = source_row[2]
+    category = source_row[3]
+    rss_url = source_row[4]
+    language = source_row[5] if len(source_row) > 5 else 'ru'
+    country = source_row[6] if len(source_row) > 6 else 'Россия'
+
     if category not in ALLOWED_CATEGORIES:
         return {'source': code, 'error': f'bad category {category}'}
 
@@ -284,29 +343,41 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
     items = parse_rss(xml, limit=limit_per_source * 2)
     created = 0
     skipped = 0
+    failed_translation = 0
 
     for it in items[:limit_per_source]:
         if already_exists(cur, it['link']):
             skipped += 1
             continue
 
-        rewrite = rewrite_article(it['title'], it['summary'], category)
+        rewrite = rewrite_article(it['title'], it['summary'], category,
+                                  language=language, country=country)
+
+        # Если для зарубежного материала не удалось перевести — не публикуем
+        if rewrite.get('skip_reason') or not rewrite.get('title') or not rewrite.get('content'):
+            failed_translation += 1
+            continue
+
         words = len((rewrite['content'] or '').split())
         reading_time = max(2, min(20, round(words / 200))) if words else 3
 
         base = slugify(rewrite['title'])
         slug = unique_slug(cur, base)
 
+        ai_notes = f'Источник: {name} ({country}). Рерайт ИИ-куратора.'
+        if language != 'ru':
+            ai_notes += f' Переведено с языка: {LANGUAGE_NAMES.get(language, language)}.'
+
         cur.execute(
             "INSERT INTO feed_articles "
             "(slug, title, summary, content, category, cover_url, source_kind, "
             "source_name, source_url, status, tags, reading_time_min, ai_processed, "
-            "ai_notes, published_at) "
-            "VALUES (%s,%s,%s,%s,%s,%s,'agent',%s,%s,'published',%s,%s,TRUE,%s,NOW())",
+            "ai_notes, source_language, source_country, published_at) "
+            "VALUES (%s,%s,%s,%s,%s,%s,'agent',%s,%s,'published',%s,%s,TRUE,%s,%s,%s,NOW())",
             (slug, rewrite['title'], rewrite['summary'], rewrite['content'],
              category, it['image'], name, it['link'],
              json.dumps(rewrite['tags']), reading_time,
-             f'Источник: {name}. Рерайт ИИ-куратора.')
+             ai_notes, language, country)
         )
         created += 1
 
@@ -315,8 +386,10 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
         "last_error = NULL WHERE id = %s",
         (created, src_id)
     )
-    return {'source': code, 'category': category, 'fetched': len(items),
-            'created': created, 'skipped': skipped}
+    return {'source': code, 'category': category, 'country': country,
+            'language': language, 'fetched': len(items),
+            'created': created, 'skipped': skipped,
+            'failed_translation': failed_translation}
 
 
 def handle_fetch_all(headers: dict, body: dict) -> dict:
@@ -327,9 +400,11 @@ def handle_fetch_all(headers: dict, body: dict) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            # Сортируем по priority DESC: Китай (300) → РФ (200) → Азия (150) → Запад (100)
             cur.execute(
-                "SELECT id, code, name, category, rss_url FROM feed_sources "
-                "WHERE enabled = TRUE ORDER BY id"
+                "SELECT id, code, name, category, rss_url, language, country, "
+                "country_flag, priority FROM feed_sources "
+                "WHERE enabled = TRUE ORDER BY priority DESC, id"
             )
             sources = cur.fetchall()
 
@@ -345,10 +420,17 @@ def handle_fetch_all(headers: dict, body: dict) -> dict:
                     results.append({'source': s[1], 'error': str(e)[:200]})
 
             total_created = sum(r.get('created', 0) for r in results)
+            # Группировка по странам — для UI/логов
+            by_country: dict = {}
+            for r in results:
+                c = r.get('country') or 'Прочее'
+                by_country[c] = by_country.get(c, 0) + r.get('created', 0)
+
             return ok({
                 'ok': True,
                 'sources_processed': len(results),
                 'total_created': total_created,
+                'by_country': by_country,
                 'results': results,
             })
     finally:
@@ -367,7 +449,8 @@ def handle_fetch_one(headers: dict, body: dict) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, code, name, category, rss_url FROM feed_sources "
+                "SELECT id, code, name, category, rss_url, language, country, "
+                "country_flag, priority FROM feed_sources "
                 "WHERE code = %s AND enabled = TRUE LIMIT 1",
                 (code,)
             )
@@ -389,7 +472,8 @@ def handle_sources(headers: dict) -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT code, name, category, rss_url, enabled, last_fetched_at, "
-                "last_fetch_count, last_error FROM feed_sources ORDER BY category, name"
+                "last_fetch_count, last_error, language, country, country_flag, priority "
+                "FROM feed_sources ORDER BY priority DESC, country, name"
             )
             items = [
                 {
@@ -397,6 +481,8 @@ def handle_sources(headers: dict) -> dict:
                     'enabled': bool(r[4]),
                     'last_fetched_at': r[5].isoformat() if r[5] else None,
                     'last_fetch_count': r[6], 'last_error': r[7],
+                    'language': r[8], 'country': r[9], 'country_flag': r[10],
+                    'priority': r[11],
                 }
                 for r in cur.fetchall()
             ]
@@ -584,8 +670,10 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
     if not is_cron_authorized(event, headers):
         return err('Не авторизован для cron', 401)
 
-    limit_per_source = max(1, min(10, int(body.get('limit') or 3)))
-    moderate_limit = max(1, min(50, int(body.get('moderate_limit') or 30)))
+    # При 45 источниках: 2 статьи/источник = ~90 новых материалов за прогон.
+    # Этого достаточно для глобального охвата, не перегружая ИИ-рерайт.
+    limit_per_source = max(1, min(10, int(body.get('limit') or 2)))
+    moderate_limit = max(1, min(100, int(body.get('moderate_limit') or 50)))
 
     conn = get_db()
     fetched_total = 0
@@ -604,10 +692,11 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
             cron_run_id = cur.fetchone()[0]
             conn.commit()
 
-            # 1. Обход источников
+            # 1. Обход источников — приоритет: Китай (300) → РФ (200) → Азия (150) → Запад (100)
             cur.execute(
-                "SELECT id, code, name, category, rss_url FROM feed_sources "
-                "WHERE enabled = TRUE ORDER BY id"
+                "SELECT id, code, name, category, rss_url, language, country, "
+                "country_flag, priority FROM feed_sources "
+                "WHERE enabled = TRUE ORDER BY priority DESC, id"
             )
             sources = cur.fetchall()
             for s in sources:

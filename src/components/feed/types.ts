@@ -24,6 +24,8 @@ export interface FeedArticle {
   auto_moderation_verdict?: "approve" | "reject" | "flag" | null;
   auto_moderation_reasoning?: string | null;
   auto_moderation_at?: string | null;
+  source_language?: string | null;
+  source_country?: string | null;
 }
 
 export interface FeedListResponse {

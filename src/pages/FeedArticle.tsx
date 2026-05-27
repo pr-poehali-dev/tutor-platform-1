@@ -181,6 +181,16 @@ export default function FeedArticlePage() {
               {article.author_display_name || article.source_name}
             </span>
           )}
+          {article.source_country && article.source_country !== "Россия" && (
+            <span className="inline-flex items-center gap-1 bg-cyan-500/15 border border-cyan-500/35 text-cyan-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+              <Icon name="Languages" size={11} />
+              Переведено с {(article.source_language || "en") === "en" ? "английского" :
+                (article.source_language === "zh" ? "китайского" :
+                (article.source_language === "ja" ? "японского" :
+                (article.source_language === "ko" ? "корейского" : article.source_language)))}
+              · {article.source_country}
+            </span>
+          )}
         </div>
 
         {/* Обложка */}
