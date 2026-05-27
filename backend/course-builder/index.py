@@ -98,6 +98,136 @@ def call_polza(messages, model='openai/gpt-4o-mini', temperature=0.6, max_tokens
         return None, f'{type(e).__name__}: {str(e)[:100]}'
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# RF COMPLIANCE: соблюдение законодательства РФ при генерации курсов
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Запрещённый контент по 149-ФЗ, 436-ФЗ, 479-ФЗ. Если встречается в сгенерированной
+# программе — курс блокируется до ручной проверки модератором.
+FORBIDDEN_PATTERNS = [
+    # Экстремизм, терроризм, насилие
+    r'\b(экстремизм|террор[иа]|джихад|нацизм|фашизм)\b',
+    r'\b(как сделать (бомбу|взрывчатк|оружие))\b',
+    r'\b(вербовк[аи]|радикализ[ауц])\b',
+    # Наркотики, оружие (изготовление)
+    r'\b(синтез|изготовление|производство) (наркотик|психотропн)',
+    r'\b(как (приготовить|сварить) (метамфетамин|героин|кокаин))\b',
+    # ЛГБТ-пропаганда среди несовершеннолетних (479-ФЗ)
+    r'\b(пропаганда (нетрадиционн|лгбт|гей|трансгендерн))\b',
+    # Призывы к суициду, селфхарм
+    r'\b(способы суицида|как покончить с собой|инструкция по самоубийству)\b',
+    r'\b(пропаганда суицида|романтизация суицида)\b',
+    # Азартные игры для детей
+    r'\b(казино|букмекер|ставк[аи] на спорт)\b.{0,40}\b(дет|школьник|подросток)\b',
+    # Обход законов
+    r'\b(как (обмануть|обойти) (налогову|закон|инспекци))\b',
+    r'\b(отмывание (денег|средств))\b',
+    r'\b(фиктивн[ыа][хй] (договор|сделк))\b',
+    # Пиратство
+    r'\b(пиратск[иая]й? (контент|скачать|раздач))\b',
+    r'\b(взлом|кряк) (windows|adobe|microsoft|office)\b',
+]
+
+
+def check_compliance(plan, course_info):
+    """Проверяет программу на соответствие законам РФ.
+    Возвращает dict: {is_safe: bool, violations: [...], age_rating: '0+'|'6+'|'12+'|'16+'|'18+', disclaimers: [...]}.
+    Если is_safe=False, курс должен помечаться is_fallback=True (блок продажи).
+    """
+    import re
+
+    # Собираем весь текст программы для проверки
+    text_parts = [
+        plan.get('program_description', ''),
+        plan.get('target_audience', ''),
+        plan.get('methodology', ''),
+        plan.get('final_project', ''),
+        ' '.join(plan.get('learning_outcomes', []) or []),
+    ]
+    for mod in plan.get('modules', []) or []:
+        text_parts.append(mod.get('module_title', ''))
+        text_parts.append(mod.get('module_description', ''))
+        for lesson in mod.get('lessons', []) or []:
+            text_parts.append(lesson.get('title', ''))
+            text_parts.append(lesson.get('summary', ''))
+
+    full_text = ' '.join(t for t in text_parts if t).lower()
+
+    # 1. Проверка на запрещённый контент
+    violations = []
+    for pattern in FORBIDDEN_PATTERNS:
+        match = re.search(pattern, full_text, re.IGNORECASE)
+        if match:
+            violations.append(f'запрещённый контент: «{match.group(0)[:50]}»')
+
+    # 2. Определяем возрастную маркировку по 436-ФЗ
+    grade = (course_info.get('grade') or '').lower()
+    subject = (course_info.get('subject') or '').lower()
+    if grade in ('1-4',):
+        age_rating = '6+'
+    elif grade in ('5-9', 'oge'):
+        age_rating = '12+'
+    elif grade in ('10-11', 'ege'):
+        age_rating = '16+'
+    elif grade == 'adult' or subject == 'business':
+        age_rating = '18+'
+    else:
+        age_rating = '12+'
+
+    # 3. Подбираем обязательные дисклеймеры по теме
+    disclaimers = []
+    if subject in ('business',) or 'инвести' in full_text or 'акции' in full_text or 'трейдинг' in full_text:
+        disclaimers.append(
+            'Материалы курса носят образовательный характер и не являются индивидуальной '
+            'инвестиционной рекомендацией. Решения о вложениях вы принимаете самостоятельно '
+            'на свой страх и риск.'
+        )
+    if 'медицин' in full_text or 'здоров' in full_text or subject == 'biology':
+        disclaimers.append(
+            'Информация о здоровье носит общеобразовательный характер и не заменяет '
+            'консультацию врача. При проблемах со здоровьем обращайтесь к специалисту.'
+        )
+    if 'юридическ' in full_text or 'правов' in full_text or subject == 'business':
+        disclaimers.append(
+            'Юридическая информация актуальна на момент создания курса. '
+            'Перед принятием юридически значимых решений рекомендуем консультацию юриста, '
+            'так как законодательство РФ может меняться.'
+        )
+    if subject == 'business' or grade == 'adult':
+        disclaimers.append(
+            'Курс предназначен для лиц старше 18 лет. Соблюдайте налоговое и трудовое '
+            'законодательство РФ. Все приведённые примеры — для образовательных целей.'
+        )
+
+    # Общий дисклеймер о персональных данных (152-ФЗ)
+    disclaimers.append(
+        'При прохождении курса соблюдается 152-ФЗ «О персональных данных». '
+        'Ваши данные не передаются третьим лицам без вашего согласия.'
+    )
+
+    return {
+        'is_safe': len(violations) == 0,
+        'violations': violations,
+        'age_rating': age_rating,
+        'disclaimers': disclaimers,
+    }
+
+
+def apply_compliance(plan, course_info):
+    """Применяет результаты compliance-проверки к плану.
+    Добавляет age_rating, disclaimers; при нарушениях блокирует продажу.
+    """
+    compliance = check_compliance(plan, course_info)
+    plan['age_rating'] = compliance['age_rating']
+    plan['disclaimers'] = compliance['disclaimers']
+    plan['compliance_checked'] = True
+    if not compliance['is_safe']:
+        # Блокируем курс — нельзя в продажу пока модератор не проверит
+        plan['_fallback'] = True
+        plan['_ai_error'] = 'compliance: ' + '; '.join(compliance['violations'])
+    return plan
+
+
 def build_fallback_curriculum(course_info):
     """РЕАЛЬНАЯ программа: построена методистом из конкретных тем ФГОС по предметам.
     Используется когда ИИ недоступен — но качество не хуже ИИ-генерации, потому что
@@ -1026,13 +1156,15 @@ def save_curriculum(conn, course_id, course_info, plan):
 
         is_fallback = bool(plan.get('_fallback'))
         ai_error = plan.get('_ai_error')
+        age_rating = (plan.get('age_rating') or '12+')[:10]
+        disclaimers = plan.get('disclaimers') or []
         cur.execute("""
             INSERT INTO course_curricula
                 (course_id, course_title, subject, grade_band, total_lessons, total_modules,
                  estimated_hours, program_description, learning_outcomes, target_audience,
                  prerequisites, methodology, final_project, certificate_available, generated_by, version,
-                 is_fallback, ai_error)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 is_fallback, ai_error, age_rating, disclaimers)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """, (
             course_id,
@@ -1053,6 +1185,8 @@ def save_curriculum(conn, course_id, course_info, plan):
             1,
             is_fallback,
             (ai_error or '')[:500] if ai_error else None,
+            age_rating,
+            json.dumps(disclaimers, ensure_ascii=False),
         ))
 
         sort_order = 0
@@ -1264,6 +1398,15 @@ def action_batch_generate(conn, body):
                 continue
             plan['_ai_error'] = gen_err
             used_fallback = True
+
+        # RF COMPLIANCE: проверяем программу на соответствие законам РФ
+        # (152-ФЗ, 436-ФЗ, 273-ФЗ, 38-ФЗ, 149-ФЗ, 479-ФЗ).
+        # При нарушениях — блокируем продажу (is_fallback=True) и записываем причину.
+        try:
+            plan = apply_compliance(plan, course_info)
+        except Exception as ce:
+            # Если фильтр падает — не блокируем процесс, но логируем
+            plan['_ai_error'] = (plan.get('_ai_error') or '') + f' compliance-error: {str(ce)[:80]}'
 
         # Изолированная транзакция: даже если сохранение упадёт — остальные курсы не пострадают
         try:

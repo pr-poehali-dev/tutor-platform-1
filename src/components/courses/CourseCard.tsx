@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating } from "./coursesData";
 import CourseVoiceDialog from "./CourseVoiceDialog";
 import { useUser } from "@/context/UserDataContext";
 
@@ -106,6 +106,13 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           {course.isSale && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20">−{course.salePercent}%</span>
           )}
+          {/* Возрастная маркировка по 436-ФЗ */}
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/15"
+            title="Возрастная маркировка по 436-ФЗ «О защите детей от информации»"
+          >
+            {getAgeRating(course)}
+          </span>
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ml-auto ${fmt.color}`}>
             {fmt.label}
           </span>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG, getCoursePrice } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating, getCourseDisclaimers } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
 import { useAuth } from "@/context/AuthContext";
@@ -200,6 +200,36 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
                   <p className="font-montserrat font-bold text-white text-sm">Преподаёт ИИ-методист</p>
                   <p className="text-white/55 text-xs">{course.tutorBadge} · доступен круглосуточно · подстраивается под твой уровень</p>
                 </div>
+              </div>
+
+              {/* Юридическая информация и соблюдение законов РФ */}
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="ShieldCheck" size={16} className="text-emerald-300" />
+                  <h4 className="font-montserrat font-bold text-white text-sm">
+                    Юридическая информация · соответствует законодательству РФ
+                  </h4>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10 border border-white/15 text-white/85 font-bold">
+                    <Icon name="UserCheck" size={12} />
+                    {getAgeRating(course)}
+                  </span>
+                  <span className="text-white/55 text-[11px]">
+                    Возрастная маркировка согласно 436-ФЗ
+                  </span>
+                </div>
+                <ul className="space-y-1.5 pt-1">
+                  {getCourseDisclaimers(course).map((d, i) => (
+                    <li key={i} className="flex gap-2 text-white/55 text-[11px] leading-relaxed">
+                      <Icon name="Info" size={12} className="text-white/40 flex-shrink-0 mt-0.5" />
+                      <span>{d}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-white/35 text-[10px] pt-1 border-t border-white/10">
+                  Платформа работает в соответствии с 273-ФЗ «Об образовании в РФ», 152-ФЗ «О персональных данных», 38-ФЗ «О рекламе» и иными нормативными актами РФ.
+                </p>
               </div>
             </div>
           )}

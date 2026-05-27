@@ -1311,6 +1311,50 @@ export const FORMAT_CONFIG = {
   video: { label: "Видеокурс", color: "text-green-400 bg-green-500/15 border-green-500/25" },
 };
 
+/** Возрастная маркировка по 436-ФЗ «О защите детей от информации». */
+export function getAgeRating(course: Course): "0+" | "6+" | "12+" | "16+" | "18+" {
+  if (course.grade === "1-4") return "6+";
+  if (course.grade === "5-9" || course.grade === "oge") return "12+";
+  if (course.grade === "10-11" || course.grade === "ege") return "16+";
+  if (course.grade === "adult" || course.subject === "business") return "18+";
+  return "12+";
+}
+
+/** Обязательные дисклеймеры курса (соблюдение законов РФ).
+ * Возвращается массив текстов для отображения на странице курса. */
+export function getCourseDisclaimers(course: Course): string[] {
+  const list: string[] = [];
+  const isBusiness = course.subject === "business";
+  const isFin = course.subject === "society" || /инвести|акци|трейдинг|финанс/i.test(course.description);
+  const isMed = course.subject === "biology" || /медицин|здоров/i.test(course.description);
+  const isLaw = isBusiness || /юрид|правов/i.test(course.description);
+
+  if (isFin || isBusiness) {
+    list.push(
+      "Материалы курса носят образовательный характер и не являются индивидуальной инвестиционной рекомендацией. Решения о вложениях вы принимаете самостоятельно на свой страх и риск.",
+    );
+  }
+  if (isMed) {
+    list.push(
+      "Информация о здоровье носит общеобразовательный характер и не заменяет консультацию врача. При проблемах со здоровьем обращайтесь к специалисту.",
+    );
+  }
+  if (isLaw) {
+    list.push(
+      "Юридическая информация актуальна на момент создания курса. Перед принятием юридически значимых решений рекомендуем консультацию юриста, так как законодательство РФ может меняться.",
+    );
+  }
+  if (isBusiness || course.grade === "adult") {
+    list.push(
+      "Курс предназначен для лиц старше 18 лет. Соблюдайте налоговое и трудовое законодательство РФ. Все приведённые примеры — для образовательных целей.",
+    );
+  }
+  list.push(
+    "При прохождении курса соблюдается 152-ФЗ «О персональных данных». Ваши данные не передаются третьим лицам без вашего согласия.",
+  );
+  return list;
+}
+
 // Базовые цены по уровню курса (₽ за полный доступ к курсу).
 // Используется на всех экранах вместо course.price.
 export const GRADE_PRICE: Record<string, number> = {
