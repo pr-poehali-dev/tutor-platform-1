@@ -328,6 +328,119 @@ def action_regenerate(conn, body):
     return ok({'regenerated': True, 'curriculum': curr, 'lessons': lessons})
 
 
+def action_status_all(conn, body):
+    """Возвращает по каждому course_id из списка: есть ли программа в кэше и метрики."""
+    ids = body.get('course_ids') or []
+    if not ids or not isinstance(ids, list):
+        return err('course_ids: массив ID курсов')
+    try:
+        ids = [int(x) for x in ids if x is not None]
+    except Exception:
+        return err('course_ids должны быть числами')
+
+    if not ids:
+        return ok({'statuses': {}})
+
+    placeholders = ','.join(['%s'] * len(ids))
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            f"""SELECT course_id, course_title, total_lessons, total_modules,
+                       estimated_hours, version, updated_at
+                FROM course_curricula
+                WHERE course_id IN ({placeholders})""",
+            tuple(ids),
+        )
+        rows = cur.fetchall()
+
+    statuses = {}
+    for r in rows:
+        statuses[r['course_id']] = {
+            'has_curriculum': True,
+            'total_lessons': r['total_lessons'],
+            'total_modules': r['total_modules'],
+            'estimated_hours': r['estimated_hours'],
+            'version': r['version'],
+            'updated_at': r['updated_at'],
+        }
+    for cid in ids:
+        if cid not in statuses:
+            statuses[cid] = {'has_curriculum': False}
+
+    return ok({
+        'statuses': statuses,
+        'total_courses': len(ids),
+        'with_curriculum': len(rows),
+        'pending': len(ids) - len(rows),
+    })
+
+
+def action_batch_generate(conn, body):
+    """Пакетная генерация: получает список курсов (course_info[]) и создаёт программы для тех,
+    у кого их ещё нет. Возвращает отчёт по каждому."""
+    courses = body.get('courses') or []
+    force = bool(body.get('force'))
+    if not courses or not isinstance(courses, list):
+        return err('courses: массив объектов с course_info')
+
+    limit = int(body.get('limit') or 5)
+    courses = courses[:limit]
+
+    results = []
+    for course_info in courses:
+        course_id = course_info.get('id')
+        if not course_id:
+            results.append({'skipped': True, 'reason': 'нет id'})
+            continue
+        try:
+            course_id = int(course_id)
+        except Exception:
+            results.append({'course_id': course_id, 'skipped': True, 'reason': 'не число'})
+            continue
+
+        existing, _ = fetch_existing(conn, course_id)
+        if existing and not force:
+            results.append({
+                'course_id': course_id,
+                'title': existing['course_title'],
+                'skipped': True,
+                'reason': 'уже сгенерирована',
+                'version': existing['version'],
+            })
+            continue
+
+        plan, gen_err = generate_curriculum(conn, course_info)
+        if not plan:
+            results.append({
+                'course_id': course_id,
+                'title': course_info.get('title'),
+                'generated': False,
+                'error': gen_err,
+            })
+            continue
+
+        save_curriculum(conn, course_id, course_info, plan)
+        curr, _ = fetch_existing(conn, course_id)
+        results.append({
+            'course_id': course_id,
+            'title': course_info.get('title'),
+            'generated': True,
+            'total_lessons': curr['total_lessons'] if curr else None,
+            'total_modules': curr['total_modules'] if curr else None,
+        })
+
+    generated = sum(1 for r in results if r.get('generated'))
+    skipped = sum(1 for r in results if r.get('skipped'))
+    failed = sum(1 for r in results if r.get('generated') is False)
+
+    return ok({
+        'processed': len(results),
+        'generated': generated,
+        'skipped': skipped,
+        'failed': failed,
+        'results': results,
+    })
+
+
 def action_list_lessons(conn, qs):
     course_id = qs.get('course_id')
     if not course_id:
@@ -426,6 +539,10 @@ def handler(event, context):
             return action_get(conn, body, qs)
         if action == 'regenerate':
             return action_regenerate(conn, body)
+        if action == 'status_all':
+            return action_status_all(conn, body)
+        if action == 'batch_generate':
+            return action_batch_generate(conn, body)
         if action == 'list_lessons':
             return action_list_lessons(conn, qs)
         if action == 'mark_progress':
