@@ -62,10 +62,16 @@ async function generateOneCourse(courseId: number): Promise<BatchResult> {
   let lastError = "unknown";
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // Жёсткий abort через 32 сек — Cloud Function всё равно убивается на 30 сек,
+    // ждать дольше бессмысленно, провоцируем переход на fallback
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), 32000);
+
     try {
       const res = await fetch(`${COURSE_BUILDER_URL}?action=batch_generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           courses: [{
             id: course.id,
@@ -78,15 +84,16 @@ async function generateOneCourse(courseId: number): Promise<BatchResult> {
             format: course.format,
           }],
           limit: 1,
-          allow_fallback: attempt === MAX_ATTEMPTS,
+          // С первой попытки разрешаем fallback — бэк сам решит, нужен ли он
+          allow_fallback: true,
         }),
       });
+      clearTimeout(abortTimer);
 
       if (!res.ok) {
         lastError = `HTTP ${res.status}`;
-        // server-side timeout/overload — ретраим
         if (res.status >= 500) {
-          await new Promise((r) => setTimeout(r, 2000 * attempt));
+          await new Promise((r) => setTimeout(r, 1500 * attempt));
           continue;
         }
         return { course_id: courseId, title: course.title, generated: false, error: lastError };
@@ -97,8 +104,10 @@ async function generateOneCourse(courseId: number): Promise<BatchResult> {
       if (first) return first;
       lastError = data.error || "пустой ответ";
     } catch (e) {
-      lastError = e instanceof Error ? e.message : "network error";
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
+      clearTimeout(abortTimer);
+      const isAbort = e instanceof DOMException && e.name === "AbortError";
+      lastError = isAbort ? "превышен таймаут (32с)" : (e instanceof Error ? e.message : "network error");
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
   }
 

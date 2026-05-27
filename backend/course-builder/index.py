@@ -64,43 +64,38 @@ def get_agent_prompt(conn, agent_key, fallback):
     return fallback, 0.6, 'openai/gpt-4o-mini'
 
 
-def call_polza(messages, model='openai/gpt-4o-mini', temperature=0.6, max_tokens=6000, retries=2):
-    """Вызов ИИ с ретраями на 5xx/timeout. Если все попытки упали — возвращает None."""
+def call_polza(messages, model='openai/gpt-4o-mini', temperature=0.6, max_tokens=4000, deadline_seconds=22, **_kwargs):
+    """Один вызов ИИ с жёстким deadline. БЕЗ ретраев — Cloud Function убивается через 30 сек,
+    у нас на всё про всё < 28 сек включая БД. Если не успели за 22 сек — вернём ошибку,
+    вызывающий код переключится на fallback. Дополнительные kwargs игнорируются (например retries)."""
     api_key = os.environ.get('POLZA_API_KEY', '')
     if not api_key:
         return None, 'POLZA_API_KEY не настроен'
 
-    last_err = 'unknown'
-    for attempt in range(retries + 1):
-        try:
-            payload = json.dumps({
-                'model': model,
-                'messages': messages,
-                'temperature': temperature,
-                'max_tokens': max_tokens,
-                'response_format': {'type': 'json_object'},
-            }).encode('utf-8')
-            req = urllib.request.Request(
-                'https://api.polza.ai/api/v1/chat/completions',
-                data=payload,
-                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-                method='POST',
-            )
-            with urllib.request.urlopen(req, timeout=45) as r:
-                data = json.loads(r.read().decode('utf-8'))
-                raw = data['choices'][0]['message']['content'].strip()
-                raw = re.sub(r'^```json\s*', '', raw)
-                raw = re.sub(r'\s*```$', '', raw)
-                return json.loads(raw), None
-        except urllib.error.HTTPError as e:
-            last_err = f'polza HTTP {e.code}'
-            # 4xx не ретраим — это наша ошибка, не сервера
-            if e.code < 500:
-                return None, last_err
-        except Exception as e:
-            last_err = f'{type(e).__name__}: {str(e)[:100]}'
-
-    return None, f'{last_err} (после {retries + 1} попыток)'
+    try:
+        payload = json.dumps({
+            'model': model,
+            'messages': messages,
+            'temperature': temperature,
+            'max_tokens': max_tokens,
+            'response_format': {'type': 'json_object'},
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.polza.ai/api/v1/chat/completions',
+            data=payload,
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=deadline_seconds) as r:
+            data = json.loads(r.read().decode('utf-8'))
+            raw = data['choices'][0]['message']['content'].strip()
+            raw = re.sub(r'^```json\s*', '', raw)
+            raw = re.sub(r'\s*```$', '', raw)
+            return json.loads(raw), None
+    except urllib.error.HTTPError as e:
+        return None, f'polza HTTP {e.code}'
+    except Exception as e:
+        return None, f'{type(e).__name__}: {str(e)[:100]}'
 
 
 def build_fallback_curriculum(course_info):
@@ -265,8 +260,12 @@ def generate_curriculum(conn, course_info):
 
     sys_prompt, temp, model = get_agent_prompt(conn, 'curriculum_designer', CURRICULUM_FALLBACK)
 
-    target_modules = max(4, min(8, total_lessons // 6))
-    lessons_per_module = total_lessons // target_modules
+    # Жёстко режем для скорости ИИ. Чем больше уроков → больше токенов → больше времени.
+    # Лимит 30 уроков влезает в 22 сек гарантированно.
+    # Если курс больше — fallback дополнит остальные уроки шаблонно.
+    generation_lessons = min(total_lessons, 30)
+    target_modules = max(4, min(6, generation_lessons // 5))
+    lessons_per_module = generation_lessons // target_modules
 
     user_msg = f"""Создай РЕАЛЬНУЮ программу платного курса. Этот курс — продукт, за который ученик платит деньги, программа должна быть конкретной.
 
@@ -274,61 +273,56 @@ def generate_curriculum(conn, course_info):
 - Название: «{course_title}»
 - Предмет: {subject}
 - Класс/уровень: {grade}
-- Всего уроков: {total_lessons}
+- Всего уроков: {generation_lessons}
 - Длительность: {duration}
 - Формат: {course_format}
-- Описание: {description}
+- Описание: {description[:200]}
 
 ТРЕБОВАНИЯ:
-1. Точное количество уроков = {total_lessons}, разбитых на {target_modules} модулей (примерно {lessons_per_module} уроков в каждом)
-2. Каждый урок — РЕАЛЬНАЯ тема из школьной программы РФ по этому предмету, а не «Урок 5: продолжение»
-3. Темы идут от простого к сложному (scaffolding)
+1. Точное количество уроков = {generation_lessons}, разбитых на {target_modules} модулей (примерно {lessons_per_module} уроков в каждом)
+2. Каждый урок — РЕАЛЬНАЯ тема из школьной программы РФ
+3. От простого к сложному
 4. Каждый 4-5-й урок — практика или контрольный
-5. Финальный модуль — итоговый проект/экзамен
-6. Темы должны соответствовать ФГОС для указанного класса
-7. Первые 2 урока — preview (бесплатное знакомство)
+5. Финальный модуль — итоговый проект
+6. Темы по ФГОС для указанного класса
 
-ВЕРНИ строго JSON:
+ВЕРНИ строго JSON (БУДЬ ЛАКОНИЧЕН):
 {{
-  "program_description": "2-3 предложения чему реально научится ученик после курса",
-  "target_audience": "Для кого курс подойдёт идеально (1-2 предложения)",
-  "prerequisites": ["что нужно знать до начала курса"],
-  "learning_outcomes": [
-    "Сможет решать задачи типа X",
-    "Сможет объяснить концепцию Y",
-    "Сможет применять метод Z",
-    "Будет готов к экзамену/проекту W"
-  ],
-  "methodology": "Краткое описание методики (Mastery Learning, видеоразборы, практика и т.д.)",
-  "final_project": "Описание финального проекта/экзамена курса",
-  "estimated_hours": число часов общего обучения,
+  "program_description": "1-2 предложения",
+  "target_audience": "1 предложение",
+  "prerequisites": ["что нужно знать"],
+  "learning_outcomes": ["сможет 1", "сможет 2", "сможет 3", "сможет 4"],
+  "methodology": "1 предложение",
+  "final_project": "1 предложение",
+  "estimated_hours": число,
   "modules": [
     {{
       "module_index": 1,
-      "module_title": "Конкретное название модуля",
-      "module_description": "Что ученик освоит в этом модуле",
+      "module_title": "Название",
+      "module_description": "1 предложение",
       "lessons": [
         {{
           "lesson_index": 1,
-          "title": "Конкретное название урока (тема из учебника)",
-          "summary": "Что разбираем в уроке (1 предложение)",
-          "type": "theory|video|practice|test|project",
-          "estimated_minutes": число (15-45),
-          "topics": ["конкретная тема 1", "тема 2"],
-          "skills_acquired": ["навык 1", "навык 2"],
-          "homework_description": "Описание ДЗ или null"
+          "title": "Конкретная тема",
+          "summary": "1 предложение",
+          "type": "theory",
+          "estimated_minutes": 25,
+          "topics": ["t1", "t2"],
+          "skills_acquired": ["s1"]
         }}
       ]
     }}
   ]
 }}
 
-ВАЖНО: ровно {total_lessons} уроков суммарно по всем модулям. Темы — РЕАЛЬНЫЕ из учебников РФ. Никаких «Урок N: практика темы»."""
+КРИТИЧНО: ровно {generation_lessons} уроков. Темы РЕАЛЬНЫЕ по ФГОС. Короткие тексты — ВАЖНА СКОРОСТЬ."""
 
-    # Снижаем max_tokens до 6000 — программа должна влезать; retries=1 чтобы не висеть долго
+    # deadline 26 сек — даём ИИ максимум возможного времени.
+    # max_tokens=3500 сокращает время генерации vs полные программы.
+    # Если не успел — мгновенный fallback, без ретраев (на ретраи нет времени)
     data, gen_err = call_polza(
         [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_msg}],
-        model=model, temperature=temp, max_tokens=6000, retries=1,
+        model=model, temperature=temp, max_tokens=3500, deadline_seconds=26,
     )
 
     if not data or not data.get('modules'):
