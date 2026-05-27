@@ -5,10 +5,39 @@ Returns: HTTP-ответ с MP3 аудио в base64
 """
 import json
 import os
+import re
 import base64
 import urllib.request
 import urllib.parse
 import urllib.error
+
+
+def make_singing_text(text: str) -> str:
+    """Превращает обычный текст в «распевный»: растягивает последнюю ударную
+    гласную в каждом слове перед знаком препинания и добавляет паузы между
+    строками. Yandex TTS не поддерживает полный SSML, но реагирует на
+    повторённые буквы и знаки препинания — это даёт эффект пения.
+    """
+    if not text:
+        return text
+    vowels = 'аеёиоуыэюяАЕЁИОУЫЭЮЯ'
+    # переносы строк → запятые с длинной паузой
+    result = text.replace('\n\n', '... ').replace('\n', ', — ')
+    # добавляем тире после ! и ? для распевной паузы
+    result = result.replace('!', '! — ').replace('?', '? — ')
+
+    def stretch_vowel(match):
+        word = match.group(1)
+        punct = match.group(2)
+        # удваиваем последнюю гласную в слове
+        for i in range(len(word) - 1, -1, -1):
+            if word[i] in vowels:
+                return word[:i] + word[i] + word[i] + word[i + 1:] + punct
+        return word + punct
+
+    # Слова из 3+ букв перед знаками препинания — растягиваем гласную
+    result = re.sub(r'(\w{3,})([,.!?\-…]+)', stretch_vowel, result)
+    return result
 
 
 VOICE_MAP = {
@@ -54,6 +83,8 @@ def handler(event, context):
 
         text = body.get('text', '').strip()
         teacher_id = body.get('teacher_id', 'alex')
+        # sing=true → текст превращается в распевный (растягиваем гласные)
+        sing = bool(body.get('sing', False))
 
         if not text:
             return {
@@ -64,6 +95,9 @@ def handler(event, context):
 
         if len(text) > 5000:
             text = text[:5000]
+
+        if sing:
+            text = make_singing_text(text)
 
         api_key = os.environ.get('YANDEX_SPEECHKIT_API_KEY', '')
         if not api_key:

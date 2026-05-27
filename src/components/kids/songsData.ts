@@ -18,6 +18,40 @@
 export type SongCategory = "potyashka" | "song" | "poem" | "lullaby" | "finger";
 export type SongAge = "1-3" | "3-5" | "5-7";
 
+/** Стиль фоновой мелодии, под который Лиса поёт нараспев. */
+export type MelodyStyle = "folk" | "pop" | "lullaby" | "ethno" | "march";
+
+/** CDN-источники фоновой инструменталки (CC0 / общественное достояние).
+ *  Используются для микширования с TTS-голосом Лисы.
+ *  Длительность каждого трека ~30-60 сек, проигрываются в цикле. */
+export const MELODY_TRACKS: Record<MelodyStyle, { url: string; label: string; volume: number }> = {
+  folk: {
+    url: "https://cdn.poehali.dev/files/songs/melody-folk.mp3",
+    label: "Гармошка и балалайка",
+    volume: 0.22,
+  },
+  pop: {
+    url: "https://cdn.poehali.dev/files/songs/melody-pop.mp3",
+    label: "Детский поп",
+    volume: 0.18,
+  },
+  lullaby: {
+    url: "https://cdn.poehali.dev/files/songs/melody-lullaby.mp3",
+    label: "Колыбельное пианино",
+    volume: 0.25,
+  },
+  ethno: {
+    url: "https://cdn.poehali.dev/files/songs/melody-ethno.mp3",
+    label: "Гусли и свирель",
+    volume: 0.22,
+  },
+  march: {
+    url: "https://cdn.poehali.dev/files/songs/melody-march.mp3",
+    label: "Игрушечный марш",
+    volume: 0.2,
+  },
+};
+
 export interface SongLine {
   text: string;
   /** Длительность строки в секундах при озвучке (для подсветки) */
@@ -45,6 +79,31 @@ export interface Song {
   parentTip: string;
   /** Признак: «УЧИСЬПРО оригинал» — текст написан методистом платформы */
   original?: boolean;
+  /** Стиль фоновой мелодии. Если не указан — выбирается по категории. */
+  melodyStyle?: MelodyStyle;
+  /** Темп пения Лисы (0.7 — очень медленно/распевно, 1.0 — обычная речь).
+   *  Если не указан — выбирается по категории (колыбельные медленнее). */
+  singSpeed?: number;
+}
+
+/** Возвращает стиль мелодии для песни — либо явно заданный, либо по умолчанию для категории. */
+export function getMelodyStyle(song: Song): MelodyStyle {
+  if (song.melodyStyle) return song.melodyStyle;
+  if (song.category === "lullaby") return "lullaby";
+  if (song.category === "potyashka") return "ethno";
+  if (song.category === "finger") return "folk";
+  if (song.category === "poem") return "pop";
+  // song
+  if (song.tags.includes("транспорт")) return "march";
+  return "folk";
+}
+
+/** Темп пения Лисы по умолчанию — колыбельные пропеваются очень медленно. */
+export function getSingSpeed(song: Song): number {
+  if (song.singSpeed) return song.singSpeed;
+  if (song.category === "lullaby") return 0.75;
+  if (song.category === "potyashka") return 0.85;
+  return 0.88;
 }
 
 export const SONG_CATEGORIES: { id: SongCategory; label: string; emoji: string }[] = [

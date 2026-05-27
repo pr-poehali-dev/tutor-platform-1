@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { Song, getTotalSongDuration } from "./songsData";
+import { Song, getTotalSongDuration, getMelodyStyle, getSingSpeed, MELODY_TRACKS } from "./songsData";
 import { TTS_URL } from "./talePlayerUtils";
 
 interface Props {
@@ -9,26 +9,32 @@ interface Props {
   onFinish?: () => void;
 }
 
-/** Плеер песенки с озвучкой Няней Лисой (Yandex SpeechKit Alena, emotion=good, speed=0.95).
- *  Особенности:
- *  - Кеш аудио для каждой строки (Map)
- *  - Прелоад следующей строки во время проигрывания текущей
- *  - Fallback на браузерный SpeechSynthesis если ИИ-TTS недоступен (offline / нет ключа)
- *  - Подсветка текущей строки в такт реальной длительности аудио */
+/** Плеер песенки — Няня Лиса поёт нараспев под фоновую инструменталку.
+ *  Архитектура:
+ *  - voice-audio: TTS Лисы (Yandex SpeechKit, voice=alena, emotion=good, sing=true)
+ *    Каждая строка озвучивается с замедлением и растягиванием гласных → эффект пения
+ *  - music-audio: фоновая мелодия из MELODY_TRACKS, играет в цикле на 18-25% громкости,
+ *    стиль выбирается по жанру песни (народная гармошка / поп / колыбельная)
+ *  - Микширование: оба <audio> играют параллельно, голос поверх музыки */
 export default function SongPlayer({ song, onClose, onFinish }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentLine, setCurrentLine] = useState(-1);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(true);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<number, string>>(new Map());
   const cancelledRef = useRef(false);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accumulatedRef = useRef<number>(0);
 
   const total = getTotalSongDuration(song);
+  const melodyStyle = getMelodyStyle(song);
+  const singSpeed = getSingSpeed(song);
+  const melody = MELODY_TRACKS[melodyStyle];
 
   const stopAudio = () => {
     if (audioRef.current) {
@@ -45,14 +51,41 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
     }
   };
 
+  const stopMusic = () => {
+    if (musicRef.current) {
+      musicRef.current.pause();
+      musicRef.current.currentTime = 0;
+    }
+  };
+
+  /** Запустить фоновую мелодию в цикле на нужной громкости. */
+  const startMusic = () => {
+    if (!musicEnabled) return;
+    if (!musicRef.current) {
+      const m = new Audio(melody.url);
+      m.loop = true;
+      m.volume = melody.volume;
+      m.preload = "auto";
+      musicRef.current = m;
+    }
+    musicRef.current.volume = melody.volume;
+    musicRef.current.play().catch(() => { /* музыка не критична */ });
+  };
+
   useEffect(() => {
     return () => {
       cancelledRef.current = true;
       stopAudio();
+      stopMusic();
+      if (musicRef.current) {
+        musicRef.current.src = "";
+        musicRef.current = null;
+      }
     };
+     
   }, []);
 
-  // При смене песни — полный сброс
+  // При смене песни — полный сброс, в т.ч. музыка с новой мелодией
   useEffect(() => {
     cancelledRef.current = false;
     audioCacheRef.current.clear();
@@ -62,18 +95,37 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
     setIsPlaying(false);
     setLoading(false);
     stopAudio();
+    stopMusic();
+    // пересоздаём музыку — у разных песен разные стили
+    if (musicRef.current) {
+      musicRef.current.src = "";
+      musicRef.current = null;
+    }
+     
   }, [song.id]);
 
-  /** Запросить TTS для одной строки. Кеширует результат. */
+  // Громкость музыки можно менять на лету
+  useEffect(() => {
+    if (musicRef.current) {
+      musicRef.current.volume = musicEnabled ? melody.volume : 0;
+    }
+    if (!musicEnabled) stopMusic();
+    else if (isPlaying) startMusic();
+     
+  }, [musicEnabled]);
+
+  /** Запросить TTS для одной строки. Кеширует результат.
+   *  Колыбельные → fox_lullaby (очень медленно), остальное → fox_song (распевно). */
   const fetchLineAudio = async (idx: number): Promise<string | null> => {
     if (audioCacheRef.current.has(idx)) return audioCacheRef.current.get(idx)!;
     const line = song.lines[idx];
     if (!line) return null;
     try {
+      const teacherId = song.category === "lullaby" ? "fox_lullaby" : "fox_song";
       const res = await fetch(TTS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: line.text, teacher_id: "fox" }),
+        body: JSON.stringify({ text: line.text, teacher_id: teacherId, sing: true }),
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -183,6 +235,7 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
   };
 
   const play = () => {
+    startMusic();
     if (currentLine >= song.lines.length - 1 || currentLine === -1) {
       // Старт с начала
       cancelledRef.current = false;
@@ -201,17 +254,20 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
   const pause = () => {
     cancelledRef.current = true;
     stopAudio();
+    stopMusic();
     setIsPlaying(false);
   };
 
   const restart = () => {
     cancelledRef.current = true;
     stopAudio();
+    stopMusic();
     cancelledRef.current = false;
     accumulatedRef.current = 0;
     setProgress(0);
     setCurrentLine(-1);
     setIsPlaying(true);
+    startMusic();
     playLine(0);
   };
 
@@ -226,17 +282,35 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
           <div className="flex-1 min-w-0">
             <h2 className="font-montserrat font-black text-white text-xl truncate">{song.title}</h2>
             <p className="text-white/85 text-xs">{song.author}</p>
-            {/* Бейдж голоса */}
-            <div className="inline-flex items-center gap-1 mt-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-              <span className="text-[10px]">🦊</span>
-              <span className="text-white text-[10px] font-bold">
-                {usingFallback ? "Голос браузера" : "Голос Няни Лисы"}
-              </span>
+            {/* Бейджи: голос Лисы + музыкальное сопровождение */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                <span className="text-[10px]">🦊</span>
+                <span className="text-white text-[10px] font-bold">
+                  {usingFallback ? "Голос браузера" : "Лиса поёт"}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                <span className="text-[10px]">🎵</span>
+                <span className="text-white text-[10px] font-bold">{melody.label}</span>
+              </div>
+              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                <span className="text-white text-[10px] font-bold">×{singSpeed}</span>
+              </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center">
-            <Icon name="X" size={18} />
-          </button>
+          <div className="flex flex-col gap-1.5">
+            <button
+              onClick={() => setMusicEnabled((v) => !v)}
+              className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+              title={musicEnabled ? "Выключить музыку" : "Включить музыку"}
+            >
+              <Icon name={musicEnabled ? "Music" : "VolumeX"} size={16} />
+            </button>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center">
+              <Icon name="X" size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Прогресс */}
