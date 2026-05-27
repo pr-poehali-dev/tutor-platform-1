@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: "Малыш 1+", icon: "Baby", path: "/kids" },
   { label: "Рисовашка", icon: "Palette", path: "/draw" },
   { label: "ОГЭ и ЕГЭ", icon: "GraduationCap", path: "/exam-bank" },
+  { label: "Выпускник", icon: "Award", path: "/graduate" },
 ];
 
 interface NavbarProps {

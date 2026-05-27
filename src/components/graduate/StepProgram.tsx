@@ -148,15 +148,14 @@ export default function StepProgram({ universityId, facultyId, onBack, onRestart
                     Минимальный балл вуза: <span className="text-amber-200 font-bold">{e.minScore}</span>
                   </p>
                 </div>
-                {s.courseSlug && (
-                  <Link
-                    to={`/courses/${s.courseSlug}`}
-                    className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:scale-[1.03] text-white text-xs font-bold px-3 py-2 rounded-xl transition-transform flex-shrink-0"
-                  >
-                    <Icon name="Sparkles" size={11} />
-                    Готовиться
-                  </Link>
-                )}
+                <Link
+                  to={`/graduate/prep/${e.subject}/${universityId}/${facultyId}`}
+                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:scale-[1.03] text-white text-xs font-bold px-3 py-2 rounded-xl transition-transform flex-shrink-0 shadow-lg shadow-purple-500/30"
+                >
+                  <Icon name="Sparkles" size={11} />
+                  Курс ЕГЭ
+                  <Icon name="ArrowRight" size={11} />
+                </Link>
               </div>
             );
           })}
