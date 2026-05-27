@@ -21,32 +21,32 @@ export type SongAge = "1-3" | "3-5" | "5-7";
 /** Стиль фоновой мелодии, под который Лиса поёт нараспев. */
 export type MelodyStyle = "folk" | "pop" | "lullaby" | "ethno" | "march";
 
-/** CDN-источники фоновой инструменталки (CC0 / общественное достояние).
+/** CDN-источники фоновой инструменталки (сгенерированы процедурно, CC0).
  *  Используются для микширования с TTS-голосом Лисы.
- *  Длительность каждого трека ~30-60 сек, проигрываются в цикле. */
+ *  Длительность каждого трека ~20 сек, проигрываются в цикле. */
 export const MELODY_TRACKS: Record<MelodyStyle, { url: string; label: string; volume: number }> = {
   folk: {
-    url: "https://cdn.poehali.dev/files/songs/melody-folk.mp3",
-    label: "Гармошка и балалайка",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs/melody-folk.wav",
+    label: "Народная гармошка",
     volume: 0.22,
   },
   pop: {
-    url: "https://cdn.poehali.dev/files/songs/melody-pop.mp3",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs/melody-pop.wav",
     label: "Детский поп",
     volume: 0.18,
   },
   lullaby: {
-    url: "https://cdn.poehali.dev/files/songs/melody-lullaby.mp3",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs/melody-lullaby.wav",
     label: "Колыбельное пианино",
     volume: 0.25,
   },
   ethno: {
-    url: "https://cdn.poehali.dev/files/songs/melody-ethno.mp3",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs/melody-ethno.wav",
     label: "Гусли и свирель",
     volume: 0.22,
   },
   march: {
-    url: "https://cdn.poehali.dev/files/songs/melody-march.mp3",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs/melody-march.wav",
     label: "Игрушечный марш",
     volume: 0.2,
   },

@@ -1,48 +1,168 @@
 """
-Business: Одноразовый загрузчик фоновых CC0-инструменталок для песенок Няни Лисы.
-По запросу скачивает один свободный трек по id (folk/pop/lullaby/ethno/march) и
-складывает в S3, чтобы его можно было микшировать с TTS-голосом в SongPlayer.
-Args: event с httpMethod=POST и queryStringParameters.id (один из ключей MELODIES)
-Returns: HTTP-ответ с результатом заливки одного трека и его CDN-URL
+Business: Генератор фоновых инструменталок для песенок Няни Лисы. Создаёт
+короткие зацикленные WAV-мелодии прямо в Python (без внешних CDN), кодирует
+в base64-WAV и кладёт в S3, чтобы их можно было микшировать с TTS-голосом.
+Args: event с httpMethod=POST и queryStringParameters.id (folk|pop|lullaby|ethno|march)
+Returns: HTTP-ответ с CDN-URL сгенерированной мелодии
 """
 import json
+import math
 import os
-import urllib.request
+import struct
+import wave
+import io
 
 import boto3
 
 
-MELODIES = {
+SAMPLE_RATE = 22050
+DURATION_SEC = 20  # 20 секунд лупа — браузер сам зациклит
+
+
+# Ноты в Гц
+NOTES = {
+    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
+    'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25,
+    'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77,
+    'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
+    'A3': 220.00, 'B3': 246.94,
+    'REST': 0,
+}
+
+
+# Композиции: список (нота, длительность в долях)
+MELODIES_DEF = {
     'folk': {
         'key': 'songs/melody-folk.mp3',
         'label': 'Народная гармошка',
-        'source': 'https://cdn.pixabay.com/audio/2022/10/14/audio_3dc1ae9001.mp3',
+        'tempo': 110,
+        'timbre': 'square',
+        'notes': [
+            ('E4', 1), ('G4', 1), ('A4', 1), ('B4', 1),
+            ('C5', 2), ('B4', 1), ('A4', 1),
+            ('G4', 2), ('E4', 2),
+            ('D4', 1), ('E4', 1), ('G4', 1), ('A4', 1),
+            ('B4', 2), ('A4', 1), ('G4', 1),
+            ('E4', 4),
+        ],
     },
     'pop': {
         'key': 'songs/melody-pop.mp3',
         'label': 'Детский поп',
-        'source': 'https://cdn.pixabay.com/audio/2023/01/09/audio_e4f0e3b9b1.mp3',
+        'tempo': 130,
+        'timbre': 'triangle',
+        'notes': [
+            ('C5', 1), ('E5', 1), ('G5', 2),
+            ('C5', 1), ('E5', 1), ('G5', 2),
+            ('A4', 1), ('C5', 1), ('E5', 2),
+            ('G4', 1), ('B4', 1), ('D5', 2),
+            ('F4', 1), ('A4', 1), ('C5', 2),
+            ('G4', 4),
+        ],
     },
     'lullaby': {
         'key': 'songs/melody-lullaby.mp3',
         'label': 'Колыбельное пианино',
-        'source': 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
+        'tempo': 70,
+        'timbre': 'sine',
+        'notes': [
+            ('E4', 2), ('G4', 2), ('E4', 2), ('C4', 2),
+            ('D4', 2), ('E4', 2), ('F4', 4),
+            ('E4', 2), ('D4', 2), ('C4', 4),
+            ('G3', 2), ('A3', 2), ('B3', 2), ('C4', 2),
+            ('D4', 4), ('C4', 4),
+        ],
     },
     'ethno': {
         'key': 'songs/melody-ethno.mp3',
         'label': 'Гусли и свирель',
-        'source': 'https://cdn.pixabay.com/audio/2022/03/15/audio_8b22a76d65.mp3',
+        'tempo': 95,
+        'timbre': 'pluck',
+        'notes': [
+            ('A4', 1), ('B4', 1), ('C5', 1), ('D5', 1),
+            ('E5', 2), ('D5', 1), ('C5', 1),
+            ('B4', 2), ('A4', 2),
+            ('G4', 1), ('A4', 1), ('B4', 1), ('C5', 1),
+            ('A4', 4),
+            ('E4', 2), ('A4', 2),
+        ],
     },
     'march': {
         'key': 'songs/melody-march.mp3',
         'label': 'Игрушечный марш',
-        'source': 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde668d05.mp3',
+        'tempo': 120,
+        'timbre': 'square',
+        'notes': [
+            ('C4', 1), ('C4', 1), ('G4', 1), ('G4', 1),
+            ('A4', 1), ('A4', 1), ('G4', 2),
+            ('F4', 1), ('F4', 1), ('E4', 1), ('E4', 1),
+            ('D4', 1), ('D4', 1), ('C4', 2),
+            ('G4', 1), ('G4', 1), ('F4', 1), ('F4', 1),
+            ('E4', 2), ('D4', 2),
+        ],
     },
 }
 
 
+def synthesize(notes, tempo, timbre, total_sec):
+    """Генерирует моно 16-bit PCM сэмплы."""
+    beat_sec = 60.0 / tempo / 2  # длительность одной "доли"
+    samples = []
+
+    while True:
+        for note_name, dur in notes:
+            freq = NOTES.get(note_name, 0)
+            note_samples = int(SAMPLE_RATE * beat_sec * dur)
+
+            for i in range(note_samples):
+                t = i / SAMPLE_RATE
+                if freq == 0:
+                    val = 0.0
+                else:
+                    phase = 2 * math.pi * freq * t
+                    if timbre == 'sine':
+                        val = math.sin(phase)
+                    elif timbre == 'square':
+                        val = 1.0 if math.sin(phase) > 0 else -1.0
+                        val *= 0.4
+                    elif timbre == 'triangle':
+                        val = 2 / math.pi * math.asin(math.sin(phase))
+                    elif timbre == 'pluck':
+                        # Затухающий синус, имитация щипка
+                        decay = math.exp(-3 * (i / note_samples))
+                        val = math.sin(phase) * decay
+                    else:
+                        val = math.sin(phase)
+
+                # ADSR envelope (мягкая атака и затухание)
+                env = 1.0
+                attack = int(0.01 * SAMPLE_RATE)
+                release = int(0.05 * SAMPLE_RATE)
+                if i < attack:
+                    env = i / attack
+                elif i > note_samples - release:
+                    env = max(0, (note_samples - i) / release)
+
+                samples.append(val * env * 0.3)  # громкость 30%
+
+            if len(samples) / SAMPLE_RATE >= total_sec:
+                return samples[:int(SAMPLE_RATE * total_sec)]
+
+
+def encode_wav(samples):
+    """Кодирует список float-сэмплов в WAV bytes."""
+    buf = io.BytesIO()
+    with wave.open(buf, 'wb') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(SAMPLE_RATE)
+        frames = b''.join(struct.pack('<h', max(-32767, min(32767, int(s * 32767)))) for s in samples)
+        wf.writeframes(frames)
+    return buf.getvalue()
+
+
 def handler(event, context):
-    """Заливает один CC0-трек в S3 по id из ?id=folk|pop|lullaby|ethno|march."""
+    """Генерирует и заливает в S3 одну фоновую инструменталку (?id=folk|pop|lullaby|ethno|march)."""
     method = event.get('httpMethod', 'POST')
 
     if method == 'OPTIONS':
@@ -66,13 +186,13 @@ def handler(event, context):
     qs = event.get('queryStringParameters') or {}
     melody_id = (qs.get('id') or '').strip()
 
-    if not melody_id or melody_id not in MELODIES:
+    if not melody_id or melody_id not in MELODIES_DEF:
         return {
             'statusCode': 400,
             'headers': {'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({
                 'error': 'Передай ?id=<melody_id>',
-                'available': list(MELODIES.keys()),
+                'available': list(MELODIES_DEF.keys()),
             }, ensure_ascii=False),
         }
 
@@ -85,20 +205,18 @@ def handler(event, context):
             'body': json.dumps({'error': 'S3 credentials missing'}),
         }
 
-    m = MELODIES[melody_id]
+    m = MELODIES_DEF[melody_id]
+    # Меняем расширение на .wav, т.к. генерируем WAV (mp3 без сторонних либ не получится)
+    s3_key = m['key'].replace('.mp3', '.wav')
 
     try:
-        req = urllib.request.Request(
-            m['source'],
-            headers={'User-Agent': 'Mozilla/5.0 (UCHISPRO melody-uploader)'},
-        )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = resp.read()
+        samples = synthesize(m['notes'], m['tempo'], m['timbre'], DURATION_SEC)
+        wav_bytes = encode_wav(samples)
     except Exception as e:
         return {
-            'statusCode': 502,
+            'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Download failed: {e}'}, ensure_ascii=False),
+            'body': json.dumps({'error': f'Synth failed: {e}'}, ensure_ascii=False),
         }
 
     s3 = boto3.client(
@@ -111,9 +229,9 @@ def handler(event, context):
     try:
         s3.put_object(
             Bucket='files',
-            Key=m['key'],
-            Body=data,
-            ContentType='audio/mpeg',
+            Key=s3_key,
+            Body=wav_bytes,
+            ContentType='audio/wav',
             CacheControl='public, max-age=31536000',
         )
     except Exception as e:
@@ -123,7 +241,7 @@ def handler(event, context):
             'body': json.dumps({'error': f'S3 upload failed: {e}'}, ensure_ascii=False),
         }
 
-    cdn_url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{m['key']}"
+    cdn_url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{s3_key}"
 
     return {
         'statusCode': 200,
@@ -134,9 +252,9 @@ def handler(event, context):
         'body': json.dumps({
             'ok': True,
             'id': melody_id,
-            'key': m['key'],
+            'key': s3_key,
             'label': m['label'],
-            'size': len(data),
+            'size': len(wav_bytes),
             'cdn_url': cdn_url,
         }, ensure_ascii=False),
     }
