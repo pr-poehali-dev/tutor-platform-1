@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Без X-User-Uid → 401",
+      "method": "GET",
+      "path": "/?action=get_progress",
+      "expectedStatus": 401
+    },
+    {
+      "name": "Неизвестный action → 400",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "headers": {"X-User-Uid": "test-uid"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "get_progress для нового uid → дефолт",
+      "method": "GET",
+      "path": "/?action=get_progress",
+      "headers": {"X-User-Uid": "test-uid-new-12345"},
+      "expectedStatus": 200,
+      "expectedBody": {"stars": 0},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { kidsApi } from "./kidsApi";
 
 const STORAGE_KEY = "uchispro_kids_progress_v1";
 
@@ -52,8 +53,47 @@ function yesterdayIso(): string {
 
 export function useKidsProgress() {
   const [progress, setProgress] = useState<KidsProgress>(() => load());
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasRemoteLoadedRef = useRef(false);
 
-  useEffect(() => { save(progress); }, [progress]);
+  useEffect(() => {
+    save(progress);
+    // Debounced sync to backend (раз в 2 сек после последнего изменения)
+    if (!hasRemoteLoadedRef.current) return; // не пушим до первой загрузки с сервера
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      kidsApi.saveProgress(progress).catch(() => { /* offline ok */ });
+    }, 2000);
+  }, [progress]);
+
+  // При монтировании — подтягиваем прогресс с сервера и сливаем с локальным (берём max)
+  useEffect(() => {
+    let cancelled = false;
+    kidsApi.getProgress().then((remote) => {
+      if (cancelled) return;
+      setProgress((local) => {
+        const merged: KidsProgress = {
+          stars: Math.max(local.stars, remote.stars || 0),
+          completedActivities: Array.from(
+            new Set([...(local.completedActivities || []), ...(remote.completedActivities || [])]),
+          ),
+          streakDays: Math.max(local.streakDays, remote.streakDays || 0),
+          lastActivityDate: [local.lastActivityDate, remote.lastActivityDate]
+            .filter(Boolean)
+            .sort()
+            .reverse()[0] || null,
+          totalAnswers: Math.max(local.totalAnswers, remote.totalAnswers || 0),
+          correctAnswers: Math.max(local.correctAnswers, remote.correctAnswers || 0),
+        };
+        return merged;
+      });
+      hasRemoteLoadedRef.current = true;
+    }).catch(() => {
+      // offline — продолжаем работать с localStorage, но включаем sync
+      hasRemoteLoadedRef.current = true;
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // Слушаем изменения прогресса из других компонентов (синхронизация в рамках вкладки)
   useEffect(() => {

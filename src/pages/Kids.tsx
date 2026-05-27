@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -6,6 +7,10 @@ import SiteFooter from "@/components/SiteFooter";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
 import { useKidsProgress } from "@/components/kids/useKidsProgress";
 import NannyFox from "@/components/kids/NannyFox";
+import ParentGate from "@/components/kids/ParentGate";
+import ParentSettingsModal from "@/components/kids/ParentSettingsModal";
+import ScreenTimeBlocker from "@/components/kids/ScreenTimeBlocker";
+import { useScreenTime } from "@/components/kids/useScreenTime";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -57,6 +62,14 @@ const REVIEWS = [
 export default function KidsLanding() {
   const totalActivities = ACTIVITIES.length;
   const { progress } = useKidsProgress();
+  const { state: screenTime } = useScreenTime(true);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [overrideUntil, setOverrideUntil] = useState<number>(0);
+
+  // Блокировка по экранному времени, кроме случая, когда родитель только что разблокировал (10 мин)
+  const overrideActive = Date.now() < overrideUntil;
+  const showBlocker = screenTime.blocked && !overrideActive;
 
   const jsonLd = [
     {
@@ -130,13 +143,36 @@ export default function KidsLanding() {
           <div className="hidden md:block">
             <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Малыш" }]} />
           </div>
-          <Link
-            to="/pricing"
-            className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            <Icon name="Sparkles" size={14} />
-            Тарифы
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* Индикатор экранного времени */}
+            {screenTime.dailyLimit > 0 && (
+              <div
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10"
+                title="Сегодняшнее экранное время"
+              >
+                <Icon name="Timer" size={13} className={screenTime.remaining > 0 ? "text-emerald-300" : "text-rose-300"} />
+                <span className="text-white/75 text-xs font-bold tabular-nums">
+                  {screenTime.minutesUsed}/{screenTime.dailyLimit} мин
+                </span>
+              </div>
+            )}
+            {/* Настройки родителя — требует PIN */}
+            <button
+              onClick={() => setGateOpen(true)}
+              aria-label="Настройки родителя"
+              title="Настройки родителя (PIN)"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all"
+            >
+              <Icon name="ShieldCheck" size={16} />
+            </button>
+            <Link
+              to="/pricing"
+              className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Icon name="Sparkles" size={14} />
+              Тарифы
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -414,6 +450,27 @@ export default function KidsLanding() {
       <SiteFooter />
 
       <NannyFox />
+
+      {/* Блокировщик экранного времени (СанПиН) */}
+      {showBlocker && (
+        <ScreenTimeBlocker
+          state={screenTime}
+          onOverride={() => setOverrideUntil(Date.now() + 10 * 60 * 1000)}
+        />
+      )}
+
+      {/* PIN-окно перед входом в настройки родителя */}
+      {gateOpen && (
+        <ParentGate
+          title="Настройки родителя"
+          description="Чтобы открыть настройки, подтверди что ты — взрослый. Это защита по 436-ФЗ."
+          onPass={() => { setGateOpen(false); setSettingsOpen(true); }}
+          onCancel={() => setGateOpen(false)}
+        />
+      )}
+
+      {/* Модалка настроек родителя */}
+      {settingsOpen && <ParentSettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }
