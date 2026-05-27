@@ -153,4 +153,16 @@
     </image:image>
   </url>
 
+  <!-- Мастерская сочинений: ЕГЭ, итоговое, журфак -->
+  <url>
+    <loc>https://учисьпро.рф/writing-craft</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>Мастерская сочинений: подготовка к ЕГЭ, итоговому сочинению и журфаку</image:title>
+    </image:image>
+  </url>
+
 </urlset>

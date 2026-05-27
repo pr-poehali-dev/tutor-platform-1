@@ -28,6 +28,7 @@ export default function SiteFooter() {
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
               <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
               <li><Link to="/mgu-track" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">👑 МГУ-трек: поступление в МГУ</Link></li>
+              <li><Link to="/writing-craft" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">✍️ Мастерская сочинений и журналистики</Link></li>
               <li><Link to="/pricing" className="text-white/70 hover:text-white transition-colors">Тарифы и оплата</Link></li>
             </ul>
           </nav>
