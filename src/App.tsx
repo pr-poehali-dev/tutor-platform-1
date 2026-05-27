@@ -36,6 +36,7 @@ const DrawLesson = lazy(() => import("./pages/DrawLesson"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
 const BiologyProblems = lazy(() => import("./pages/BiologyProblems"));
 const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
+const Graduate = lazy(() => import("./pages/Graduate"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -91,6 +92,7 @@ const App = () => (
                     <Route path="/chemistry-problems" element={<ChemistryProblems />} />
                     <Route path="/draw" element={<DrawLanding />} />
                     <Route path="/draw/:id" element={<DrawLesson />} />
+                    <Route path="/graduate" element={<Graduate />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />
