@@ -29,6 +29,7 @@ const SiteHealth = lazy(() => import("./pages/admin/SiteHealth"));
 const VideoStudio = lazy(() => import("./pages/admin/VideoStudio"));
 const AIEvolutionLab = lazy(() => import("./pages/admin/AIEvolutionLab"));
 const CoursesContent = lazy(() => import("./pages/admin/CoursesContent"));
+const MGUTrack = lazy(() => import("./pages/MGUTrack"));
 const DrawLanding = lazy(() => import("./pages/DrawLanding"));
 const DrawLesson = lazy(() => import("./pages/DrawLesson"));
 const MathProblems = lazy(() => import("./pages/MathProblems"));
@@ -80,6 +81,7 @@ const App = () => (
                     <Route path="/admin/video-studio" element={<VideoStudio />} />
                     <Route path="/admin/ai-lab" element={<AIEvolutionLab />} />
                     <Route path="/admin/courses-content" element={<CoursesContent />} />
+                    <Route path="/mgu-track" element={<MGUTrack />} />
                     <Route path="/ads/:slug" element={<AdLanding />} />
                     <Route path="/math-problems" element={<MathProblems />} />
                     <Route path="/biology-problems" element={<BiologyProblems />} />

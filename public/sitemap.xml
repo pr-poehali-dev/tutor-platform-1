@@ -141,4 +141,16 @@
   <url><loc>https://учисьпро.рф/courses/skills</loc><lastmod>2026-05-26</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
   <url><loc>https://учисьпро.рф/courses/career</loc><lastmod>2026-05-26</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
 
+  <!-- Премиум-трек: поступление в МГУ -->
+  <url>
+    <loc>https://учисьпро.рф/mgu-track</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>МГУ-трек: стратегия поступления в МГУ с ИИ-стратегом</image:title>
+    </image:image>
+  </url>
+
 </urlset>

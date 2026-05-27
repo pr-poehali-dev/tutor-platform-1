@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Список факультетов МГУ",
+      "method": "GET",
+      "path": "/?action=faculties",
+      "expectedStatus": 200
+    },
+    {
+      "name": "compatibility без faculty_code → 400",
+      "method": "POST",
+      "path": "/?action=compatibility",
+      "body": {},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Неизвестное действие → 400",
+      "method": "GET",
+      "path": "/?action=xxx",
+      "expectedStatus": 400
+    }
+  ]
+}
