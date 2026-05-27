@@ -1,0 +1,54 @@
+{
+  "tests": [
+    {
+      "name": "list — public access, returns items array",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"items": [], "total": 0},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "item without slug — 400",
+      "method": "GET",
+      "path": "/?action=item",
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "submit without auth — 401",
+      "method": "POST",
+      "path": "/?action=submit",
+      "body": {"title": "Тестовая статья длиннее восьми", "content": "x", "category": "science"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "pending without admin key — 401",
+      "method": "GET",
+      "path": "/?action=pending",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "moderate without admin key — 401",
+      "method": "POST",
+      "path": "/?action=moderate",
+      "body": {"id": 1, "decision": "approve"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "unknown action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

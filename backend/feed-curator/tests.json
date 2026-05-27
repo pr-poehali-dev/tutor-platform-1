@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "sources without admin key — 401",
+      "method": "GET",
+      "path": "/?action=sources",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "fetch_all without admin key — 401",
+      "method": "POST",
+      "path": "/?action=fetch_all",
+      "body": {"limit": 2},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "fetch_one without admin key — 401",
+      "method": "POST",
+      "path": "/?action=fetch_one",
+      "body": {"source_code": "nplus1"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "unknown action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

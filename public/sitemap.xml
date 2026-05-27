@@ -201,4 +201,16 @@
     </image:image>
   </url>
 
+  <!-- Модуль «Лента»: новости науки, культуры, образования, ИИ и роботов -->
+  <url>
+    <loc>https://учисьпро.рф/feed</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.96</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>Лента УЧИСЬПРО: наука, культура, образование, ИИ и роботы для школьников</image:title>
+    </image:image>
+  </url>
+
 </urlset>

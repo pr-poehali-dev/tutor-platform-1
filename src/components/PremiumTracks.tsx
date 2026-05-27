@@ -130,6 +130,28 @@ const TRACKS: Track[] = [
     badgeColor: "bg-rose-500/20 border-rose-500/40 text-rose-200",
     ctaColor: "from-rose-500 to-amber-600",
   },
+  {
+    to: "/feed",
+    emoji: "📡",
+    badgeText: "Модуль · Лента",
+    badgeIcon: "Newspaper",
+    title: "Лента «Хочу всё знать»",
+    subtitle: "Наука, культура, ИИ и роботы",
+    description:
+      "Живой журнал для школьников: научные открытия, новости Минпросвещения, культура, разработки нейросетей и роботов. ИИ-куратор подбирает материалы из проверенных источников. Можешь и сам публиковать свои статьи — после модерации они появятся в общей ленте.",
+    highlights: [
+      { icon: "Sparkles", label: "ИИ-куратор" },
+      { icon: "PenLine", label: "Публикация" },
+      { icon: "ShieldCheck", label: "Модерация" },
+    ],
+    cta: "Открыть ленту",
+    gradient: "from-fuchsia-900/40 via-purple-900/25 to-cyan-900/30",
+    borderColor: "border-fuchsia-500/30",
+    glow1: "bg-fuchsia-500/20",
+    glow2: "bg-cyan-500/20",
+    badgeColor: "bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-200",
+    ctaColor: "from-fuchsia-500 to-cyan-600",
+  },
 ];
 
 export default function PremiumTracks() {

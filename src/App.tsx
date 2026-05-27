@@ -41,6 +41,10 @@ const GraduatePrep = lazy(() => import("./pages/GraduatePrep"));
 const KnowYourself = lazy(() => import("./pages/KnowYourself"));
 const KnowYourselfResult = lazy(() => import("./pages/KnowYourselfResult"));
 const ExamChecklist = lazy(() => import("./pages/ExamChecklist"));
+const Feed = lazy(() => import("./pages/Feed"));
+const FeedArticle = lazy(() => import("./pages/FeedArticle"));
+const FeedSubmit = lazy(() => import("./pages/FeedSubmit"));
+const AdminFeed = lazy(() => import("./pages/admin/AdminFeed"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -101,6 +105,10 @@ const App = () => (
                     <Route path="/know-yourself" element={<KnowYourself />} />
                     <Route path="/know-yourself/result" element={<KnowYourselfResult />} />
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
+                    <Route path="/feed" element={<Feed />} />
+                    <Route path="/feed/submit" element={<FeedSubmit />} />
+                    <Route path="/feed/:slug" element={<FeedArticle />} />
+                    <Route path="/admin/feed" element={<AdminFeed />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />
