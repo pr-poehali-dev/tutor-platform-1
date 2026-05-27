@@ -15,6 +15,7 @@ export const SUBJECTS = [
   { id: "logic", label: "Логика", emoji: "🧠" },
   { id: "skills", label: "Soft Skills", emoji: "💎" },
   { id: "career", label: "Профориентация", emoji: "🧭" },
+  { id: "business", label: "Бизнес и MBA", emoji: "💼" },
 ];
 
 export const GRADES = [
@@ -24,6 +25,7 @@ export const GRADES = [
   { id: "10-11", label: "10–11 класс" },
   { id: "ege", label: "ЕГЭ" },
   { id: "oge", label: "ОГЭ" },
+  { id: "adult", label: "Взрослым" },
 ];
 
 export const FORMAT = [
@@ -1274,6 +1276,32 @@ export const COURSES: Course[] = [
     isSale: false,
     trialAvailable: true,
     description: "Полная стратегия поступления в топ-вуз: расчёт нужных баллов ЕГЭ, перечневые олимпиады для БВИ, целевое обучение, индивидуальные достижения. Калькулятор шансов под твои оценки. Учим как родителям и школьнику двигаться вместе к цели без паники.",
+  },
+  // ─── БИЗНЕС И MBA ──────────────────────────────────────────────────────────
+  {
+    id: 48,
+    subject: "business",
+    title: "MBA для предпринимателей РФ: запуск и управление бизнесом",
+    tutor: "ИИ-методист Дмитрий",
+    tutorAvatar: "💼",
+    tutorBadge: "Российское право + бизнес-практика",
+    grade: "adult",
+    format: "online",
+    price: 0,
+    priceUnit: "за курс",
+    rating: 4.98,
+    reviews: 0,
+    students: 0,
+    lessons: 64,
+    duration: "60 мин",
+    tags: ["MBA", "ИП и ООО", "Налоги РФ", "Маркетинг", "Финансы", "Право", "Стратегия"],
+    color: "from-slate-700 to-amber-600",
+    emoji: "💼",
+    isNew: true,
+    isHit: false,
+    isSale: false,
+    trialAvailable: true,
+    description: "Полноценный MBA по российским реалиям: от регистрации ИП и выбора системы налогообложения (УСН, ПСН, НПД, АУСН) до построения отдела продаж и привлечения инвестиций. Реальное законодательство РФ 2026: 54-ФЗ, 152-ФЗ, маркировка «Честный знак», трудовой кодекс, налоговая реформа. Кейсы российских предпринимателей: Wildberries, Ozon, Яндекс. После курса — готовый бизнес-план под защиту инвесторам.",
   },
 ];
 
