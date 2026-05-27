@@ -165,4 +165,16 @@
     </image:image>
   </url>
 
+  <!-- Модуль «Выпускник»: 100 вузов России, программа поступления -->
+  <url>
+    <loc>https://учисьпро.рф/graduate</loc>
+    <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.98</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg</image:loc>
+      <image:title>Выпускник: подбор вуза и программа поступления, 100 вузов России</image:title>
+    </image:image>
+  </url>
+
 </urlset>

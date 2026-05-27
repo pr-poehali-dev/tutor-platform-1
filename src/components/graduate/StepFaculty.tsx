@@ -35,7 +35,12 @@ export default function StepFaculty({ universityId, onSelect, onBack }: Props) {
           <Icon name="BookOpen" size={12} className="text-purple-300" />
           <span className="text-xs text-purple-200 font-bold uppercase tracking-wider">Шаг 3 из 4</span>
         </div>
-        <h2 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">Выбери факультет</h2>
+        <h1 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">
+          Факультеты и направления — {university.shortName}
+        </h1>
+        <p className="text-white/55 text-xs md:text-sm mb-3 max-w-xl mx-auto">
+          {university.fullName}, {university.city}
+        </p>
         <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-2">
           <span className="text-2xl">{university.emoji}</span>
           <span className="font-montserrat font-bold text-white text-sm">{university.shortName}</span>

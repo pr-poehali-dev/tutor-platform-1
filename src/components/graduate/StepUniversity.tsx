@@ -26,9 +26,11 @@ export default function StepUniversity({ regionId, onSelect, onBack }: Props) {
           <Icon name="GraduationCap" size={12} className="text-purple-300" />
           <span className="text-xs text-purple-200 font-bold uppercase tracking-wider">Шаг 2 из 4</span>
         </div>
-        <h2 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">Выбери вуз</h2>
+        <h1 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">
+          Вузы региона «{region?.name}»
+        </h1>
         <p className="text-white/60 text-sm md:text-base">
-          {region?.emoji} {region?.name} — {universities.length} вузов
+          {region?.emoji} {universities.length} учебных заведений · проходные баллы и бюджетные места
         </p>
       </div>
 
