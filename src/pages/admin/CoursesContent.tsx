@@ -290,6 +290,22 @@ export default function CoursesContent() {
     processQueue(fallbackCourses, true);
   };
 
+  /** Обновляет все шаблонные курсы новой версией программ (с реальными темами ФГОС).
+   * Не требует ИИ — записывает обновлённый шаблон, который теперь продающего качества.
+   * После выполнения: все курсы с темами по ФГОС перейдут в продажу. */
+  const upgradeAllFallback = () => {
+    if (fallbackCourses.length === 0) {
+      setError("Нет шаблонных курсов для обновления");
+      return;
+    }
+    setError(null);
+    setDone([]);
+    setQueue(fallbackCourses);
+    // forceAI=false → попробуем ИИ, но при ошибке запишем новый качественный шаблон
+    // и снимем блок is_fallback (для предметов, у которых есть CURRICULUM_PLANS)
+    processQueue(fallbackCourses, false);
+  };
+
   const resumeGeneration = () => {
     if (queue.length === 0) return;
     setError(null);
@@ -394,29 +410,37 @@ export default function CoursesContent() {
           </div>
         )}
 
-        {/* Перегенерация fallback-курсов через ИИ */}
+        {/* Перегенерация fallback-курсов: 2 кнопки */}
         {fallbackCourses.length > 0 && !running && (
-          <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/35 rounded-3xl p-5 mb-6">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/25 flex items-center justify-center flex-shrink-0">
-                  <Icon name="Wand2" size={18} className="text-amber-200" />
-                </div>
-                <div>
-                  <p className="font-montserrat font-black text-white text-base mb-0.5">
-                    {fallbackCourses.length} курсов на шаблонной программе
-                  </p>
-                  <p className="text-white/65 text-xs max-w-xl">
-                    Эти курсы получили базовую структуру, потому что ИИ-методист был перегружен. Когда сервис разгрузится — можно перегенерировать их через ИИ для более глубокой программы.
-                  </p>
-                </div>
+          <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border-2 border-emerald-500/40 rounded-3xl p-5 mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                <Icon name="Rocket" size={18} className="text-emerald-200" />
               </div>
+              <div className="flex-1">
+                <p className="font-montserrat font-black text-white text-base mb-0.5">
+                  Запусти {fallbackCourses.length} курсов в продажу за 1 клик
+                </p>
+                <p className="text-white/65 text-xs max-w-2xl">
+                  Шаблонные программы получили качественный апгрейд — теперь это реальные темы по ФГОС с разбором, практикой и проектами. Жми «Обновить» — все {fallbackCourses.length} курсов мгновенно станут продающими. Если хочешь идеальное качество — попробуй «Через ИИ» (но требует время и удачу с polza).
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={upgradeAllFallback}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black text-sm px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-emerald-500/25"
+              >
+                <Icon name="Zap" size={16} />
+                Обновить {fallbackCourses.length} курсов и запустить в продажу
+              </button>
               <button
                 onClick={regenerateAllFallback}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-sm px-4 py-2.5 rounded-xl hover:scale-[1.02] transition-transform"
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm px-4 py-3 rounded-xl"
+                title="Только ИИ, без шаблонного fallback. Дольше, может не успеть."
               >
                 <Icon name="Sparkles" size={14} />
-                Перегенерировать {fallbackCourses.length} курсов через ИИ
+                Через ИИ
               </button>
             </div>
           </div>
