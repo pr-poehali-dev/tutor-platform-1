@@ -64,34 +64,165 @@ def get_agent_prompt(conn, agent_key, fallback):
     return fallback, 0.6, 'openai/gpt-4o-mini'
 
 
-def call_polza(messages, model='openai/gpt-4o-mini', temperature=0.6, max_tokens=6000):
+def call_polza(messages, model='openai/gpt-4o-mini', temperature=0.6, max_tokens=6000, retries=2):
+    """Вызов ИИ с ретраями на 5xx/timeout. Если все попытки упали — возвращает None."""
     api_key = os.environ.get('POLZA_API_KEY', '')
     if not api_key:
         return None, 'POLZA_API_KEY не настроен'
-    try:
-        payload = json.dumps({
-            'model': model,
-            'messages': messages,
-            'temperature': temperature,
-            'max_tokens': max_tokens,
-            'response_format': {'type': 'json_object'},
-        }).encode('utf-8')
-        req = urllib.request.Request(
-            'https://api.polza.ai/api/v1/chat/completions',
-            data=payload,
-            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-            method='POST',
-        )
-        with urllib.request.urlopen(req, timeout=90) as r:
-            data = json.loads(r.read().decode('utf-8'))
-            raw = data['choices'][0]['message']['content'].strip()
-            raw = re.sub(r'^```json\s*', '', raw)
-            raw = re.sub(r'\s*```$', '', raw)
-            return json.loads(raw), None
-    except urllib.error.HTTPError as e:
-        return None, f'polza HTTP {e.code}'
-    except Exception as e:
-        return None, f'{type(e).__name__}: {str(e)[:100]}'
+
+    last_err = 'unknown'
+    for attempt in range(retries + 1):
+        try:
+            payload = json.dumps({
+                'model': model,
+                'messages': messages,
+                'temperature': temperature,
+                'max_tokens': max_tokens,
+                'response_format': {'type': 'json_object'},
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.polza.ai/api/v1/chat/completions',
+                data=payload,
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=45) as r:
+                data = json.loads(r.read().decode('utf-8'))
+                raw = data['choices'][0]['message']['content'].strip()
+                raw = re.sub(r'^```json\s*', '', raw)
+                raw = re.sub(r'\s*```$', '', raw)
+                return json.loads(raw), None
+        except urllib.error.HTTPError as e:
+            last_err = f'polza HTTP {e.code}'
+            # 4xx не ретраим — это наша ошибка, не сервера
+            if e.code < 500:
+                return None, last_err
+        except Exception as e:
+            last_err = f'{type(e).__name__}: {str(e)[:100]}'
+
+    return None, f'{last_err} (после {retries + 1} попыток)'
+
+
+def build_fallback_curriculum(course_info):
+    """Резервная программа: строится без ИИ из шаблонов. Используется если ИИ-методист недоступен.
+    Лучше чем «4 одинаковых модуля», и работает 100% времени."""
+    title = course_info.get('title', 'Курс')
+    subject = course_info.get('subject', '')
+    grade = course_info.get('grade', '')
+    total_lessons = int(course_info.get('lessons', 32))
+
+    target_modules = max(4, min(8, total_lessons // 6))
+    lessons_per_module = max(2, total_lessons // target_modules)
+
+    # Шаблоны модулей по предметам
+    module_templates = {
+        'math': [
+            ('Базовые концепции', 'Освоение фундаментальных понятий и операций'),
+            ('Уравнения и неравенства', 'Решение уравнений разной сложности'),
+            ('Функции и графики', 'Анализ функций, построение и чтение графиков'),
+            ('Геометрия и измерения', 'Планиметрия, стереометрия, тригонометрия'),
+            ('Текстовые задачи', 'Перевод словесных условий в математические модели'),
+            ('Подготовка к экзамену', 'Решение задач прошлых лет, разбор типовых ошибок'),
+            ('Олимпиадные задачи', 'Нестандартные подходы, красивые решения'),
+            ('Итоговый проект', 'Применение всех изученных методов'),
+        ],
+        'physics': [
+            ('Механика', 'Кинематика, динамика, законы сохранения'),
+            ('Молекулярная физика и термодинамика', 'Газовые законы, тепловые процессы'),
+            ('Электричество и магнетизм', 'Постоянный и переменный ток, электромагнитная индукция'),
+            ('Оптика', 'Геометрическая и волновая оптика'),
+            ('Квантовая физика', 'Фотоэффект, атомная и ядерная физика'),
+            ('Решение задач ЕГЭ', 'Разбор всех типов заданий с разбалловкой'),
+            ('Эксперименты и лабораторные', 'Практические работы и анализ данных'),
+            ('Итоговая аттестация', 'Контрольный тест по всему курсу'),
+        ],
+        'russian': [
+            ('Фонетика и орфоэпия', 'Произношение, ударение, орфоэпические нормы'),
+            ('Морфология', 'Части речи и их признаки'),
+            ('Синтаксис и пунктуация', 'Простое и сложное предложение, знаки препинания'),
+            ('Орфография', 'Правописание корней, приставок, окончаний'),
+            ('Лексика и фразеология', 'Значение слов, паронимы, фразеологизмы'),
+            ('Текст и стили речи', 'Анализ текста, типы и стили речи'),
+            ('Сочинение', 'Структура сочинения, аргументация, проблематика'),
+            ('Подготовка к экзамену', 'Решение демоверсий, разбор ошибок'),
+        ],
+        'english': [
+            ('Базовая грамматика', 'Времена, артикли, предлоги'),
+            ('Расширение лексики', 'Тематические наборы слов, словообразование'),
+            ('Чтение и понимание', 'Работа с текстами разного уровня'),
+            ('Аудирование', 'Понимание речи на слух'),
+            ('Говорение и произношение', 'Диалоги, монологи, фонетика'),
+            ('Письмо', 'Эссе, письма, форматы коммуникации'),
+            ('Подготовка к экзамену', 'Стратегии прохождения тестов'),
+            ('Финальная практика', 'Полные пробники'),
+        ],
+    }
+
+    default_templates = [
+        ('Введение и основы', 'Знакомство с предметом, базовые понятия'),
+        ('Ключевые темы блока 1', 'Освоение первой половины программы'),
+        ('Ключевые темы блока 2', 'Углубление и расширение материала'),
+        ('Применение знаний', 'Практические задачи и кейсы'),
+        ('Сложные темы', 'Олимпиадный уровень, нестандартные задачи'),
+        ('Подготовка к контролю', 'Систематизация и повторение'),
+        ('Итоговый проект', 'Самостоятельная работа по всему курсу'),
+        ('Финальная аттестация', 'Контроль усвоения материала'),
+    ]
+
+    templates = module_templates.get(subject, default_templates)[:target_modules]
+
+    modules = []
+    lesson_global = 0
+    for m_idx, (mod_title, mod_desc) in enumerate(templates):
+        lessons_in_module = lessons_per_module
+        if m_idx == len(templates) - 1:
+            # Последний модуль добирает остаток
+            lessons_in_module = total_lessons - lesson_global
+
+        lessons = []
+        for l in range(lessons_in_module):
+            lesson_global += 1
+            if lesson_global > total_lessons:
+                break
+            lesson_type = 'theory'
+            if (l + 1) % 5 == 0:
+                lesson_type = 'practice'
+            if l == lessons_in_module - 1 and m_idx == len(templates) - 1:
+                lesson_type = 'project'
+            lessons.append({
+                'lesson_index': l + 1,
+                'title': f'{mod_title}: занятие {l + 1}',
+                'summary': f'Разбор темы «{mod_title}» с примерами и тренировкой',
+                'type': lesson_type,
+                'estimated_minutes': 25 + (l % 3) * 5,
+                'topics': [mod_title, f'{subject} {grade}'],
+                'skills_acquired': ['понимание темы', 'применение на практике'],
+                'homework_description': f'Решить 5 задач по теме «{mod_title}»' if lesson_type == 'practice' else None,
+            })
+
+        modules.append({
+            'module_index': m_idx + 1,
+            'module_title': mod_title,
+            'module_description': mod_desc,
+            'lessons': lessons,
+        })
+
+    return {
+        'program_description': f'Систематический курс «{title}» из {total_lessons} уроков для уровня {grade}. Программа охватывает все ключевые темы предмета.',
+        'target_audience': f'Школьники уровня {grade}, изучающие {subject}',
+        'prerequisites': ['базовая школьная программа предыдущего года'],
+        'learning_outcomes': [
+            'Освоит ключевые понятия предмета',
+            'Научится решать типовые задачи',
+            'Сможет применять знания на практике',
+            'Будет готов к контрольным и экзаменам',
+        ],
+        'methodology': 'Mastery Learning + поэтапное усложнение + регулярная практика',
+        'final_project': 'Итоговая аттестация по всему пройденному материалу',
+        'estimated_hours': total_lessons * 30 // 60,
+        'modules': modules,
+        '_fallback': True,
+    }
 
 
 CURRICULUM_FALLBACK = (
@@ -194,9 +325,10 @@ def generate_curriculum(conn, course_info):
 
 ВАЖНО: ровно {total_lessons} уроков суммарно по всем модулям. Темы — РЕАЛЬНЫЕ из учебников РФ. Никаких «Урок N: практика темы»."""
 
+    # Снижаем max_tokens до 6000 — программа должна влезать; retries=1 чтобы не висеть долго
     data, gen_err = call_polza(
         [{'role': 'system', 'content': sys_prompt}, {'role': 'user', 'content': user_msg}],
-        model=model, temperature=temp, max_tokens=8000,
+        model=model, temperature=temp, max_tokens=6000, retries=1,
     )
 
     if not data or not data.get('modules'):
@@ -375,14 +507,16 @@ def action_status_all(conn, body):
 
 
 def action_batch_generate(conn, body):
-    """Пакетная генерация: получает список курсов (course_info[]) и создаёт программы для тех,
-    у кого их ещё нет. Возвращает отчёт по каждому."""
+    """Пакетная генерация. ВАЖНО: каждый курс обрабатывается изолированно — даже если падает 1, остальные сохраняются.
+    Если ИИ совсем недоступен — включается fallback-генератор, чтобы курс хотя бы получил базовую структуру."""
     courses = body.get('courses') or []
     force = bool(body.get('force'))
+    allow_fallback = body.get('allow_fallback', True)
     if not courses or not isinstance(courses, list):
         return err('courses: массив объектов с course_info')
 
-    limit = int(body.get('limit') or 5)
+    # Лимит 1 чтобы каждый курс шёл отдельным запросом — нет каскадных падений
+    limit = int(body.get('limit') or 1)
     courses = courses[:limit]
 
     results = []
@@ -397,7 +531,22 @@ def action_batch_generate(conn, body):
             results.append({'course_id': course_id, 'skipped': True, 'reason': 'не число'})
             continue
 
-        existing, _ = fetch_existing(conn, course_id)
+        # Проверяем что не было пересечения параллельных запросов
+        try:
+            existing, _ = fetch_existing(conn, course_id)
+        except Exception as e:
+            results.append({
+                'course_id': course_id,
+                'title': course_info.get('title'),
+                'generated': False,
+                'error': f'БД-ошибка при проверке: {str(e)[:80]}',
+            })
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            continue
+
         if existing and not force:
             results.append({
                 'course_id': course_id,
@@ -408,7 +557,15 @@ def action_batch_generate(conn, body):
             })
             continue
 
+        # ИИ-генерация с ретраями
         plan, gen_err = generate_curriculum(conn, course_info)
+        used_fallback = False
+
+        # Если ИИ не справился — используем fallback (если разрешено)
+        if not plan and allow_fallback:
+            plan = build_fallback_curriculum(course_info)
+            used_fallback = True
+
         if not plan:
             results.append({
                 'course_id': course_id,
@@ -418,25 +575,42 @@ def action_batch_generate(conn, body):
             })
             continue
 
-        save_curriculum(conn, course_id, course_info, plan)
-        curr, _ = fetch_existing(conn, course_id)
-        results.append({
-            'course_id': course_id,
-            'title': course_info.get('title'),
-            'generated': True,
-            'total_lessons': curr['total_lessons'] if curr else None,
-            'total_modules': curr['total_modules'] if curr else None,
-        })
+        # Изолированная транзакция: даже если сохранение упадёт — остальные курсы не пострадают
+        try:
+            save_curriculum(conn, course_id, course_info, plan)
+            curr, _ = fetch_existing(conn, course_id)
+            results.append({
+                'course_id': course_id,
+                'title': course_info.get('title'),
+                'generated': True,
+                'fallback': used_fallback,
+                'total_lessons': curr['total_lessons'] if curr else None,
+                'total_modules': curr['total_modules'] if curr else None,
+                'ai_error': gen_err if used_fallback else None,
+            })
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            results.append({
+                'course_id': course_id,
+                'title': course_info.get('title'),
+                'generated': False,
+                'error': f'ошибка сохранения: {str(e)[:80]}',
+            })
 
     generated = sum(1 for r in results if r.get('generated'))
     skipped = sum(1 for r in results if r.get('skipped'))
     failed = sum(1 for r in results if r.get('generated') is False)
+    fallback_count = sum(1 for r in results if r.get('fallback'))
 
     return ok({
         'processed': len(results),
         'generated': generated,
         'skipped': skipped,
         'failed': failed,
+        'fallback_used': fallback_count,
         'results': results,
     })
 
