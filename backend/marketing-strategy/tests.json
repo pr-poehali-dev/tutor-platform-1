@@ -1,0 +1,45 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Без PIN — 403",
+      "method": "GET",
+      "path": "/?action=analyze",
+      "expectedStatus": 403
+    },
+    {
+      "name": "Algorithm analyze",
+      "method": "GET",
+      "path": "/?action=analyze&days=30",
+      "headers": {"X-Admin-Pin": "7777"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Segments",
+      "method": "GET",
+      "path": "/?action=segments",
+      "headers": {"X-Admin-Pin": "7777"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Tasks list",
+      "method": "GET",
+      "path": "/?action=tasks",
+      "headers": {"X-Admin-Pin": "7777"},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Task create",
+      "method": "POST",
+      "path": "/?action=task_create",
+      "headers": {"X-Admin-Pin": "7777", "Content-Type": "application/json"},
+      "body": "{\"title\":\"Тестовая задача\",\"description\":\"test\",\"priority\":\"high\"}",
+      "expectedStatus": 200
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import func2url from "../../../backend/func2url.json";
+import InboxFromMarketing from "@/components/admin/InboxFromMarketing";
 
 const SALES_URL = (func2url as Record<string, string>)["sales-dashboard"];
 const PIN_KEY = "uchispro_admin_pin_v1";
@@ -247,6 +248,9 @@ export default function SalesDashboard() {
             sub="по оплаченным заказам"
           />
         </div>
+
+        {/* Входящие задачи от отдела маркетинга */}
+        <InboxFromMarketing pin={pin} />
 
         {/* Динамика и воронка */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">

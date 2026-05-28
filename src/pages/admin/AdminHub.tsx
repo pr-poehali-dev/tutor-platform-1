@@ -29,6 +29,14 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    group: "Отдел маркетинга",
+    items: [
+      { label: "Стратегия и аналитика", path: "/admin/marketing", icon: "Target", description: "SWOT, воронка, когорты, RFM-сегменты, идеи роста и план на месяц" },
+      { label: "ИИ-стратег", path: "/admin/marketing", icon: "Brain", description: "Глубокий анализ от GPT с рекомендациями и расчётом эффекта в ₽" },
+      { label: "Задачи отделу продаж", path: "/admin/marketing", icon: "ClipboardList", description: "Создание и контроль задач: прозвон лидов, реактивация, кампании" },
+    ],
+  },
+  {
     group: "Маркетинг и продвижение",
     items: [
       { label: "Промо-ролики для соцсетей", path: "/promo/video", icon: "Clapperboard", description: "Генерация видеообзоров с озвучкой для VK, TikTok, YouTube Shorts" },
