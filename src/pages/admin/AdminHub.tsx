@@ -22,6 +22,13 @@ interface Section {
 
 const SECTIONS: Section[] = [
   {
+    group: "Отдел продаж",
+    items: [
+      { label: "Дашборд продаж", path: "/admin/sales", icon: "BarChart3", description: "KPI, выручка, воронка, конверсия и динамика по дням" },
+      { label: "База клиентов", path: "/admin/sales", icon: "Users", description: "Поиск по email/телефону, сегменты, LTV, история покупок" },
+    ],
+  },
+  {
     group: "Маркетинг и продвижение",
     items: [
       { label: "Промо-ролики для соцсетей", path: "/promo/video", icon: "Clapperboard", description: "Генерация видеообзоров с озвучкой для VK, TikTok, YouTube Shorts" },
