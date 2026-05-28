@@ -149,6 +149,27 @@ def handler(event, context):
             'body': json.dumps({'error': 'Method not allowed'})
         }
 
+    # ════════════════════════════════════════════════════════════════════
+    # АКЦИЯ «ДОБРО»: оплата приостановлена до 15.06.2026 23:59 (Europe/Moscow)
+    # Возвращаем 423 Locked с понятным сообщением, чтобы фронт сразу показал баннер.
+    # ════════════════════════════════════════════════════════════════════
+    from datetime import timezone, timedelta
+    promo_end = datetime(2026, 6, 15, 23, 59, 59,
+                         tzinfo=timezone(timedelta(hours=3)))
+    if datetime.now(timezone.utc) <= promo_end.astimezone(timezone.utc):
+        return {
+            'statusCode': 423,
+            'headers': HEADERS,
+            'body': json.dumps({
+                'error': 'payment_paused_by_promo',
+                'promo_code': 'DOBRO',
+                'promo_end': '2026-06-15T23:59:59+03:00',
+                'message': 'Платежи приостановлены до 15 июня 2026 года в рамках акции '
+                           '«ДОБРО». Все курсы и ИИ-репетитор доступны бесплатно.',
+                'redirect': '/promo/dobro',
+            }, ensure_ascii=False)
+        }
+
     # Parse body
     body = event.get('body', '{}')
     if event.get('isBase64Encoded'):

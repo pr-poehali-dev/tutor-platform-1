@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { useAuth } from "@/context/AuthContext";
+import { isPromoActive, formatEndDate, PROMO_CODE } from "@/components/promo/dobroConfig";
 
 const PLANS = [
   {
@@ -129,7 +130,14 @@ export default function Pricing() {
   const { isAuthenticated, openLogin } = useAuth();
   const navigate = useNavigate();
 
+  const promoOn = isPromoActive();
+
   const handlePlanClick = (planId: string) => {
+    // Во время акции «ДОБРО» все оплаты заблокированы — перенаправляем на курсы
+    if (promoOn) {
+      navigate("/courses");
+      return;
+    }
     if (!isAuthenticated) {
       try {
         sessionStorage.setItem("pending_checkout_plan", planId);
@@ -182,6 +190,27 @@ export default function Pricing() {
           <Icon name="ArrowLeft" size={16} />
           На главную
         </Link>
+
+        {/* Баннер акции ДОБРО */}
+        {promoOn && (
+          <div className="mb-8 bg-gradient-to-r from-rose-500/20 via-pink-500/20 to-orange-500/20 border-2 border-rose-500/40 rounded-3xl p-5 md:p-6 flex items-start gap-3 flex-wrap">
+            <div className="text-4xl flex-shrink-0">❤️</div>
+            <div className="flex-1 min-w-[260px]">
+              <p className="font-montserrat font-black text-white text-base md:text-lg mb-1">
+                Акция «{PROMO_CODE}»: оплата на паузе до {formatEndDate()}
+              </p>
+              <p className="text-white/80 text-sm">
+                Все тарифы доступны <strong>бесплатно</strong> прямо сейчас — без карты и подписки. Ниже описание тарифов на период после акции.
+              </p>
+            </div>
+            <Link
+              to="/courses"
+              className="bg-white text-rose-600 font-black text-sm px-5 py-2.5 rounded-xl hover:scale-[1.03] transition-transform"
+            >
+              Открыть курсы
+            </Link>
+          </div>
+        )}
 
         {/* Header */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-12 md:mb-16">
@@ -258,14 +287,16 @@ export default function Pricing() {
               <button
                 onClick={() => handlePlanClick(plan.id)}
                 className={`w-full font-bold text-sm py-3 rounded-2xl transition-all ${
-                  plan.highlighted
+                  promoOn
+                    ? "bg-gradient-to-r from-rose-500 to-orange-500 text-white hover:opacity-90"
+                    : plan.highlighted
                     ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
                     : plan.price === 0
                     ? "bg-white/8 border border-white/15 text-white hover:bg-white/12"
                     : "bg-white text-background hover:bg-white/90"
                 }`}
               >
-                {plan.cta}
+                {promoOn ? "❤️ Бесплатно по акции ДОБРО" : plan.cta}
               </button>
             </div>
           ))}

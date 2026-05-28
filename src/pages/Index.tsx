@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import StarsBackground from "@/components/home/StarsBackground";
 import HomeSections from "@/components/home/HomeSections";
+import DobroBanner from "@/components/promo/DobroBanner";
 import { useActiveSection } from "@/components/home/useActiveSection";
 import { HOME_JSON_LD } from "@/components/home/constants";
 
@@ -36,6 +37,8 @@ export default function Index() {
           <Breadcrumbs items={crumbs} />
         </div>
       </div>
+
+      <DobroBanner />
 
       <HomeSections />
 

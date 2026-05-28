@@ -14,6 +14,7 @@ import { AccessProvider } from "@/context/AccessContext";
 import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import UtmTracker from "@/components/ads/UtmTracker";
+import DobroTopBar from "@/components/promo/DobroTopBar";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -51,6 +52,7 @@ const Contacts = lazy(() => import("./pages/Contacts"));
 const Referral = lazy(() => import("./pages/Referral"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Status = lazy(() => import("./pages/Status"));
+const PromoDobro = lazy(() => import("./pages/PromoDobro"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -81,6 +83,7 @@ const App = () => (
           <BrowserRouter>
             <YandexMetrika />
             <UtmTracker />
+            <DobroTopBar />
             <AuthProvider>
               <AccessProvider>
                 <Suspense fallback={<PageSkeleton />}>
@@ -121,6 +124,7 @@ const App = () => (
                     <Route path="/referral" element={<Referral />} />
                     <Route path="/reviews" element={<Reviews />} />
                     <Route path="/status" element={<Status />} />
+                    <Route path="/promo/dobro" element={<PromoDobro />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />

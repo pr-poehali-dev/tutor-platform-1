@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { isValidEmail } from "@/components/extensions/yookassa/useYookassa";
+import { isPromoActive } from "@/components/promo/dobroConfig";
 
 type PlanId = "trial" | "base" | "pro" | "family";
 
@@ -78,6 +79,13 @@ export default function Checkout() {
   useEffect(() => {
     if (!loading && !isAuthenticated) openLogin();
   }, [loading, isAuthenticated, openLogin]);
+
+  // Во время акции «ДОБРО» все оплаты заблокированы — отправляем на лендинг акции
+  useEffect(() => {
+    if (isPromoActive()) {
+      navigate("/promo/dobro", { replace: true });
+    }
+  }, [navigate]);
 
   if (loading) {
     return (
