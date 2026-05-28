@@ -14,6 +14,38 @@ export async function seedIfEmpty(): Promise<{ ok: boolean; auto_seeded?: boolea
     return { ok: false };
   }
 }
+
+// ─── Health-monitor ──────────────────────────────────────────────────
+export interface FeedHealthAlert {
+  severity: "critical" | "warning" | "info" | string;
+  type: string;
+  title: string;
+  body: string;
+  created_at: string | null;
+}
+
+export interface FeedHealth {
+  status: "ok" | "warning" | "critical" | string;
+  metrics: {
+    total_published: number;
+    fresh_24h: number;
+    sources_active: number;
+    sources_disabled: number;
+  };
+  alerts_count: number;
+  alerts: FeedHealthAlert[];
+  last_run: { kind: string | null; status: string | null; at: string | null } | null;
+}
+
+export async function fetchFeedHealth(): Promise<FeedHealth | null> {
+  try {
+    const res = await fetch(`${CURATOR_URL}?action=health`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 const TOKEN_KEY = "uchispro_auth_token_v1";
 
 function authToken(): string | null {

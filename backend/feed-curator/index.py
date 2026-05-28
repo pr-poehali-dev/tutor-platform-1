@@ -335,10 +335,25 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
     try:
         xml = fetch_url(rss_url)
     except (urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
+        # Self-healing: после 5 ошибок подряд автоотключаем источник
         cur.execute(
-            "UPDATE feed_sources SET last_error = %s, last_fetched_at = NOW() WHERE id = %s",
+            "UPDATE feed_sources SET last_error = %s, last_fetched_at = NOW(), "
+            "consecutive_errors = consecutive_errors + 1, "
+            "enabled = CASE WHEN consecutive_errors + 1 >= 5 THEN FALSE ELSE enabled END, "
+            "auto_disabled_at = CASE WHEN consecutive_errors + 1 >= 5 THEN NOW() ELSE auto_disabled_at END "
+            "WHERE id = %s "
+            "RETURNING consecutive_errors, enabled",
             (str(e)[:480], src_id)
         )
+        row = cur.fetchone()
+        if row and not row[1]:
+            cur.execute(
+                "INSERT INTO feed_health_events (severity, event_type, title, body, metadata) "
+                "VALUES ('warning', 'source_auto_disabled', %s, %s, %s)",
+                (f'Источник {name} автоматически отключён',
+                 f'5 ошибок подряд при обращении к RSS. Последняя: {str(e)[:300]}',
+                 json.dumps({'source_code': code, 'rss_url': rss_url}, ensure_ascii=False))
+            )
         return {'source': code, 'error': f'fetch: {e}', 'created': 0}
 
     items = parse_rss(xml, limit=limit_per_source * 2)
@@ -384,8 +399,10 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
 
     cur.execute(
         "UPDATE feed_sources SET last_fetched_at = NOW(), last_fetch_count = %s, "
-        "last_error = NULL WHERE id = %s",
-        (created, src_id)
+        "last_error = NULL, consecutive_errors = 0, "
+        "last_success_at = CASE WHEN %s > 0 THEN NOW() ELSE last_success_at END "
+        "WHERE id = %s",
+        (created, created, src_id)
     )
     return {'source': code, 'category': category, 'country': country,
             'language': language, 'fetched': len(items),
@@ -719,17 +736,28 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
                 conn.rollback()
                 err_msg = f'auto_moderate failed: {e}'
 
+            # 2.5 Гарантированное автопополнение из резервного пула — лента не должна стареть
+            topup_result = {'created': 0, 'by_category': {}}
+            try:
+                topup_result = topup_from_demo_pool(cur, min_per_category=2)
+                conn.commit()
+            except (psycopg2.Error, OSError) as e:
+                conn.rollback()
+                topup_result = {'created': 0, 'error': str(e)[:200]}
+
             # 3. Финализируем запись запуска
             cur.execute(
                 "UPDATE feed_cron_runs SET status = %s, fetched = %s, moderated = %s, "
                 "approved = %s, rejected = %s, flagged = %s, error_message = %s, "
                 "payload = %s, finished_at = NOW() WHERE id = %s",
-                ('error' if err_msg else 'ok', fetched_total,
+                ('error' if err_msg else 'ok',
+                 fetched_total + topup_result.get('created', 0),
                  moderation.get('moderated', 0), moderation.get('approved', 0),
                  moderation.get('rejected', 0), moderation.get('flagged', 0),
                  err_msg,
                  json.dumps({'fetch': fetch_results,
-                             'moderation_details': moderation.get('details', [])},
+                             'moderation_details': moderation.get('details', []),
+                             'topup': topup_result},
                             ensure_ascii=False),
                  cron_run_id)
             )
@@ -777,6 +805,85 @@ def handle_cron_log(headers: dict) -> dict:
             return ok({'items': items})
     finally:
         conn.close()
+
+
+def topup_from_demo_pool(cur, target_count: int = 15, min_per_category: int = 2) -> dict:
+    """Берёт случайные шаблоны из feed_demo_pool, перефразирует через ИИ и публикует.
+    Цель: гарантировать минимум N свежих статей в каждой категории."""
+    categories = ('science', 'culture', 'education', 'robots', 'ai', 'grants')
+    created_total = 0
+    created_by_cat: dict = {}
+
+    for cat in categories:
+        # Считаем, сколько в этой категории свежих статей (за 48ч)
+        cur.execute(
+            "SELECT COUNT(*) FROM feed_articles "
+            "WHERE status='published' AND category=%s "
+            "AND COALESCE(published_at, created_at) > NOW() - INTERVAL '48 hours'",
+            (cat,)
+        )
+        fresh = cur.fetchone()[0]
+        need = max(0, min_per_category - fresh)
+        if need == 0:
+            continue
+
+        # Берём наименее использованные шаблоны этой категории
+        cur.execute(
+            "SELECT id, code, seed_title, seed_summary, seed_facts, tags, country, country_flag "
+            "FROM feed_demo_pool WHERE category=%s "
+            "ORDER BY use_count ASC, COALESCE(last_used_at, '2000-01-01'::timestamptz) ASC "
+            "LIMIT %s",
+            (cat, need * 2)  # с запасом на дубли
+        )
+        templates = cur.fetchall()
+
+        for tmpl in templates[:need]:
+            tpl_id, code, title, summary, facts, tags, country, flag = tmpl
+
+            # Проверяем, что такой slug ещё не публиковали недавно (защита от дублей)
+            base_slug = slugify(title)
+            cur.execute(
+                "SELECT 1 FROM feed_articles WHERE slug LIKE %s "
+                "AND created_at > NOW() - INTERVAL '14 days' LIMIT 1",
+                (base_slug + '%',)
+            )
+            if cur.fetchone():
+                continue
+
+            # Прогоняем через ИИ-рерайт (чтобы текст был уникальным)
+            rewrite = rewrite_article(title, summary + '\n\nФакты: ' + facts, cat,
+                                      language='ru', country=country)
+            final_title = (rewrite.get('title') or title)[:380]
+            final_summary = (rewrite.get('summary') or summary)[:900]
+            final_content = (rewrite.get('content') or facts)[:25000]
+            final_tags = rewrite.get('tags') or (json.loads(tags) if isinstance(tags, str) else (tags or []))
+
+            words = len(final_content.split())
+            reading_time = max(2, min(20, round(words / 200))) if words else 3
+            slug = unique_slug(cur, slugify(final_title))
+
+            cur.execute(
+                "INSERT INTO feed_articles "
+                "(slug, title, summary, content, category, source_kind, source_name, "
+                "status, tags, reading_time_min, ai_processed, ai_notes, "
+                "source_language, source_country, published_at) "
+                "VALUES (%s,%s,%s,%s,%s,'agent',%s,'published',%s,%s,TRUE,%s,'ru',%s,NOW())",
+                (slug, final_title, final_summary, final_content, cat,
+                 f'УЧИСЬПРО · Редакционный материал ({country})',
+                 json.dumps(final_tags, ensure_ascii=False) if isinstance(final_tags, list) else json.dumps([cat]),
+                 reading_time,
+                 f'Автопополнение из резервного пула. Шаблон: {code}. Страна: {country}.',
+                 country)
+            )
+            cur.execute(
+                "UPDATE feed_demo_pool SET use_count = use_count + 1, last_used_at = NOW() "
+                "WHERE id = %s",
+                (tpl_id,)
+            )
+            created_total += 1
+            created_by_cat[cat] = created_by_cat.get(cat, 0) + 1
+
+    return {'created': created_total, 'by_category': created_by_cat}
 
 
 def handle_seed_if_empty(event: dict) -> dict:
@@ -832,16 +939,209 @@ def handle_seed_if_empty(event: dict) -> dict:
                     conn.rollback()
                     results.append({'source': s[1], 'error': str(e)[:200]})
 
+            # 4) Если RSS-источники не дали достаточно (мало или 0) — добираем из demo-pool
+            topup_result = {'created': 0, 'by_category': {}}
+            if fetched_total < 6:
+                try:
+                    topup_result = topup_from_demo_pool(cur, min_per_category=2)
+                    conn.commit()
+                except (psycopg2.Error, OSError) as e:
+                    conn.rollback()
+                    topup_result = {'created': 0, 'error': str(e)[:200]}
+
             cur.execute(
                 "UPDATE feed_cron_runs SET status='ok', fetched=%s, "
                 "payload=%s, finished_at=NOW() WHERE id=%s",
-                (fetched_total,
-                 json.dumps({'auto_seed': True, 'results': results}, ensure_ascii=False),
+                (fetched_total + topup_result.get('created', 0),
+                 json.dumps({'auto_seed': True, 'results': results,
+                             'topup': topup_result}, ensure_ascii=False),
                  run_id)
             )
             conn.commit()
             return ok({'ok': True, 'auto_seeded': True, 'run_id': run_id,
-                       'fetched': fetched_total, 'sources': len(results)})
+                       'fetched_from_rss': fetched_total,
+                       'fetched_from_pool': topup_result.get('created', 0),
+                       'sources_tried': len(results)})
+    finally:
+        conn.close()
+
+
+def handle_keep_alive(event: dict, headers: dict) -> dict:
+    """Лёгкий часовой пульс: проверяем здоровье ленты и при нехватке добиваем из пула.
+
+    Срабатывает раз в час по cron. Не требует auth — но имеет встроенный rate-limit 50 минут.
+    Полностью автономный: ничего не падает, всегда возвращает 200.
+    """
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Rate-limit: не чаще раз в 50 минут
+            cur.execute(
+                "SELECT id FROM feed_cron_runs "
+                "WHERE kind='keep_alive' AND started_at > NOW() - INTERVAL '50 minutes' "
+                "ORDER BY started_at DESC LIMIT 1"
+            )
+            if cur.fetchone():
+                return ok({'ok': True, 'skipped': True, 'reason': 'rate-limited'})
+
+            cur.execute(
+                "INSERT INTO feed_cron_runs (kind, status) VALUES ('keep_alive','running') "
+                "RETURNING id"
+            )
+            run_id = cur.fetchone()[0]
+            conn.commit()
+
+            # Метрики живучести
+            cur.execute(
+                "SELECT COUNT(*) FROM feed_articles WHERE status='published' "
+                "AND COALESCE(published_at, created_at) > NOW() - INTERVAL '24 hours'"
+            )
+            fresh_24h = cur.fetchone()[0]
+
+            cur.execute("SELECT COUNT(*) FROM feed_articles WHERE status='published'")
+            total_published = cur.fetchone()[0]
+
+            cur.execute(
+                "SELECT COUNT(*) FROM feed_sources WHERE enabled = TRUE"
+            )
+            active_sources = cur.fetchone()[0]
+
+            cur.execute(
+                "SELECT COUNT(*) FROM feed_sources "
+                "WHERE auto_disabled_at IS NOT NULL "
+                "AND auto_disabled_at > NOW() - INTERVAL '7 days'"
+            )
+            recently_disabled = cur.fetchone()[0]
+
+            # ЛОГИКА АВТОЛЕЧЕНИЯ:
+            # 1. Если совсем пусто — топап из пула на 18 статей (3 на категорию)
+            # 2. Если за 24 часа < 6 свежих — добиваем минимум до 2 на категорию
+            # 3. Иначе ничего не делаем
+            topup_result = {'created': 0, 'by_category': {}}
+            action_taken = 'none'
+
+            if total_published == 0:
+                topup_result = topup_from_demo_pool(cur, min_per_category=3)
+                action_taken = 'emergency_seed'
+            elif fresh_24h < 6:
+                topup_result = topup_from_demo_pool(cur, min_per_category=2)
+                action_taken = 'top_up'
+            conn.commit()
+
+            # Health-monitor: алерт если много отвалившихся источников
+            if recently_disabled >= 3:
+                cur.execute(
+                    "SELECT 1 FROM feed_health_events "
+                    "WHERE event_type='many_sources_disabled' "
+                    "AND created_at > NOW() - INTERVAL '24 hours' LIMIT 1"
+                )
+                if not cur.fetchone():
+                    cur.execute(
+                        "INSERT INTO feed_health_events "
+                        "(severity, event_type, title, body, metadata) "
+                        "VALUES ('critical', 'many_sources_disabled', %s, %s, %s)",
+                        (f'Отключено {recently_disabled} источников за 7 дней',
+                         'Несколько RSS-источников подряд показывают ошибки. '
+                         'Проверь их в админке.',
+                         json.dumps({'count': recently_disabled}, ensure_ascii=False))
+                    )
+
+            # Health-monitor: критический алерт если лента «протухает»
+            if fresh_24h == 0 and total_published > 0 and action_taken == 'none':
+                cur.execute(
+                    "INSERT INTO feed_health_events "
+                    "(severity, event_type, title, body, metadata) "
+                    "VALUES ('warning', 'feed_stale', %s, %s, %s)",
+                    ('Лента не обновлялась 24 часа',
+                     'Cron работает, но новых статей не приходит. Проверь polza.ai и RSS.',
+                     json.dumps({'fresh_24h': 0, 'total': total_published}, ensure_ascii=False))
+                )
+
+            cur.execute(
+                "UPDATE feed_cron_runs SET status='ok', fetched=%s, "
+                "payload=%s, finished_at=NOW() WHERE id=%s",
+                (topup_result.get('created', 0),
+                 json.dumps({
+                     'fresh_24h': fresh_24h,
+                     'total_published': total_published,
+                     'active_sources': active_sources,
+                     'recently_disabled': recently_disabled,
+                     'action_taken': action_taken,
+                     'topup': topup_result,
+                 }, ensure_ascii=False),
+                 run_id)
+            )
+            conn.commit()
+
+            return ok({
+                'ok': True, 'run_id': run_id,
+                'metrics': {
+                    'fresh_24h': fresh_24h,
+                    'total_published': total_published,
+                    'active_sources': active_sources,
+                    'recently_disabled': recently_disabled,
+                },
+                'action_taken': action_taken,
+                'topup_created': topup_result.get('created', 0),
+            })
+    finally:
+        conn.close()
+
+
+def handle_health(event: dict, headers: dict) -> dict:
+    """Публичный health-эндпоинт: метрики и нерешённые алерты."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM feed_articles WHERE status='published'")
+            total = cur.fetchone()[0]
+            cur.execute(
+                "SELECT COUNT(*) FROM feed_articles WHERE status='published' "
+                "AND COALESCE(published_at, created_at) > NOW() - INTERVAL '24 hours'"
+            )
+            fresh_24h = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM feed_sources WHERE enabled=TRUE")
+            sources_active = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM feed_sources WHERE auto_disabled_at IS NOT NULL")
+            sources_disabled = cur.fetchone()[0]
+            cur.execute(
+                "SELECT severity, event_type, title, body, created_at "
+                "FROM feed_health_events WHERE resolved_at IS NULL "
+                "ORDER BY created_at DESC LIMIT 10"
+            )
+            alerts = [
+                {'severity': r[0], 'type': r[1], 'title': r[2], 'body': r[3] or '',
+                 'created_at': r[4].isoformat() if r[4] else None}
+                for r in cur.fetchall()
+            ]
+            cur.execute(
+                "SELECT kind, status, started_at FROM feed_cron_runs "
+                "ORDER BY started_at DESC LIMIT 1"
+            )
+            last_run = cur.fetchone()
+
+            status = 'ok'
+            if total == 0:
+                status = 'critical'
+            elif fresh_24h == 0 or sources_disabled > 3:
+                status = 'warning'
+
+            return ok({
+                'status': status,
+                'metrics': {
+                    'total_published': total,
+                    'fresh_24h': fresh_24h,
+                    'sources_active': sources_active,
+                    'sources_disabled': sources_disabled,
+                },
+                'alerts_count': len(alerts),
+                'alerts': alerts,
+                'last_run': {
+                    'kind': last_run[0] if last_run else None,
+                    'status': last_run[1] if last_run else None,
+                    'at': last_run[2].isoformat() if last_run and last_run[2] else None,
+                } if last_run else None,
+            })
     finally:
         conn.close()
 
@@ -878,5 +1178,11 @@ def handler(event: dict, context) -> dict:
     # Публичный: автонаполнение если лента пуста (без auth, с rate-limit)
     if action == 'seed_if_empty':
         return handle_seed_if_empty(event)
+    # Публичный часовой пульс (rate-limit 50 мин). Автозалечивание ленты.
+    if action == 'keep_alive':
+        return handle_keep_alive(event, headers)
+    # Публичный health-check (метрики + алерты)
+    if action == 'health':
+        return handle_health(event, headers)
 
     return err('Неизвестное действие', 404)
