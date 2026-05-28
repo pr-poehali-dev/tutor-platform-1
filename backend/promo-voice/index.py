@@ -19,9 +19,9 @@ import hashlib
 import boto3
 
 
-VOICE = 'alexander'        # молодой мужской премиум-голос (естественный)
-EMOTION = 'good'           # дружелюбно
-SPEED = 0.98               # естественный темп, чтобы не обрезались окончания
+VOICE = 'filipp'           # молодой мужской, доступен на v1 (alexander требует v3)
+EMOTION = 'neutral'        # естественнее наигранного 'good'
+SPEED = 0.95               # чуть медленнее — окончания не глотаются
 LANG = 'ru-RU'
 FORMAT = 'mp3'
 SAMPLE_RATE = '48000'
@@ -164,13 +164,21 @@ def handler(event: dict, context) -> dict:
     try:
         audio = synth_one(full_text)
     except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode('utf-8', errors='ignore')[:500]
+        except Exception:
+            err_body = ''
         return {'statusCode': 502, 'headers': HEADERS,
                 'body': json.dumps({'error': f'speechkit_http_{e.code}',
-                                    'detail': str(e.read()[:200])})}
+                                    'detail': err_body,
+                                    'voice': VOICE,
+                                    'text_preview': full_text[:200]},
+                                   ensure_ascii=False)}
     except (urllib.error.URLError, RuntimeError, OSError) as e:
         return {'statusCode': 502, 'headers': HEADERS,
                 'body': json.dumps({'error': 'speechkit_failed',
-                                    'detail': str(e)[:200]})}
+                                    'detail': str(e)[:200]},
+                                   ensure_ascii=False)}
 
     # Загружаем в S3 для скачивания, но не критично если упадёт —
     # клиент получит аудио в base64 напрямую (без CORS-проблем с CDN).

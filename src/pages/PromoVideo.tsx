@@ -61,10 +61,11 @@ export default function PromoVideo() {
           scenes: variant.scenes.map((s) => ({ text: s.voice, duration: s.duration })),
         }),
       });
+      const voiceData = await voiceResp.json().catch(() => ({}));
       if (!voiceResp.ok) {
-        throw new Error(`Не удалось сгенерировать озвучку (HTTP ${voiceResp.status})`);
+        const reason = voiceData?.detail || voiceData?.error || `HTTP ${voiceResp.status}`;
+        throw new Error(`Не удалось сгенерировать озвучку: ${reason}`);
       }
-      const voiceData = await voiceResp.json();
       // Бэк возвращает base64 (обходит CORS на CDN) + опционально URL для скачивания
       if (!voiceData.audio_base64 && !voiceData.audio_url) {
         throw new Error(voiceData.error || "Бэкенд не вернул аудио-данные");
