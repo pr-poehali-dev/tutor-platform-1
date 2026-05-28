@@ -38,7 +38,18 @@ def handler(event, context):
         body = json.loads(body_str) if isinstance(body_str, str) else body_str
 
         audio_b64 = body.get('audio_base64', '')
-        fmt = body.get('format', 'oggopus')
+        fmt_raw = (body.get('format') or 'oggopus').strip().lower()
+
+        # Yandex SpeechKit v1 принимает только lpcm и oggopus.
+        # Safari/iOS пишут audio/mp4 (AAC) — Yandex его не поймёт.
+        # Поэтому для mp4 не передаём format вообще: Yandex попытается
+        # определить контейнер по первым байтам.
+        if fmt_raw in ('mp4', 'm4a', 'aac', 'mpeg'):
+            fmt = ''  # пусть Yandex определит сам
+        elif fmt_raw == 'lpcm':
+            fmt = 'lpcm'
+        else:
+            fmt = 'oggopus'
 
         if not audio_b64:
             return {
@@ -94,10 +105,27 @@ def handler(event, context):
                 text = result.get('result', '').strip()
         except urllib.error.HTTPError as e:
             err_body = e.read().decode('utf-8', errors='ignore')
+            # Делаем понятное пользователю сообщение
+            low = err_body.lower()
+            if 'format' in low or 'codec' in low or 'unsupported' in low:
+                user_msg = ('Браузер записал звук в формате, который не понимает '
+                            'распознавалка. Открой сайт в Chrome или обнови Safari.')
+            elif 'too short' in low or 'short' in low:
+                user_msg = 'Запись слишком короткая. Зажми кнопку и говори чётче.'
+            elif 'quota' in low or 'limit' in low or e.code == 429:
+                user_msg = 'Сервис распознавания временно перегружен. Попробуй через минуту.'
+            elif e.code in (401, 403):
+                user_msg = 'Сбой авторизации сервиса. Мы уже разбираемся.'
+            else:
+                user_msg = f'Сервис распознавания ответил ошибкой (код {e.code}). Попробуй ещё раз.'
             return {
                 'statusCode': 502,
                 'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': f'Yandex STT error: {e.code}', 'detail': err_body[:300]}, ensure_ascii=False),
+                'body': json.dumps({
+                    'error': user_msg,
+                    'yandex_code': e.code,
+                    'detail': err_body[:300],
+                }, ensure_ascii=False),
             }
 
         return {

@@ -38,20 +38,47 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
       return;
     }
 
+    // КРИТИЧНО: MediaRecorder может вообще отсутствовать (старые WebView,
+    // Telegram in-app браузер на iOS, Samsung Internet старых версий)
+    if (typeof MediaRecorder === "undefined") {
+      setVoiceError(
+        "Твой браузер не умеет записывать звук. Открой учисьпро.рф в обычном Safari или Chrome (не во встроенном браузере приложения соцсети).",
+      );
+      return;
+    }
+
+    // Подбираем формат с учётом Safari (он умеет только audio/mp4)
+    const mimeCandidates = [
+      "audio/ogg;codecs=opus",
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4;codecs=mp4a.40.2",
+      "audio/mp4",
+    ];
+    const mimeType = mimeCandidates.find((m) =>
+      typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(m),
+    ) || "";
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Try opus first (best for Yandex), fallback to webm
-      let mimeType = "audio/ogg;codecs=opus";
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = "audio/webm;codecs=opus";
-      }
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = "audio/webm";
+      // Создание рекордера может упасть, даже если выше всё прошло
+      let recorder: MediaRecorder;
+      try {
+        recorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+      } catch (mrErr) {
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        const m = mrErr instanceof Error ? mrErr.message : String(mrErr);
+        setVoiceError(
+          `Этот браузер не поддерживает запись звука. Открой сайт в Chrome или обнови Safari до последней версии. (${m.slice(0, 80)})`,
+        );
+        return;
       }
 
-      const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
@@ -59,11 +86,20 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      recorder.onerror = (ev) => {
+        const err = (ev as unknown as { error?: { name?: string; message?: string } }).error;
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        setVoiceError(`Запись прервалась: ${err?.message || err?.name || "неизвестная ошибка"}`);
+        setIsRecording(false);
+      };
+
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
         streamRef.current = null;
 
-        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const realMime = recorder.mimeType || mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: realMime });
         if (blob.size < 1000) {
           setVoiceError("Слишком короткая запись");
           return;
@@ -72,7 +108,10 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
         setIsTranscribing(true);
         try {
           const audioB64 = await blobToBase64(blob);
-          const format = mimeType.includes("ogg") ? "oggopus" : "oggopus";
+          // Передаём фактический формат — STT должен его уметь распаковать
+          const format = realMime.includes("mp4") ? "mp4"
+                       : realMime.includes("ogg") ? "oggopus"
+                       : "oggopus";
           const res = await fetch(STT_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -113,6 +152,8 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
         setVoiceError("Микрофон не найден. Подключи микрофон или гарнитуру и попробуй ещё раз.");
       } else if (name === "NotReadableError" || name === "AbortError") {
         setVoiceError("Микрофон занят другим приложением. Закрой Zoom, Discord, Skype и другие программы со звонками.");
+      } else if (name === "TypeError" || /constraints/i.test(err?.message || "")) {
+        setVoiceError("Браузер не понял настройки записи. Открой сайт в обычном Safari или Chrome (не из встроенного браузера соцсети).");
       } else {
         const msg = err?.message || "Нет доступа к микрофону";
         setVoiceError(`Не удалось включить микрофон: ${msg}`);

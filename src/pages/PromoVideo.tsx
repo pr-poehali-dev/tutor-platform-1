@@ -198,7 +198,7 @@ export default function PromoVideo() {
         )}
 
         {/* Превью / плеер */}
-        <div className={`relative rounded-3xl overflow-hidden border border-white/10 bg-black mb-6 ${
+        <div className={`relative rounded-3xl overflow-hidden border border-white/10 bg-black mb-4 ${
           variant.aspect === "9:16" ? "max-w-[400px] mx-auto aspect-[9/16]" : "aspect-video"
         }`}>
           {current ? (
@@ -207,17 +207,40 @@ export default function PromoVideo() {
               controls
               autoPlay
               loop
+              poster={variant.posterUrl}
               className="w-full h-full object-contain bg-black"
             />
           ) : (
-            <div className={`absolute inset-0 bg-gradient-to-br ${variant.scenes[0].bg} flex flex-col items-center justify-center text-center p-6`}>
-              <div className="text-6xl md:text-8xl mb-4">{variant.scenes[0].emoji}</div>
-              <p className="font-montserrat font-black text-white text-2xl md:text-4xl mb-2 whitespace-pre-line drop-shadow-lg">
-                {variant.scenes[0].title}
-              </p>
-              <p className="text-white/80 text-sm md:text-base">Нажми «Создать ролик» внизу — через минуту здесь будет видео</p>
-            </div>
+            <>
+              <img
+                src={variant.posterUrl}
+                alt={`Постер ролика: ${variant.label}`}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col items-center justify-end text-center p-6 pb-8">
+                <p className="text-white/95 font-bold text-base md:text-lg drop-shadow-lg mb-2">
+                  Жми «Создать ролик» — через минуту здесь будет видео
+                </p>
+                <p className="text-white/70 text-xs md:text-sm">
+                  Сейчас показана обложка-постер для соцсетей
+                </p>
+              </div>
+            </>
           )}
+        </div>
+
+        {/* Кнопка скачать постер отдельно */}
+        <div className="text-center mb-6">
+          <a
+            href={variant.posterUrl}
+            download={`uchispro-poster-${variant.id}.jpg`}
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-100 text-sm font-bold underline underline-offset-4"
+          >
+            <Icon name="Image" size={14} />
+            Скачать обложку-постер для соцсетей ({variant.aspect})
+          </a>
         </div>
 
         {/* Прогресс / кнопки */}

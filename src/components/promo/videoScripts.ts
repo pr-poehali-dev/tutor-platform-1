@@ -37,6 +37,8 @@ export interface VideoVariant {
   platforms: string[];
   /** Сцены. */
   scenes: VideoScene[];
+  /** Готовая обложка-постер (FLUX) — прикреплять при публикации в соцсетях. */
+  posterUrl: string;
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -147,6 +149,7 @@ export const VIDEO_SHORTS_60: VideoVariant = {
   width: 720,
   height: 1280,
   platforms: ["VK Клипы", "TikTok", "YouTube Shorts", "Дзен Видео"],
+  posterUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/731fc37c-ffae-4f3f-a1e6-34a7fe86d6b0.jpg",
   scenes: [
     HOOK,                  // 4s
     PROBLEM,               // 6s
@@ -168,6 +171,7 @@ export const VIDEO_WIDE_60: VideoVariant = {
   width: 1280,
   height: 720,
   platforms: ["VK Видео", "Rutube", "Дзен", "Telegram"],
+  posterUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/91289bad-1c65-43d9-a125-881fe8491313.jpg",
   scenes: [
     HOOK,
     PROBLEM,
@@ -188,6 +192,7 @@ export const VIDEO_WIDE_120: VideoVariant = {
   width: 1280,
   height: 720,
   platforms: ["YouTube", "VK Видео", "Rutube", "Презентации"],
+  posterUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/2c748f4f-6859-4396-af29-741d5bebfae3.jpg",
   scenes: [
     { ...HOOK, duration: 5 },
     { ...PROBLEM, duration: 8, voice: "Один час с репетитором стоит полторы тысячи рублей. А до экзамена нужно сорок часов. Получается шестьдесят тысяч за подготовку одного ребёнка. И это без гарантии результата." },

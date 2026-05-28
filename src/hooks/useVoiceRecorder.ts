@@ -38,44 +38,84 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
   const start = useCallback(async () => {
     setError(null);
 
+    // 1) Проверка getUserMedia
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setError("Голосовой ввод не поддерживается этим браузером. Открой сайт в Chrome, Safari, Яндекс.Браузере или Edge.");
       setState("error");
       return;
     }
 
+    // 2) HTTPS обязателен
     if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
       setError("Голос работает только по защищённому соединению (https). Открой сайт по адресу https://учисьпро.рф");
       setState("error");
       return;
     }
 
+    // 3) КРИТИЧНО: проверяем MediaRecorder ДО запроса микрофона.
+    //    Некоторые WebView (Telegram in-app, старый Samsung Internet, iOS<14.3)
+    //    вообще не имеют MediaRecorder — раньше тут падал ReferenceError.
+    if (typeof MediaRecorder === "undefined") {
+      setError("Твой браузер не умеет записывать звук. Открой учисьпро.рф в обычном Safari или Chrome (не во встроенном браузере приложения).");
+      setState("error");
+      return;
+    }
+
+    // 4) Подбираем формат с учётом Safari (он умеет только audio/mp4)
+    const mimeCandidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4;codecs=mp4a.40.2",
+      "audio/mp4",
+      "audio/ogg;codecs=opus",
+    ];
+    const mime = mimeCandidates.find((m) =>
+      typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(m),
+    ) || "";  // пустая строка = браузер сам выберет дефолт
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Визуализация уровня звука
-      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const audioCtx = new AC();
-      audioCtxRef.current = audioCtx;
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        analyser.getByteFrequencyData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i++) sum += data[i];
-        setLevel(Math.min(1, sum / data.length / 100));
-        rafRef.current = requestAnimationFrame(tick);
-      };
-      tick();
+      // Визуализация уровня звука (не критично, если упадёт — продолжаем)
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AC) {
+          const audioCtx = new AC();
+          audioCtxRef.current = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          const tick = () => {
+            analyser.getByteFrequencyData(data);
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) sum += data[i];
+            setLevel(Math.min(1, sum / data.length / 100));
+            rafRef.current = requestAnimationFrame(tick);
+          };
+          tick();
+        }
+      } catch {
+        // Визуализация не получилась — не страшно, продолжаем без неё
+      }
 
-      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      // 5) Создаём MediaRecorder — оборачиваем в try, чтобы при неподдержке
+      //    закрыть стрим и показать понятную ошибку.
+      let recorder: MediaRecorder;
+      try {
+        recorder = mime
+          ? new MediaRecorder(stream, { mimeType: mime })
+          : new MediaRecorder(stream);
+      } catch (mrErr) {
+        cleanup();
+        const m = mrErr instanceof Error ? mrErr.message : String(mrErr);
+        setError(`Этот браузер не умеет записывать звук в нужном формате. Попробуй открыть сайт в Chrome или обнови Safari до последней версии. (${m.slice(0, 80)})`);
+        setState("error");
+        return;
+      }
+
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
@@ -83,8 +123,16 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
         if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      recorder.onerror = (ev) => {
+        const err = (ev as unknown as { error?: { name?: string; message?: string } }).error;
+        cleanup();
+        setError(`Запись прервалась: ${err?.message || err?.name || "неизвестная ошибка"}`);
+        setState("error");
+      };
+
       recorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: mime });
+        const realMime = recorder.mimeType || mime || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: realMime });
         cleanup();
         if (blob.size < 800) {
           setState("idle");
@@ -98,10 +146,15 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
           for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
           const b64 = btoa(binary);
 
+          // Передаём фактический формат — STT поймёт что распаковывать
+          const format = realMime.includes("mp4") ? "mp4"
+                       : realMime.includes("ogg") ? "oggopus"
+                       : "oggopus";
+
           const res = await fetch(STT_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ audio_base64: b64 }),
+            body: JSON.stringify({ audio_base64: b64, format }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data?.error || "Ошибка распознавания");
@@ -135,6 +188,8 @@ export default function useVoiceRecorder(onTranscribed: (text: string) => void) 
         setError("Микрофон не найден. Подключи микрофон или гарнитуру и попробуй ещё раз.");
       } else if (name === "NotReadableError" || name === "AbortError") {
         setError("Микрофон занят другим приложением. Закрой Zoom, Discord, Skype и попробуй снова.");
+      } else if (name === "TypeError" || /constraints/i.test(msg)) {
+        setError("Браузер не понял настройки записи. Открой сайт в обычном Safari/Chrome (не из встроенного браузера соцсети).");
       } else {
         setError(msg || "Не удалось включить микрофон");
       }
