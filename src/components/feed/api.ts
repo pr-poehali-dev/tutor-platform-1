@@ -3,6 +3,17 @@ import { FeedArticle, FeedCategory, FeedListResponse } from "./types";
 
 const FEED_URL = (func2url as Record<string, string>)["feed"];
 const CURATOR_URL = (func2url as Record<string, string>)["feed-curator"];
+
+/** Авто-запуск парсера если лента пустая (на бэке стоит rate-limit 30 мин). */
+export async function seedIfEmpty(): Promise<{ ok: boolean; auto_seeded?: boolean; fetched?: number }> {
+  try {
+    const res = await fetch(`${CURATOR_URL}?action=seed_if_empty`);
+    if (!res.ok) return { ok: false };
+    return await res.json();
+  } catch {
+    return { ok: false };
+  }
+}
 const TOKEN_KEY = "uchispro_auth_token_v1";
 
 function authToken(): string | null {

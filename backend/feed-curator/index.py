@@ -779,6 +779,73 @@ def handle_cron_log(headers: dict) -> dict:
         conn.close()
 
 
+def handle_seed_if_empty(event: dict) -> dict:
+    """Публичный авто-запуск парсера, если в ленте 0 статей.
+    Защита от спама: срабатывает максимум раз в 30 минут."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 1) Проверяем что лента действительно пустая
+            cur.execute("SELECT COUNT(*) FROM feed_articles WHERE status='published'")
+            published = cur.fetchone()[0]
+            if published > 0:
+                return ok({'ok': True, 'skipped': True, 'reason': 'feed not empty',
+                           'published_count': published})
+
+            # 2) Проверяем что не было свежего auto-seed (rate limit)
+            cur.execute(
+                "SELECT id, started_at FROM feed_cron_runs "
+                "WHERE kind='auto_seed' AND started_at > NOW() - INTERVAL '30 minutes' "
+                "ORDER BY started_at DESC LIMIT 1"
+            )
+            recent = cur.fetchone()
+            if recent:
+                return ok({'ok': True, 'skipped': True,
+                           'reason': 'recent auto_seed exists',
+                           'last_run_id': recent[0]})
+
+            # 3) Запускаем мини-обход: топ-5 приоритетных RU-источников, по 2 статьи
+            cur.execute(
+                "INSERT INTO feed_cron_runs (kind, status) VALUES ('auto_seed','running') "
+                "RETURNING id"
+            )
+            run_id = cur.fetchone()[0]
+            conn.commit()
+
+            cur.execute(
+                "SELECT id, code, name, category, rss_url, language, country, "
+                "country_flag, priority FROM feed_sources "
+                "WHERE enabled = TRUE AND language = 'ru' "
+                "ORDER BY priority DESC LIMIT 5"
+            )
+            sources = cur.fetchall()
+            fetched_total = 0
+            results = []
+            for s in sources:
+                try:
+                    res = process_source(cur, s, limit_per_source=2)
+                    conn.commit()
+                    results.append(res)
+                    fetched_total += res.get('created', 0)
+                except (psycopg2.Error, urllib.error.URLError,
+                        urllib.error.HTTPError, OSError, ValueError) as e:
+                    conn.rollback()
+                    results.append({'source': s[1], 'error': str(e)[:200]})
+
+            cur.execute(
+                "UPDATE feed_cron_runs SET status='ok', fetched=%s, "
+                "payload=%s, finished_at=NOW() WHERE id=%s",
+                (fetched_total,
+                 json.dumps({'auto_seed': True, 'results': results}, ensure_ascii=False),
+                 run_id)
+            )
+            conn.commit()
+            return ok({'ok': True, 'auto_seeded': True, 'run_id': run_id,
+                       'fetched': fetched_total, 'sources': len(results)})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """ИИ-агент: парсинг RSS и рерайт статей."""
     method = event.get('httpMethod', 'GET')
@@ -808,5 +875,8 @@ def handler(event: dict, context) -> dict:
         return handle_cron(event, headers, body)
     if action == 'cron_log':
         return handle_cron_log(headers)
+    # Публичный: автонаполнение если лента пуста (без auth, с rate-limit)
+    if action == 'seed_if_empty':
+        return handle_seed_if_empty(event)
 
     return err('Неизвестное действие', 404)
