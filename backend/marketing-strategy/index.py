@@ -614,6 +614,118 @@ def handle_strategy(cur, sid: int) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────
+# ЧАТ С ИИ-МАРКЕТОЛОГОМ (бесплатные тактики при нулевом бюджете)
+# ──────────────────────────────────────────────────────────────────────
+
+CHAT_SYSTEM = (
+    "Ты — Юра, ИИ-маркетолог УЧИСЬПРО с 10-летним опытом в EdTech (Skyeng, Учи.ру). "
+    "У владельца БЮДЖЕТ = 0 РУБЛЕЙ на рекламу. Поэтому ВСЕ твои советы — про бесплатные методы: "
+    "SEO, контент-маркетинг, соцсети (VK/Telegram/Reels), реферальная программа, "
+    "партнёрства/бартер с блогерами, отзывы и кейсы, email-рассылки и push, "
+    "PR в СМИ (vc.ru, EdTech-издания), сообщества и форумы (vk.com/edu, родительские чаты). "
+    "ПРИНЦИПЫ: 1) Конкретика, не вода. 2) Чёткий план действий с шагами. "
+    "3) Указывай ожидаемый эффект (лидов, охват, выручка). 4) Не предлагай платные инструменты. "
+    "5) Если данные пользователя показывают слабое место — назови его прямо. "
+    "6) Пиши коротко: 3-5 абзацев максимум, маркированные списки."
+)
+
+
+def fetch_chat_history(cur, limit: int = 20) -> list:
+    cur.execute(
+        "SELECT role, content, created_at FROM marketing_chat "
+        "ORDER BY created_at DESC LIMIT %s", (limit,)
+    )
+    rows = list(reversed([{'role': r[0], 'content': r[1], 'created_at': r[2]}
+                          for r in cur.fetchall()]))
+    return rows
+
+
+def handle_chat_history(cur) -> dict:
+    cur.execute(
+        "SELECT id, role, content, meta, created_at "
+        "FROM marketing_chat ORDER BY created_at ASC LIMIT 200"
+    )
+    msgs = [{'id': r[0], 'role': r[1], 'content': r[2], 'meta': r[3], 'created_at': r[4]}
+            for r in cur.fetchall()]
+    return ok({'messages': msgs})
+
+
+def handle_chat_send(cur, body: dict) -> dict:
+    text = (body.get('message') or '').strip()
+    if not text:
+        return err('Сообщение пустое')
+    # Сохраняем сообщение владельца
+    cur.execute(
+        "INSERT INTO marketing_chat (role, content) VALUES ('user', %s) RETURNING id, created_at",
+        (text,)
+    )
+    _, user_at = cur.fetchone()
+
+    # Собираем актуальный контекст из метрик
+    m = collect_metrics(cur, 30)
+    rfm = build_rfm(cur)
+    context_block = (
+        f"\n\nКОНТЕКСТ УЧИСЬПРО (последние 30 дней):\n"
+        f"- Выручка: {m['revenue']:,.0f} ₽ (рост {m['revenue_growth_pct']}%)\n"
+        f"- Заказов: {m['paid_orders']}, средний чек {m['aov']:,.0f} ₽\n"
+        f"- Новых пользователей: {m['new_users']}, купили {m['unique_buyers']} ({m['conv_reg_to_buy']}%)\n"
+        f"- ARPU: {m['arpu']:,.0f} ₽\n"
+        f"- Сегменты: VIP {rfm['vip']['count']}, постоянные {rfm['regulars']['count']}, "
+        f"спящие {rfm['sleeping']['count']}, горячие лиды {rfm['hot_lead']['count']}, "
+        f"холодные {rfm['cold']['count']}\n"
+        f"- БЮДЖЕТ НА РЕКЛАМУ: 0 ₽."
+    )
+
+    # История последних 10 сообщений для контекста
+    history = fetch_chat_history(cur, 10)
+    messages = [{'role': 'system', 'content': CHAT_SYSTEM + context_block}]
+    for h in history[:-1]:  # без последнего user-сообщения (уже сохранили)
+        messages.append({'role': h['role'], 'content': h['content']})
+    messages.append({'role': 'user', 'content': text})
+
+    # Вызов ИИ
+    if not POLZA_API_KEY:
+        reply = ('ИИ-сервис временно недоступен. Используй библиотеку бесплатных тактик ниже — '
+                 'там собраны проверенные методы привлечения клиентов без рекламы.')
+    else:
+        payload = {'model': POLZA_MODEL, 'messages': messages,
+                   'temperature': 0.7, 'max_tokens': 1200}
+        req = urllib.request.Request(
+            POLZA_URL,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Authorization': f'Bearer {POLZA_API_KEY}',
+                     'Content-Type': 'application/json'},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45) as r:
+                data = json.loads(r.read().decode('utf-8'))
+                reply = data['choices'][0]['message']['content']
+        except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError):
+            reply = ('Не удалось получить ответ от ИИ. Попробуй ещё раз через минуту.')
+
+    # Сохраняем ответ
+    cur.execute(
+        "INSERT INTO marketing_chat (role, content) VALUES ('assistant', %s) "
+        "RETURNING id, created_at",
+        (reply,)
+    )
+    rid, assistant_at = cur.fetchone()
+
+    return ok({
+        'user_message': {'role': 'user', 'content': text, 'created_at': user_at},
+        'reply': {'id': rid, 'role': 'assistant', 'content': reply, 'created_at': assistant_at},
+    })
+
+
+def handle_chat_clear(cur) -> dict:
+    cur.execute("UPDATE marketing_chat SET content = content WHERE 1=0")
+    # очистим через TRUNCATE-эквивалент через UPDATE невозможно; используем безопасный путь
+    cur.execute("INSERT INTO marketing_chat (role, content, meta) VALUES "
+                "('system','--- очистка истории ---','{\"cleared\":true}'::jsonb)")
+    return ok({'ok': True})
+
+
+# ──────────────────────────────────────────────────────────────────────
 # ENTRYPOINT
 # ──────────────────────────────────────────────────────────────────────
 
@@ -676,6 +788,12 @@ def handler(event: dict, context) -> dict:
             except ValueError:
                 return err('Неверный id')
             return handle_strategy(cur, sid)
+        if action == 'chat_history':
+            return handle_chat_history(cur)
+        if action == 'chat_send':
+            r = handle_chat_send(cur, body)
+            conn.commit()
+            return r
         return err('Неизвестный action', 404)
     finally:
         conn.close()

@@ -10,6 +10,8 @@ import DashboardHeader from "./marketing/DashboardHeader";
 import AiStrategyCard from "./marketing/AiStrategyCard";
 import AnalysisSection from "./marketing/AnalysisSection";
 import TasksSection from "./marketing/TasksSection";
+import ChatPanel from "./marketing/ChatPanel";
+import TacticsLibrary from "./marketing/TacticsLibrary";
 
 const MKT_URL = (func2url as Record<string, string>)["marketing-strategy"];
 
@@ -147,6 +149,8 @@ export default function MarketingDashboard() {
           </div>
         )}
 
+        <ChatPanel pin={pin} />
+
         {ai && ai.ai && (
           <AiStrategyCard
             ai={ai}
@@ -168,6 +172,8 @@ export default function MarketingDashboard() {
             onSendIdea={createTaskFromAi}
           />
         )}
+
+        <TacticsLibrary onSendTask={createTaskFromAi} />
 
         <TasksSection
           tasks={tasks}
