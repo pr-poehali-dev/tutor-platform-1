@@ -159,12 +159,17 @@ def handler(event: dict, context) -> dict:
                 'body': json.dumps({'error': 'speechkit_failed',
                                     'detail': str(e)[:200]})}
 
+    # Загружаем в S3 для скачивания, но не критично если упадёт —
+    # клиент получит аудио в base64 напрямую (без CORS-проблем с CDN).
+    audio_url = ''
     try:
         audio_url = upload_to_s3(audio, variant_id)
-    except (RuntimeError, OSError) as e:
-        return {'statusCode': 502, 'headers': HEADERS,
-                'body': json.dumps({'error': 's3_failed',
-                                    'detail': str(e)[:200]})}
+    except (RuntimeError, OSError):
+        pass
+
+    # Base64 аудио передаём прямо в ответе — клиент декодирует
+    # без сетевого запроса к CDN. Это обходит блокировку CORS на bucket.poehali.dev.
+    audio_b64 = base64.b64encode(audio).decode('ascii')
 
     return {
         'statusCode': 200,
@@ -172,6 +177,8 @@ def handler(event: dict, context) -> dict:
         'body': json.dumps({
             'ok': True,
             'audio_url': audio_url,
+            'audio_base64': audio_b64,
+            'audio_size_bytes': len(audio),
             'voice': VOICE,
             'total_sec': running,
             'scene_offsets': scene_offsets,

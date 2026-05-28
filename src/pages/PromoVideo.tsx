@@ -65,29 +65,35 @@ export default function PromoVideo() {
         throw new Error(`Не удалось сгенерировать озвучку (HTTP ${voiceResp.status})`);
       }
       const voiceData = await voiceResp.json();
-      if (!voiceData.audio_url) {
-        throw new Error("Бэкенд не вернул ссылку на аудио");
+      // Бэк возвращает base64 (обходит CORS на CDN) + опционально URL для скачивания
+      if (!voiceData.audio_base64 && !voiceData.audio_url) {
+        throw new Error(voiceData.error || "Бэкенд не вернул аудио-данные");
       }
 
-      // 2) Видео
+      // 2) Видео — приоритет base64, чтобы не падать на CORS
       setStage("render");
       setProgressText("Рендерим видео…");
       const result = await renderVideo({
         variant,
-        voiceUrl: voiceData.audio_url,
+        voiceBase64: voiceData.audio_base64,
+        voiceUrl: voiceData.audio_url || undefined,
         onProgress: (p, s) => {
           setProgress(p);
           setProgressText(s);
         },
       });
 
-      // 3) Готово
+      // 3) Готово. audioUrl сохраняем для кнопки «Скачать MP3».
+      // Если CDN недоступен — собираем data-URL из base64.
+      const audioDownloadUrl = voiceData.audio_url
+        || (voiceData.audio_base64 ? `data:audio/mpeg;base64,${voiceData.audio_base64}` : "");
+
       setGenerated((prev) => ({
         ...prev,
         [variant.id]: {
           videoUrl: result.url,
           mimeType: result.mimeType,
-          audioUrl: voiceData.audio_url,
+          audioUrl: audioDownloadUrl,
           sizeMb: result.blob.size / (1024 * 1024),
           durationSec: result.durationMs / 1000,
         },

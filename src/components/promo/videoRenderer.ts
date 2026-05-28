@@ -14,8 +14,10 @@ import { VideoScene, VideoVariant } from "./videoScripts";
 
 export interface RenderOptions {
   variant: VideoVariant;
-  /** Готовая дорожка озвучки (MP3 от SpeechKit). */
-  voiceUrl: string;
+  /** Готовая дорожка озвучки (MP3 от SpeechKit), URL. */
+  voiceUrl?: string;
+  /** Альтернатива voiceUrl: MP3 в base64 (обходит CORS на CDN). */
+  voiceBase64?: string;
   /** Прогресс рендера (0..1). */
   onProgress?: (progress: number, stage: string) => void;
 }
@@ -164,17 +166,34 @@ function pickMimeType(): string {
 }
 
 export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
-  const { variant, voiceUrl, onProgress } = opts;
+  const { variant, voiceUrl, voiceBase64, onProgress } = opts;
   const totalSec = variant.scenes.reduce((s, sc) => s + sc.duration, 0);
   const totalMs = totalSec * 1000;
   const isVertical = variant.aspect === "9:16";
 
-  // 1) Загружаем аудио-дорожку и кладём в AudioContext
+  // 1) Получаем аудио-байты. Приоритет — base64 (обходит CORS на CDN).
   onProgress?.(0.05, "Загружаем озвучку…");
-  const audioResp = await fetch(voiceUrl);
-  const audioBuf = await audioResp.arrayBuffer();
+  let audioBuf: ArrayBuffer;
+  if (voiceBase64) {
+    // Декодируем base64 в ArrayBuffer прямо в браузере, без сети
+    const binary = atob(voiceBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    audioBuf = bytes.buffer;
+  } else if (voiceUrl) {
+    const audioResp = await fetch(voiceUrl);
+    if (!audioResp.ok) {
+      throw new Error(`Не удалось скачать озвучку (HTTP ${audioResp.status})`);
+    }
+    audioBuf = await audioResp.arrayBuffer();
+  } else {
+    throw new Error("Не передана озвучка: нужен voiceBase64 или voiceUrl");
+  }
 
   const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) {
+    throw new Error("Браузер не поддерживает Web Audio API — обнови Safari/Chrome.");
+  }
   const audioCtx = new AudioCtx();
   const audioBuffer = await audioCtx.decodeAudioData(audioBuf.slice(0));
 

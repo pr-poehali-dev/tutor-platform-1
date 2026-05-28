@@ -15,6 +15,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import UtmTracker from "@/components/ads/UtmTracker";
 import DobroTopBar from "@/components/promo/DobroTopBar";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -87,6 +88,7 @@ const App = () => (
             <DobroTopBar />
             <AuthProvider>
               <AccessProvider>
+                <ErrorBoundary>
                 <Suspense fallback={<PageSkeleton />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
@@ -143,6 +145,7 @@ const App = () => (
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
+                </ErrorBoundary>
                 <LoginModal />
               </AccessProvider>
             </AuthProvider>
