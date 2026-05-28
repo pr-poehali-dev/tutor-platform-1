@@ -1,0 +1,264 @@
+/**
+ * Рендер промо-ролика в браузере: Canvas → MediaRecorder → WebM/MP4.
+ *
+ * Идея: для каждой сцены сценария рисуем красивый кадр с градиентом,
+ * эмодзи и анимацией текста. Параллельно проигрываем аудио-дорожку
+ * (озвучка диктора + лёгкая фоновая музыка опционально). MediaRecorder
+ * захватывает поток с canvas + аудио и отдаёт готовый файл.
+ *
+ * Работает в Chrome, Edge, Firefox (с разной кодек-поддержкой).
+ * Safari не поддерживает MediaRecorder на canvas → даём fallback: WebM.
+ */
+
+import { VideoScene, VideoVariant } from "./videoScripts";
+
+export interface RenderOptions {
+  variant: VideoVariant;
+  /** Готовая дорожка озвучки (MP3 от SpeechKit). */
+  voiceUrl: string;
+  /** Прогресс рендера (0..1). */
+  onProgress?: (progress: number, stage: string) => void;
+}
+
+export interface RenderResult {
+  blob: Blob;
+  url: string;
+  mimeType: string;
+  durationMs: number;
+}
+
+const FPS = 30;
+
+// ─── Утилиты рисования ────────────────────────────────────────────────────
+
+function parseGradient(bg: string): { from: string; via?: string; to: string } {
+  const colors: Record<string, string> = {
+    "purple-600": "#9333ea", "purple-500": "#a855f7",
+    "pink-500": "#ec4899", "pink-400": "#f472b6",
+    "orange-500": "#f97316", "orange-400": "#fb923c",
+    "rose-500": "#f43f5e", "rose-400": "#fb7185", "rose-600": "#e11d48",
+    "red-600": "#dc2626",
+    "yellow-300": "#fde047", "yellow-200": "#fef08a",
+    "cyan-500": "#06b6d4", "cyan-400": "#22d3ee",
+    "blue-500": "#3b82f6",
+    "violet-600": "#7c3aed",
+    "fuchsia-500": "#d946ef",
+    "emerald-500": "#10b981",
+    "teal-500": "#14b8a6",
+    "amber-500": "#f59e0b",
+    "indigo-600": "#4f46e5",
+  };
+  const parts = bg.split(" ").map((p) => p.replace(/^(from-|via-|to-)/, ""));
+  const from = colors[parts[0]] || "#7c3aed";
+  const via = bg.includes("via-") ? colors[parts[1]] : undefined;
+  const to = colors[parts[parts.length - 1]] || "#ec4899";
+  return { from, via, to };
+}
+
+function drawScene(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  scene: VideoScene,
+  sceneProgress: number,
+  isVertical: boolean,
+) {
+  // ── Фон-градиент с лёгкой пульсацией
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  const { from, via, to } = parseGradient(scene.bg);
+  grad.addColorStop(0, from);
+  if (via) grad.addColorStop(0.5, via);
+  grad.addColorStop(1, to);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Тёмный виньетка-оверлей для контраста
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H));
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Эмодзи (большой, плавно появляется и пульсирует)
+  const emojiScale = 0.6 + Math.min(1, sceneProgress * 4) * 0.4 + Math.sin(sceneProgress * Math.PI * 4) * 0.03;
+  const emojiSize = Math.floor(Math.min(W, H) * (isVertical ? 0.28 : 0.32) * emojiScale);
+  ctx.font = `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.globalAlpha = Math.min(1, sceneProgress * 6);
+  const emojiY = isVertical ? H * 0.32 : H * 0.36;
+  ctx.fillText(scene.emoji, W / 2, emojiY);
+  ctx.globalAlpha = 1;
+
+  // ── Тёмная плашка под заголовком
+  const titleY = isVertical ? H * 0.6 : H * 0.62;
+  const lines = scene.title.split("\n");
+  const titleFontSize = Math.floor(Math.min(W, H) * (isVertical ? 0.085 : 0.075));
+
+  // Заголовок с подсветкой
+  ctx.font = `900 ${titleFontSize}px Montserrat, "Segoe UI", system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0,0,0,0.7)";
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 4;
+
+  // Лёгкий слайд снизу-вверх в начале сцены
+  const slideOffset = Math.max(0, (1 - sceneProgress * 4)) * 40;
+  ctx.fillStyle = "#ffffff";
+  lines.forEach((line, i) => {
+    ctx.fillText(
+      line,
+      W / 2,
+      titleY + i * titleFontSize * 1.1 + slideOffset,
+    );
+  });
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // ── Подзаголовок
+  if (scene.subtitle) {
+    const subY = titleY + lines.length * titleFontSize * 1.1 + (isVertical ? 60 : 50);
+    const subFontSize = Math.floor(Math.min(W, H) * (isVertical ? 0.045 : 0.04));
+    ctx.font = `700 ${subFontSize}px Montserrat, "Segoe UI", system-ui, sans-serif`;
+    ctx.fillStyle = scene.accent ? "#fde047" : "rgba(255,255,255,0.85)";
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = 12;
+    ctx.fillText(scene.subtitle, W / 2, subY + slideOffset * 0.6);
+    ctx.shadowBlur = 0;
+  }
+
+  // ── Логотип в углу
+  const logoY = isVertical ? H * 0.93 : H * 0.92;
+  const logoFontSize = Math.floor(Math.min(W, H) * 0.035);
+  ctx.font = `900 ${logoFontSize}px Montserrat, system-ui, sans-serif`;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.shadowColor = "rgba(0,0,0,0.5)";
+  ctx.shadowBlur = 10;
+  ctx.fillText("🚀 УЧИСЬПРО · учисьпро.рф", W / 2, logoY);
+  ctx.shadowBlur = 0;
+
+  // ── Прогресс-полоска снизу
+  const barH = Math.max(4, Math.floor(H * 0.006));
+  ctx.fillStyle = "rgba(255,255,255,0.2)";
+  ctx.fillRect(0, H - barH, W, barH);
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.fillRect(0, H - barH, W * sceneProgress, barH);
+}
+
+// ─── Главный рендер ───────────────────────────────────────────────────────
+
+/** Подбирает доступный MIME-тип видео-кодека. */
+function pickMimeType(): string {
+  const candidates = [
+    "video/mp4;codecs=h264,aac",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm",
+  ];
+  for (const m of candidates) {
+    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)) {
+      return m;
+    }
+  }
+  return "video/webm";
+}
+
+export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
+  const { variant, voiceUrl, onProgress } = opts;
+  const totalSec = variant.scenes.reduce((s, sc) => s + sc.duration, 0);
+  const totalMs = totalSec * 1000;
+  const isVertical = variant.aspect === "9:16";
+
+  // 1) Загружаем аудио-дорожку и кладём в AudioContext
+  onProgress?.(0.05, "Загружаем озвучку…");
+  const audioResp = await fetch(voiceUrl);
+  const audioBuf = await audioResp.arrayBuffer();
+
+  const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const audioCtx = new AudioCtx();
+  const audioBuffer = await audioCtx.decodeAudioData(audioBuf.slice(0));
+
+  // 2) Canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = variant.width;
+  canvas.height = variant.height;
+  const ctx = canvas.getContext("2d")!;
+
+  // 3) Стрим видео + стрим аудио → MediaRecorder
+  const videoStream = canvas.captureStream(FPS);
+  const audioDest = audioCtx.createMediaStreamDestination();
+  const source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioDest);
+  source.connect(audioCtx.destination); // чтобы пользователь слышал во время записи
+
+  const audioTrack = audioDest.stream.getAudioTracks()[0];
+  if (audioTrack) videoStream.addTrack(audioTrack);
+
+  const mimeType = pickMimeType();
+  const recorder = new MediaRecorder(videoStream, {
+    mimeType,
+    videoBitsPerSecond: 4_000_000,
+    audioBitsPerSecond: 128_000,
+  });
+
+  const chunks: Blob[] = [];
+  recorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) chunks.push(e.data);
+  };
+
+  // 4) Запускаем
+  const startTime = performance.now();
+  recorder.start(250);
+  source.start();
+  onProgress?.(0.1, "Рендерим кадры…");
+
+  // 5) Цикл рисования
+  await new Promise<void>((resolve) => {
+    function tick() {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / 1000, totalSec);
+
+      // Найти текущую сцену
+      let acc = 0;
+      let scene = variant.scenes[0];
+      let sceneStart = 0;
+      for (const s of variant.scenes) {
+        if (t < acc + s.duration) {
+          scene = s;
+          sceneStart = acc;
+          break;
+        }
+        acc += s.duration;
+      }
+      const sceneProgress = Math.min(1, (t - sceneStart) / scene.duration);
+
+      drawScene(ctx, variant.width, variant.height, scene, sceneProgress, isVertical);
+
+      onProgress?.(0.1 + (t / totalSec) * 0.85, `Сцена ${variant.scenes.indexOf(scene) + 1}/${variant.scenes.length}`);
+
+      if (elapsed < totalMs + 200) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve();
+      }
+    }
+    tick();
+  });
+
+  // 6) Финал
+  recorder.stop();
+  source.stop();
+
+  const finalBlob: Blob = await new Promise((resolve) => {
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+  });
+
+  onProgress?.(1, "Готово!");
+  return {
+    blob: finalBlob,
+    url: URL.createObjectURL(finalBlob),
+    mimeType,
+    durationMs: totalMs,
+  };
+}

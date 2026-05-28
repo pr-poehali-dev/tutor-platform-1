@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight ok",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET method not allowed",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 405
+    },
+    {
+      "name": "POST without scenes — 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"variant_id": "test"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST invalid JSON — 400",
+      "method": "POST",
+      "path": "/",
+      "body": "not-json",
+      "expectedStatus": 400
+    }
+  ]
+}
