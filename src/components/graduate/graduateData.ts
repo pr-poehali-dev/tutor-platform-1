@@ -2863,6 +2863,653 @@ export const UNIVERSITIES: University[] = [
       },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // РАСШИРЕНИЕ: +25 ВУЗов по городам-миллионникам (приоритет — миллионники)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ─── ВОЛГОГРАД (миллионник, не был представлен) ────────────────────
+  {
+    id: "volsu",
+    shortName: "ВолГУ",
+    fullName: "Волгоградский государственный университет",
+    city: "Волгоград",
+    regionId: "volgograd",
+    emoji: "🗿",
+    color: "from-amber-600 to-orange-700",
+    website: "https://volsu.ru",
+    faculties: [
+      {
+        id: "volsu-it",
+        name: "Институт математики и информационных технологий",
+        specialty: "Прикладная математика и информатика",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "informatics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 215,
+        budgetSeats: 145,
+      },
+    ],
+  },
+  {
+    id: "vstu",
+    shortName: "ВолгГТУ",
+    fullName: "Волгоградский государственный технический университет",
+    city: "Волгоград",
+    regionId: "volgograd",
+    emoji: "⚙",
+    color: "from-zinc-600 to-stone-700",
+    faculties: [
+      {
+        id: "vstu-auto",
+        name: "Автомобильный факультет",
+        specialty: "Эксплуатация транспортно-технологических машин",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "physics", minScore: 40 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 205,
+        budgetSeats: 220,
+      },
+    ],
+  },
+  {
+    id: "volggmu",
+    shortName: "ВолгГМУ",
+    fullName: "Волгоградский государственный медицинский университет",
+    city: "Волгоград",
+    regionId: "volgograd",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    website: "https://www.volgmed.ru",
+    faculties: [
+      {
+        id: "volggmu-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 50 },
+          { subject: "biology", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 245,
+        budgetSeats: 240,
+      },
+    ],
+  },
+
+  // ─── ОМСК (миллионник, был только военный) ─────────────────────────
+  {
+    id: "omsu",
+    shortName: "ОмГУ им. Достоевского",
+    fullName: "Омский государственный университет им. Ф. М. Достоевского",
+    city: "Омск",
+    regionId: "omsk",
+    emoji: "📚",
+    color: "from-purple-600 to-indigo-700",
+    website: "https://www.omsu.ru",
+    faculties: [
+      {
+        id: "omsu-it",
+        name: "Факультет компьютерных наук",
+        specialty: "Прикладная математика и информатика",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "informatics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 215,
+        budgetSeats: 130,
+      },
+    ],
+  },
+  {
+    id: "omgtu",
+    shortName: "ОмГТУ",
+    fullName: "Омский государственный технический университет",
+    city: "Омск",
+    regionId: "omsk",
+    emoji: "⚙",
+    color: "from-slate-600 to-zinc-700",
+    faculties: [
+      {
+        id: "omgtu-aero",
+        name: "Факультет транспорта, нефти и газа",
+        specialty: "Авиационная и ракетно-космическая техника",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 210,
+        budgetSeats: 195,
+      },
+    ],
+  },
+  {
+    id: "omgmu",
+    shortName: "ОмГМУ",
+    fullName: "Омский государственный медицинский университет",
+    city: "Омск",
+    regionId: "omsk",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    faculties: [
+      {
+        id: "omgmu-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 50 },
+          { subject: "biology", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 240,
+        budgetSeats: 210,
+      },
+    ],
+  },
+
+  // ─── ЕКАТЕРИНБУРГ (миллионник, расширение) ─────────────────────────
+  {
+    id: "urgups",
+    shortName: "УрГУПС",
+    fullName: "Уральский государственный университет путей сообщения",
+    city: "Екатеринбург",
+    regionId: "sverdlovsk",
+    emoji: "🚆",
+    color: "from-blue-700 to-cyan-700",
+    faculties: [
+      {
+        id: "urgups-railway",
+        name: "Механический факультет",
+        specialty: "Подвижной состав железных дорог",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "physics", minScore: 40 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 210,
+        budgetSeats: 200,
+      },
+    ],
+  },
+  {
+    id: "usue",
+    shortName: "УрГЭУ-СИНХ",
+    fullName: "Уральский государственный экономический университет",
+    city: "Екатеринбург",
+    regionId: "sverdlovsk",
+    emoji: "💼",
+    color: "from-emerald-600 to-teal-700",
+    faculties: [
+      {
+        id: "usue-finance",
+        name: "Институт финансов и права",
+        specialty: "Финансы и кредит",
+        exams: [
+          { subject: "math_prof", minScore: 50 },
+          { subject: "social", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 230,
+        budgetSeats: 150,
+      },
+    ],
+  },
+
+  // ─── КАЗАНЬ (миллионник, расширение) ───────────────────────────────
+  {
+    id: "kazan-aviation",
+    shortName: "КНИТУ-КАИ",
+    fullName: "Казанский национальный исследовательский технический университет им. А. Н. Туполева — КАИ",
+    city: "Казань",
+    regionId: "tatarstan",
+    emoji: "✈",
+    color: "from-sky-600 to-blue-700",
+    website: "https://kai.ru",
+    faculties: [
+      {
+        id: "kai-aero",
+        name: "Институт авиации, наземного транспорта и энергетики",
+        specialty: "Проектирование авиационных и ракетных двигателей",
+        exams: [
+          { subject: "math_prof", minScore: 50 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 220,
+        budgetSeats: 260,
+      },
+    ],
+  },
+  {
+    id: "kazan-energy",
+    shortName: "КГЭУ",
+    fullName: "Казанский государственный энергетический университет",
+    city: "Казань",
+    regionId: "tatarstan",
+    emoji: "⚡",
+    color: "from-yellow-500 to-amber-600",
+    faculties: [
+      {
+        id: "kgeu-energy",
+        name: "Институт электроэнергетики и электроники",
+        specialty: "Электроэнергетика и электротехника",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 210,
+        budgetSeats: 240,
+      },
+    ],
+  },
+
+  // ─── НИЖНИЙ НОВГОРОД (миллионник, расширение) ──────────────────────
+  {
+    id: "nnsu-economy",
+    shortName: "НИУ ВШЭ — Нижний",
+    fullName: "Национальный исследовательский университет «Высшая школа экономики» — Нижний Новгород",
+    city: "Нижний Новгород",
+    regionId: "nizhny",
+    emoji: "💼",
+    color: "from-blue-700 to-indigo-800",
+    website: "https://nnov.hse.ru",
+    faculties: [
+      {
+        id: "hse-nn-it",
+        name: "Факультет информатики, математики и компьютерных наук",
+        specialty: "Прикладная математика и информатика",
+        exams: [
+          { subject: "math_prof", minScore: 60 },
+          { subject: "informatics", minScore: 55 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 260,
+        budgetSeats: 130,
+      },
+    ],
+  },
+
+  // ─── ЧЕЛЯБИНСК (миллионник, расширение) ────────────────────────────
+  {
+    id: "chgma",
+    shortName: "ЮУГМУ",
+    fullName: "Южно-Уральский государственный медицинский университет",
+    city: "Челябинск",
+    regionId: "chelyabinsk",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    faculties: [
+      {
+        id: "yugmu-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 50 },
+          { subject: "biology", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 240,
+        budgetSeats: 230,
+      },
+    ],
+  },
+  {
+    id: "magtu",
+    shortName: "МГТУ им. Носова",
+    fullName: "Магнитогорский государственный технический университет им. Г. И. Носова",
+    city: "Магнитогорск",
+    regionId: "chelyabinsk",
+    emoji: "⚙",
+    color: "from-zinc-600 to-stone-700",
+    faculties: [
+      {
+        id: "magtu-metal",
+        name: "Институт металлургии, машиностроения и материалообработки",
+        specialty: "Металлургия",
+        exams: [
+          { subject: "math_prof", minScore: 40 },
+          { subject: "physics", minScore: 40 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 195,
+        budgetSeats: 220,
+      },
+    ],
+  },
+
+  // ─── САМАРА (миллионник, расширение) ───────────────────────────────
+  {
+    id: "samara-pol",
+    shortName: "СамГТУ",
+    fullName: "Самарский государственный технический университет",
+    city: "Самара",
+    regionId: "samara",
+    emoji: "⚙",
+    color: "from-slate-600 to-zinc-700",
+    website: "https://samgtu.ru",
+    faculties: [
+      {
+        id: "samgtu-oil",
+        name: "Нефтетехнологический факультет",
+        specialty: "Нефтегазовое дело",
+        exams: [
+          { subject: "math_prof", minScore: 45 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 215,
+        budgetSeats: 250,
+      },
+    ],
+  },
+
+  // ─── УФА (миллионник, расширение) ──────────────────────────────────
+  {
+    id: "ugatu",
+    shortName: "УГАТУ",
+    fullName: "Уфимский государственный авиационный технический университет",
+    city: "Уфа",
+    regionId: "bashkortostan",
+    emoji: "✈",
+    color: "from-sky-600 to-blue-700",
+    faculties: [
+      {
+        id: "ugatu-aero",
+        name: "Факультет авиационных двигателей",
+        specialty: "Двигатели летательных аппаратов",
+        exams: [
+          { subject: "math_prof", minScore: 50 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 225,
+        budgetSeats: 235,
+      },
+    ],
+  },
+  {
+    id: "ugntu",
+    shortName: "УГНТУ",
+    fullName: "Уфимский государственный нефтяной технический университет",
+    city: "Уфа",
+    regionId: "bashkortostan",
+    emoji: "🛢",
+    color: "from-amber-600 to-orange-700",
+    website: "https://www.rusoil.net",
+    faculties: [
+      {
+        id: "ugntu-oil",
+        name: "Факультет трубопроводного транспорта",
+        specialty: "Нефтегазовое дело",
+        exams: [
+          { subject: "math_prof", minScore: 50 },
+          { subject: "physics", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 225,
+        budgetSeats: 280,
+      },
+    ],
+  },
+
+  // ─── РОСТОВ-НА-ДОНУ (миллионник, расширение) ───────────────────────
+  {
+    id: "rsue-rinh",
+    shortName: "РГЭУ (РИНХ)",
+    fullName: "Ростовский государственный экономический университет",
+    city: "Ростов-на-Дону",
+    regionId: "rostov",
+    emoji: "💼",
+    color: "from-emerald-600 to-teal-700",
+    faculties: [
+      {
+        id: "rinh-finance",
+        name: "Финансовый факультет",
+        specialty: "Финансы и кредит",
+        exams: [
+          { subject: "math_prof", minScore: 50 },
+          { subject: "social", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 230,
+        budgetSeats: 165,
+      },
+    ],
+  },
+
+  // ─── КРАСНОЯРСК (миллионник, расширение) ───────────────────────────
+  {
+    id: "krasgmu",
+    shortName: "КрасГМУ",
+    fullName: "Красноярский государственный медицинский университет им. В. Ф. Войно-Ясенецкого",
+    city: "Красноярск",
+    regionId: "krasnoyarsk",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    faculties: [
+      {
+        id: "krasgmu-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 50 },
+          { subject: "biology", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 245,
+        budgetSeats: 235,
+      },
+    ],
+  },
+
+  // ─── НОВОСИБИРСК (миллионник, расширение) ──────────────────────────
+  {
+    id: "nstu",
+    shortName: "НГТУ",
+    fullName: "Новосибирский государственный технический университет",
+    city: "Новосибирск",
+    regionId: "novosibirsk",
+    emoji: "⚙",
+    color: "from-slate-600 to-zinc-700",
+    website: "https://www.nstu.ru",
+    faculties: [
+      {
+        id: "nstu-it",
+        name: "Факультет прикладной математики и информатики",
+        specialty: "Прикладная математика и информатика",
+        exams: [
+          { subject: "math_prof", minScore: 55 },
+          { subject: "informatics", minScore: 50 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 240,
+        budgetSeats: 260,
+      },
+    ],
+  },
+  {
+    id: "ngpu",
+    shortName: "НГПУ",
+    fullName: "Новосибирский государственный педагогический университет",
+    city: "Новосибирск",
+    regionId: "novosibirsk",
+    emoji: "📚",
+    color: "from-emerald-500 to-green-600",
+    faculties: [
+      {
+        id: "ngpu-edu",
+        name: "Институт филологии, массовой информации и психологии",
+        specialty: "Педагогическое образование (русский язык и литература)",
+        exams: [
+          { subject: "russian", minScore: 55 },
+          { subject: "literature", minScore: 50 },
+          { subject: "social", minScore: 45 },
+        ],
+        passingScore: 220,
+        budgetSeats: 180,
+      },
+    ],
+  },
+
+  // ─── ПЕРМЬ (миллионник, расширение) ────────────────────────────────
+  {
+    id: "psma",
+    shortName: "ПГМУ им. Вагнера",
+    fullName: "Пермский государственный медицинский университет им. Е. А. Вагнера",
+    city: "Пермь",
+    regionId: "perm",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    faculties: [
+      {
+        id: "psma-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 50 },
+          { subject: "biology", minScore: 50 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 240,
+        budgetSeats: 215,
+      },
+    ],
+  },
+
+  // ─── ВОРОНЕЖ (миллионник, расширение) ──────────────────────────────
+  {
+    id: "vgma",
+    shortName: "ВГМУ им. Бурденко",
+    fullName: "Воронежский государственный медицинский университет им. Н. Н. Бурденко",
+    city: "Воронеж",
+    regionId: "voronezh",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    website: "https://vrngmu.ru",
+    faculties: [
+      {
+        id: "vgma-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 55 },
+          { subject: "biology", minScore: 55 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 255,
+        budgetSeats: 270,
+      },
+    ],
+  },
+
+  // ─── КРАСНОДАР (миллионник, расширение) ────────────────────────────
+  {
+    id: "kgufkst",
+    shortName: "КГУФКСТ",
+    fullName: "Кубанский государственный университет физической культуры, спорта и туризма",
+    city: "Краснодар",
+    regionId: "krasnodar",
+    emoji: "🏅",
+    color: "from-amber-500 to-orange-600",
+    faculties: [
+      {
+        id: "kgufkst-sport",
+        name: "Факультет адаптивной и оздоровительной физической культуры",
+        specialty: "Физическая культура",
+        exams: [
+          { subject: "biology", minScore: 45 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 195,
+        budgetSeats: 165,
+        hasAdditional: true,
+        additionalNote: "Профильный экзамен (физподготовка, нормативы)",
+      },
+    ],
+  },
+
+  // ─── САНКТ-ПЕТЕРБУРГ (расширение) ──────────────────────────────────
+  {
+    id: "spbmu-mechnikov",
+    shortName: "СЗГМУ им. Мечникова",
+    fullName: "Северо-Западный государственный медицинский университет им. И. И. Мечникова",
+    city: "Санкт-Петербург",
+    regionId: "spb",
+    emoji: "⚕",
+    color: "from-rose-500 to-red-500",
+    website: "https://szgmu.ru",
+    faculties: [
+      {
+        id: "szgmu-medical",
+        name: "Лечебный факультет",
+        specialty: "Лечебное дело",
+        exams: [
+          { subject: "chemistry", minScore: 55 },
+          { subject: "biology", minScore: 55 },
+          { subject: "russian", minScore: 50 },
+        ],
+        passingScore: 255,
+        budgetSeats: 290,
+      },
+    ],
+  },
+
+  // ─── МОСКВА (расширение — ИТ и инженерия) ──────────────────────────
+  {
+    id: "mai",
+    shortName: "МАИ",
+    fullName: "Московский авиационный институт (НИУ)",
+    city: "Москва",
+    regionId: "moscow",
+    emoji: "✈",
+    color: "from-sky-600 to-blue-700",
+    website: "https://mai.ru",
+    faculties: [
+      {
+        id: "mai-aero",
+        name: "Институт № 1 «Авиационная техника»",
+        specialty: "Самолёто- и вертолётостроение",
+        exams: [
+          { subject: "math_prof", minScore: 55 },
+          { subject: "physics", minScore: 50 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 245,
+        budgetSeats: 310,
+      },
+    ],
+  },
+  {
+    id: "mirea",
+    shortName: "РТУ МИРЭА",
+    fullName: "Российский технологический университет МИРЭА",
+    city: "Москва",
+    regionId: "moscow",
+    emoji: "💻",
+    color: "from-cyan-600 to-blue-700",
+    website: "https://www.mirea.ru",
+    faculties: [
+      {
+        id: "mirea-it",
+        name: "Институт информационных технологий",
+        specialty: "Программная инженерия",
+        exams: [
+          { subject: "math_prof", minScore: 55 },
+          { subject: "informatics", minScore: 55 },
+          { subject: "russian", minScore: 45 },
+        ],
+        passingScore: 250,
+        budgetSeats: 340,
+      },
+    ],
+  },
 ];
 
 export function getUniversitiesByRegion(regionId: string): University[] {

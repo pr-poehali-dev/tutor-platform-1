@@ -4,20 +4,20 @@ import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 const NAV_ITEMS = [
-  { label: "Маршрут", icon: "Compass", section: "journey" },
-  { label: "ИИ-учитель", icon: "Bot", section: "ai-teacher" },
-  { label: "Прогресс", icon: "TrendingUp", section: "progress" },
-  { label: "Рейтинг", icon: "BarChart2", section: "leaderboard" },
+  { label: "Маршрут",    short: "Маршрут",  icon: "Compass",     section: "journey" },
+  { label: "ИИ-учитель", short: "ИИ",       icon: "Bot",         section: "ai-teacher" },
+  { label: "Прогресс",   short: "Прогресс", icon: "TrendingUp",  section: "progress" },
+  { label: "Рейтинг",    short: "Рейтинг",  icon: "BarChart2",   section: "leaderboard" },
 ];
 
 const NAV_LINKS = [
-  { label: "Курсы", icon: "Library", path: "/courses" },
-  { label: "Лента", icon: "Newspaper", path: "/feed" },
-  { label: "Малыш 1+", icon: "Baby", path: "/kids" },
-  { label: "Рисовашка", icon: "Palette", path: "/draw" },
-  { label: "ОГЭ и ЕГЭ", icon: "GraduationCap", path: "/exam-bank" },
-  { label: "Познай себя", icon: "Compass", path: "/know-yourself" },
-  { label: "Выпускник", icon: "Award", path: "/graduate" },
+  { label: "Курсы",        short: "Курсы",   icon: "Library",        path: "/courses" },
+  { label: "Лента",        short: "Лента",   icon: "Newspaper",      path: "/feed" },
+  { label: "Малыш 1+",     short: "Малыш",   icon: "Baby",           path: "/kids" },
+  { label: "Рисовашка",    short: "Рис.",    icon: "Palette",        path: "/draw" },
+  { label: "ОГЭ и ЕГЭ",    short: "ЕГЭ",     icon: "GraduationCap",  path: "/exam-bank" },
+  { label: "Познай себя",  short: "Тест",    icon: "Compass",        path: "/know-yourself" },
+  { label: "Выпускник",    short: "ВУЗы",    icon: "Award",          path: "/graduate" },
 ];
 
 interface NavbarProps {
@@ -30,81 +30,85 @@ interface NavbarProps {
 export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onToggleMobile }: NavbarProps) {
   const { isAuthenticated, openLogin } = useAuth();
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-3" aria-label="Главная навигация">
-      <div className="max-w-6xl mx-auto">
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl px-4 md:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg animate-pulse-glow" aria-hidden="true">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-3 py-2.5" aria-label="Главная навигация">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl pl-3 pr-2 md:pl-4 md:pr-3 py-2 flex items-center justify-between gap-2">
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-base animate-pulse-glow" aria-hidden="true">
               🚀
             </div>
-            <span className="font-montserrat font-black text-lg gradient-text-purple tracking-wide">УЧИСЬПРО</span>
-          </div>
+            <span className="font-montserrat font-black text-base lg:text-lg gradient-text-purple tracking-wide hidden sm:inline">УЧИСЬПРО</span>
+          </Link>
 
-          <div className="hidden md:flex items-center gap-1">
+          {/* На md показываем только иконки, на lg — короткие подписи, на xl — полные */}
+          <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center min-w-0">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.section}
                 onClick={() => onScrollTo(item.section)}
-                aria-label={`Перейти к разделу ${item.label}`}
+                aria-label={item.label}
+                title={item.label}
                 aria-current={activeSection === item.section ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium transition-all duration-200 ${
                   activeSection === item.section
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : "text-white/60 hover:text-white hover:bg-white/8"
+                    ? "bg-purple-500/20 text-purple-300"
+                    : "text-white/65 hover:text-white hover:bg-white/8"
                 }`}
               >
-                <Icon name={item.icon} size={15} aria-hidden="true" />
-                {item.label}
+                <Icon name={item.icon} size={14} aria-hidden="true" />
+                <span className="hidden lg:inline xl:hidden">{item.short}</span>
+                <span className="hidden xl:inline">{item.label}</span>
               </button>
             ))}
+            <span className="w-px h-5 bg-white/10 mx-1" aria-hidden="true" />
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                aria-label={`Открыть страницу: ${link.label}`}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-purple-300 hover:text-white hover:bg-purple-500/15 transition-all duration-200 border border-purple-500/25"
+                aria-label={link.label}
+                title={link.label}
+                className="flex items-center gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium text-purple-300 hover:text-white hover:bg-purple-500/15 transition-all duration-200"
               >
-                <Icon name={link.icon} size={15} aria-hidden="true" />
-                {link.label}
+                <Icon name={link.icon} size={14} aria-hidden="true" />
+                <span className="hidden lg:inline xl:hidden">{link.short}</span>
+                <span className="hidden xl:inline">{link.label}</span>
               </Link>
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
             <Link
               to="/search"
               aria-label="Поиск по сайту (Ctrl+K)"
               title="Поиск по сайту (Ctrl+K)"
-              className="flex items-center gap-1.5 text-white/70 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 px-3 py-2 rounded-xl transition-colors"
+              className="flex items-center text-white/70 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 p-1.5 rounded-lg transition-colors"
             >
               <Icon name="Search" size={14} aria-hidden="true" />
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 bg-white/8 border border-white/15 text-white/55 font-bold rounded text-[10px] px-1 py-0.5">
-                <Icon name="Command" size={9} />K
-              </kbd>
             </Link>
             {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
               <Link
                 to="/cabinet"
                 aria-label="Открыть личный кабинет"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+                title="Личный кабинет"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs lg:text-sm font-semibold px-2.5 lg:px-4 py-2 rounded-lg hover:opacity-90 transition-opacity glow-purple"
               >
                 <Icon name="User" size={14} aria-hidden="true" />
-                Кабинет
+                <span className="hidden xl:inline">Кабинет</span>
               </Link>
             ) : (
               <>
                 <button
                   onClick={openLogin}
                   aria-label="Войти в аккаунт"
-                  className="text-sm text-white/70 hover:text-white transition-colors px-3 py-2"
+                  className="text-xs lg:text-sm text-white/75 hover:text-white transition-colors px-2 py-1.5 hidden lg:inline"
                 >
                   Войти
                 </button>
                 <Link
                   to="/pricing"
                   aria-label="Посмотреть тарифы"
-                  className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+                  className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs lg:text-sm font-semibold px-3 lg:px-4 py-2 rounded-lg hover:opacity-90 transition-opacity glow-purple"
                 >
                   Тарифы
                 </Link>
