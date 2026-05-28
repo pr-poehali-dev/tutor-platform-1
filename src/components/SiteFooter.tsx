@@ -43,13 +43,11 @@ export default function SiteFooter() {
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Поддержка</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/promo/dobro" className="text-rose-200 hover:text-rose-100 transition-colors font-black">❤️ Акция ДОБРО — бесплатно до 15.06</Link></li>
-              <li><Link to="/promo/video" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎬 Промо-ролики для соцсетей</Link></li>
               <li><Link to="/help" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">💡 Центр помощи и FAQ</Link></li>
               <li><Link to="/contacts" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">✉️ Написать нам</Link></li>
               <li><Link to="/reviews" className="text-yellow-200 hover:text-yellow-100 transition-colors font-bold">⭐ Отзывы учеников</Link></li>
               <li><Link to="/referral" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🎁 Приведи друга — +7 дней</Link></li>
               <li><a href="https://t.me/+QgiLIa1gFRY4Y2Iy" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">💬 Telegram-сообщество</a></li>
-              <li><Link to="/status" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">📊 Статус систем</Link></li>
             </ul>
           </nav>
 
