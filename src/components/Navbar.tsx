@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import ZnaikaBadge from "@/components/znaika/ZnaikaBadge";
 
 const NAV_ITEMS = [
   { label: "Маршрут",    short: "Маршрут",  icon: "Compass",     section: "journey" },
@@ -85,6 +86,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             >
               <Icon name="Search" size={14} aria-hidden="true" />
             </Link>
+            {isAuthenticated && <ZnaikaBadge />}
             {isAuthenticated && <NotificationBell />}
             {isAuthenticated ? (
               <Link

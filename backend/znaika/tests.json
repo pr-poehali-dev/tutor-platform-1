@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET state без токена — 401",
+      "method": "GET",
+      "path": "/?action=state",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST checkin без токена — 401",
+      "method": "POST",
+      "path": "/?action=checkin",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестный action — 404",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "headers": {"X-Auth-Token": "fake_invalid_token_123"},
+      "expectedStatus": 401
+    }
+  ]
+}

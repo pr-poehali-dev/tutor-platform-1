@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import { UserDataProvider } from "@/context/UserDataContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AccessProvider } from "@/context/AccessContext";
+import { ZnaikaProvider } from "@/context/ZnaikaContext";
 import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import UtmTracker from "@/components/ads/UtmTracker";
@@ -66,6 +67,8 @@ const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const Znaika = lazy(() => import("./pages/Znaika"));
+const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -87,6 +90,7 @@ const App = () => (
             <UtmTracker />
             <DobroTopBar />
             <AuthProvider>
+              <ZnaikaProvider>
               <AccessProvider>
                 <ErrorBoundary>
                 <Suspense fallback={<PageSkeleton />}>
@@ -141,6 +145,8 @@ const App = () => (
                     <Route path="/checkout/success" element={<CheckoutSuccess />} />
                     <Route path="/checkout/:planId" element={<Checkout />} />
                     <Route path="/course-checkout/:courseId" element={<CourseCheckout />} />
+                    <Route path="/znaika" element={<Znaika />} />
+                    <Route path="/admin" element={<AdminHub />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
@@ -148,6 +154,7 @@ const App = () => (
                 </ErrorBoundary>
                 <LoginModal />
               </AccessProvider>
+              </ZnaikaProvider>
             </AuthProvider>
           </BrowserRouter>
         </UserDataProvider>

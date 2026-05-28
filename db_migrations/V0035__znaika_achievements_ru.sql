@@ -1,0 +1,14 @@
+UPDATE znaika_achievements SET title='Первые шаги',     description='Зарегистрировался на УЧИСЬПРО'         WHERE code='first_steps';
+UPDATE znaika_achievements SET title='Первый урок',     description='Прошёл первый урок'                      WHERE code='first_lesson';
+UPDATE znaika_achievements SET title='Неделя в потоке', description='7 дней входа подряд'                     WHERE code='streak_7';
+UPDATE znaika_achievements SET title='Марафонец',       description='30 дней входа подряд'                    WHERE code='streak_30';
+UPDATE znaika_achievements SET title='Железная воля',   description='100 дней входа подряд'                   WHERE code='streak_100';
+UPDATE znaika_achievements SET title='Старательный',    description='Прошёл 10 уроков'                        WHERE code='lessons_10';
+UPDATE znaika_achievements SET title='Знаток',          description='Прошёл 50 уроков'                        WHERE code='lessons_50';
+UPDATE znaika_achievements SET title='Эрудит',          description='Прошёл 100 уроков'                       WHERE code='lessons_100';
+UPDATE znaika_achievements SET title='Поверил в себя',  description='Первая покупка курса'                    WHERE code='first_purchase';
+UPDATE znaika_achievements SET title='Расскажи другу',  description='Привёл первого друга'                    WHERE code='referral_1';
+UPDATE znaika_achievements SET title='Амбассадор',      description='Привёл 5 друзей'                         WHERE code='referral_5';
+UPDATE znaika_achievements SET title='Голос правды',    description='Оставил первый отзыв'                    WHERE code='review_1';
+UPDATE znaika_achievements SET title='Познал себя',     description='Прошёл тест на профориентацию'           WHERE code='know_yourself';
+UPDATE znaika_achievements SET title='Покоритель ЕГЭ',  description='Сдал пробный ЕГЭ на 80+ баллов'          WHERE code='exam_master';

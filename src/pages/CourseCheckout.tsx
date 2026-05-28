@@ -5,6 +5,8 @@ import Seo from "@/components/seo/Seo";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import { useZnaika } from "@/context/ZnaikaContext";
+import ZnaikaCheckoutWidget from "@/components/znaika/ZnaikaCheckoutWidget";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   SocialProof,
@@ -21,6 +23,7 @@ export default function CourseCheckout() {
   const navigate = useNavigate();
   const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
   const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess } = useAccess();
+  const { earn: earnZnaika } = useZnaika();
   const { isReady, loaded: readyLoaded } = useReadyCourses();
 
   const course = useMemo(
@@ -75,6 +78,22 @@ export default function CourseCheckout() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returnedFromPayment, isAuthenticated, course?.id]);
+
+  // Автоначисление 5% кэшбека ЗНАЙКАМИ после успешной покупки.
+  // Каждая покупка — один раз, ключ в localStorage.
+  useEffect(() => {
+    if (!course || !isAuthenticated) return;
+    const hasAccess = canAccessCourse(course.id);
+    if (!hasAccess) return;
+    const key = `znaika_cashback_course_${course.id}`;
+    if (localStorage.getItem(key)) return;
+    const price = getCoursePrice(course);
+    const cashback = Math.floor(price * 0.05);
+    if (cashback <= 0) return;
+    localStorage.setItem(key, "1");
+    earnZnaika("purchase_cashback", cashback, `Кэшбек 5% за курс «${course.title}»`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course?.id, isAuthenticated, canAccessCourse, earnZnaika]);
 
   if (!course) {
     return (
@@ -323,6 +342,9 @@ export default function CourseCheckout() {
                   </div>
                   <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
                 </div>
+
+                {/* Виджет ЗНАЕК — скидка и кэшбек */}
+                <ZnaikaCheckoutWidget price={amount ?? price} />
 
                 {/* Email для чека 54-ФЗ */}
                 {isAuthenticated && (
