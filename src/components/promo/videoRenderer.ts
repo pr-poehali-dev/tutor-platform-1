@@ -167,8 +167,7 @@ function pickMimeType(): string {
 
 export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
   const { variant, voiceUrl, voiceBase64, onProgress } = opts;
-  const totalSec = variant.scenes.reduce((s, sc) => s + sc.duration, 0);
-  const totalMs = totalSec * 1000;
+  const plannedSec = variant.scenes.reduce((s, sc) => s + sc.duration, 0);
   const isVertical = variant.aspect === "9:16";
 
   // 1) Получаем аудио-байты. Приоритет — base64 (обходит CORS на CDN).
@@ -196,6 +195,12 @@ export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
   }
   const audioCtx = new AudioCtx();
   const audioBuffer = await audioCtx.decodeAudioData(audioBuf.slice(0));
+
+  // Реальная длительность озвучки. Берём максимум из планового и фактического
+  // + 0.4 сек "хвоста", чтобы фраза не обрывалась на полуслове.
+  const audioSec = audioBuffer.duration;
+  const totalSec = Math.max(plannedSec, audioSec) + 0.4;
+  const totalMs = totalSec * 1000;
 
   // 2) Canvas
   const canvas = document.createElement("canvas");
@@ -256,7 +261,9 @@ export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
 
       onProgress?.(0.1 + (t / totalSec) * 0.85, `Сцена ${variant.scenes.indexOf(scene) + 1}/${variant.scenes.length}`);
 
-      if (elapsed < totalMs + 200) {
+      // +600 мс хвоста после конца озвучки — recorder успевает зафиксировать
+      // последние аудио-пакеты, фраза не обрывается.
+      if (elapsed < totalMs + 600) {
         requestAnimationFrame(tick);
       } else {
         resolve();
