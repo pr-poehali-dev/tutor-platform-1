@@ -15,6 +15,23 @@ export async function seedIfEmpty(): Promise<{ ok: boolean; auto_seeded?: boolea
   }
 }
 
+/** Часовой освежитель ленты (заменяет нерабочий Vercel-cron).
+ *  Вызывается при заходе на /feed. На бэке стоит rate-limit 25 минут —
+ *  значит реальное обновление произойдёт не чаще раза в 25 минут,
+ *  даже если страницу открывает тысячи людей одновременно.
+ *  Старые статьи НЕ удаляются. */
+export async function keepAlive(): Promise<{
+  ok: boolean; topup_created?: number; action_taken?: string; skipped?: boolean;
+}> {
+  try {
+    const res = await fetch(`${CURATOR_URL}?action=keep_alive`);
+    if (!res.ok) return { ok: false };
+    return await res.json();
+  } catch {
+    return { ok: false };
+  }
+}
+
 // ─── Health-monitor ──────────────────────────────────────────────────
 export interface FeedHealthAlert {
   severity: "critical" | "warning" | "info" | string;

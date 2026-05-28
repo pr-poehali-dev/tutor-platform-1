@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import ArticleCard from "@/components/feed/ArticleCard";
-import { fetchFeed, seedIfEmpty } from "@/components/feed/api";
+import { fetchFeed, seedIfEmpty, keepAlive } from "@/components/feed/api";
 import { CATEGORY_META, FeedArticle, FeedCategory } from "@/components/feed/types";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -32,8 +32,7 @@ export default function Feed() {
       setHasMore(res.has_more);
       setLoading(false);
 
-      // Авто-наполнение: если лента полностью пуста (нет ни одной категории)
-      // — просим бэкенд запустить парсер и через 8 сек подгружаем результат.
+      // Авто-наполнение: если лента полностью пуста — экстренный посев.
       const noContent = (res.items?.length || 0) === 0 && (res.total || 0) === 0;
       if (noContent && category === "all") {
         const seed = await seedIfEmpty();
@@ -46,6 +45,25 @@ export default function Feed() {
             setHasMore(r2.has_more);
           }, 8000);
         }
+        return;
+      }
+
+      // Иначе — фоновое обновление: дёргаем keep_alive (rate-limited 25 мин).
+      // Если за последние 25 минут уже был прогон — бэк пропустит,
+      // иначе добавит свежие статьи. Через 6 сек перезагружаем список.
+      // Старые статьи НЕ удаляются.
+      if (category === "all") {
+        keepAlive().then((ka) => {
+          if (ka.ok && !ka.skipped && (ka.topup_created || 0) > 0) {
+            setTimeout(async () => {
+              const r2 = await fetchFeed(category, 1);
+              setItems(r2.items);
+              setCounts(r2.category_counts);
+              setTotal(r2.total);
+              setHasMore(r2.has_more);
+            }, 6000);
+          }
+        });
       }
     });
   }, [category]);

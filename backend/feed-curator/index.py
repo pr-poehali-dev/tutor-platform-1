@@ -807,20 +807,26 @@ def handle_cron_log(headers: dict) -> dict:
         conn.close()
 
 
-def topup_from_demo_pool(cur, target_count: int = 15, min_per_category: int = 2) -> dict:
+def topup_from_demo_pool(cur, target_count: int = 15, min_per_category: int = 2,
+                          freshness_window_hours: int = 48) -> dict:
     """Берёт случайные шаблоны из feed_demo_pool, перефразирует через ИИ и публикует.
-    Цель: гарантировать минимум N свежих статей в каждой категории."""
+
+    Цель: гарантировать минимум N свежих статей в каждой категории
+    за окно freshness_window_hours.
+    СТАРЫЕ СТАТЬИ НИКОГДА НЕ УДАЛЯЕМ.
+    """
     categories = ('science', 'culture', 'education', 'robots', 'ai', 'grants')
     created_total = 0
     created_by_cat: dict = {}
 
     for cat in categories:
-        # Считаем, сколько в этой категории свежих статей (за 48ч)
+        # Считаем, сколько в этой категории свежих статей за окно
         cur.execute(
             "SELECT COUNT(*) FROM feed_articles "
             "WHERE status='published' AND category=%s "
-            "AND COALESCE(published_at, created_at) > NOW() - INTERVAL '48 hours'",
-            (cat,)
+            "AND COALESCE(published_at, created_at) > NOW() - "
+            "(INTERVAL '1 hour' * %s)",
+            (cat, freshness_window_hours)
         )
         fresh = cur.fetchone()[0]
         need = max(0, min_per_category - fresh)
@@ -975,10 +981,11 @@ def handle_keep_alive(event: dict, headers: dict) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            # Rate-limit: не чаще раз в 50 минут
+            # Rate-limit: не чаще раз в 25 минут (cron срабатывает каждый час,
+            # но руками можно дёрнуть чаще)
             cur.execute(
                 "SELECT id FROM feed_cron_runs "
-                "WHERE kind='keep_alive' AND started_at > NOW() - INTERVAL '50 minutes' "
+                "WHERE kind='keep_alive' AND started_at > NOW() - INTERVAL '25 minutes' "
                 "ORDER BY started_at DESC LIMIT 1"
             )
             if cur.fetchone():
@@ -1013,19 +1020,23 @@ def handle_keep_alive(event: dict, headers: dict) -> dict:
             )
             recently_disabled = cur.fetchone()[0]
 
-            # ЛОГИКА АВТОЛЕЧЕНИЯ:
-            # 1. Если совсем пусто — топап из пула на 18 статей (3 на категорию)
-            # 2. Если за 24 часа < 6 свежих — добиваем минимум до 2 на категорию
-            # 3. Иначе ничего не делаем
+            # ЛОГИКА АВТООБНОВЛЕНИЯ:
+            # Каждый часовой прогон ДОБАВЛЯЕТ свежие статьи — старые НЕ удаляем.
+            # Если совсем пусто — экстренный посев (3 на категорию).
+            # Иначе — гарантированно добавляем минимум по 1 свежей статье на категорию
+            #         каждый час (LRU из demo-pool с ИИ-рерайтом).
             topup_result = {'created': 0, 'by_category': {}}
-            action_taken = 'none'
+            action_taken = 'always_refresh'
 
             if total_published == 0:
                 topup_result = topup_from_demo_pool(cur, min_per_category=3)
                 action_taken = 'emergency_seed'
-            elif fresh_24h < 6:
-                topup_result = topup_from_demo_pool(cur, min_per_category=2)
-                action_taken = 'top_up'
+            else:
+                # Часовой освежитель — добавляет статей до min_per_category
+                # за последние 12 часов. Если за 12ч уже есть свежие — добивает
+                # до планки, иначе создаёт N новых.
+                topup_result = topup_from_demo_pool(cur, min_per_category=1,
+                                                   freshness_window_hours=12)
             conn.commit()
 
             # Health-monitor: алерт если много отвалившихся источников
