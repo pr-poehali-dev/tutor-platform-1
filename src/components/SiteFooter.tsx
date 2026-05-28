@@ -47,6 +47,7 @@ export default function SiteFooter() {
               <li><Link to="/reviews" className="text-yellow-200 hover:text-yellow-100 transition-colors font-bold">⭐ Отзывы учеников</Link></li>
               <li><Link to="/referral" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🎁 Приведи друга — +7 дней</Link></li>
               <li><a href="https://t.me/+QgiLIa1gFRY4Y2Iy" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">💬 Telegram-сообщество</a></li>
+              <li><Link to="/status" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">📊 Статус систем</Link></li>
             </ul>
           </nav>
 

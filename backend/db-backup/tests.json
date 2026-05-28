@@ -1,0 +1,6 @@
+{
+  "tests": [
+    {"name": "list — public 200", "method": "GET", "path": "/?action=list", "expectedStatus": 200, "expectedBody": {"count": 0}, "bodyMatcher": "partial"},
+    {"name": "unknown action — 404", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}

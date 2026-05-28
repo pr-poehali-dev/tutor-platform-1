@@ -253,4 +253,12 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Открытый статус всех систем (auto-updating health monitor) -->
+  <url>
+    <loc>https://учисьпро.рф/status</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.6</priority>
+  </url>
+
 </urlset>

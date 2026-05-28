@@ -50,6 +50,7 @@ const Help = lazy(() => import("./pages/Help"));
 const Contacts = lazy(() => import("./pages/Contacts"));
 const Referral = lazy(() => import("./pages/Referral"));
 const Reviews = lazy(() => import("./pages/Reviews"));
+const Status = lazy(() => import("./pages/Status"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -119,6 +120,7 @@ const App = () => (
                     <Route path="/contacts" element={<Contacts />} />
                     <Route path="/referral" element={<Referral />} />
                     <Route path="/reviews" element={<Reviews />} />
+                    <Route path="/status" element={<Status />} />
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />

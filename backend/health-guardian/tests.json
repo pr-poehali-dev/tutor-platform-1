@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {"name": "status — public 200", "method": "GET", "path": "/?action=status", "expectedStatus": 200, "expectedBody": {"overall_status": "string"}, "bodyMatcher": "partial"},
+    {"name": "alerts — public 200", "method": "GET", "path": "/?action=alerts", "expectedStatus": 200, "expectedBody": {"count": 0}, "bodyMatcher": "partial"},
+    {"name": "unknown — 404", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}
