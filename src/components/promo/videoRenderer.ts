@@ -57,6 +57,22 @@ function parseGradient(bg: string): { from: string; via?: string; to: string } {
   return { from, via, to };
 }
 
+function drawCover(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  W: number,
+  H: number,
+  zoom: number,
+) {
+  // object-fit: cover + лёгкий Ken Burns zoom (1.0 → ~1.08)
+  const scale = Math.max(W / img.width, H / img.height) * zoom;
+  const dw = img.width * scale;
+  const dh = img.height * scale;
+  const dx = (W - dw) / 2;
+  const dy = (H - dh) / 2;
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
 function drawScene(
   ctx: CanvasRenderingContext2D,
   W: number,
@@ -64,32 +80,56 @@ function drawScene(
   scene: VideoScene,
   sceneProgress: number,
   isVertical: boolean,
+  photos: Map<string, HTMLImageElement>,
 ) {
-  // ── Фон-градиент с лёгкой пульсацией
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  const { from, via, to } = parseGradient(scene.bg);
-  grad.addColorStop(0, from);
-  if (via) grad.addColorStop(0.5, via);
-  grad.addColorStop(1, to);
-  ctx.fillStyle = grad;
+  const photo = scene.photoUrl ? photos.get(scene.photoUrl) : undefined;
+
+  // ── Фото-фон с медленным зумом (Ken Burns) — оживляет статичный кадр
+  if (photo) {
+    const zoom = 1.0 + sceneProgress * 0.08;
+    drawCover(ctx, photo, W, H, zoom);
+    // Лёгкая цветная подложка от градиента сцены (для брендового настроения)
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    const { from, via, to } = parseGradient(scene.bg);
+    grad.addColorStop(0, from + "55");      // ~33% прозрачность
+    if (via) grad.addColorStop(0.5, via + "33");
+    grad.addColorStop(1, to + "55");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // Fallback — старый градиентный фон
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    const { from, via, to } = parseGradient(scene.bg);
+    grad.addColorStop(0, from);
+    if (via) grad.addColorStop(0.5, via);
+    grad.addColorStop(1, to);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── Затемнение снизу — чтобы текст читался поверх любого фото
+  const fade = ctx.createLinearGradient(0, H * 0.35, 0, H);
+  fade.addColorStop(0, "rgba(0,0,0,0)");
+  fade.addColorStop(0.5, "rgba(0,0,0,0.55)");
+  fade.addColorStop(1, "rgba(0,0,0,0.85)");
+  ctx.fillStyle = fade;
   ctx.fillRect(0, 0, W, H);
 
-  // ── Тёмный виньетка-оверлей для контраста
-  const vignette = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H));
+  // ── Виньетка по краям для глубины
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H));
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.45)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.55)");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, W, H);
 
-  // ── Эмодзи (большой, плавно появляется и пульсирует)
-  const emojiScale = 0.6 + Math.min(1, sceneProgress * 4) * 0.4 + Math.sin(sceneProgress * Math.PI * 4) * 0.03;
-  const emojiSize = Math.floor(Math.min(W, H) * (isVertical ? 0.28 : 0.32) * emojiScale);
+  // ── Маленький эмодзи-бейдж над заголовком (без огромной картинки)
+  const badgeY = isVertical ? H * 0.5 : H * 0.52;
+  const emojiSize = Math.floor(Math.min(W, H) * 0.07);
   ctx.font = `${emojiSize}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.globalAlpha = Math.min(1, sceneProgress * 6);
-  const emojiY = isVertical ? H * 0.32 : H * 0.36;
-  ctx.fillText(scene.emoji, W / 2, emojiY);
+  ctx.fillText(scene.emoji, W / 2, badgeY);
   ctx.globalAlpha = 1;
 
   // ── Тёмная плашка под заголовком
@@ -208,6 +248,31 @@ export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
   canvas.height = variant.height;
   const ctx = canvas.getContext("2d")!;
 
+  // 2.1) Предзагрузка реалистичных фото-фонов для каждой сцены.
+  // Используем crossOrigin=anonymous, чтобы canvas не «протух» от CORS.
+  onProgress?.(0.07, "Загружаем фото…");
+  const photos = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    variant.scenes.map(
+      (sc) =>
+        new Promise<void>((resolve) => {
+          if (!sc.photoUrl || photos.has(sc.photoUrl)) {
+            resolve();
+            return;
+          }
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            photos.set(sc.photoUrl!, img);
+            resolve();
+          };
+          // Если фото не загрузилось — не падаем, просто оставим градиент
+          img.onerror = () => resolve();
+          img.src = sc.photoUrl;
+        }),
+    ),
+  );
+
   // 3) Стрим видео + стрим аудио → MediaRecorder
   const videoStream = canvas.captureStream(FPS);
   const audioDest = audioCtx.createMediaStreamDestination();
@@ -257,7 +322,7 @@ export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
       }
       const sceneProgress = Math.min(1, (t - sceneStart) / scene.duration);
 
-      drawScene(ctx, variant.width, variant.height, scene, sceneProgress, isVertical);
+      drawScene(ctx, variant.width, variant.height, scene, sceneProgress, isVertical, photos);
 
       onProgress?.(0.1 + (t / totalSec) * 0.85, `Сцена ${variant.scenes.indexOf(scene) + 1}/${variant.scenes.length}`);
 

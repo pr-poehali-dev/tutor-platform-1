@@ -21,6 +21,8 @@ export interface VideoScene {
   bg: string;
   /** Промт для FLUX/Pollinations, если нужна картинка (опционально). */
   imagePrompt?: string;
+  /** Реалистичное фото-фон для сцены (CDN URL). */
+  photoUrl?: string;
   /** Цвет акцента (для подписи). */
   accent?: string;
 }
@@ -52,6 +54,7 @@ const HOOK: VideoScene = {
   subtitle: "Сейчас покажу почему",
   emoji: "🚀",
   bg: "from-purple-600 via-pink-500 to-orange-500",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/aa51f41e-8e27-4ccd-83bb-2701d142e21a.jpg",
 };
 
 const PROBLEM: VideoScene = {
@@ -62,6 +65,7 @@ const PROBLEM: VideoScene = {
   emoji: "😱",
   bg: "from-red-600 via-rose-500 to-pink-500",
   accent: "text-yellow-300",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/766f26c0-891d-4c22-8d93-f8b27ae06780.jpg",
 };
 
 const SOLUTION: VideoScene = {
@@ -71,6 +75,7 @@ const SOLUTION: VideoScene = {
   subtitle: "ИИ-репетитор 24/7",
   emoji: "🤖",
   bg: "from-cyan-500 via-blue-500 to-purple-600",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/44b28d64-f19b-4fa6-a105-25f0c27b9fc4.jpg",
 };
 
 const FEATURE_AI: VideoScene = {
@@ -80,6 +85,7 @@ const FEATURE_AI: VideoScene = {
   subtitle: "Ответ за секунду",
   emoji: "💬",
   bg: "from-violet-600 via-purple-500 to-fuchsia-500",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/b38d93ff-5fbe-4405-8d5e-3c1d4f88ecbb.jpg",
 };
 
 const FEATURE_EGE: VideoScene = {
@@ -89,6 +95,7 @@ const FEATURE_EGE: VideoScene = {
   subtitle: "+ 230 ВУЗов России",
   emoji: "🎓",
   bg: "from-emerald-500 via-teal-500 to-cyan-500",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/358c5c18-a251-4fd3-8974-956020a3632d.jpg",
 };
 
 const FEATURE_PROF: VideoScene = {
@@ -98,6 +105,7 @@ const FEATURE_PROF: VideoScene = {
   subtitle: "Тест на профессию",
   emoji: "🧭",
   bg: "from-amber-500 via-orange-500 to-rose-500",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/ad4ce5d0-3a80-443b-80f3-6b34f783439a.jpg",
 };
 
 const FEATURE_KIDS: VideoScene = {
@@ -107,6 +115,7 @@ const FEATURE_KIDS: VideoScene = {
   subtitle: "Развивашки для дошкольников",
   emoji: "👶",
   bg: "from-pink-400 via-rose-400 to-orange-400",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/3fc27b66-a8d2-4d07-87fa-9e070688dc19.jpg",
 };
 
 const FEATURE_GRANTS: VideoScene = {
@@ -116,6 +125,7 @@ const FEATURE_GRANTS: VideoScene = {
   subtitle: "Обновляется каждый час",
   emoji: "📡",
   bg: "from-indigo-600 via-blue-500 to-cyan-400",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/6c0a6569-63b1-43fd-950a-ab91cce039a8.jpg",
 };
 
 const PROMO_DOBRO: VideoScene = {
@@ -126,6 +136,7 @@ const PROMO_DOBRO: VideoScene = {
   emoji: "❤️",
   bg: "from-rose-500 via-pink-500 to-orange-500",
   accent: "text-yellow-200",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/c9c4b316-016e-4bd8-a053-d7a46ff47120.jpg",
 };
 
 const CTA: VideoScene = {
@@ -135,6 +146,7 @@ const CTA: VideoScene = {
   subtitle: "Начни прямо сейчас →",
   emoji: "🌐",
   bg: "from-purple-600 via-fuchsia-500 to-pink-500",
+  photoUrl: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/87ca5b7f-4378-4408-bf31-321bf9dec249.jpg",
 };
 
 // ───────────────────────────────────────────────────────────────────────────
