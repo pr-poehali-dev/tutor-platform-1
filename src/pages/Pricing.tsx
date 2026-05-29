@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { isPromoActive, formatEndDate, PROMO_CODE } from "@/components/promo/dobroConfig";
 import PlanComparison from "@/components/pricing/PlanComparison";
 import PricingTestimonials from "@/components/pricing/PricingTestimonials";
+import PricingBundles from "@/components/pricing/PricingBundles";
+import PricingReferral from "@/components/pricing/PricingReferral";
 
 const PLANS = [
   {
@@ -224,9 +226,16 @@ export default function Pricing() {
             <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4 leading-tight">
               Выбери подходящий <span className="gradient-text-purple">тариф</span>
             </h1>
-            <p className="text-white/55 text-base md:text-lg">
+            <p className="text-white/55 text-base md:text-lg mb-5">
               Подписка стоит дешевле одного занятия с репетитором. Без скрытых платежей. Отмена в любой момент.
             </p>
+            <a
+              href="#compare"
+              className="inline-flex items-center gap-2 bg-white/8 border border-white/15 text-white font-bold text-sm px-5 py-2.5 rounded-2xl hover:bg-white/12 transition-all"
+            >
+              <Icon name="Table2" size={16} />
+              Сравнить тарифы
+            </a>
           </div>
           <div className="relative rounded-3xl overflow-hidden border border-white/10 glow-purple hidden md:block">
             <img
@@ -304,6 +313,9 @@ export default function Pricing() {
           ))}
         </div>
 
+        {/* Выгодные комплекты (апселл) */}
+        <PricingBundles onSelect={handlePlanClick} />
+
         {/* Сравнение тарифов */}
         <PlanComparison />
 
@@ -328,6 +340,9 @@ export default function Pricing() {
 
         {/* Отзывы и результаты учеников */}
         <PricingTestimonials />
+
+        {/* Реферальная программа */}
+        <PricingReferral />
 
         {/* FAQ */}
         <div className="mb-12">

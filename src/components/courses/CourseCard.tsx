@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating } from "./coursesData";
+import { getCourseReview } from "./courseReview";
 import CourseVoiceDialog from "./CourseVoiceDialog";
 import { useUser } from "@/context/UserDataContext";
 
@@ -31,6 +32,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
   const oldPrice = Math.round(realPrice * 1.6);
   const [dialogOpen, setDialogOpen] = useState(false);
   const accent = SUBJECT_ACCENTS[course.subject] || "#a855f7";
+  const review = getCourseReview(course.id);
 
   const user = useUser();
   const isFav = user.isFavorite(course.id);
@@ -128,6 +130,28 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
 
         {/* Description */}
         <p className="text-white/50 text-xs leading-relaxed mb-3">{course.description}</p>
+
+        {/* Rating row */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <div className="flex gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Icon key={i} name="Star" size={12} className="text-amber-400 fill-amber-400" />
+            ))}
+          </div>
+          <span className="text-white text-xs font-bold">{course.rating}</span>
+          <span className="text-white/40 text-xs">· {course.reviews.toLocaleString("ru-RU")} отзывов</span>
+        </div>
+
+        {/* Mini review */}
+        <div className="flex gap-2 mb-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/8">
+          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${review.color} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+            {review.initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-white/70 text-[11px] leading-snug">«{review.text}»</p>
+            <p className="text-white/35 text-[10px] mt-0.5">{review.name}, ученик</p>
+          </div>
+        </div>
 
         {/* Tags */}
         <div className="flex gap-1.5 flex-wrap mb-4">

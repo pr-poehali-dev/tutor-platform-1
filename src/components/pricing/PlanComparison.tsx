@@ -51,7 +51,7 @@ function Cell({ value, highlight }: { value: string | boolean; highlight: boolea
 
 export default function PlanComparison() {
   return (
-    <div className="mb-16">
+    <div id="compare" className="mb-16 scroll-mt-24">
       <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-6 text-center">
         Сравнение тарифов
       </h2>
