@@ -4,6 +4,8 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { useAuth } from "@/context/AuthContext";
 import { isPromoActive, formatEndDate, PROMO_CODE } from "@/components/promo/dobroConfig";
+import PlanComparison from "@/components/pricing/PlanComparison";
+import PricingTestimonials from "@/components/pricing/PricingTestimonials";
 
 const PLANS = [
   {
@@ -302,6 +304,9 @@ export default function Pricing() {
           ))}
         </div>
 
+        {/* Сравнение тарифов */}
+        <PlanComparison />
+
         {/* Bonuses */}
         <div className="bg-card/60 border border-white/8 rounded-3xl p-6 md:p-8 mb-16">
           <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-5 text-center">Что входит во все платные тарифы</h2>
@@ -320,6 +325,9 @@ export default function Pricing() {
             ))}
           </div>
         </div>
+
+        {/* Отзывы и результаты учеников */}
+        <PricingTestimonials />
 
         {/* FAQ */}
         <div className="mb-12">
