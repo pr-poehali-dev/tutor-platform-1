@@ -30,7 +30,7 @@ const BANNERS: Banner[] = [
     title: "Для сторис",
     desc: "Вертикальный формат для Stories",
     format: "Сторис · 9:16",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/155a057c-2254-4526-9691-b61c0ab78ad1.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/614ef643-36ee-45d5-98d8-149c3ee21554.jpg",
     post:
       "✨ Не понял тему? Спроси у ИИ-репетитора — ответит за секунды!\n\n" +
       `Учись когда удобно, готовься к экзаменам без стресса. ${SITE} 👆`,
