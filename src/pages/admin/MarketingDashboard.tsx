@@ -13,6 +13,7 @@ import TasksSection from "./marketing/TasksSection";
 import ChatPanel from "./marketing/ChatPanel";
 import TacticsLibrary from "./marketing/TacticsLibrary";
 import PromoStats from "./marketing/PromoStats";
+import ProjectManagerPanel from "./marketing/ProjectManagerPanel";
 
 const MKT_URL = (func2url as Record<string, string>)["marketing-strategy"];
 
@@ -149,6 +150,8 @@ export default function MarketingDashboard() {
             <Icon name="AlertCircle" size={16} className="flex-shrink-0 mt-0.5" /> {error}
           </div>
         )}
+
+        <ProjectManagerPanel pin={pin} />
 
         <ChatPanel pin={pin} />
 

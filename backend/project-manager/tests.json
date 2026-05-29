@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {"name": "status without auth", "method": "GET", "path": "/?action=status", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "runs without auth", "method": "GET", "path": "/?action=runs", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "analyze without auth", "method": "POST", "path": "/?action=analyze", "body": {}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "cron without secret", "method": "POST", "path": "/?action=cron", "body": {}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "options cors", "method": "OPTIONS", "path": "/", "expectedStatus": 200}
+  ]
+}
