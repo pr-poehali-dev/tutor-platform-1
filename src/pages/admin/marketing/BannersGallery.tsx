@@ -24,7 +24,7 @@ const BANNERS: Banner[] = [
     title: "Для сторис",
     desc: "Вертикальный формат для Stories",
     format: "Сторис · 9:16",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/db3af181-d9e4-4bd2-a756-cba2506503.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/155a057c-2254-4526-9691-b61c0ab78ad1.jpg",
   },
   {
     id: "dobro",
