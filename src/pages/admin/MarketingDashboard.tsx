@@ -12,6 +12,7 @@ import AnalysisSection from "./marketing/AnalysisSection";
 import TasksSection from "./marketing/TasksSection";
 import ChatPanel from "./marketing/ChatPanel";
 import TacticsLibrary from "./marketing/TacticsLibrary";
+import PromoStats from "./marketing/PromoStats";
 
 const MKT_URL = (func2url as Record<string, string>)["marketing-strategy"];
 
@@ -150,6 +151,8 @@ export default function MarketingDashboard() {
         )}
 
         <ChatPanel pin={pin} />
+
+        <PromoStats />
 
         {ai && ai.ai && (
           <AiStrategyCard

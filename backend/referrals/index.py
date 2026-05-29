@@ -189,6 +189,59 @@ def handle_invited_list(token: str) -> dict:
         conn.close()
 
 
+def handle_promo_track(body: dict) -> dict:
+    promo = (body.get('promo') or 'dobro').strip()[:40] or 'dobro'
+    event_type = (body.get('event') or '').strip()[:20]
+    if event_type not in ('share', 'visit'):
+        return err('Неверный тип события', 400)
+    channel = (body.get('channel') or '').strip()[:20] or None
+    ref_code = (body.get('ref') or '').strip().upper()[:40] or None
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO promo_shares (promo, event, channel, ref_code) "
+                "VALUES (%s, %s, %s, %s)",
+                (promo, event_type, channel, ref_code)
+            )
+            conn.commit()
+            return ok({'ok': True})
+    finally:
+        conn.close()
+
+
+def handle_promo_stats(qs: dict) -> dict:
+    promo = (qs.get('promo') or 'dobro').strip()[:40] or 'dobro'
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT event, COALESCE(channel, 'direct'), COUNT(*) "
+                "FROM promo_shares WHERE promo=%s GROUP BY event, channel",
+                (promo,)
+            )
+            shares = {}
+            visits = {}
+            total_shares = 0
+            total_visits = 0
+            for ev, ch, cnt in cur.fetchall():
+                if ev == 'share':
+                    shares[ch] = cnt
+                    total_shares += cnt
+                else:
+                    visits[ch] = cnt
+                    total_visits += cnt
+            return ok({
+                'promo': promo,
+                'total_shares': total_shares,
+                'total_visits': total_visits,
+                'shares_by_channel': shares,
+                'visits_by_channel': visits,
+            })
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Реферальная программа УЧИСЬПРО."""
     method = event.get('httpMethod', 'GET')
@@ -209,5 +262,9 @@ def handler(event: dict, context) -> dict:
         return handle_use_code(token, body)
     if action == 'invited_list':
         return handle_invited_list(token)
+    if action == 'promo_track' and method == 'POST':
+        return handle_promo_track(body)
+    if action == 'promo_stats':
+        return handle_promo_stats(qs)
 
     return err('Неизвестное действие', 404)

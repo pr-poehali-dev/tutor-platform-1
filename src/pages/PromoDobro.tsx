@@ -7,12 +7,15 @@ import SiteFooter from "@/components/SiteFooter";
 import {
   isPromoActive, timeLeft, formatEndDate, PROMO_CODE,
 } from "@/components/promo/dobroConfig";
+import { trackShare, trackVisit } from "@/components/promo/promoTracking";
 
 const SITE = "https://xn--h1agdcde2c.xn--p1ai";
 
 const SHARE_URL = `${SITE}/promo/dobro`;
 const SHARE_TITLE = "Акция ДОБРО на УЧИСЬПРО";
 const SHARE_TEXT = "Акция ДОБРО на УЧИСЬПРО — все курсы и ИИ-репетитор для подготовки к ЕГЭ бесплатно до 15 июня 2026. Успей подключиться!";
+
+const linkFor = (from: string) => `${SHARE_URL}?from=${from}`;
 
 export default function PromoDobro() {
   const [active, setActive] = useState(false);
@@ -21,11 +24,13 @@ export default function PromoDobro() {
 
   useEffect(() => {
     setActive(isPromoActive());
+    trackVisit("dobro");
     const t = setInterval(() => setTl(timeLeft()), 1000);
     return () => clearInterval(t);
   }, []);
 
   const copyLink = async () => {
+    trackShare("copy");
     try {
       await navigator.clipboard.writeText(SHARE_URL);
       setCopied(true);
@@ -205,22 +210,25 @@ export default function PromoDobro() {
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             <a
-              href={`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TEXT)}`}
+              href={`https://t.me/share/url?url=${encodeURIComponent(linkFor("tg"))}&text=${encodeURIComponent(SHARE_TEXT)}`}
               target="_blank" rel="noopener noreferrer"
+              onClick={() => trackShare("tg")}
               className="flex items-center gap-2 bg-[#229ED9] hover:bg-[#1b88bb] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
               <Icon name="Send" size={16} /> Telegram
             </a>
             <a
-              href={`https://vk.com/share.php?url=${encodeURIComponent(SHARE_URL)}&title=${encodeURIComponent(SHARE_TITLE)}&description=${encodeURIComponent(SHARE_TEXT)}&noparse=true`}
+              href={`https://vk.com/share.php?url=${encodeURIComponent(linkFor("vk"))}&title=${encodeURIComponent(SHARE_TITLE)}&description=${encodeURIComponent(SHARE_TEXT)}&noparse=true`}
               target="_blank" rel="noopener noreferrer"
+              onClick={() => trackShare("vk")}
               className="flex items-center gap-2 bg-[#0077FF] hover:bg-[#0066dd] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
               <Icon name="Share2" size={16} /> ВКонтакте
             </a>
             <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(SHARE_TEXT + " " + SHARE_URL)}`}
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(SHARE_TEXT + " " + linkFor("wa"))}`}
               target="_blank" rel="noopener noreferrer"
+              onClick={() => trackShare("wa")}
               className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
               <Icon name="MessageCircle" size={16} /> WhatsApp
