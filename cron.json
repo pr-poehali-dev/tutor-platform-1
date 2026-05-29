@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/cron",
-  "description": "Расписание автозапусков ИИ-агента «Лента» — парсинг источников + автомодерация",
+  "description": "Расписание автозапусков ИИ-агентов: «Лента» (парсинг и модерация) и ИИ-менеджер проекта (анализ метрик и постановка задач)",
   "crons": [
     {
       "name": "feed-curator-6h",
@@ -8,6 +8,16 @@
       "schedule": "0 */6 * * *",
       "method": "GET",
       "url": "https://functions.poehali.dev/b4aed0e9-e169-4add-b041-36eaab3d44a5?action=cron",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
+    },
+    {
+      "name": "project-manager-daily",
+      "description": "Раз в день в 09:00 UTC: ИИ-менеджер Алекс анализирует метрики проекта и сам ставит задачи отделам маркетинга и продаж",
+      "schedule": "0 9 * * *",
+      "method": "POST",
+      "url": "https://functions.poehali.dev/2949bcce-ad58-490f-bbbf-05bae50ac1b8?action=cron",
       "headers": {
         "Authorization": "Bearer ${CRON_SECRET}"
       }
