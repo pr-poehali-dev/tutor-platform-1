@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/share/:page",
+      "destination": "/api/share?page=:page"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron-feed",

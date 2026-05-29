@@ -8,7 +8,6 @@ import {
   isPromoActive, timeLeft, formatEndDate, PROMO_CODE,
 } from "@/components/promo/dobroConfig";
 import { trackShare, trackVisit } from "@/components/promo/promoTracking";
-import func2url from "../../backend/func2url.json";
 
 const SITE = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -16,10 +15,9 @@ const SHARE_URL = `${SITE}/promo/dobro`;
 const SHARE_TITLE = "Акция ДОБРО на УЧИСЬПРО";
 const SHARE_TEXT = "Акция ДОБРО на УЧИСЬПРО — все курсы и ИИ-репетитор для подготовки к ЕГЭ бесплатно до 15 июня 2026. Успей подключиться!";
 
-// Ссылка для соцсетей: og-share отдаёт ботам VK/Telegram правильное превью
-// (баннер + заголовок), а живых людей мгновенно перенаправляет на /promo/dobro.
-const OG_SHARE = (func2url as Record<string, string>)["og-share"];
-const shareLinkFor = (from: string) => `${OG_SHARE}?page=dobro&from=${from}`;
+// Красивая ссылка на домене: /share/dobro отдаёт ботам VK/Telegram правильное
+// превью (баннер + заголовок), а живых людей перенаправляет на /promo/dobro.
+const shareLinkFor = (from: string) => `${SITE}/share/dobro?from=${from}`;
 
 export default function PromoDobro() {
   const [active, setActive] = useState(false);
