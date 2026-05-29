@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {"name": "human redirects to page", "method": "GET", "path": "/?page=dobro", "headers": {"User-Agent": "Mozilla/5.0 (iPhone)"}, "expectedStatus": 302},
+    {"name": "vk bot gets html", "method": "GET", "path": "/?page=dobro", "headers": {"User-Agent": "vkShare; +http://vk.com/dev/Share"}, "expectedStatus": 200},
+    {"name": "telegram bot gets html", "method": "GET", "path": "/?page=dobro", "headers": {"User-Agent": "TelegramBot (like TwitterBot)"}, "expectedStatus": 200},
+    {"name": "unknown page human redirect", "method": "GET", "path": "/?page=unknown", "headers": {"User-Agent": "Mozilla/5.0"}, "expectedStatus": 302},
+    {"name": "options cors", "method": "OPTIONS", "path": "/", "expectedStatus": 200}
+  ]
+}

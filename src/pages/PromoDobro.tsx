@@ -8,6 +8,7 @@ import {
   isPromoActive, timeLeft, formatEndDate, PROMO_CODE,
 } from "@/components/promo/dobroConfig";
 import { trackShare, trackVisit } from "@/components/promo/promoTracking";
+import func2url from "../../backend/func2url.json";
 
 const SITE = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -15,7 +16,10 @@ const SHARE_URL = `${SITE}/promo/dobro`;
 const SHARE_TITLE = "Акция ДОБРО на УЧИСЬПРО";
 const SHARE_TEXT = "Акция ДОБРО на УЧИСЬПРО — все курсы и ИИ-репетитор для подготовки к ЕГЭ бесплатно до 15 июня 2026. Успей подключиться!";
 
-const linkFor = (from: string) => `${SHARE_URL}?from=${from}`;
+// Ссылка для соцсетей: og-share отдаёт ботам VK/Telegram правильное превью
+// (баннер + заголовок), а живых людей мгновенно перенаправляет на /promo/dobro.
+const OG_SHARE = (func2url as Record<string, string>)["og-share"];
+const shareLinkFor = (from: string) => `${OG_SHARE}?page=dobro&from=${from}`;
 
 export default function PromoDobro() {
   const [active, setActive] = useState(false);
@@ -46,6 +50,7 @@ export default function PromoDobro() {
         title="Акция ДОБРО — учись бесплатно до 15 июня 2026 · УЧИСЬПРО"
         description="С 28 мая по 15 июня 2026 платежи на паузе. Полный доступ ко всем курсам, ИИ-репетитору и подготовке к ЕГЭ — бесплатно для каждого школьника."
         canonical={`${SITE}/promo/dobro`}
+        image="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/46b6c1c6-3ba8-49a9-a61c-ecadaca3d8a1.jpg"
       />
 
       <div className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
@@ -210,7 +215,7 @@ export default function PromoDobro() {
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             <a
-              href={`https://t.me/share/url?url=${encodeURIComponent(linkFor("tg"))}&text=${encodeURIComponent(SHARE_TEXT)}`}
+              href={`https://t.me/share/url?url=${encodeURIComponent(shareLinkFor("tg"))}&text=${encodeURIComponent(SHARE_TEXT)}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => trackShare("tg")}
               className="flex items-center gap-2 bg-[#229ED9] hover:bg-[#1b88bb] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
@@ -218,7 +223,7 @@ export default function PromoDobro() {
               <Icon name="Send" size={16} /> Telegram
             </a>
             <a
-              href={`https://vk.com/share.php?url=${encodeURIComponent(linkFor("vk"))}&title=${encodeURIComponent(SHARE_TITLE)}&description=${encodeURIComponent(SHARE_TEXT)}&noparse=true`}
+              href={`https://vk.com/share.php?url=${encodeURIComponent(shareLinkFor("vk"))}&title=${encodeURIComponent(SHARE_TITLE)}&description=${encodeURIComponent(SHARE_TEXT)}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => trackShare("vk")}
               className="flex items-center gap-2 bg-[#0077FF] hover:bg-[#0066dd] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
@@ -226,7 +231,7 @@ export default function PromoDobro() {
               <Icon name="Share2" size={16} /> ВКонтакте
             </a>
             <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(SHARE_TEXT + " " + linkFor("wa"))}`}
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(SHARE_TEXT + " " + shareLinkFor("wa"))}`}
               target="_blank" rel="noopener noreferrer"
               onClick={() => trackShare("wa")}
               className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
