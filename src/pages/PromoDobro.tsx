@@ -10,15 +10,30 @@ import {
 
 const SITE = "https://xn--h1agdcde2c.xn--p1ai";
 
+const SHARE_URL = `${SITE}/promo/dobro`;
+const SHARE_TITLE = "Акция ДОБРО на УЧИСЬПРО";
+const SHARE_TEXT = "Акция ДОБРО на УЧИСЬПРО — все курсы и ИИ-репетитор для подготовки к ЕГЭ бесплатно до 15 июня 2026. Успей подключиться!";
+
 export default function PromoDobro() {
   const [active, setActive] = useState(false);
   const [tl, setTl] = useState(() => timeLeft());
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setActive(isPromoActive());
     const t = setInterval(() => setTl(timeLeft()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(SHARE_URL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("Скопируй ссылку:", SHARE_URL);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
@@ -190,26 +205,33 @@ export default function PromoDobro() {
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             <a
-              href={`https://t.me/share/url?url=${encodeURIComponent(SITE + "/promo/dobro")}&text=${encodeURIComponent("Акция ДОБРО на УЧИСЬПРО — все курсы и ИИ-репетитор бесплатно до 15 июня 2026")}`}
+              href={`https://t.me/share/url?url=${encodeURIComponent(SHARE_URL)}&text=${encodeURIComponent(SHARE_TEXT)}`}
               target="_blank" rel="noopener noreferrer"
-              className="bg-[#229ED9] hover:bg-[#1b88bb] text-white font-bold text-sm px-5 py-2.5 rounded-xl"
+              className="flex items-center gap-2 bg-[#229ED9] hover:bg-[#1b88bb] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
-              Telegram
+              <Icon name="Send" size={16} /> Telegram
             </a>
             <a
-              href={`https://vk.com/share.php?url=${encodeURIComponent(SITE + "/promo/dobro")}`}
+              href={`https://vk.com/share.php?url=${encodeURIComponent(SHARE_URL)}&title=${encodeURIComponent(SHARE_TITLE)}&description=${encodeURIComponent(SHARE_TEXT)}&noparse=true`}
               target="_blank" rel="noopener noreferrer"
-              className="bg-[#0077FF] hover:bg-[#0066dd] text-white font-bold text-sm px-5 py-2.5 rounded-xl"
+              className="flex items-center gap-2 bg-[#0077FF] hover:bg-[#0066dd] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
-              ВКонтакте
+              <Icon name="Share2" size={16} /> ВКонтакте
             </a>
             <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent("Акция ДОБРО на УЧИСЬПРО — все курсы бесплатно до 15 июня: " + SITE + "/promo/dobro")}`}
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(SHARE_TEXT + " " + SHARE_URL)}`}
               target="_blank" rel="noopener noreferrer"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl"
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
             >
-              WhatsApp
+              <Icon name="MessageCircle" size={16} /> WhatsApp
             </a>
+            <button
+              onClick={copyLink}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
+            >
+              <Icon name={copied ? "Check" : "Link"} size={16} />
+              {copied ? "Скопировано!" : "Копировать ссылку"}
+            </button>
           </div>
         </section>
       </main>
