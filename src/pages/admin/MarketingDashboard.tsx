@@ -14,6 +14,7 @@ import ChatPanel from "./marketing/ChatPanel";
 import TacticsLibrary from "./marketing/TacticsLibrary";
 import PromoStats from "./marketing/PromoStats";
 import ProjectManagerPanel from "./marketing/ProjectManagerPanel";
+import BannersGallery from "./marketing/BannersGallery";
 
 const MKT_URL = (func2url as Record<string, string>)["marketing-strategy"];
 
@@ -152,6 +153,8 @@ export default function MarketingDashboard() {
         )}
 
         <ProjectManagerPanel pin={pin} />
+
+        <BannersGallery />
 
         <ChatPanel pin={pin} />
 
