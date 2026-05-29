@@ -19,7 +19,7 @@ const BANNERS: Banner[] = [
     title: "Универсальный",
     desc: "Учись бесплатно · ИИ-репетитор 24/7",
     format: "Пост · квадрат",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/f42287bb-3704-4fb2-ad63-aee6b818753b.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/84cbb9ad-8ba5-4a42-8af5-b39a4737f443.jpg",
     post:
       "🚀 Персональный ИИ-репетитор, который отвечает за секунды — 24/7!\n\n" +
       "📚 Все курсы 1–11 классов\n🎓 Подготовка к ЕГЭ и ОГЭ\n🎤 Голосовое и текстовое общение\n\n" +
@@ -30,7 +30,7 @@ const BANNERS: Banner[] = [
     title: "Для сторис",
     desc: "Вертикальный формат для Stories",
     format: "Сторис · 9:16",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/614ef643-36ee-45d5-98d8-149c3ee21554.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/c6c7492f-6a6a-4ea9-b461-bf1d7995999f.jpg",
     post:
       "✨ Не понял тему? Спроси у ИИ-репетитора — ответит за секунды!\n\n" +
       `Учись когда удобно, готовься к экзаменам без стресса. ${SITE} 👆`,
@@ -40,7 +40,7 @@ const BANNERS: Banner[] = [
     title: "Акция ДОБРО",
     desc: "Учись бесплатно до 15 июня",
     format: "Пост · квадрат",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/ce211ed6-3814-427c-8918-2629335ec548.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/408d0324-8c8a-439c-8726-d87e3367b731.jpg",
     post:
       "❤️ Акция ДОБРО: учись БЕСПЛАТНО до 15 июня!\n\n" +
       "Мы поставили все платежи на паузу. Каждый школьник может пройти любой курс УЧИСЬПРО — без карты, без подписки, без ограничений.\n\n" +
@@ -52,7 +52,7 @@ const BANNERS: Banner[] = [
     title: "Подготовка к ЕГЭ",
     desc: "Сдай ЕГЭ на высший балл",
     format: "Пост · квадрат",
-    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/1ac253de-acc4-427c-b3de-302b303c000d.jpg",
+    url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/6d24e5b9-5bd4-4c8a-a5ce-b4a7ac38c7b2.jpg",
     post:
       "🎯 Сдай ЕГЭ на высший балл с ИИ-репетитором!\n\n" +
       "📝 Разбор заданий ФИПИ\n⚡ Объяснения за секунды\n🕐 Готовься 24/7 в своём темпе\n\n" +
