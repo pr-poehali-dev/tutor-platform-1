@@ -210,6 +210,32 @@ def handle_promo_track(body: dict) -> dict:
         conn.close()
 
 
+def compute_surge(cur, promo: str) -> dict:
+    """Определяет всплеск переходов: визиты за последний час против среднечасового
+    за предыдущие 24 часа. Всплеск, если за час >= 5 переходов и >= 3x от среднего."""
+    cur.execute(
+        "SELECT COUNT(*) FROM promo_shares "
+        "WHERE promo=%s AND event='visit' AND created_at >= NOW() - INTERVAL '1 hour'",
+        (promo,)
+    )
+    last_hour = cur.fetchone()[0]
+    cur.execute(
+        "SELECT COUNT(*) FROM promo_shares "
+        "WHERE promo=%s AND event='visit' "
+        "AND created_at >= NOW() - INTERVAL '25 hours' "
+        "AND created_at < NOW() - INTERVAL '1 hour'",
+        (promo,)
+    )
+    prev_24 = cur.fetchone()[0]
+    avg_hour = prev_24 / 24.0 if prev_24 else 0.0
+    active = last_hour >= 5 and (avg_hour == 0 or last_hour >= avg_hour * 3)
+    return {
+        'active': active,
+        'last_hour': last_hour,
+        'avg_hour': round(avg_hour, 1),
+    }
+
+
 def handle_promo_stats(qs: dict) -> dict:
     promo = (qs.get('promo') or 'dobro').strip()[:40] or 'dobro'
     conn = get_db()
@@ -231,12 +257,14 @@ def handle_promo_stats(qs: dict) -> dict:
                 else:
                     visits[ch] = cnt
                     total_visits += cnt
+            surge = compute_surge(cur, promo)
             return ok({
                 'promo': promo,
                 'total_shares': total_shares,
                 'total_visits': total_visits,
                 'shares_by_channel': shares,
                 'visits_by_channel': visits,
+                'surge': surge,
             })
     finally:
         conn.close()

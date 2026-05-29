@@ -6,11 +6,18 @@ import func2url from "../../../../backend/func2url.json";
 
 const REF_URL = (func2url as Record<string, string>)["referrals"];
 
+interface Surge {
+  active: boolean;
+  last_hour: number;
+  avg_hour: number;
+}
+
 interface Stats {
   total_shares: number;
   total_visits: number;
   shares_by_channel: Record<string, number>;
   visits_by_channel: Record<string, number>;
+  surge?: Surge;
 }
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -43,9 +50,14 @@ export default function PromoStats() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, [load]);
 
   const channels = ["vk", "tg", "wa", "copy", "direct"];
+  const surge = stats?.surge;
 
   return (
     <Card className="border border-rose-400/25 bg-gradient-to-br from-rose-500/[0.06] to-orange-500/[0.04] p-5 mb-8">
@@ -57,6 +69,19 @@ export default function PromoStats() {
           <Icon name="RefreshCw" size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
+
+      {surge?.active && (
+        <div className="mb-4 rounded-xl border border-amber-400/40 bg-gradient-to-r from-amber-500/20 to-orange-500/15 p-3.5 flex items-start gap-3 animate-pulse">
+          <div className="text-2xl">🔥</div>
+          <div>
+            <div className="font-montserrat font-bold text-amber-200 text-sm">Всплеск переходов по акции!</div>
+            <div className="text-white/75 text-xs mt-0.5">
+              За последний час — <b className="text-amber-100">{surge.last_hour}</b> переходов
+              (обычно ~{surge.avg_hour}/час). Ловите горячих лидов: напишите новым пользователям и предложите помощь с подключением.
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
