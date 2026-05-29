@@ -11,6 +11,7 @@ import DashboardHeader from "./sales/DashboardHeader";
 import KpiOverview, { ChartsAndFunnel } from "./sales/KpiOverview";
 import CustomersTable from "./sales/CustomersTable";
 import CustomerDetailModal from "./sales/CustomerDetailModal";
+import PromoStats from "./marketing/PromoStats";
 
 const SALES_URL = (func2url as Record<string, string>)["sales-dashboard"];
 
@@ -117,6 +118,9 @@ export default function SalesDashboard() {
 
         {/* Входящие задачи от отдела маркетинга */}
         <InboxFromMarketing pin={pin} />
+
+        {/* Приток лидов по акции ДОБРО */}
+        <PromoStats />
 
         <ChartsAndFunnel overview={overview} funnel={funnel} />
 
