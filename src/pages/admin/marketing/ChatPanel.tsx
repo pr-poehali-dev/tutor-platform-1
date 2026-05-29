@@ -21,6 +21,13 @@ const QUICK_PROMPTS = [
   "Как использовать ЗНАЙКИ для виральности?",
 ];
 
+const PLAN_30_PROMPT =
+  "Составь конкретный план продвижения на 30 дней при бюджете 0 рублей. " +
+  "Разбей строго по 4 неделям. Для каждой недели дай: цель недели, 3-5 конкретных задач " +
+  "(что именно сделать руками), на какой канал и сегмент аудитории, и ожидаемый результат в цифрах. " +
+  "Опирайся на наши реальные метрики продаж, реферальную программу, ЗНАЙКИ и акцию ДОБРО. " +
+  "В конце добавь список из 5 первых действий на сегодня. Пиши кратко, по пунктам, без воды.";
+
 interface Props {
   pin: string;
 }
@@ -107,6 +114,16 @@ export default function ChatPanel({ pin }: Props) {
           <Icon name="RefreshCw" size={14} className={historyLoading ? "animate-spin" : ""} />
         </Button>
       </div>
+
+      {/* Кнопка: готовый план на 30 дней */}
+      <button
+        onClick={() => send(PLAN_30_PROMPT)}
+        disabled={loading}
+        className="w-full mb-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 to-cyan-500/15 hover:from-emerald-500/30 hover:to-cyan-500/25 text-emerald-100 font-bold text-sm py-3 transition-all disabled:opacity-50"
+      >
+        <Icon name="CalendarCheck" size={16} />
+        Сгенерировать план на 30 дней
+      </button>
 
       {/* Лента сообщений */}
       <div
