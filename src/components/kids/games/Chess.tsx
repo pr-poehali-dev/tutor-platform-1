@@ -16,9 +16,13 @@ import {
 export default function Chess({
   onSay,
   onWin,
+  onLoss,
+  level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
+  onLoss?: () => void;
+  level?: number;
 }) {
   const [board, setBoard] = useState<Board>(initBoard);
   const [sel, setSel] = useState<{ r: number; c: number } | null>(null);
@@ -43,6 +47,7 @@ export default function Chess({
       } else {
         setOver("b");
         onSay("Мат! В этот раз победила я. Но ты здорово играл! Сыграем ещё?");
+        onLoss?.();
       }
       return true;
     }
@@ -61,7 +66,7 @@ export default function Chess({
   useEffect(() => {
     if (turn !== "b" || over) return;
     const t = setTimeout(() => {
-      const m = pickKsushaMove(board);
+      const m = pickKsushaMove(board, level);
       if (!m) { finish(board, "w"); return; }
       const captured = board[m.tr][m.tc];
       const nb = applyMove(board, m);
@@ -72,7 +77,7 @@ export default function Chess({
       if (!finish(nb, "b")) setTurn("w");
     }, 800);
     return () => clearTimeout(t);
-  }, [turn, over, board, finish, onSay]);
+  }, [turn, over, board, finish, onSay, level]);
 
   const myMoves = turn === "w" && !over && sel
     ? legalMovesFrom(board, sel.r, sel.c)

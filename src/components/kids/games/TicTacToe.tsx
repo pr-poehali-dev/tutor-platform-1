@@ -41,9 +41,13 @@ function findBest(b: Cell[], me: "O", you: "X"): number | null {
 export default function TicTacToe({
   onSay,
   onWin,
+  onLoss,
+  level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
+  onLoss?: () => void;
+  level?: number;
 }) {
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
   const [turn, setTurn] = useState<"X" | "O">("X");
@@ -56,7 +60,16 @@ export default function TicTacToe({
   };
 
   const ksushaMove = useCallback((b: Cell[]) => {
-    const i = findBest(b, "O", "X");
+    // На низком уровне Ксюша иногда ходит наугад (даёт малышу шанс),
+    // с ростом уровня играет всё точнее и почти не ошибается.
+    const randomChance = Math.max(0, 0.6 - (level - 1) * 0.2);
+    const empty = b.map((v, idx) => (v ? -1 : idx)).filter((idx) => idx >= 0);
+    let i: number | null;
+    if (Math.random() < randomChance && empty.length) {
+      i = empty[Math.floor(Math.random() * empty.length)];
+    } else {
+      i = findBest(b, "O", "X");
+    }
     if (i === null) return;
     const next = [...b];
     next[i] = "O";
@@ -65,13 +78,14 @@ export default function TicTacToe({
     if (w === "O") {
       setOver("O");
       onSay("Я собрала три нолика в ряд! В этот раз повезло мне. Сыграем ещё?");
+      onLoss?.();
     } else if (next.every((c) => c)) {
       setOver("draw");
       onSay("Ничья! Никто не выиграл. Хочешь сыграть ещё разок?");
     } else {
       setTurn("X");
     }
-  }, [onSay]);
+  }, [onSay, onLoss, level]);
 
   useEffect(() => {
     if (turn === "O" && !over) {

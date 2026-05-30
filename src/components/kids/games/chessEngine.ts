@@ -215,9 +215,22 @@ const VALUE: Record<PieceType, number> = {
 
 // Простой ИИ для Ксюши: выбирает ход с наибольшей выгодой на 1 полуход вперёд
 // (берёт ценную фигуру, избегает явных потерь). Достаточно для детской партии.
-export function pickKsushaMove(b: Board): Move | null {
+export function pickKsushaMove(b: Board, level = 1): Move | null {
   const moves = allLegalMoves(b, "b");
   if (moves.length === 0) return null;
+
+  // На низком уровне Ксюша часто ходит наугад (поддаётся малышу),
+  // с ростом уровня всё чаще выбирает лучший ход.
+  // level 1 → ~60% случайных ходов, level 5+ → почти всегда лучший.
+  const randomChance = Math.max(0, 0.7 - (level - 1) * 0.15);
+  if (Math.random() < randomChance) {
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  // Чем выше уровень, тем строже Ксюша избегает потерь и точнее считает.
+  const captureWeight = 10;
+  const dangerWeight = 4 + level * 2; // выше уровень → сильнее бережёт фигуры
+  const noise = Math.max(0.05, 1.5 - level * 0.25); // меньше случайности с уровнем
 
   let best: Move | null = null;
   let bestScore = -Infinity;
@@ -225,7 +238,7 @@ export function pickKsushaMove(b: Board): Move | null {
   for (const m of moves) {
     let score = 0;
     const target = b[m.tr][m.tc];
-    if (target) score += VALUE[target.type] * 10;
+    if (target) score += VALUE[target.type] * captureWeight;
 
     const nb = applyMove(b, m);
 
@@ -237,11 +250,16 @@ export function pickKsushaMove(b: Board): Move | null {
     // штраф, если после хода наша фигура под боем (может быть взята)
     if (isAttacked(nb, m.tr, m.tc, "w")) {
       const moved = nb[m.tr][m.tc];
-      if (moved) score -= VALUE[moved.type] * 8;
+      if (moved) score -= VALUE[moved.type] * dangerWeight;
     }
 
-    // лёгкое продвижение пешек и развитие к центру
-    score += Math.random() * 0.5;
+    // на высоких уровнях — лёгкое стремление к центру доски
+    if (level >= 3) {
+      const centerBonus = 3 - (Math.abs(m.tr - 3.5) + Math.abs(m.tc - 3.5));
+      score += centerBonus * 0.2;
+    }
+
+    score += Math.random() * noise;
 
     if (score > bestScore) {
       bestScore = score;

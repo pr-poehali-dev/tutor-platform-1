@@ -90,9 +90,13 @@ function count(b: Board, p: Piece): number {
 export default function Checkers({
   onSay,
   onWin,
+  onLoss,
+  level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
+  onLoss?: () => void;
+  level?: number;
 }) {
   const [board, setBoard] = useState<Board>(initBoard);
   const [sel, setSel] = useState<{ r: number; c: number } | null>(null);
@@ -110,6 +114,7 @@ export default function Checkers({
     if (count(b, 1) === 0) {
       setOver(2);
       onSay("Я забрала все твои шашки. В этот раз победила я! Сыграем ещё?");
+      onLoss?.();
       return true;
     }
     if (count(b, 2) === 0) {
@@ -126,11 +131,12 @@ export default function Checkers({
         onWin();
       } else {
         onSay("У тебя не осталось ходов. В этот раз победила я! Попробуешь ещё?");
+        onLoss?.();
       }
       return true;
     }
     return false;
-  }, [onSay, onWin]);
+  }, [onSay, onWin, onLoss]);
 
   // Ход Ксюши
   useEffect(() => {
@@ -138,17 +144,33 @@ export default function Checkers({
     const t = setTimeout(() => {
       const moves = allMoves(board, 2);
       if (moves.length === 0) { checkEnd(board, 2); return; }
-      // приоритет — взятие, иначе случайный ход
       const caps = moves.filter((m) => m.cap);
-      const pick = (caps.length ? caps : moves)[
-        Math.floor(Math.random() * (caps.length ? caps.length : moves.length))
-      ];
+
+      // На низком уровне Ксюша иногда «не замечает» взятие и ходит наугад —
+      // так малышу легче выиграть. С ростом уровня всегда бьёт.
+      const missChance = Math.max(0, 0.6 - (level - 1) * 0.2);
+      const useCapture = caps.length > 0 && Math.random() > missChance;
+      const pool = useCapture ? caps : moves;
+
+      let pick = pool[Math.floor(Math.random() * pool.length)];
+
+      // На уровне 3+ Ксюша избегает ходов, после которых её шашку сразу побьют
+      if (level >= 3) {
+        const safe = pool.filter((m) => {
+          const after = applyMove(board, m);
+          return allMoves(after, 1).every(
+            (om) => !(om.cap && om.cap.r === m.tr && om.cap.c === m.tc)
+          );
+        });
+        if (safe.length) pick = safe[Math.floor(Math.random() * safe.length)];
+      }
+
       const nb = applyMove(board, pick);
       setBoard(nb);
       if (!checkEnd(nb, 1)) setTurn(1);
     }, 750);
     return () => clearTimeout(t);
-  }, [turn, over, board, checkEnd]);
+  }, [turn, over, board, checkEnd, level]);
 
   const click = (r: number, c: number) => {
     if (turn !== 1 || over) return;

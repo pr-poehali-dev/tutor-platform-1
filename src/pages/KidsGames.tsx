@@ -10,15 +10,10 @@ import { useScreenTime } from "@/components/kids/useScreenTime";
 import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import { useKsushaVoice } from "@/components/kids/poznavashka/useKsushaVoice";
 import { KSUSHA_AVATAR } from "@/components/kids/poznavashka/poznavashkaData";
-import KsushaSpeech, { SoundToggle } from "@/components/kids/games/KsushaSpeech";
 import { KIDS_GAMES, GameInfo } from "@/components/kids/games/gamesData";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
-import TicTacToe from "@/components/kids/games/TicTacToe";
-import Fifteen from "@/components/kids/games/Fifteen";
-import Checkers from "@/components/kids/games/Checkers";
-import SeaBattle from "@/components/kids/games/SeaBattle";
-import Chess from "@/components/kids/games/Chess";
+import GamePlay from "@/components/kids/games/GamePlay";
 
 export default function KidsGames() {
   const { state: screenTime } = useScreenTime(true);
@@ -131,46 +126,19 @@ export default function KidsGames() {
 
       {/* ЭКРАН ИГРЫ */}
       {game && (
-        <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-6">
-          <div className="flex items-center justify-between mb-5">
-            <button
-              onClick={backToHub}
-              className="inline-flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-medium transition-colors"
-            >
-              <Icon name="ChevronLeft" size={16} />
-              Все игры
-            </button>
-            <SoundToggle enabled={enabled} onToggle={toggle} />
-          </div>
-
-          <div className="mb-6">
-            <KsushaSpeech
-              text={bubble}
-              speaking={speaking}
-              onReplay={enabled ? () => speak(bubble) : undefined}
-            />
-          </div>
-
-          {!isAuthenticated && (
-            <div className="mb-5 text-center">
-              <button
-                onClick={openLogin}
-                className="inline-flex items-center gap-2 text-amber-300 hover:text-amber-200 text-sm font-bold underline underline-offset-4"
-              >
-                <Icon name="LogIn" size={14} />
-                Войди, чтобы получать ЗНАЙКИ за победы
-              </button>
-            </div>
-          )}
-
-          <div className="flex justify-center">
-            {game.slug === "tictactoe" && <TicTacToe onSay={say} onWin={handleWin} />}
-            {game.slug === "fifteen" && <Fifteen onSay={say} onWin={handleWin} />}
-            {game.slug === "checkers" && <Checkers onSay={say} onWin={handleWin} />}
-            {game.slug === "seabattle" && <SeaBattle onSay={say} onWin={handleWin} />}
-            {game.slug === "chess" && <Chess onSay={say} onWin={handleWin} />}
-          </div>
-        </section>
+        <GamePlay
+          game={game}
+          bubble={bubble}
+          speaking={speaking}
+          voiceEnabled={enabled}
+          onToggleVoice={toggle}
+          onSpeak={speak}
+          onSay={say}
+          onBack={backToHub}
+          onReward={handleWin}
+          isAuthenticated={isAuthenticated}
+          onLogin={openLogin}
+        />
       )}
 
       <SiteFooter />
