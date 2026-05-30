@@ -32,6 +32,8 @@ export default function GamePlay({
   onToggleVoice,
   onSpeak,
   onSay,
+  onShowText,
+  onChirp,
   onBack,
   onReward,
   isAuthenticated,
@@ -44,6 +46,8 @@ export default function GamePlay({
   onToggleVoice: () => void;
   onSpeak: (text: string) => void;
   onSay: (text: string) => void;
+  onShowText: (text: string) => void;
+  onChirp?: (text: string, volume?: number) => void;
   onBack: () => void;
   onReward: () => void;
   isAuthenticated: boolean;
@@ -68,11 +72,14 @@ export default function GamePlay({
       clearTimers();
       if (active) {
         setEmotion("thinking");
-        onSay(rnd(THINK_PHRASES));
-        // через паузу — "Есть идея!" и радостный кивок
+        // Показываем текст «Надо подумать…» и тихо мычим «хм-м»
+        onShowText(rnd(THINK_PHRASES));
+        onChirp?.("Хм-м-м", 0.55);
+        // через паузу — радостное «Оп!» + полноценное «Есть идея!»
         timers.current.push(
           window.setTimeout(() => {
             setEmotion("idea");
+            onChirp?.("Оп!", 0.8);
             onSay(rnd(IDEA_PHRASES));
           }, 1100)
         );
@@ -80,12 +87,13 @@ export default function GamePlay({
         setEmotion("idle");
       }
     },
-    [onSay, clearTimers]
+    [onSay, onShowText, onChirp, clearTimers]
   );
 
   const handleWin = () => {
     clearTimers();
     setEmotion("happy");
+    onChirp?.("Оп-па!", 0.85);
     onReward();
     if (!adaptive) return;
     const { leveledUp, level: newLevel } = registerWin();

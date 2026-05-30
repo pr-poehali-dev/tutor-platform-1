@@ -16,6 +16,7 @@ function stripEmoji(text: string): string {
 
 export function useKsushaVoice() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const chirpRef = useRef<HTMLAudioElement | null>(null);
   const cacheRef = useRef<Map<string, string>>(new Map());
   const [enabled, setEnabled] = useState(true);
   const [speaking, setSpeaking] = useState(false);
@@ -24,6 +25,10 @@ export function useKsushaVoice() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
+    }
+    if (chirpRef.current) {
+      chirpRef.current.pause();
+      chirpRef.current = null;
     }
     setSpeaking(false);
   }, []);
@@ -62,6 +67,38 @@ export function useKsushaVoice() {
     [enabled, stop]
   );
 
+  // Короткий звук-эмоция («оп!», «хм-м») — играет негромко и не прерывает
+  // длинные реплики так заметно. Не меняет состояние speaking.
+  const chirp = useCallback(
+    async (rawText: string, volume = 0.7) => {
+      if (!enabled) return;
+      const text = stripEmoji(rawText);
+      if (!text) return;
+      try {
+        let audioSrc = cacheRef.current.get("chirp:" + text);
+        if (!audioSrc) {
+          const res = await fetch(TTS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, teacher_id: "ksusha" }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.audio_base64) return;
+          audioSrc = `data:${data.mime || "audio/mpeg"};base64,${data.audio_base64}`;
+          cacheRef.current.set("chirp:" + text, audioSrc);
+        }
+        if (chirpRef.current) chirpRef.current.pause();
+        const audio = new Audio(audioSrc);
+        audio.volume = volume;
+        chirpRef.current = audio;
+        await audio.play().catch(() => {});
+      } catch {
+        // тихо игнорируем — звук необязательный
+      }
+    },
+    [enabled]
+  );
+
   const toggle = useCallback(() => {
     setEnabled((prev) => {
       if (prev) stop();
@@ -71,5 +108,5 @@ export function useKsushaVoice() {
 
   useEffect(() => stop, [stop]);
 
-  return { speak, stop, toggle, enabled, speaking };
+  return { speak, chirp, stop, toggle, enabled, speaking };
 }

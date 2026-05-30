@@ -21,7 +21,7 @@ export default function KidsGames() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [overrideUntil, setOverrideUntil] = useState<number>(0);
 
-  const { speak, stop, toggle, enabled, speaking } = useKsushaVoice();
+  const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
 
@@ -45,10 +45,15 @@ export default function KidsGames() {
     setBubble("");
   };
 
-  // Реплика Ксюши во время игры
+  // Реплика Ксюши во время игры (текст в облачке + озвучка)
   const say = (text: string) => {
     setBubble(text);
     speak(text);
+  };
+
+  // Показать текст в облачке без полной озвучки (для коротких звуков-эмоций)
+  const showText = (text: string) => {
+    setBubble(text);
   };
 
   const handleWin = () => {
@@ -132,6 +137,8 @@ export default function KidsGames() {
           onToggleVoice={toggle}
           onSpeak={speak}
           onSay={say}
+          onShowText={showText}
+          onChirp={chirp}
           onBack={backToHub}
           onReward={handleWin}
           isAuthenticated={isAuthenticated}

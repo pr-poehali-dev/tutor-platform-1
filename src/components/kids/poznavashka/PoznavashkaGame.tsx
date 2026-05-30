@@ -33,7 +33,7 @@ function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => 
 export default function PoznavashkaGame() {
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
-  const { speak, stop, toggle, enabled, speaking } = useKsushaVoice();
+  const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
 
   const [phase, setPhase] = useState<Phase>("map");
   const [world, setWorld] = useState<PoznavashkaWorld | null>(null);
@@ -65,8 +65,10 @@ export default function PoznavashkaGame() {
       setVerdict("correct");
       setCorrectCount((c) => c + 1);
       setEarnedZnaiki((z) => z + ZNAIKI_PER_CORRECT);
+      chirp("Оп-па!", 0.85);
     } else {
       setVerdict("wrong");
+      chirp("Хм-м-м", 0.55);
       setTimeout(() => {
         setVerdict("idle");
         setSelected(null);
