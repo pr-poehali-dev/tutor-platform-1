@@ -10,6 +10,35 @@ import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 
+const CANONICAL = `${SITE_URL}/kids/poznavashka`;
+
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Познавашка с Ксюшей",
+    description:
+      "Обучающая игра для детей: Ксюша в сказочной стране рассказывает, как устроен окружающий мир. За правильные ответы дети получают ЗНАЙКИ.",
+    url: CANONICAL,
+    inLanguage: "ru",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Малыш", item: `${SITE_URL}/kids` },
+      { "@type": "ListItem", position: 3, name: "Познавашка", item: CANONICAL },
+    ],
+  },
+];
+
+const BREADCRUMBS = [
+  { label: "Главная", href: "/" },
+  { label: "Малыш", href: "/kids" },
+  { label: "Познавашка" },
+];
+
 export default function KidsPoznavashka() {
   const { state: screenTime } = useScreenTime(true);
   const [gateOpen, setGateOpen] = useState(false);
@@ -24,11 +53,16 @@ export default function KidsPoznavashka() {
       <Seo
         title="Познавашка с Ксюшей — игра про окружающий мир для малышей | УЧИСЬПРО Малыш"
         description="Весёлая обучающая игра для детей до 12 лет. Персонаж Ксюша в сказочной стране рассказывает, как устроен окружающий мир. За правильные ответы дети получают ЗНАЙКИ — внутреннюю валюту платформы."
-        canonical={`${SITE_URL}/kids/poznavashka`}
+        canonical={CANONICAL}
         keywords="познавательная игра для детей, окружающий мир для малышей, обучающая игра дошкольникам, викторина для детей, развивающая игра онлайн"
+        jsonLd={JSON_LD}
       />
 
-      <KidsTopBar screenTime={screenTime} onOpenSettings={() => setGateOpen(true)} />
+      <KidsTopBar
+        screenTime={screenTime}
+        onOpenSettings={() => setGateOpen(true)}
+        breadcrumbs={BREADCRUMBS}
+      />
 
       {/* Герой раздела */}
       <section className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 pt-8 pb-2 text-center">

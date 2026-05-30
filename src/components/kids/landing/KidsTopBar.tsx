@@ -2,6 +2,11 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 
+interface Crumb {
+  label: string;
+  href?: string;
+}
+
 interface Props {
   screenTime: {
     dailyLimit: number;
@@ -9,9 +14,13 @@ interface Props {
     remaining: number;
   };
   onOpenSettings: () => void;
+  breadcrumbs?: Crumb[];
 }
 
-export default function KidsTopBar({ screenTime, onOpenSettings }: Props) {
+const DEFAULT_CRUMBS: Crumb[] = [{ label: "Главная", href: "/" }, { label: "Малыш" }];
+
+export default function KidsTopBar({ screenTime, onOpenSettings, breadcrumbs }: Props) {
+  const crumbs = breadcrumbs ?? DEFAULT_CRUMBS;
   return (
     <>
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -35,7 +44,7 @@ export default function KidsTopBar({ screenTime, onOpenSettings }: Props) {
             <span className="font-montserrat font-black text-base gradient-text-purple tracking-wide group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
           <div className="hidden md:block">
-            <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Малыш" }]} />
+            <Breadcrumbs items={crumbs} />
           </div>
           <div className="flex items-center gap-2">
             {/* Индикатор экранного времени */}

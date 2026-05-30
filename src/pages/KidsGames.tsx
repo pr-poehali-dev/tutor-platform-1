@@ -15,6 +15,40 @@ import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
 import GamePlay from "@/components/kids/games/GamePlay";
 
+const CANONICAL = `${SITE_URL}/kids/games`;
+
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Игротека с Ксюшей",
+    description:
+      "Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, шахматы, морской бой. Объясняет правила голосом и играет вместе с ребёнком.",
+    url: CANONICAL,
+    inLanguage: "ru",
+    hasPart: KIDS_GAMES.map((g) => ({
+      "@type": "Game",
+      name: g.title,
+      description: g.short,
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Малыш", item: `${SITE_URL}/kids` },
+      { "@type": "ListItem", position: 3, name: "Игротека", item: CANONICAL },
+    ],
+  },
+];
+
+const BREADCRUMBS = [
+  { label: "Главная", href: "/" },
+  { label: "Малыш", href: "/kids" },
+  { label: "Игротека" },
+];
+
 export default function KidsGames() {
   const { state: screenTime } = useScreenTime(true);
   const [gateOpen, setGateOpen] = useState(false);
@@ -71,11 +105,16 @@ export default function KidsGames() {
       <Seo
         title="Игротека с Ксюшей — шашки, шахматы, пятнашки, морской бой для детей | УЧИСЬПРО Малыш"
         description="Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, шахматы, морской бой. Объясняет правила голосом, играет вместе с ребёнком. За победу — ЗНАЙКИ."
-        canonical={`${SITE_URL}/kids/games`}
+        canonical={CANONICAL}
         keywords="игры для детей онлайн, крестики нолики, пятнашки, шашки для детей, шахматы для детей, морской бой, логические игры малышам"
+        jsonLd={JSON_LD}
       />
 
-      <KidsTopBar screenTime={screenTime} onOpenSettings={() => setGateOpen(true)} />
+      <KidsTopBar
+        screenTime={screenTime}
+        onOpenSettings={() => setGateOpen(true)}
+        breadcrumbs={BREADCRUMBS}
+      />
 
       {/* Герой */}
       <section className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 pt-8 pb-2 text-center">
