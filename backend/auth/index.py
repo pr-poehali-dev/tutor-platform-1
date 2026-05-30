@@ -114,13 +114,22 @@ def handle_register(body: dict, user_agent: str, ip: str) -> dict:
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM auth_users WHERE LOWER(email) = %s LIMIT 1", (email,))
             if cur.fetchone():
-                return err('Пользователь с таким email уже существует', 409)
+                return err('Этот email уже зарегистрирован. Войди в свой аккаунт.', 409)
 
-            cur.execute(
-                "INSERT INTO auth_users (email, name, password_hash, phone, last_login_at) "
-                "VALUES (%s, %s, %s, '', NOW()) RETURNING id",
-                (email, name or None, pwd_hash)
-            )
+            try:
+                cur.execute(
+                    "INSERT INTO auth_users (email, name, password_hash, phone, last_login_at) "
+                    "VALUES (%s, %s, %s, '', NOW()) RETURNING id",
+                    (email, name or None, pwd_hash)
+                )
+            except Exception as db_exc:
+                conn.rollback()
+                pgcode = getattr(db_exc, 'pgcode', None)
+                msg = str(db_exc).lower()
+                if pgcode == '23505' or 'unique' in msg or 'duplicate' in msg:
+                    return err('Этот email уже зарегистрирован. Войди в свой аккаунт.', 409)
+                raise
+
             user_id = cur.fetchone()[0]
             token = create_session(cur, user_id, user_agent, ip)
             conn.commit()
