@@ -1,30 +1,24 @@
 import Icon from "@/components/ui/icon";
-import { KSUSHA_AVATAR } from "@/components/kids/poznavashka/poznavashkaData";
+import KsushaAvatar, { KsushaEmotion } from "./KsushaAvatar";
 
 export default function KsushaSpeech({
   text,
   size = "md",
   speaking = false,
+  emotion,
   onReplay,
 }: {
   text: string;
   size?: "sm" | "md" | "lg";
   speaking?: boolean;
+  emotion?: KsushaEmotion;
   onReplay?: () => void;
 }) {
-  const avatarSize =
-    size === "lg" ? "w-24 h-24" : size === "sm" ? "w-12 h-12" : "w-16 h-16";
+  // Если эмоция не задана явно — показываем «говорит» во время озвучки, иначе спокойствие
+  const emo: KsushaEmotion = emotion ?? (speaking ? "speaking" : "idle");
   return (
     <div className="flex items-end gap-3">
-      <img
-        src={KSUSHA_AVATAR}
-        alt="Ксюша"
-        className={`flex-shrink-0 rounded-full border-4 object-cover transition-all ${
-          speaking
-            ? "border-amber-300 ring-4 ring-amber-300/40 animate-pulse scale-105"
-            : "border-amber-300/60"
-        } shadow-lg shadow-amber-500/20 ${avatarSize}`}
-      />
+      <KsushaAvatar emotion={emo} size={size} />
       <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
         {text}
         {onReplay && (

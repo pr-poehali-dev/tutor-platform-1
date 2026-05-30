@@ -8,7 +8,7 @@ import ScreenTimeBlocker from "@/components/kids/ScreenTimeBlocker";
 import { useScreenTime } from "@/components/kids/useScreenTime";
 import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
-import { KSUSHA_AVATAR } from "@/components/kids/poznavashka/poznavashkaData";
+import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 
 export default function KidsPoznavashka() {
   const { state: screenTime } = useScreenTime(true);
@@ -36,11 +36,9 @@ export default function KidsPoznavashka() {
           <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Новый раздел</span>
         </div>
         <div className="flex items-center justify-center gap-4 mb-3">
-          <img
-            src={KSUSHA_AVATAR}
-            alt="Ксюша"
-            className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-amber-300/60 shadow-xl shadow-amber-500/20 object-cover"
-          />
+          <div className="scale-110 md:scale-125">
+            <KsushaAvatar emotion="idle" size="lg" />
+          </div>
           <h1 className="font-montserrat font-black text-4xl md:text-5xl text-white">
             Познавашка
           </h1>

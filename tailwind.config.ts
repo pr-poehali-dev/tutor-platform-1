@@ -105,6 +105,30 @@ export default {
 					'0%, 100%': { transform: 'translateX(0)' },
 					'20%, 60%': { transform: 'translateX(-6px)' },
 					'40%, 80%': { transform: 'translateX(6px)' }
+				},
+				'ksusha-idle': {
+					'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+					'50%': { transform: 'translateY(-5px) rotate(-1.5deg)' }
+				},
+				'ksusha-think': {
+					'0%, 100%': { transform: 'rotate(-7deg) translateY(0)' },
+					'50%': { transform: 'rotate(-7deg) translateY(-4px)' }
+				},
+				'ksusha-happy': {
+					'0%, 100%': { transform: 'translateY(0) rotate(0deg) scale(1)' },
+					'25%': { transform: 'translateY(-12px) rotate(-5deg) scale(1.05)' },
+					'50%': { transform: 'translateY(0) rotate(0deg) scale(1)' },
+					'75%': { transform: 'translateY(-12px) rotate(5deg) scale(1.05)' }
+				},
+				'ksusha-idea': {
+					'0%': { transform: 'scale(1) rotate(0deg)' },
+					'30%': { transform: 'scale(1.18) rotate(-6deg)' },
+					'60%': { transform: 'scale(1.18) rotate(6deg)' },
+					'100%': { transform: 'scale(1) rotate(0deg)' }
+				},
+				'ksusha-sad': {
+					'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+					'50%': { transform: 'translateY(3px) rotate(2deg)' }
 				}
 			},
 			animation: {
@@ -114,6 +138,11 @@ export default {
 				'scale-in': 'scale-in 0.3s ease forwards',
 				'spin-slow': 'spin-slow 20s linear infinite',
 				'shake': 'shake 0.4s ease-in-out',
+				'ksusha-idle': 'ksusha-idle 3.5s ease-in-out infinite',
+				'ksusha-think': 'ksusha-think 1.2s ease-in-out infinite',
+				'ksusha-happy': 'ksusha-happy 0.7s ease-in-out 2',
+				'ksusha-idea': 'ksusha-idea 0.6s ease-in-out',
+				'ksusha-sad': 'ksusha-sad 1.5s ease-in-out infinite',
 			}
 		}
 	},

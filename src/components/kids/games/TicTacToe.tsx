@@ -42,11 +42,13 @@ export default function TicTacToe({
   onSay,
   onWin,
   onLoss,
+  onThinking,
   level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
   onLoss?: () => void;
+  onThinking?: (active: boolean) => void;
   level?: number;
 }) {
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
@@ -82,17 +84,20 @@ export default function TicTacToe({
     } else if (next.every((c) => c)) {
       setOver("draw");
       onSay("Ничья! Никто не выиграл. Хочешь сыграть ещё разок?");
+      onThinking?.(false);
     } else {
+      onThinking?.(false);
       setTurn("X");
     }
-  }, [onSay, onLoss, level]);
+  }, [onSay, onLoss, onThinking, level]);
 
   useEffect(() => {
     if (turn === "O" && !over) {
-      const t = setTimeout(() => ksushaMove(board), 700);
+      onThinking?.(true);
+      const t = setTimeout(() => ksushaMove(board), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, board, ksushaMove]);
+  }, [turn, over, board, ksushaMove, onThinking]);
 
   const click = (i: number) => {
     if (board[i] || over || turn !== "X") return;

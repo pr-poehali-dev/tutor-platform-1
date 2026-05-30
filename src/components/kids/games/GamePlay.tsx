@@ -1,5 +1,7 @@
+import { useState, useRef, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import KsushaSpeech, { SoundToggle } from "./KsushaSpeech";
+import { KsushaEmotion } from "./KsushaAvatar";
 import { GameInfo } from "./gamesData";
 import { useGameLevel } from "./useGameLevel";
 import TicTacToe from "./TicTacToe";
@@ -14,6 +16,13 @@ const ADAPTIVE: Record<string, boolean> = {
   checkers: true,
   chess: true,
 };
+
+const THINK_PHRASES = ["Надо подумать…", "Так, дай подумаю…", "Хм, думаю…"];
+const IDEA_PHRASES = ["Есть идея!", "О, придумала!", "Вот мой ход!"];
+
+function rnd<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
 export default function GamePlay({
   game,
@@ -43,23 +52,63 @@ export default function GamePlay({
   const { level, winsToNext, registerWin, registerLoss } = useGameLevel(game.slug);
   const adaptive = ADAPTIVE[game.slug];
 
+  const [emotion, setEmotion] = useState<KsushaEmotion>("idle");
+  const timers = useRef<number[]>([]);
+
+  const clearTimers = useCallback(() => {
+    timers.current.forEach((t) => clearTimeout(t));
+    timers.current = [];
+  }, []);
+
+  useEffect(() => clearTimers, [clearTimers]);
+
+  // Игра сообщает, что Ксюша "думает" над ходом
+  const handleThinking = useCallback(
+    (active: boolean) => {
+      clearTimers();
+      if (active) {
+        setEmotion("thinking");
+        onSay(rnd(THINK_PHRASES));
+        // через паузу — "Есть идея!" и радостный кивок
+        timers.current.push(
+          window.setTimeout(() => {
+            setEmotion("idea");
+            onSay(rnd(IDEA_PHRASES));
+          }, 1100)
+        );
+      } else {
+        setEmotion("idle");
+      }
+    },
+    [onSay, clearTimers]
+  );
+
   const handleWin = () => {
+    clearTimers();
+    setEmotion("happy");
     onReward();
     if (!adaptive) return;
     const { leveledUp, level: newLevel } = registerWin();
     if (leveledUp) {
-      // Озвучиваем повышение уровня чуть позже, после реплики о победе
-      setTimeout(() => {
-        onSay(
-          `Ух ты! Ты выиграл уже две партии подряд! Теперь я буду играть посложнее — уровень ${newLevel}. Покажи, на что ты способен!`
-        );
-      }, 2600);
+      timers.current.push(
+        window.setTimeout(() => {
+          onSay(
+            `Ух ты! Ты выиграл уже две партии подряд! Теперь я буду играть посложнее — уровень ${newLevel}. Покажи, на что ты способен!`
+          );
+        }, 2600)
+      );
     }
   };
 
   const handleLoss = () => {
+    clearTimers();
+    setEmotion("sad");
     if (adaptive) registerLoss();
   };
+
+  // Эмоция пузыря: приоритет у заданного состояния, иначе — "говорит"/спокойствие
+  const bubbleEmotion: KsushaEmotion =
+    emotion !== "idle" ? emotion : speaking ? "speaking" : "idle";
 
   return (
     <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-6">
@@ -86,6 +135,7 @@ export default function GamePlay({
         <KsushaSpeech
           text={bubble}
           speaking={speaking}
+          emotion={bubbleEmotion}
           onReplay={voiceEnabled ? () => onSpeak(bubble) : undefined}
         />
       </div>
@@ -112,15 +162,15 @@ export default function GamePlay({
 
       <div className="flex justify-center">
         {game.slug === "tictactoe" && (
-          <TicTacToe onSay={onSay} onWin={handleWin} onLoss={handleLoss} level={level} />
+          <TicTacToe onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
         {game.slug === "fifteen" && <Fifteen onSay={onSay} onWin={handleWin} />}
         {game.slug === "checkers" && (
-          <Checkers onSay={onSay} onWin={handleWin} onLoss={handleLoss} level={level} />
+          <Checkers onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
         {game.slug === "seabattle" && <SeaBattle onSay={onSay} onWin={handleWin} />}
         {game.slug === "chess" && (
-          <Chess onSay={onSay} onWin={handleWin} onLoss={handleLoss} level={level} />
+          <Chess onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
       </div>
     </section>

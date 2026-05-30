@@ -91,11 +91,13 @@ export default function Checkers({
   onSay,
   onWin,
   onLoss,
+  onThinking,
   level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
   onLoss?: () => void;
+  onThinking?: (active: boolean) => void;
   level?: number;
 }) {
   const [board, setBoard] = useState<Board>(initBoard);
@@ -141,6 +143,7 @@ export default function Checkers({
   // Ход Ксюши
   useEffect(() => {
     if (turn !== 2 || over) return;
+    onThinking?.(true);
     const t = setTimeout(() => {
       const moves = allMoves(board, 2);
       if (moves.length === 0) { checkEnd(board, 2); return; }
@@ -167,10 +170,11 @@ export default function Checkers({
 
       const nb = applyMove(board, pick);
       setBoard(nb);
+      onThinking?.(false);
       if (!checkEnd(nb, 1)) setTurn(1);
-    }, 750);
+    }, 1700);
     return () => clearTimeout(t);
-  }, [turn, over, board, checkEnd, level]);
+  }, [turn, over, board, checkEnd, level, onThinking]);
 
   const click = (r: number, c: number) => {
     if (turn !== 1 || over) return;

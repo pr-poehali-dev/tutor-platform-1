@@ -17,11 +17,13 @@ export default function Chess({
   onSay,
   onWin,
   onLoss,
+  onThinking,
   level = 1,
 }: {
   onSay: (text: string) => void;
   onWin: () => void;
   onLoss?: () => void;
+  onThinking?: (active: boolean) => void;
   level?: number;
 }) {
   const [board, setBoard] = useState<Board>(initBoard);
@@ -65,19 +67,21 @@ export default function Chess({
   // Ход Ксюши
   useEffect(() => {
     if (turn !== "b" || over) return;
+    onThinking?.(true);
     const t = setTimeout(() => {
       const m = pickKsushaMove(board, level);
-      if (!m) { finish(board, "w"); return; }
+      if (!m) { onThinking?.(false); finish(board, "w"); return; }
       const captured = board[m.tr][m.tc];
       const nb = applyMove(board, m);
       setBoard(nb);
+      onThinking?.(false);
       if (captured) {
         onSay(`Я забираю твою фигуру — ${PIECE_NAME[captured.type]}. Будь внимательнее!`);
       }
       if (!finish(nb, "b")) setTurn("w");
-    }, 800);
+    }, 1700);
     return () => clearTimeout(t);
-  }, [turn, over, board, finish, onSay, level]);
+  }, [turn, over, board, finish, onSay, level, onThinking]);
 
   const myMoves = turn === "w" && !over && sel
     ? legalMovesFrom(board, sel.r, sel.c)

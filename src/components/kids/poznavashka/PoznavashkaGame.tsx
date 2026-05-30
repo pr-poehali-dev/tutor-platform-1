@@ -3,53 +3,16 @@ import Icon from "@/components/ui/icon";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useKsushaVoice } from "./useKsushaVoice";
+import KsushaSays from "@/components/kids/games/KsushaSpeech";
+import { KsushaEmotion } from "@/components/kids/games/KsushaAvatar";
 import {
   POZNAVASHKA_WORLDS,
-  KSUSHA_AVATAR,
   ZNAIKI_PER_CORRECT,
   PoznavashkaWorld,
 } from "./poznavashkaData";
 
 type Phase = "map" | "play" | "result";
 type Verdict = "idle" | "correct" | "wrong";
-
-function KsushaSays({
-  text,
-  size = "md",
-  speaking = false,
-  onReplay,
-}: {
-  text: string;
-  size?: "md" | "lg";
-  speaking?: boolean;
-  onReplay?: () => void;
-}) {
-  return (
-    <div className="flex items-end gap-3">
-      <img
-        src={KSUSHA_AVATAR}
-        alt="Ксюша"
-        className={`flex-shrink-0 rounded-full border-4 object-cover transition-all ${
-          speaking
-            ? "border-amber-300 ring-4 ring-amber-300/40 animate-pulse scale-105"
-            : "border-amber-300/60"
-        } shadow-lg shadow-amber-500/20 ${size === "lg" ? "w-24 h-24" : "w-16 h-16"}`}
-      />
-      <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
-        {text}
-        {onReplay && (
-          <button
-            onClick={onReplay}
-            aria-label="Повторить голосом"
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
-          >
-            <Icon name={speaking ? "Volume2" : "RotateCcw"} size={16} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
@@ -226,6 +189,7 @@ export default function PoznavashkaGame() {
 
         <div className="bg-card border border-white/10 rounded-3xl p-6 my-6">
           <KsushaSays
+            emotion="happy"
             text={
               allRight
                 ? "Ты настоящий Познавашка! Я тобой горжусь 💛"
@@ -283,6 +247,8 @@ export default function PoznavashkaGame() {
   // ===== ЭКРАН: ИГРА =====
   if (phase === "play" && world && question) {
     const total = world.questions.length;
+    const qEmotion: KsushaEmotion =
+      verdict === "correct" ? "happy" : showHint ? "thinking" : speaking ? "speaking" : "idle";
     return (
       <div className="max-w-2xl mx-auto px-5 py-8">
         {/* Прогресс */}
@@ -318,6 +284,7 @@ export default function PoznavashkaGame() {
           <KsushaSays
             text={question.question}
             speaking={speaking}
+            emotion={qEmotion}
             onReplay={enabled ? () => speak(question.question) : undefined}
           />
         </div>
