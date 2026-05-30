@@ -9,10 +9,56 @@ Returns: HTTP-ответ с MP3 аудио в base64
 import json
 import os
 import re
+import io
+import wave
+import audioop
 import base64
 import urllib.request
 import urllib.parse
 import urllib.error
+
+
+def pitch_up_lpcm(pcm_bytes: bytes, sample_rate: int, semitones: float) -> bytes:
+    """Поднимает высоту тона звука (pitch-shift), сохраняя темп речи.
+
+    Делает голос «детским»: звонким и более высоким, но Оксаночка не
+    тараторит — длительность остаётся прежней.
+
+    Принцип без внешних библиотек (только stdlib audioop):
+    1. Ускоряем звук, понижая частоту дискретизации в factor раз —
+       это одновременно поднимает тон и укорачивает запись.
+    2. Возвращаем исходную длительность, растягивая обратно через ratecv —
+       тон при этом остаётся высоким.
+
+    pcm_bytes — сырой моно LPCM 16-bit.
+    """
+    if semitones <= 0:
+        return pcm_bytes
+    factor = 2.0 ** (semitones / 12.0)  # 3 полутона ≈ 1.19x
+    width = 2  # 16-bit
+    channels = 1
+
+    # Шаг 1: поднимаем тон — интерпретируем как более высокий sample_rate,
+    # затем ресемплим обратно к base rate (звук становится выше и короче).
+    raised_rate = int(sample_rate * factor)
+    shifted, _ = audioop.ratecv(pcm_bytes, width, channels, raised_rate, sample_rate, None)
+
+    # Шаг 2: восстанавливаем исходную длительность (тон не меняется).
+    stretched, _ = audioop.ratecv(
+        shifted, width, channels, int(sample_rate / factor), sample_rate, None
+    )
+    return stretched
+
+
+def lpcm_to_wav(pcm_bytes: bytes, sample_rate: int) -> bytes:
+    """Упаковывает сырой LPCM 16-bit моно в WAV-контейнер."""
+    buf = io.BytesIO()
+    with wave.open(buf, 'wb') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm_bytes)
+    return buf.getvalue()
 
 
 VOWELS = 'аеёиоуыэюяАЕЁИОУЫЭЮЯ'
@@ -301,12 +347,14 @@ VOICE_MAP = {
         'pitch_shift': 0,
     },
     # Оксаночка — ведущая игры «Познавашка» в модуле Малыш.
-    # Звонкий, ласковый, чуть медленнее обычного — для малышей, играющих на слух.
+    # Берём тёплый голос Алёны и поднимаем высоту тона постобработкой —
+    # получается звонкий «детский» голос, при этом живой и человечный.
     'oksana': {
-        'voice': 'jane',
+        'voice': 'alena',
         'role': 'friendly',
-        'speed': '0.92',
+        'speed': '0.96',
         'pitch_shift': 0,
+        'child_pitch': 3,  # подъём тона в полутонах (детский тембр)
     },
     # Няня Лиса — тёплый, мягкий, для малышей
     'fox': {
@@ -391,6 +439,12 @@ def handler(event, context):
         voice_cfg = VOICE_MAP.get(teacher_id, VOICE_MAP['alex'])
         folder_id = os.environ.get('YANDEX_FOLDER_ID', '').strip()
 
+        # Если у голоса задан child_pitch — синтезируем в сыром LPCM,
+        # чтобы потом поднять тон и сделать голос «детским».
+        child_pitch = float(voice_cfg.get('child_pitch', 0) or 0)
+        pcm_rate = 48000
+        out_format = 'lpcm' if child_pitch > 0 else 'mp3'
+
         params = {
             'text': text,
             'lang': 'ru-RU',
@@ -398,8 +452,10 @@ def handler(event, context):
             # role вместо emotion — даёт более живые интонации в нейроголосах
             'role': voice_cfg['role'],
             'speed': voice_cfg['speed'],
-            'format': 'mp3',
+            'format': out_format,
         }
+        if out_format == 'lpcm':
+            params['sampleRateHertz'] = pcm_rate
         if folder_id:
             params['folderId'] = folder_id
         payload = urllib.parse.urlencode(params).encode('utf-8')
@@ -417,7 +473,6 @@ def handler(event, context):
         try:
             with urllib.request.urlopen(req, timeout=25) as response:
                 audio_bytes = response.read()
-                audio_b64 = base64.b64encode(audio_bytes).decode('ascii')
         except urllib.error.HTTPError as e:
             err_body = e.read().decode('utf-8', errors='ignore')
             # Если v3-параметр role не поддерживается, повторяем с emotion (fallback)
@@ -437,7 +492,6 @@ def handler(event, context):
                 try:
                     with urllib.request.urlopen(req2, timeout=25) as response:
                         audio_bytes = response.read()
-                        audio_b64 = base64.b64encode(audio_bytes).decode('ascii')
                 except urllib.error.HTTPError as e2:
                     err_body2 = e2.read().decode('utf-8', errors='ignore')
                     return {
@@ -452,6 +506,22 @@ def handler(event, context):
                     'body': json.dumps({'error': f'Yandex TTS error: {e.code}', 'detail': err_body[:300]}, ensure_ascii=False),
                 }
 
+        # Детский тон: поднимаем высоту голоса и упаковываем в WAV
+        if child_pitch > 0:
+            try:
+                shifted = pitch_up_lpcm(audio_bytes, pcm_rate, child_pitch)
+                wav_bytes = lpcm_to_wav(shifted, pcm_rate)
+                audio_b64 = base64.b64encode(wav_bytes).decode('ascii')
+                mime = 'audio/wav'
+            except Exception:
+                # Если обработка не удалась — отдаём как WAV без сдвига тона
+                wav_bytes = lpcm_to_wav(audio_bytes, pcm_rate)
+                audio_b64 = base64.b64encode(wav_bytes).decode('ascii')
+                mime = 'audio/wav'
+        else:
+            audio_b64 = base64.b64encode(audio_bytes).decode('ascii')
+            mime = 'audio/mpeg'
+
         return {
             'statusCode': 200,
             'headers': {
@@ -460,7 +530,7 @@ def handler(event, context):
             },
             'body': json.dumps({
                 'audio_base64': audio_b64,
-                'mime': 'audio/mpeg',
+                'mime': mime,
             }),
         }
 
