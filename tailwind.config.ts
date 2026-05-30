@@ -100,6 +100,11 @@ export default {
 				'spin-slow': {
 					from: { transform: 'rotate(0deg)' },
 					to: { transform: 'rotate(360deg)' }
+				},
+				'shake': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'20%, 60%': { transform: 'translateX(-6px)' },
+					'40%, 80%': { transform: 'translateX(6px)' }
 				}
 			},
 			animation: {
@@ -108,6 +113,7 @@ export default {
 				'fade-in': 'fade-in 0.5s ease forwards',
 				'scale-in': 'scale-in 0.3s ease forwards',
 				'spin-slow': 'spin-slow 20s linear infinite',
+				'shake': 'shake 0.4s ease-in-out',
 			}
 		}
 	},

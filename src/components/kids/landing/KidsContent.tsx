@@ -6,6 +6,38 @@ import { PRINCIPLES, REVIEWS, FAQ_ITEMS } from "./kidsLandingData";
 export default function KidsContent() {
   return (
     <>
+      {/* Познавашка — игровой раздел с Оксаночкой */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
+        <Link
+          to="/kids/poznavashka"
+          className="group block relative overflow-hidden rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-emerald-500/15 hover:border-amber-400/50 transition-all"
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-5 p-6 md:p-8">
+            <img
+              src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/bd414e9f-28a3-45ca-a1e3-27e06993a99f.png"
+              alt="Оксаночка"
+              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-amber-300/60 shadow-xl shadow-amber-500/20 object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
+            />
+            <div className="flex-1 text-center sm:text-left">
+              <span className="inline-block text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
+                Игра · Новинка
+              </span>
+              <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
+                Познавашка с Оксаночкой
+              </h2>
+              <p className="text-white/70 text-sm md:text-base max-w-xl">
+                Весёлое путешествие по сказочной стране: узнаём, как устроен окружающий мир, и собираем
+                <span className="text-amber-300 font-bold"> ЗНАЙКИ</span> за правильные ответы.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-black px-6 py-3.5 rounded-2xl group-hover:scale-105 transition-transform flex-shrink-0">
+              Играть
+              <Icon name="ArrowRight" size={18} />
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* Возрастные ступени */}
       <section id="ages" className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-12">
         <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Возрастные ступени</p>

@@ -62,6 +62,7 @@ const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
 const KidsLibrary = lazy(() => import("./pages/KidsLibrary"));
 const KidsLibraryItem = lazy(() => import("./pages/KidsLibraryItem"));
 const KidsSongs = lazy(() => import("./pages/KidsSongs"));
+const KidsPoznavashka = lazy(() => import("./pages/KidsPoznavashka"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
@@ -140,6 +141,7 @@ const App = () => (
                     <Route path="/kids/library" element={<KidsLibrary />} />
                     <Route path="/kids/library/:id" element={<KidsLibraryItem />} />
                     <Route path="/kids/songs" element={<KidsSongs />} />
+                    <Route path="/kids/poznavashka" element={<KidsPoznavashka />} />
                     <Route path="/kids/:age" element={<KidsAge />} />
                     <Route path="/exam-bank" element={<ExamBank />} />
                     <Route path="/score-calculator" element={<ScoreCalculator />} />
