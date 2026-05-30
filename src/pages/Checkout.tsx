@@ -147,7 +147,9 @@ export default function Checkout() {
     if (res.demoMode) {
       // ЮKassa не настроена — отправляем на success, там есть демо-активация
       navigate(`/checkout/success?plan=${plan.id}&demo=${res.subscriptionId}`);
+      return;
     }
+    setLocalError("Не удалось перейти к оплате. Попробуй ещё раз через минуту.");
   };
 
   const displayError = localError;

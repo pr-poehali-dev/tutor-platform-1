@@ -153,7 +153,7 @@ export default function Cabinet() {
           </Link>
 
           <Link
-            to="/"
+            to="/know-yourself"
             className="group rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.07] hover:border-white/20 p-5 transition-all"
           >
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/30 to-green-500/20 border border-emerald-500/30 flex items-center justify-center mb-3">

@@ -507,6 +507,8 @@ def handler(event: dict, context) -> dict:
             return handle_confirm_demo(token, body)
         return err('Unknown action', 404)
     except psycopg2.Error as e:
-        return err(f'DB error: {str(e)[:200]}', 500)
+        print(f'[access] DB error: {str(e)[:500]}')
+        return err('Сервис временно недоступен. Попробуй ещё раз через минуту.', 500)
     except Exception as e:
-        return err(f'Server error: {str(e)[:200]}', 500)
+        print(f'[access] Server error: {str(e)[:500]}')
+        return err('Что-то пошло не так. Попробуй ещё раз чуть позже.', 500)
