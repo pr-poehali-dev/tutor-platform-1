@@ -8,7 +8,7 @@ import ScreenTimeBlocker from "@/components/kids/ScreenTimeBlocker";
 import { useScreenTime } from "@/components/kids/useScreenTime";
 import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
-import { OKSANOCHKA_AVATAR } from "@/components/kids/poznavashka/poznavashkaData";
+import { KSUSHA_AVATAR } from "@/components/kids/poznavashka/poznavashkaData";
 
 export default function KidsPoznavashka() {
   const { state: screenTime } = useScreenTime(true);
@@ -22,8 +22,8 @@ export default function KidsPoznavashka() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Познавашка с Оксаночкой — игра про окружающий мир для малышей | УЧИСЬПРО Малыш"
-        description="Весёлая обучающая игра для детей до 12 лет. Персонаж Оксаночка в сказочной стране рассказывает, как устроен окружающий мир. За правильные ответы дети получают ЗНАЙКИ — внутреннюю валюту платформы."
+        title="Познавашка с Ксюшей — игра про окружающий мир для малышей | УЧИСЬПРО Малыш"
+        description="Весёлая обучающая игра для детей до 12 лет. Персонаж Ксюша в сказочной стране рассказывает, как устроен окружающий мир. За правильные ответы дети получают ЗНАЙКИ — внутреннюю валюту платформы."
         canonical={`${SITE_URL}/kids/poznavashka`}
         keywords="познавательная игра для детей, окружающий мир для малышей, обучающая игра дошкольникам, викторина для детей, развивающая игра онлайн"
       />
@@ -37,8 +37,8 @@ export default function KidsPoznavashka() {
         </div>
         <div className="flex items-center justify-center gap-4 mb-3">
           <img
-            src={OKSANOCHKA_AVATAR}
-            alt="Оксаночка"
+            src={KSUSHA_AVATAR}
+            alt="Ксюша"
             className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-amber-300/60 shadow-xl shadow-amber-500/20 object-cover"
           />
           <h1 className="font-montserrat font-black text-4xl md:text-5xl text-white">
@@ -46,7 +46,7 @@ export default function KidsPoznavashka() {
           </h1>
         </div>
         <p className="text-white/65 text-base md:text-lg max-w-2xl mx-auto">
-          Оксаночка приглашает в путешествие по сказочной стране! Узнавай, как устроен мир,
+          Ксюша приглашает в путешествие по сказочной стране! Узнавай, как устроен мир,
           отвечай на вопросы и собирай <span className="text-amber-300 font-bold">ЗНАЙКИ</span> за каждый верный ответ.
         </p>
       </section>

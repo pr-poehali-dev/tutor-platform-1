@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
-import { useOksanaVoice } from "./useOksanaVoice";
+import { useKsushaVoice } from "./useKsushaVoice";
 import {
   POZNAVASHKA_WORLDS,
-  OKSANOCHKA_AVATAR,
+  KSUSHA_AVATAR,
   ZNAIKI_PER_CORRECT,
   PoznavashkaWorld,
 } from "./poznavashkaData";
@@ -13,7 +13,7 @@ import {
 type Phase = "map" | "play" | "result";
 type Verdict = "idle" | "correct" | "wrong";
 
-function OksanaSays({
+function KsushaSays({
   text,
   size = "md",
   speaking = false,
@@ -27,8 +27,8 @@ function OksanaSays({
   return (
     <div className="flex items-end gap-3">
       <img
-        src={OKSANOCHKA_AVATAR}
-        alt="Оксаночка"
+        src={KSUSHA_AVATAR}
+        alt="Ксюша"
         className={`flex-shrink-0 rounded-full border-4 object-cover transition-all ${
           speaking
             ? "border-amber-300 ring-4 ring-amber-300/40 animate-pulse scale-105"
@@ -70,7 +70,7 @@ function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => 
 export default function PoznavashkaGame() {
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
-  const { speak, stop, toggle, enabled, speaking } = useOksanaVoice();
+  const { speak, stop, toggle, enabled, speaking } = useKsushaVoice();
 
   const [phase, setPhase] = useState<Phase>("map");
   const [world, setWorld] = useState<PoznavashkaWorld | null>(null);
@@ -133,7 +133,7 @@ export default function PoznavashkaGame() {
   };
 
   const MAP_GREETING =
-    "Привет! Я Оксаночка. Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.";
+    "Привет! Я Ксюша. Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.";
 
   // Озвучка приветствия на карте миров
   useEffect(() => {
@@ -174,8 +174,8 @@ export default function PoznavashkaGame() {
           <SoundToggle enabled={enabled} onToggle={toggle} />
         </div>
         <div className="mb-8">
-          <OksanaSays
-            text="Привет! Я Оксаночка 🌸 Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения."
+          <KsushaSays
+            text="Привет! Я Ксюша 🌸 Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения."
             size="lg"
             speaking={speaking}
             onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
@@ -225,7 +225,7 @@ export default function PoznavashkaGame() {
         </h2>
 
         <div className="bg-card border border-white/10 rounded-3xl p-6 my-6">
-          <OksanaSays
+          <KsushaSays
             text={
               allRight
                 ? "Ты настоящий Познавашка! Я тобой горжусь 💛"
@@ -313,9 +313,9 @@ export default function PoznavashkaGame() {
           </div>
         </div>
 
-        {/* Оксаночка задаёт вопрос */}
+        {/* Ксюша задаёт вопрос */}
         <div className="mb-6">
-          <OksanaSays
+          <KsushaSays
             text={question.question}
             speaking={speaking}
             onReplay={enabled ? () => speak(question.question) : undefined}

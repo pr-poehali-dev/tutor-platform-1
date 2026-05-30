@@ -6,7 +6,7 @@ import { PRINCIPLES, REVIEWS, FAQ_ITEMS } from "./kidsLandingData";
 export default function KidsContent() {
   return (
     <>
-      {/* Познавашка — игровой раздел с Оксаночкой */}
+      {/* Познавашка — игровой раздел с Ксюшей */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
         <Link
           to="/kids/poznavashka"
@@ -15,7 +15,7 @@ export default function KidsContent() {
           <div className="flex flex-col sm:flex-row items-center gap-5 p-6 md:p-8">
             <img
               src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/bd414e9f-28a3-45ca-a1e3-27e06993a99f.png"
-              alt="Оксаночка"
+              alt="Ксюша"
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-amber-300/60 shadow-xl shadow-amber-500/20 object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
             />
             <div className="flex-1 text-center sm:text-left">
@@ -23,7 +23,7 @@ export default function KidsContent() {
                 Игра · Новинка
               </span>
               <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
-                Познавашка с Оксаночкой
+                Познавашка с Ксюшей
               </h2>
               <p className="text-white/70 text-sm md:text-base max-w-xl">
                 Весёлое путешествие по сказочной стране: узнаём, как устроен окружающий мир, и собираем

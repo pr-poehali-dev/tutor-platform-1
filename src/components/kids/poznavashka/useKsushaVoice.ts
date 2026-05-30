@@ -14,7 +14,7 @@ function stripEmoji(text: string): string {
     .trim();
 }
 
-export function useOksanaVoice() {
+export function useKsushaVoice() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cacheRef = useRef<Map<string, string>>(new Map());
   const [enabled, setEnabled] = useState(true);
@@ -41,7 +41,7 @@ export function useOksanaVoice() {
           const res = await fetch(TTS_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, teacher_id: "oksana" }),
+            body: JSON.stringify({ text, teacher_id: "ksusha" }),
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.audio_base64) return;
