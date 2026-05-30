@@ -38,6 +38,36 @@ export default function KidsContent() {
         </Link>
       </section>
 
+      {/* Игротека с Ксюшей — настольные и логические игры */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
+        <Link
+          to="/kids/games"
+          className="group block relative overflow-hidden rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/15 via-sky-500/10 to-purple-500/15 hover:border-cyan-400/50 transition-all"
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-5 p-6 md:p-8">
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-5xl shadow-lg flex-shrink-0 group-hover:scale-105 transition-transform">
+              ♟️
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <span className="inline-block text-cyan-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
+                Игротека · Новинка
+              </span>
+              <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
+                Игротека с Ксюшей
+              </h2>
+              <p className="text-white/70 text-sm md:text-base max-w-xl">
+                Ксюша научит играть в крестики-нолики, пятнашки, шашки и морской бой — и сыграет
+                вместе с тобой. За победу — <span className="text-amber-300 font-bold">ЗНАЙКИ</span>.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-6 py-3.5 rounded-2xl group-hover:scale-105 transition-transform flex-shrink-0">
+              Играть
+              <Icon name="ArrowRight" size={18} />
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* Возрастные ступени */}
       <section id="ages" className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 py-12">
         <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Возрастные ступени</p>
