@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
+import { useOksanaVoice } from "./useOksanaVoice";
 import {
   POZNAVASHKA_WORLDS,
   OKSANOCHKA_AVATAR,
@@ -12,26 +13,64 @@ import {
 type Phase = "map" | "play" | "result";
 type Verdict = "idle" | "correct" | "wrong";
 
-function OksanaSays({ text, size = "md" }: { text: string; size?: "md" | "lg" }) {
+function OksanaSays({
+  text,
+  size = "md",
+  speaking = false,
+  onReplay,
+}: {
+  text: string;
+  size?: "md" | "lg";
+  speaking?: boolean;
+  onReplay?: () => void;
+}) {
   return (
     <div className="flex items-end gap-3">
       <img
         src={OKSANOCHKA_AVATAR}
         alt="Оксаночка"
-        className={`flex-shrink-0 rounded-full border-4 border-amber-300/60 shadow-lg shadow-amber-500/20 object-cover ${
-          size === "lg" ? "w-24 h-24" : "w-16 h-16"
-        }`}
+        className={`flex-shrink-0 rounded-full border-4 object-cover transition-all ${
+          speaking
+            ? "border-amber-300 ring-4 ring-amber-300/40 animate-pulse scale-105"
+            : "border-amber-300/60"
+        } shadow-lg shadow-amber-500/20 ${size === "lg" ? "w-24 h-24" : "w-16 h-16"}`}
       />
-      <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 shadow-xl font-bold text-base md:text-lg leading-snug">
+      <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
         {text}
+        {onReplay && (
+          <button
+            onClick={onReplay}
+            aria-label="Повторить голосом"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition-colors"
+          >
+            <Icon name={speaking ? "Volume2" : "RotateCcw"} size={16} />
+          </button>
+        )}
       </div>
     </div>
+  );
+}
+
+function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-bold transition-colors ${
+        enabled
+          ? "bg-amber-400/15 border-amber-400/40 text-amber-200 hover:bg-amber-400/25"
+          : "bg-white/5 border-white/15 text-white/50 hover:bg-white/10"
+      }`}
+    >
+      <Icon name={enabled ? "Volume2" : "VolumeX"} size={16} />
+      {enabled ? "Голос включён" : "Голос выключен"}
+    </button>
   );
 }
 
 export default function PoznavashkaGame() {
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
+  const { speak, stop, toggle, enabled, speaking } = useOksanaVoice();
 
   const [phase, setPhase] = useState<Phase>("map");
   const [world, setWorld] = useState<PoznavashkaWorld | null>(null);
@@ -93,14 +132,53 @@ export default function PoznavashkaGame() {
     setShowHint(false);
   };
 
+  const MAP_GREETING =
+    "Привет! Я Оксаночка. Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.";
+
+  // Озвучка приветствия на карте миров
+  useEffect(() => {
+    if (phase === "map") speak(MAP_GREETING);
+    else stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Озвучка вопроса при его появлении
+  useEffect(() => {
+    if (phase === "play" && question && verdict === "idle" && !showHint) {
+      speak(question.question);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, qIndex]);
+
+  // Озвучка подсказки после ошибки
+  useEffect(() => {
+    if (showHint && question && verdict !== "correct") {
+      speak(question.hint);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHint]);
+
+  // Озвучка интересного факта после правильного ответа
+  useEffect(() => {
+    if (verdict === "correct" && question) {
+      speak(question.fact);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verdict]);
+
   // ===== ЭКРАН: КАРТА МИРОВ =====
   if (phase === "map") {
     return (
       <div className="max-w-5xl mx-auto px-5 md:px-8 py-10">
-        <div className="text-center mb-8">
+        <div className="flex justify-end mb-3">
+          <SoundToggle enabled={enabled} onToggle={toggle} />
+        </div>
+        <div className="mb-8">
           <OksanaSays
             text="Привет! Я Оксаночка 🌸 Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения."
             size="lg"
+            speaking={speaking}
+            onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
           />
         </div>
 
@@ -226,15 +304,22 @@ export default function PoznavashkaGame() {
               />
             ))}
           </div>
-          <span className="inline-flex items-center gap-1 text-amber-300 text-sm font-bold">
-            <Icon name="Sparkles" size={14} />
-            {earnedZnaiki}
-          </span>
+          <div className="flex items-center gap-3">
+            <SoundToggle enabled={enabled} onToggle={toggle} />
+            <span className="inline-flex items-center gap-1 text-amber-300 text-sm font-bold">
+              <Icon name="Sparkles" size={14} />
+              {earnedZnaiki}
+            </span>
+          </div>
         </div>
 
         {/* Оксаночка задаёт вопрос */}
         <div className="mb-6">
-          <OksanaSays text={question.question} />
+          <OksanaSays
+            text={question.question}
+            speaking={speaking}
+            onReplay={enabled ? () => speak(question.question) : undefined}
+          />
         </div>
 
         {/* Подсказка */}
