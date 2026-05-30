@@ -56,7 +56,7 @@ export default function KidsContent() {
                 Игротека с Ксюшей
               </h2>
               <p className="text-white/70 text-sm md:text-base max-w-xl">
-                Ксюша научит играть в крестики-нолики, пятнашки, шашки и морской бой — и сыграет
+                Ксюша научит играть в крестики-нолики, пятнашки, шашки, шахматы и морской бой — и сыграет
                 вместе с тобой. За победу — <span className="text-amber-300 font-bold">ЗНАЙКИ</span>.
               </p>
             </div>

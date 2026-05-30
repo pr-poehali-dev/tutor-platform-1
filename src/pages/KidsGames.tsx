@@ -18,6 +18,7 @@ import TicTacToe from "@/components/kids/games/TicTacToe";
 import Fifteen from "@/components/kids/games/Fifteen";
 import Checkers from "@/components/kids/games/Checkers";
 import SeaBattle from "@/components/kids/games/SeaBattle";
+import Chess from "@/components/kids/games/Chess";
 
 export default function KidsGames() {
   const { state: screenTime } = useScreenTime(true);
@@ -69,9 +70,9 @@ export default function KidsGames() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Игротека с Ксюшей — шашки, шахматы, пятнашки, морской бой для детей | УЧИСЬПРО Малыш"
-        description="Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, морской бой. Объясняет правила голосом, играет вместе с ребёнком. За победу — ЗНАЙКИ."
+        description="Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, шахматы, морской бой. Объясняет правила голосом, играет вместе с ребёнком. За победу — ЗНАЙКИ."
         canonical={`${SITE_URL}/kids/games`}
-        keywords="игры для детей онлайн, крестики нолики, пятнашки, шашки для детей, морской бой, логические игры малышам"
+        keywords="игры для детей онлайн, крестики нолики, пятнашки, шашки для детей, шахматы для детей, морской бой, логические игры малышам"
       />
 
       <KidsTopBar screenTime={screenTime} onOpenSettings={() => setGateOpen(true)} />
@@ -167,6 +168,7 @@ export default function KidsGames() {
             {game.slug === "fifteen" && <Fifteen onSay={say} onWin={handleWin} />}
             {game.slug === "checkers" && <Checkers onSay={say} onWin={handleWin} />}
             {game.slug === "seabattle" && <SeaBattle onSay={say} onWin={handleWin} />}
+            {game.slug === "chess" && <Chess onSay={say} onWin={handleWin} />}
           </div>
         </section>
       )}
