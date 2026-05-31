@@ -108,6 +108,7 @@ export default function Connect4({
 
       const next = place(b, choice, "r");
       if (checkWin(next, "r")) {
+        onThinking?.(false);
         setOver("r");
         onSay("Я собрала четыре красные фишки в ряд! Здорово вышло. Хочешь реванш?");
         onLoss?.();

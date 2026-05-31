@@ -129,6 +129,7 @@ export default function Gomoku({
       const next = [...b];
       next[pick] = "b";
       if (winnerAt(next, pick)) {
+        onThinking?.(false);
         setOver("b");
         onSay("Я собрала пять синих фишек в ряд! В этот раз повезло мне. Сыграем ещё?");
         onLoss?.();
