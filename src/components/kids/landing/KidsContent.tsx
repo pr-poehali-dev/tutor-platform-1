@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
 import { PRINCIPLES, REVIEWS, FAQ_ITEMS } from "./kidsLandingData";
+import { KIDS_GAMES } from "@/components/kids/games/gamesData";
 
 export default function KidsContent() {
   return (
@@ -56,16 +57,40 @@ export default function KidsContent() {
                 Игротека с Ксюшей
               </h2>
               <p className="text-white/70 text-sm md:text-base max-w-xl">
-                Ксюша научит играть в крестики-нолики, пятнашки, шашки, шахматы и морской бой — и сыграет
-                вместе с тобой. За победу — <span className="text-amber-300 font-bold">ЗНАЙКИ</span>.
+                Крестики-нолики, шашки, шахматы, пятнашки, морской бой, пять в ряд, реверси, «найди пару»
+                и другие игры — <span className="text-white font-bold">{KIDS_GAMES.length} штук</span>! Ксюша
+                объяснит правила и сыграет с тобой. За победу — <span className="text-amber-300 font-bold">ЗНАЙКИ</span>.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-6 py-3.5 rounded-2xl group-hover:scale-105 transition-transform flex-shrink-0">
-              Играть
+              Все игры
               <Icon name="ArrowRight" size={18} />
             </div>
           </div>
         </Link>
+
+        {/* Плитки конкретных игр — быстрый доступ + перелинковка для SEO */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
+          {KIDS_GAMES.map((g) => (
+            <Link
+              key={g.slug}
+              to={`/kids/games/${g.slug}`}
+              className="group relative bg-card border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center gap-2 hover:border-white/30 hover:translate-y-[-3px] transition-all"
+            >
+              {g.isNew && (
+                <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wide bg-emerald-400/90 text-emerald-950 rounded-full px-1.5 py-0.5">
+                  New
+                </span>
+              )}
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
+                {g.emoji}
+              </div>
+              <span className="text-white/85 text-xs font-bold leading-tight group-hover:text-white">
+                {g.title}
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* Возрастные ступени */}
