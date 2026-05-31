@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import KsushaSpeech, { SoundToggle } from "./KsushaSpeech";
 import { KsushaEmotion } from "./KsushaAvatar";
@@ -9,12 +10,24 @@ import Fifteen from "./Fifteen";
 import Checkers from "./Checkers";
 import SeaBattle from "./SeaBattle";
 import Chess from "./Chess";
+import Gomoku from "./Gomoku";
+import Connect4 from "./Connect4";
+import Reversi from "./Reversi";
+import Memory from "./Memory";
+import Simon from "./Simon";
+import GuessNumber from "./GuessNumber";
+import Minesweeper from "./Minesweeper";
+import Nim from "./Nim";
 
-// Игры, где есть ИИ-соперник и работает адаптивная сложность
+// Движки, где есть ИИ-соперник и работает адаптивная сложность
 const ADAPTIVE: Record<string, boolean> = {
   tictactoe: true,
   checkers: true,
   chess: true,
+  gomoku: true,
+  connect4: true,
+  reversi: true,
+  nim: true,
 };
 
 const THINK_PHRASES = ["Надо подумать…", "Так, дай подумаю…", "Хм, думаю…"];
@@ -35,6 +48,7 @@ export default function GamePlay({
   onShowText,
   onChirp,
   onBack,
+  backHref = "/kids/games",
   onReward,
   isAuthenticated,
   onLogin,
@@ -49,12 +63,13 @@ export default function GamePlay({
   onShowText: (text: string) => void;
   onChirp?: (text: string, volume?: number) => void;
   onBack: () => void;
+  backHref?: string;
   onReward: () => void;
   isAuthenticated: boolean;
   onLogin: () => void;
 }) {
   const { level, winsToNext, registerWin, registerLoss } = useGameLevel(game.slug);
-  const adaptive = ADAPTIVE[game.slug];
+  const adaptive = ADAPTIVE[game.engine];
 
   const [emotion, setEmotion] = useState<KsushaEmotion>("idle");
   const timers = useRef<number[]>([]);
@@ -121,13 +136,14 @@ export default function GamePlay({
   return (
     <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-6">
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <button
+        <Link
+          to={backHref}
           onClick={onBack}
           className="inline-flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-medium transition-colors"
         >
           <Icon name="ChevronLeft" size={16} />
           Все игры
-        </button>
+        </Link>
         <div className="flex items-center gap-3">
           {adaptive && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-violet-400/15 text-violet-200 px-3 py-1.5 text-sm font-bold">
@@ -169,16 +185,34 @@ export default function GamePlay({
       )}
 
       <div className="flex justify-center">
-        {game.slug === "tictactoe" && (
+        {game.engine === "tictactoe" && (
           <TicTacToe onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
-        {game.slug === "fifteen" && <Fifteen onSay={onSay} onWin={handleWin} />}
-        {game.slug === "checkers" && (
+        {game.engine === "fifteen" && (
+          <Fifteen onSay={onSay} onWin={handleWin} size={game.slug === "eights" ? 3 : 4} />
+        )}
+        {game.engine === "checkers" && (
           <Checkers onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
-        {game.slug === "seabattle" && <SeaBattle onSay={onSay} onWin={handleWin} />}
-        {game.slug === "chess" && (
+        {game.engine === "seabattle" && <SeaBattle onSay={onSay} onWin={handleWin} />}
+        {game.engine === "chess" && (
           <Chess onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
+        )}
+        {game.engine === "gomoku" && (
+          <Gomoku onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
+        )}
+        {game.engine === "connect4" && (
+          <Connect4 onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
+        )}
+        {game.engine === "reversi" && (
+          <Reversi onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
+        )}
+        {game.engine === "memory" && <Memory onSay={onSay} onWin={handleWin} />}
+        {game.engine === "simon" && <Simon onSay={onSay} onWin={handleWin} />}
+        {game.engine === "guessnumber" && <GuessNumber onSay={onSay} onWin={handleWin} />}
+        {game.engine === "minesweeper" && <Minesweeper onSay={onSay} onWin={handleWin} />}
+        {game.engine === "nim" && (
+          <Nim onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
       </div>
     </section>

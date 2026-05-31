@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import Icon from "@/components/ui/icon";
@@ -8,12 +9,8 @@ import ParentSettingsModal from "@/components/kids/ParentSettingsModal";
 import ScreenTimeBlocker from "@/components/kids/ScreenTimeBlocker";
 import { useScreenTime } from "@/components/kids/useScreenTime";
 import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
-import { useKsushaVoice } from "@/components/kids/poznavashka/useKsushaVoice";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
-import { KIDS_GAMES, GameInfo } from "@/components/kids/games/gamesData";
-import { useZnaika } from "@/context/ZnaikaContext";
-import { useAuth } from "@/context/AuthContext";
-import GamePlay from "@/components/kids/games/GamePlay";
+import { KIDS_GAMES } from "@/components/kids/games/gamesData";
 
 const CANONICAL = `${SITE_URL}/kids/games`;
 
@@ -23,13 +20,14 @@ const JSON_LD = [
     "@type": "CollectionPage",
     name: "Игротека с Ксюшей",
     description:
-      "Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, шахматы, морской бой. Объясняет правила голосом и играет вместе с ребёнком.",
+      "Бесплатные онлайн-игры для детей: крестики-нолики, пятнашки, шашки, шахматы, морской бой, пять в ряд, реверси и другие. Ксюша объясняет правила голосом и играет вместе с ребёнком.",
     url: CANONICAL,
     inLanguage: "ru",
     hasPart: KIDS_GAMES.map((g) => ({
       "@type": "Game",
       name: g.title,
       description: g.short,
+      url: `${SITE_URL}/kids/games/${g.slug}`,
     })),
   },
   {
@@ -55,58 +53,16 @@ export default function KidsGames() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [overrideUntil, setOverrideUntil] = useState<number>(0);
 
-  const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
-  const { earn } = useZnaika();
-  const { isAuthenticated, openLogin } = useAuth();
-
-  const [game, setGame] = useState<GameInfo | null>(null);
-  const [bubble, setBubble] = useState<string>("");
-  const [rewarded, setRewarded] = useState(false);
-
   const overrideActive = Date.now() < overrideUntil;
   const showBlocker = screenTime.blocked && !overrideActive;
-
-  const openGame = (g: GameInfo) => {
-    setGame(g);
-    setRewarded(false);
-    setBubble(g.rules);
-    speak(g.rules);
-  };
-
-  const backToHub = () => {
-    stop();
-    setGame(null);
-    setBubble("");
-  };
-
-  // Реплика Ксюши во время игры (текст в облачке + озвучка)
-  const say = (text: string) => {
-    setBubble(text);
-    speak(text);
-  };
-
-  // Показать текст в облачке без полной озвучки (для коротких звуков-эмоций)
-  const showText = (text: string) => {
-    setBubble(text);
-  };
-
-  const handleWin = () => {
-    if (!game || rewarded) return;
-    setRewarded(true);
-    if (isAuthenticated) {
-      earn("kids_game", game.reward, `Игротека: ${game.title}`);
-    }
-  };
-
-  useEffect(() => stop, [stop]);
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Игротека с Ксюшей — шашки, шахматы, пятнашки, морской бой для детей | УЧИСЬПРО Малыш"
-        description="Ксюша учит малышей играть в настольные и логические игры: крестики-нолики, пятнашки, шашки, шахматы, морской бой. Объясняет правила голосом, играет вместе с ребёнком. За победу — ЗНАЙКИ."
+        title="Игротека с Ксюшей — бесплатные онлайн-игры для детей | УЧИСЬПРО Малыш"
+        description="Бесплатные развивающие игры для детей: крестики-нолики, шашки, шахматы, пятнашки, морской бой, пять в ряд, реверси, найди пару и другие. Ксюша объясняет правила голосом и играет вместе с ребёнком. За победу — ЗНАЙКИ."
         canonical={CANONICAL}
-        keywords="игры для детей онлайн, крестики нолики, пятнашки, шашки для детей, шахматы для детей, морской бой, логические игры малышам"
+        keywords="игры для детей онлайн, бесплатные детские игры, крестики нолики, пятнашки, шашки для детей, шахматы для детей, морской бой, логические игры малышам"
         jsonLd={JSON_LD}
       />
 
@@ -136,54 +92,38 @@ export default function KidsGames() {
       </section>
 
       {/* ВЫБОР ИГРЫ */}
-      {!game && (
-        <section className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {KIDS_GAMES.map((g) => (
-              <button
-                key={g.slug}
-                onClick={() => openGame(g)}
-                className="group text-left bg-card border border-white/10 rounded-3xl overflow-hidden hover:border-white/30 hover:translate-y-[-4px] transition-all"
-              >
-                <div className={`h-2 bg-gradient-to-r ${g.color}`} />
-                <div className="p-6 flex items-center gap-5">
-                  <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${g.color} flex items-center justify-center text-4xl shadow-lg group-hover:scale-110 transition-transform`}>
-                    {g.emoji}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-montserrat font-black text-white text-xl mb-1">{g.title}</h3>
-                    <p className="text-white/60 text-sm mb-2">{g.short}</p>
-                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-300 bg-amber-400/10 border border-amber-400/25 rounded-full px-2.5 py-1 font-bold">
-                      <Icon name="Sparkles" size={11} />
-                      +{g.reward} ЗНАЕК за победу
-                    </span>
-                  </div>
-                  <Icon name="ChevronRight" size={24} className="text-white/30 group-hover:text-white/70 transition-colors" />
+      <section className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {KIDS_GAMES.map((g) => (
+            <Link
+              key={g.slug}
+              to={`/kids/games/${g.slug}`}
+              className="group relative text-left bg-card border border-white/10 rounded-3xl overflow-hidden hover:border-white/30 hover:translate-y-[-4px] transition-all"
+            >
+              {g.isNew && (
+                <span className="absolute top-3 right-3 z-10 text-[10px] font-black uppercase tracking-wide bg-emerald-400/90 text-emerald-950 rounded-full px-2 py-0.5">
+                  Новинка
+                </span>
+              )}
+              <div className={`h-2 bg-gradient-to-r ${g.color}`} />
+              <div className="p-6 flex items-center gap-5">
+                <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${g.color} flex items-center justify-center text-4xl shadow-lg group-hover:scale-110 transition-transform`}>
+                  {g.emoji}
                 </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ЭКРАН ИГРЫ */}
-      {game && (
-        <GamePlay
-          game={game}
-          bubble={bubble}
-          speaking={speaking}
-          voiceEnabled={enabled}
-          onToggleVoice={toggle}
-          onSpeak={speak}
-          onSay={say}
-          onShowText={showText}
-          onChirp={chirp}
-          onBack={backToHub}
-          onReward={handleWin}
-          isAuthenticated={isAuthenticated}
-          onLogin={openLogin}
-        />
-      )}
+                <div className="flex-1">
+                  <h3 className="font-montserrat font-black text-white text-xl mb-1">{g.title}</h3>
+                  <p className="text-white/60 text-sm mb-2">{g.short}</p>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-amber-300 bg-amber-400/10 border border-amber-400/25 rounded-full px-2.5 py-1 font-bold">
+                    <Icon name="Sparkles" size={11} />
+                    +{g.reward} ЗНАЕК за победу
+                  </span>
+                </div>
+                <Icon name="ChevronRight" size={24} className="text-white/30 group-hover:text-white/70 transition-colors" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <SiteFooter />
 
