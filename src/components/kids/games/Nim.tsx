@@ -28,8 +28,9 @@ export default function Nim({
 
   const total = (p: number[]) => p.reduce((a, b) => a + b, 0);
 
-  const ksushaMove = useCallback(
-    (p: number[]) => {
+  const ksushaMove = useCallback(() => {
+    setPiles((p) => {
+      if (p.reduce((a, b) => a + b, 0) === 0) return p;
       const nimSum = p.reduce((a, b) => a ^ b, 0);
       const smart = Math.random() < Math.min(1, 0.3 + (level - 1) * 0.3);
 
@@ -55,7 +56,6 @@ export default function Nim({
 
       const next = [...p];
       next[pileIdx] -= take;
-      setPiles(next);
       onThinking?.(false);
       if (total(next) === 0) {
         setOver("ksusha");
@@ -64,17 +64,18 @@ export default function Nim({
       } else {
         setTurn("you");
       }
-    },
-    [onSay, onLoss, onThinking, level]
-  );
+      return next;
+    });
+  }, [onSay, onLoss, onThinking, level]);
 
   useEffect(() => {
     if (turn === "ksusha" && !over) {
       onThinking?.(true);
-      const t = setTimeout(() => ksushaMove(piles), 1700);
+      const t = setTimeout(() => ksushaMove(), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, piles, ksushaMove, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   // Клик по звезде: забрать её и все правее в этой кучке
   const takeFrom = (pileIdx: number, starIdx: number) => {

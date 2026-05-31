@@ -95,13 +95,13 @@ export default function Gomoku({
     setOver(null);
   };
 
-  const ksushaMove = useCallback(
-    (b: Cell[]) => {
+  const ksushaMove = useCallback(() => {
+    setBoard((b) => {
       const empties: number[] = [];
       b.forEach((v, i) => {
         if (!v) empties.push(i);
       });
-      if (empties.length === 0) return;
+      if (empties.length === 0) return b;
 
       const randomChance = Math.max(0, 0.5 - (level - 1) * 0.2);
       let pick: number;
@@ -128,7 +128,6 @@ export default function Gomoku({
 
       const next = [...b];
       next[pick] = "b";
-      setBoard(next);
       if (winnerAt(next, pick)) {
         setOver("b");
         onSay("Я собрала пять синих фишек в ряд! В этот раз повезло мне. Сыграем ещё?");
@@ -137,17 +136,18 @@ export default function Gomoku({
         onThinking?.(false);
         setTurn("r");
       }
-    },
-    [onSay, onLoss, onThinking, level]
-  );
+      return next;
+    });
+  }, [onSay, onLoss, onThinking, level]);
 
   useEffect(() => {
     if (turn === "b" && !over) {
       onThinking?.(true);
-      const t = setTimeout(() => ksushaMove(board), 1700);
+      const t = setTimeout(() => ksushaMove(), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, board, ksushaMove, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   const click = (i: number) => {
     if (board[i] || over || turn !== "r") return;

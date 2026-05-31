@@ -64,24 +64,31 @@ export default function Chess({
     return false;
   }, [onSay, onWin]);
 
-  // Ход Ксюши
+  // Ход Ксюши — запускается только при смене хода, доску читаем функционально
   useEffect(() => {
     if (turn !== "b" || over) return;
     onThinking?.(true);
     const t = setTimeout(() => {
-      const m = pickKsushaMove(board, level);
-      if (!m) { onThinking?.(false); finish(board, "w"); return; }
-      const captured = board[m.tr][m.tc];
-      const nb = applyMove(board, m);
-      setBoard(nb);
-      onThinking?.(false);
-      if (captured) {
-        onSay(`Я забираю твою фигуру — ${PIECE_NAME[captured.type]}. Будь внимательнее!`);
-      }
-      if (!finish(nb, "b")) setTurn("w");
+      setBoard((board) => {
+        const m = pickKsushaMove(board, level);
+        if (!m) {
+          onThinking?.(false);
+          finish(board, "w");
+          return board;
+        }
+        const captured = board[m.tr][m.tc];
+        const nb = applyMove(board, m);
+        onThinking?.(false);
+        if (captured) {
+          onSay(`Я забираю твою фигуру — ${PIECE_NAME[captured.type]}. Будь внимательнее!`);
+        }
+        if (!finish(nb, "b")) setTurn("w");
+        return nb;
+      });
     }, 1700);
     return () => clearTimeout(t);
-  }, [turn, over, board, finish, onSay, level, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   const myMoves = turn === "w" && !over && sel
     ? legalMovesFrom(board, sel.r, sel.c)

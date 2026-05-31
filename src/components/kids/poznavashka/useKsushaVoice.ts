@@ -18,11 +18,18 @@ export function useKsushaVoice() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const chirpRef = useRef<HTMLAudioElement | null>(null);
   const cacheRef = useRef<Map<string, string>>(new Map());
+  // Токен последнего запроса речи — защищает от гонки, когда несколько
+  // реплик приходят подряд, пока грузится аудио предыдущей.
+  const speakIdRef = useRef(0);
   const [enabled, setEnabled] = useState(true);
   const [speaking, setSpeaking] = useState(false);
 
   const stop = useCallback(() => {
+    // Любая текущая загрузка речи становится неактуальной
+    speakIdRef.current++;
     if (audioRef.current) {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.pause();
       audioRef.current = null;
     }
@@ -40,6 +47,8 @@ export function useKsushaVoice() {
       if (!text) return;
 
       stop();
+      // Фиксируем свой идентификатор после stop() (он увеличил счётчик)
+      const myId = speakIdRef.current;
       try {
         let audioSrc = cacheRef.current.get(text);
         if (!audioSrc) {
@@ -48,20 +57,31 @@ export function useKsushaVoice() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text, teacher_id: "ksusha" }),
           });
+          // Пока грузилось — пришла новая реплика или нажали стоп
+          if (myId !== speakIdRef.current) return;
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.audio_base64) return;
           audioSrc = `data:${data.mime || "audio/mpeg"};base64,${data.audio_base64}`;
           cacheRef.current.set(text, audioSrc);
         }
 
+        // Финальная проверка перед воспроизведением
+        if (myId !== speakIdRef.current) return;
+
         const audio = new Audio(audioSrc);
         audioRef.current = audio;
         setSpeaking(true);
-        audio.onended = () => setSpeaking(false);
-        audio.onerror = () => setSpeaking(false);
-        await audio.play().catch(() => setSpeaking(false));
+        audio.onended = () => {
+          if (myId === speakIdRef.current) setSpeaking(false);
+        };
+        audio.onerror = () => {
+          if (myId === speakIdRef.current) setSpeaking(false);
+        };
+        await audio.play().catch(() => {
+          if (myId === speakIdRef.current) setSpeaking(false);
+        });
       } catch {
-        setSpeaking(false);
+        if (myId === speakIdRef.current) setSpeaking(false);
       }
     },
     [enabled, stop]

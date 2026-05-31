@@ -140,41 +140,48 @@ export default function Checkers({
     return false;
   }, [onSay, onWin, onLoss]);
 
-  // Ход Ксюши
+  // Ход Ксюши — запускается только при смене хода, доску читаем функционально
   useEffect(() => {
     if (turn !== 2 || over) return;
     onThinking?.(true);
     const t = setTimeout(() => {
-      const moves = allMoves(board, 2);
-      if (moves.length === 0) { checkEnd(board, 2); return; }
-      const caps = moves.filter((m) => m.cap);
+      setBoard((board) => {
+        const moves = allMoves(board, 2);
+        if (moves.length === 0) {
+          checkEnd(board, 2);
+          onThinking?.(false);
+          return board;
+        }
+        const caps = moves.filter((m) => m.cap);
 
-      // На низком уровне Ксюша иногда «не замечает» взятие и ходит наугад —
-      // так малышу легче выиграть. С ростом уровня всегда бьёт.
-      const missChance = Math.max(0, 0.6 - (level - 1) * 0.2);
-      const useCapture = caps.length > 0 && Math.random() > missChance;
-      const pool = useCapture ? caps : moves;
+        // На низком уровне Ксюша иногда «не замечает» взятие и ходит наугад —
+        // так малышу легче выиграть. С ростом уровня всегда бьёт.
+        const missChance = Math.max(0, 0.6 - (level - 1) * 0.2);
+        const useCapture = caps.length > 0 && Math.random() > missChance;
+        const pool = useCapture ? caps : moves;
 
-      let pick = pool[Math.floor(Math.random() * pool.length)];
+        let pick = pool[Math.floor(Math.random() * pool.length)];
 
-      // На уровне 3+ Ксюша избегает ходов, после которых её шашку сразу побьют
-      if (level >= 3) {
-        const safe = pool.filter((m) => {
-          const after = applyMove(board, m);
-          return allMoves(after, 1).every(
-            (om) => !(om.cap && om.cap.r === m.tr && om.cap.c === m.tc)
-          );
-        });
-        if (safe.length) pick = safe[Math.floor(Math.random() * safe.length)];
-      }
+        // На уровне 3+ Ксюша избегает ходов, после которых её шашку сразу побьют
+        if (level >= 3) {
+          const safe = pool.filter((m) => {
+            const after = applyMove(board, m);
+            return allMoves(after, 1).every(
+              (om) => !(om.cap && om.cap.r === m.tr && om.cap.c === m.tc)
+            );
+          });
+          if (safe.length) pick = safe[Math.floor(Math.random() * safe.length)];
+        }
 
-      const nb = applyMove(board, pick);
-      setBoard(nb);
-      onThinking?.(false);
-      if (!checkEnd(nb, 1)) setTurn(1);
+        const nb = applyMove(board, pick);
+        onThinking?.(false);
+        if (!checkEnd(nb, 1)) setTurn(1);
+        return nb;
+      });
     }, 1700);
     return () => clearTimeout(t);
-  }, [turn, over, board, checkEnd, level, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   const click = (r: number, c: number) => {
     if (turn !== 1 || over) return;

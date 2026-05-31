@@ -61,43 +61,50 @@ export default function TicTacToe({
     setOver(null);
   };
 
-  const ksushaMove = useCallback((b: Cell[]) => {
-    // На низком уровне Ксюша иногда ходит наугад (даёт малышу шанс),
-    // с ростом уровня играет всё точнее и почти не ошибается.
-    const randomChance = Math.max(0, 0.6 - (level - 1) * 0.2);
-    const empty = b.map((v, idx) => (v ? -1 : idx)).filter((idx) => idx >= 0);
-    let i: number | null;
-    if (Math.random() < randomChance && empty.length) {
-      i = empty[Math.floor(Math.random() * empty.length)];
-    } else {
-      i = findBest(b, "O", "X");
-    }
-    if (i === null) return;
-    const next = [...b];
-    next[i] = "O";
-    setBoard(next);
-    const w = winner(next);
-    if (w === "O") {
-      setOver("O");
-      onSay("Я собрала три нолика в ряд! В этот раз повезло мне. Сыграем ещё?");
-      onLoss?.();
-    } else if (next.every((c) => c)) {
-      setOver("draw");
-      onSay("Ничья! Никто не выиграл. Хочешь сыграть ещё разок?");
-      onThinking?.(false);
-    } else {
-      onThinking?.(false);
-      setTurn("X");
-    }
+  const ksushaMove = useCallback(() => {
+    setBoard((b) => {
+      // защита: ходим только если ещё есть пустые клетки и нет победителя
+      if (winner(b) || b.every((c) => c)) return b;
+      // На низком уровне Ксюша иногда ходит наугад (даёт малышу шанс),
+      // с ростом уровня играет всё точнее и почти не ошибается.
+      const randomChance = Math.max(0, 0.6 - (level - 1) * 0.2);
+      const empty = b.map((v, idx) => (v ? -1 : idx)).filter((idx) => idx >= 0);
+      let i: number | null;
+      if (Math.random() < randomChance && empty.length) {
+        i = empty[Math.floor(Math.random() * empty.length)];
+      } else {
+        i = findBest(b, "O", "X");
+      }
+      if (i === null) return b;
+      const next = [...b];
+      next[i] = "O";
+      const w = winner(next);
+      if (w === "O") {
+        setOver("O");
+        onSay("Я собрала три нолика в ряд! В этот раз повезло мне. Сыграем ещё?");
+        onLoss?.();
+      } else if (next.every((c) => c)) {
+        setOver("draw");
+        onSay("Ничья! Никто не выиграл. Хочешь сыграть ещё разок?");
+        onThinking?.(false);
+      } else {
+        onThinking?.(false);
+        setTurn("X");
+      }
+      return next;
+    });
   }, [onSay, onLoss, onThinking, level]);
 
+  // Ход Ксюши запускается ТОЛЬКО при смене хода на «O», а не на каждое
+  // изменение доски — иначе плодятся таймеры и реплики накладываются.
   useEffect(() => {
     if (turn === "O" && !over) {
       onThinking?.(true);
-      const t = setTimeout(() => ksushaMove(board), 1700);
+      const t = setTimeout(() => ksushaMove(), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, board, ksushaMove, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   const click = (i: number) => {
     if (board[i] || over || turn !== "X") return;

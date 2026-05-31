@@ -117,14 +117,16 @@ export default function Reversi({
     [onSay, onWin, onLoss]
   );
 
-  const ksushaMove = useCallback(
-    (b: Cell[]) => {
+  const [pass, setPass] = useState(0); // триггер повторного хода Ксюши, если игрок пропускает
+
+  const ksushaMove = useCallback(() => {
+    setBoard((b) => {
       const moves = legalMoves(b, "b");
       if (moves.size === 0) {
         onThinking?.(false);
         if (legalMoves(b, "w").size === 0) finish(b);
         else setTurn("w");
-        return;
+        return b;
       }
       const entries = [...moves.entries()];
       let pick = entries[0];
@@ -145,28 +147,25 @@ export default function Reversi({
       const next = applyMove(b, pick[0], "b", pick[1]);
       onThinking?.(false);
       if (legalMoves(next, "w").size === 0 && legalMoves(next, "b").size === 0) {
-        setBoard(next);
         finish(next);
+      } else if (legalMoves(next, "w").size === 0) {
+        onSay("У тебя нет хода — мой ход снова!");
+        setPass((p) => p + 1);
       } else {
-        setBoard(next);
-        if (legalMoves(next, "w").size === 0) {
-          onSay("У тебя нет хода — мой ход снова!");
-          setTurn("b");
-        } else {
-          setTurn("w");
-        }
+        setTurn("w");
       }
-    },
-    [onSay, onThinking, finish, level]
-  );
+      return next;
+    });
+  }, [onSay, onThinking, finish, level]);
 
   useEffect(() => {
     if (turn === "b" && !over) {
       onThinking?.(true);
-      const t = setTimeout(() => ksushaMove(board), 1700);
+      const t = setTimeout(() => ksushaMove(), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, board, ksushaMove, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over, pass]);
 
   const myMoves = turn === "w" && !over ? legalMoves(board, "w") : new Map<number, number[]>();
   const { w, b: bl } = countCells(board);

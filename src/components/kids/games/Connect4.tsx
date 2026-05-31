@@ -78,13 +78,14 @@ export default function Connect4({
     setOver(null);
   };
 
-  const ksushaMove = useCallback(
-    (b: Cell[]) => {
+  const ksushaMove = useCallback(() => {
+    setBoard((b) => {
       const cols = validCols(b);
       if (cols.length === 0) {
         setOver("draw");
         onSay("Ничья! Все клеточки заняты. Сыграем ещё разок?");
-        return;
+        onThinking?.(false);
+        return b;
       }
 
       // Выигрышный ход
@@ -106,7 +107,6 @@ export default function Connect4({
       }
 
       const next = place(b, choice, "r");
-      setBoard(next);
       if (checkWin(next, "r")) {
         setOver("r");
         onSay("Я собрала четыре красные фишки в ряд! Здорово вышло. Хочешь реванш?");
@@ -119,17 +119,18 @@ export default function Connect4({
         onThinking?.(false);
         setTurn("y");
       }
-    },
-    [onSay, onLoss, onThinking, level]
-  );
+      return next;
+    });
+  }, [onSay, onLoss, onThinking, level]);
 
   useEffect(() => {
     if (turn === "r" && !over) {
       onThinking?.(true);
-      const t = setTimeout(() => ksushaMove(board), 1700);
+      const t = setTimeout(() => ksushaMove(), 1700);
       return () => clearTimeout(t);
     }
-  }, [turn, over, board, ksushaMove, onThinking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turn, over]);
 
   const clickCol = (col: number) => {
     if (over || turn !== "y" || dropRow(board, col) < 0) return;
