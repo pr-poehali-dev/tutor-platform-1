@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
-import { PRINCIPLES, REVIEWS, FAQ_ITEMS } from "./kidsLandingData";
+import { PRINCIPLES, REVIEWS, FAQ_ITEMS, GAMES_FAQ } from "./kidsLandingData";
 import { KIDS_GAMES } from "@/components/kids/games/gamesData";
 
 export default function KidsContent() {
@@ -219,6 +219,36 @@ export default function KidsContent() {
               <div className="px-5 pb-5 text-white/65 text-sm leading-relaxed">{f.a}</div>
             </details>
           ))}
+        </div>
+      </section>
+
+      {/* FAQ про игры */}
+      <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pb-12">
+        <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Игротека · вопросы</p>
+        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white text-center mb-8">
+          Вопросы про игры
+        </h2>
+
+        <div className="space-y-3">
+          {GAMES_FAQ.map((f, i) => (
+            <details key={i} className="group bg-card border border-white/10 rounded-2xl overflow-hidden">
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-3 p-5 hover:bg-white/[0.03] transition-colors">
+                <span className="font-montserrat font-bold text-white text-sm md:text-base">{f.q}</span>
+                <Icon name="Plus" size={18} className="text-white/55 flex-shrink-0 group-open:rotate-45 transition-transform" />
+              </summary>
+              <div className="px-5 pb-5 text-white/65 text-sm leading-relaxed">{f.a}</div>
+            </details>
+          ))}
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/kids/games"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform"
+          >
+            <Icon name="Gamepad2" size={18} />
+            Перейти в Игротеку
+          </Link>
         </div>
       </section>
 
