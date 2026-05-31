@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
@@ -58,11 +58,22 @@ const PLANS: Record<PlanId, PlanDef> = {
   },
 };
 
+const YEAR_DISCOUNT = 0.4;
+function yearPrice(monthly: number): number {
+  return Math.round(monthly * 12 * (1 - YEAR_DISCOUNT));
+}
+
 export default function Checkout() {
   const { planId } = useParams<{ planId: string }>();
+  const [searchParams] = useSearchParams();
+  const period: "month" | "year" = searchParams.get("period") === "year" ? "year" : "month";
   const { user, isAuthenticated, loading, openLogin } = useAuth();
   const navigate = useNavigate();
   const plan = useMemo<PlanDef | null>(() => (planId && (planId in PLANS) ? PLANS[planId as PlanId] : null), [planId]);
+  // Год доступен только для платных тарифов
+  const isYear = period === "year" && !!plan && plan.price > 0;
+  const displayPrice = isYear && plan ? yearPrice(plan.price) : plan?.price ?? 0;
+  const displayPeriod = isYear ? "год" : plan?.period ?? "";
 
   const { buySubscription } = useAccess();
   const [email, setEmail] = useState<string>(user?.email ?? "");
@@ -129,7 +140,7 @@ export default function Checkout() {
 
     const returnUrl = `${window.location.origin}/checkout/success?plan=${plan.id}`;
     setIsLoading(true);
-    const res = await buySubscription(plan.id, returnUrl, email);
+    const res = await buySubscription(plan.id, returnUrl, email, isYear ? "year" : "month");
     setIsLoading(false);
 
     if (!res.ok) {
@@ -174,13 +185,19 @@ export default function Checkout() {
         </h1>
 
         <div className={`rounded-3xl border border-white/12 bg-gradient-to-br ${plan.gradient} p-6 md:p-7 mb-6`}>
-          <div className="flex items-baseline gap-2 mb-3">
+          <div className="flex items-baseline gap-2 mb-1">
             <span className="font-montserrat font-black text-4xl md:text-5xl text-white">
-              {plan.price === 0 ? "0" : plan.price.toLocaleString("ru-RU")}
+              {displayPrice === 0 ? "0" : displayPrice.toLocaleString("ru-RU")}
             </span>
-            <span className="text-white/65 text-base">₽ / {plan.period}</span>
+            <span className="text-white/65 text-base">₽ / {displayPeriod}</span>
           </div>
-          <p className="text-white/70 text-sm md:text-base mb-4">{plan.description}</p>
+          {isYear && plan && (
+            <p className="text-emerald-300 text-sm font-bold mb-3">
+              ≈ {Math.round(displayPrice / 12).toLocaleString("ru-RU")} ₽/мес · экономия{" "}
+              {(plan.price * 12 - displayPrice).toLocaleString("ru-RU")} ₽ против помесячной оплаты
+            </p>
+          )}
+          <p className="text-white/70 text-sm md:text-base mb-4 mt-2">{plan.description}</p>
           <ul className="space-y-2">
             {plan.features.map((f) => (
               <li key={f} className="flex items-start gap-2 text-sm text-white/85">
@@ -190,6 +207,38 @@ export default function Checkout() {
             ))}
           </ul>
         </div>
+
+        {/* Блок доверия — гарантия возврата + безопасность */}
+        {!isFree && (
+          <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-green-500/5 p-5 md:p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                <Icon name="ShieldCheck" size={24} className="text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="font-montserrat font-black text-white text-base md:text-lg mb-1">
+                  Гарантия возврата 7 дней
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Если платформа не подойдёт — вернём деньги в течение 7 дней без вопросов
+                  (ст. 32 ЗоЗПП). Отмена подписки в любой момент из личного кабинета.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/10">
+              {[
+                { icon: "Lock", text: "Оплата через ЮKassa" },
+                { icon: "FileCheck", text: "Чек по 54-ФЗ" },
+                { icon: "MapPin", text: "Серверы в РФ" },
+              ].map((b) => (
+                <div key={b.text} className="flex flex-col items-center text-center gap-1.5">
+                  <Icon name={b.icon} size={16} className="text-emerald-300" />
+                  <span className="text-white/60 text-[11px] leading-tight">{b.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-3xl border border-white/12 bg-white/[0.04] p-6 md:p-7 mb-6">
           <h2 className="font-montserrat font-black text-lg text-white mb-4">Контактные данные</h2>
@@ -284,7 +333,7 @@ export default function Checkout() {
             ) : (
               <>
                 <Icon name="CreditCard" size={16} />
-                Оплатить {plan.price.toLocaleString("ru-RU")} ₽
+                Оплатить {displayPrice.toLocaleString("ru-RU")} ₽
               </>
             )}
           </button>

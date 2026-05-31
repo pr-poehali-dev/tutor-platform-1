@@ -24,12 +24,32 @@ GRADE_PRICE_KOPECKS = {
     "all": 59000,
 }
 
-# Тарифы подписки (server-side, нельзя подделать с клиента)
+# Тарифы подписки (server-side, нельзя подделать с клиента).
+# Годовая цена = 12 мес со скидкой 40% (платишь как за ~7 месяцев).
 SUBSCRIPTION_PLANS = {
     "base":   {"name": "Базовый",  "price_kopecks":  59000, "period_days": 30},
     "pro":    {"name": "Профи",    "price_kopecks": 129000, "period_days": 30},
     "family": {"name": "Семейный", "price_kopecks": 199000, "period_days": 30},
 }
+
+# Скидка на годовую оплату
+YEAR_DISCOUNT = 0.40
+
+
+def resolve_plan(plan_id: str, period: str):
+    """Возвращает (base_plan_id, plan_dict) с учётом периода month/year.
+    Годовой план: цена = месяц * 12 * (1 - YEAR_DISCOUNT), период 365 дней."""
+    base_plan = SUBSCRIPTION_PLANS.get(plan_id)
+    if not base_plan:
+        return None, None
+    if period == 'year':
+        year_price = int(round(base_plan['price_kopecks'] * 12 * (1 - YEAR_DISCOUNT)))
+        return plan_id, {
+            'name': f"{base_plan['name']} (год)",
+            'price_kopecks': year_price,
+            'period_days': 365,
+        }
+    return plan_id, dict(base_plan)
 
 YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
 
@@ -292,10 +312,13 @@ def handle_buy_course(token: str, body: dict) -> dict:
 def handle_buy_subscription(token: str, body: dict) -> dict:
     """Создаёт pending-подписку и платёж ЮKassa. Возвращает payment_url."""
     plan_id = (body.get('plan_id') or '').strip()
+    period = (body.get('period') or 'month').strip()
+    if period not in ('month', 'year'):
+        period = 'month'
     return_url = (body.get('return_url') or '').strip()
     customer_email_override = (body.get('email') or '').strip()
 
-    plan = SUBSCRIPTION_PLANS.get(plan_id)
+    _, plan = resolve_plan(plan_id, period)
     if not plan:
         return err('Неизвестный тариф', 400)
     if not return_url.startswith('https://'):
@@ -341,9 +364,9 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                 conn.commit()
 
             cur.execute(
-                "INSERT INTO subscriptions (user_id, plan_id, status, amount_kopecks, payment_provider) "
-                "VALUES (%s, %s, 'pending', %s, 'yookassa') RETURNING id",
-                (user_id, plan_id, amount_kopecks)
+                "INSERT INTO subscriptions (user_id, plan_id, status, amount_kopecks, payment_provider, period_days) "
+                "VALUES (%s, %s, 'pending', %s, 'yookassa', %s) RETURNING id",
+                (user_id, plan_id, amount_kopecks, plan['period_days'])
             )
             subscription_id = cur.fetchone()[0]
             conn.commit()
@@ -364,6 +387,7 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     'subscription_id': str(subscription_id),
                     'user_id': str(user_id),
                     'plan_id': plan_id,
+                    'period': period,
                     'period_days': str(plan['period_days']),
                 }
                 yk = create_yookassa_payment(
@@ -438,14 +462,13 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
 
             if kind == 'subscription':
                 cur.execute(
-                    "SELECT plan_id FROM subscriptions WHERE id = %s AND user_id = %s AND status = 'pending'",
+                    "SELECT plan_id, period_days FROM subscriptions WHERE id = %s AND user_id = %s AND status = 'pending'",
                     (purchase_id, user_id)
                 )
                 row = cur.fetchone()
                 if not row:
                     return err('Подписка не найдена', 404)
-                plan_id = row[0]
-                period_days = SUBSCRIPTION_PLANS.get(plan_id, {}).get('period_days', 30)
+                plan_id, period_days = row[0], row[1] or 30
                 cur.execute(
                     "UPDATE subscriptions SET status = 'active', started_at = NOW(), "
                     "expires_at = NOW() + (%s || ' days')::interval, updated_at = NOW() "

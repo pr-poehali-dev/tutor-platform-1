@@ -33,7 +33,7 @@ interface AccessState {
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
   buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string) => Promise<BuyCourseResult>;
-  buySubscription: (planId: string, returnUrl: string, email?: string) => Promise<BuySubscriptionResult>;
+  buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year") => Promise<BuySubscriptionResult>;
   confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
 }
 
@@ -112,14 +112,14 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  const buySubscription = useCallback(async (planId: string, returnUrl: string, email?: string): Promise<BuySubscriptionResult> => {
+  const buySubscription = useCallback(async (planId: string, returnUrl: string, email?: string, period: "month" | "year" = "month"): Promise<BuySubscriptionResult> => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Сначала войди в аккаунт" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=buy_subscription`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
-        body: JSON.stringify({ plan_id: planId, return_url: returnUrl, email }),
+        body: JSON.stringify({ plan_id: planId, return_url: returnUrl, email, period }),
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, message: data.error || "Не получилось оформить подписку" };

@@ -23,6 +23,23 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "GET shop без токена — 401",
+      "method": "GET",
+      "path": "/?action=shop",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "POST redeem без токена — 401",
+      "method": "POST",
+      "path": "/?action=redeem",
+      "body": {"item_code": "discount_5"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Неизвестный action — 404",
       "method": "GET",
       "path": "/?action=unknown",

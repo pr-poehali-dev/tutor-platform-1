@@ -408,6 +408,93 @@ def handle_quote(cur, user_id: int, body: dict) -> dict:
     })
 
 
+def gen_coupon_code() -> str:
+    """Генерирует читаемый код купона: ZN-XXXX-XXXX."""
+    import secrets
+    alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    part = lambda: ''.join(secrets.choice(alphabet) for _ in range(4))
+    return f'ZN-{part()}-{part()}'
+
+
+def fetch_shop(cur, user_id: int) -> dict:
+    """Каталог товаров + активный инвентарь пользователя."""
+    cur.execute(
+        "SELECT code, title, description, icon, kind, price, payload, tier "
+        "FROM znaika_shop_items WHERE active = TRUE ORDER BY sort_order"
+    )
+    items = [
+        {'code': r[0], 'title': r[1], 'description': r[2], 'icon': r[3],
+         'kind': r[4], 'price': r[5], 'payload': r[6], 'tier': r[7]}
+        for r in cur.fetchall()
+    ]
+    cur.execute(
+        "SELECT item_code, kind, coupon_code, payload, status, created_at "
+        "FROM znaika_redemptions WHERE user_id = %s ORDER BY created_at DESC LIMIT 50",
+        (user_id,)
+    )
+    inventory = [
+        {'item_code': r[0], 'kind': r[1], 'coupon_code': r[2],
+         'payload': r[3], 'status': r[4], 'created_at': r[5]}
+        for r in cur.fetchall()
+    ]
+    bal = ensure_balance(cur, user_id)
+    return {'items': items, 'inventory': inventory, 'balance': bal['balance']}
+
+
+def handle_shop(cur, user_id: int) -> dict:
+    return ok(fetch_shop(cur, user_id))
+
+
+def handle_redeem(cur, user_id: int, body: dict) -> dict:
+    """Покупка товара в магазине ЗНАЕК за баллы."""
+    item_code = (body.get('item_code') or '').strip()
+    if not item_code:
+        return err('item_code обязателен')
+    cur.execute(
+        "SELECT title, kind, price, payload FROM znaika_shop_items "
+        "WHERE code = %s AND active = TRUE",
+        (item_code,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return err('Товар не найден', 404)
+    title, kind, price, payload = row
+
+    # Косметику нельзя купить дважды
+    if kind == 'cosmetic':
+        cur.execute(
+            "SELECT 1 FROM znaika_redemptions WHERE user_id=%s AND item_code=%s LIMIT 1",
+            (user_id, item_code)
+        )
+        if cur.fetchone():
+            return err('Этот товар уже куплен', 409)
+
+    # Списываем баллы
+    try:
+        debit(cur, user_id, price, 'shop_purchase',
+              description=f'Магазин: {title}', meta={'item_code': item_code})
+    except ValueError as e:
+        return err(str(e), 402)
+
+    coupon_code = gen_coupon_code() if kind in ('discount_coupon', 'bonus_days') else None
+    cur.execute(
+        "INSERT INTO znaika_redemptions (user_id, item_code, kind, price, coupon_code, payload) "
+        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+        (user_id, item_code, kind, price, coupon_code, json.dumps(payload or {}))
+    )
+    redemption_id = cur.fetchone()[0]
+
+    return ok({
+        'ok': True,
+        'redemption_id': redemption_id,
+        'item_code': item_code,
+        'kind': kind,
+        'coupon_code': coupon_code,
+        'payload': payload,
+        'state': fetch_state(cur, user_id),
+    })
+
+
 def handler(event: dict, context) -> dict:
     """Маршрутизация запросов к системе ЗНАЕК."""
     method = event.get('httpMethod', 'GET')
@@ -449,6 +536,12 @@ def handler(event: dict, context) -> dict:
             return result
         if action == 'quote_discount' and method == 'POST':
             return handle_quote(cur, user_id, body)
+        if action == 'shop' and method == 'GET':
+            return handle_shop(cur, user_id)
+        if action == 'redeem' and method == 'POST':
+            result = handle_redeem(cur, user_id, body)
+            conn.commit()
+            return result
 
         return err('Неизвестный action или метод', 404)
     finally:

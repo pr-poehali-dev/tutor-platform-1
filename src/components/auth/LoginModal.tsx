@@ -51,13 +51,19 @@ export default function LoginModal() {
     }
     closeLogin();
     let pendingPlan: string | null = null;
+    let pendingPeriod: string | null = null;
     try {
       pendingPlan = sessionStorage.getItem("pending_checkout_plan");
+      pendingPeriod = sessionStorage.getItem("pending_checkout_period");
       if (pendingPlan) sessionStorage.removeItem("pending_checkout_plan");
+      if (pendingPeriod) sessionStorage.removeItem("pending_checkout_period");
     } catch {
       // ignore
     }
-    if (pendingPlan) navigate(`/checkout/${pendingPlan}`);
+    if (pendingPlan) {
+      const q = pendingPeriod === "year" ? "?period=year" : "";
+      navigate(`/checkout/${pendingPlan}${q}`);
+    }
     else navigate("/cabinet");
   };
 

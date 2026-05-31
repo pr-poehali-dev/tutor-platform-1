@@ -37,6 +37,26 @@ export interface ZnaikaState {
   achievements: ZnaikaAchievement[];
 }
 
+export interface ZnaikaShopItem {
+  code: string;
+  title: string;
+  description: string;
+  icon: string;
+  kind: "discount_coupon" | "bonus_days" | "cosmetic";
+  price: number;
+  payload: Record<string, unknown>;
+  tier: "common" | "rare" | "epic" | "legendary";
+}
+
+export interface ZnaikaRedemption {
+  item_code: string;
+  kind: string;
+  coupon_code: string | null;
+  payload: Record<string, unknown>;
+  status: string;
+  created_at: string;
+}
+
 interface ZnaikaContextValue {
   state: ZnaikaState | null;
   loading: boolean;
@@ -45,6 +65,8 @@ interface ZnaikaContextValue {
   earn: (reason: string, amount?: number, description?: string) => Promise<void>;
   quoteDiscount: (price: number) => Promise<{ max_discount: number; final_price: number; balance: number; discount_percent_limit: number } | null>;
   spend: (amount: number, reason: string, description?: string) => Promise<{ ok: boolean; message?: string }>;
+  fetchShop: () => Promise<{ items: ZnaikaShopItem[]; inventory: ZnaikaRedemption[]; balance: number } | null>;
+  redeem: (itemCode: string) => Promise<{ ok: boolean; couponCode?: string | null; kind?: string; message?: string }>;
 }
 
 const ZnaikaContext = createContext<ZnaikaContextValue | null>(null);
@@ -165,8 +187,36 @@ export function ZnaikaProvider({ children }: { children: ReactNode }) {
     }
   }, [token, authHeaders]);
 
+  const fetchShop = useCallback(async () => {
+    if (!token) return null;
+    try {
+      const res = await fetch(`${ZNAIKA_URL}?action=shop`, { headers: authHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }, [token, authHeaders]);
+
+  const redeem = useCallback(async (itemCode: string) => {
+    if (!token) return { ok: false, message: "Войди в аккаунт" };
+    try {
+      const res = await fetch(`${ZNAIKA_URL}?action=redeem`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ item_code: itemCode }),
+      });
+      const data = await res.json();
+      if (data?.state) setState(data.state);
+      if (!res.ok) return { ok: false, message: data?.error };
+      return { ok: true, couponCode: data.coupon_code, kind: data.kind };
+    } catch {
+      return { ok: false, message: "Сетевая ошибка" };
+    }
+  }, [token, authHeaders]);
+
   return (
-    <ZnaikaContext.Provider value={{ state, loading, refresh, checkIn, earn, quoteDiscount, spend }}>
+    <ZnaikaContext.Provider value={{ state, loading, refresh, checkIn, earn, quoteDiscount, spend, fetchShop, redeem }}>
       {children}
     </ZnaikaContext.Provider>
   );
@@ -183,6 +233,8 @@ export function useZnaika(): ZnaikaContextValue {
       earn: async () => {},
       quoteDiscount: async () => null,
       spend: async () => ({ ok: false }),
+      fetchShop: async () => null,
+      redeem: async () => ({ ok: false }),
     };
   }
   return ctx;

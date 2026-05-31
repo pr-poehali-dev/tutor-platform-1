@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -91,6 +92,13 @@ const PLANS = [
   },
 ];
 
+const YEAR_DISCOUNT = 0.4; // -40% при годовой оплате
+
+// Цена за год (со скидкой) — целое число рублей
+function yearPrice(monthly: number): number {
+  return Math.round(monthly * 12 * (1 - YEAR_DISCOUNT));
+}
+
 const FAQ = [
   {
     q: "Можно ли отменить подписку в любой момент?",
@@ -133,8 +141,12 @@ const PRICING_JSON_LD = [
 export default function Pricing() {
   const { isAuthenticated, openLogin } = useAuth();
   const navigate = useNavigate();
+  const [period, setPeriod] = useState<"month" | "year">("year");
 
   const promoOn = isPromoActive();
+
+  const checkoutPath = (planId: string) =>
+    `/checkout/${planId}${period === "year" ? "?period=year" : ""}`;
 
   const handlePlanClick = (planId: string) => {
     // Во время акции «ДОБРО» все оплаты заблокированы — перенаправляем на курсы
@@ -145,12 +157,13 @@ export default function Pricing() {
     if (!isAuthenticated) {
       try {
         sessionStorage.setItem("pending_checkout_plan", planId);
+        sessionStorage.setItem("pending_checkout_period", period);
       } catch {
         // ignore
       }
       openLogin();
     } else {
-      navigate(`/checkout/${planId}`);
+      navigate(checkoutPath(planId));
     }
   };
 
@@ -247,6 +260,38 @@ export default function Pricing() {
           </div>
         </div>
 
+        {/* Переключатель периода */}
+        {!promoOn && (
+          <div className="flex flex-col items-center mb-8">
+            <div className="inline-flex items-center bg-white/5 border border-white/12 rounded-2xl p-1.5 relative">
+              <button
+                onClick={() => setPeriod("month")}
+                className={`relative z-10 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                  period === "month" ? "bg-white text-background" : "text-white/60 hover:text-white"
+                }`}
+              >
+                Помесячно
+              </button>
+              <button
+                onClick={() => setPeriod("year")}
+                className={`relative z-10 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${
+                  period === "year" ? "bg-white text-background" : "text-white/60 hover:text-white"
+                }`}
+              >
+                На год
+                <span className="bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full">
+                  −40%
+                </span>
+              </button>
+            </div>
+            {period === "year" && (
+              <p className="text-emerald-300/90 text-sm font-medium mt-3">
+                💰 Выгода до {(yearPrice(1990) ? (1990 * 12 - yearPrice(1990)) : 0).toLocaleString("ru-RU")} ₽ в год на «Семейном»
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Plans */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-16">
           {PLANS.map(plan => (
@@ -265,14 +310,36 @@ export default function Pricing() {
               <div className="mb-5">
                 <p className="text-white/55 text-xs font-medium mb-1">{plan.badge}</p>
                 <h3 className="font-montserrat font-black text-2xl text-white mb-3">{plan.name}</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-montserrat font-black text-3xl text-white">
-                    {plan.price === 0 ? "0" : plan.price.toLocaleString("ru-RU")}
-                  </span>
-                  <span className="text-white/55 text-sm">₽ / {plan.period}</span>
-                </div>
-                {plan.oldPrice && (
-                  <p className="text-white/35 text-xs line-through mt-1">{plan.oldPrice.toLocaleString("ru-RU")} ₽</p>
+                {plan.price === 0 ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-montserrat font-black text-3xl text-white">0</span>
+                    <span className="text-white/55 text-sm">₽ / {plan.period}</span>
+                  </div>
+                ) : period === "year" ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-montserrat font-black text-3xl text-white">
+                        {yearPrice(plan.price).toLocaleString("ru-RU")}
+                      </span>
+                      <span className="text-white/55 text-sm">₽ / год</span>
+                    </div>
+                    <p className="text-emerald-300 text-xs font-bold mt-1">
+                      ≈ {Math.round(yearPrice(plan.price) / 12).toLocaleString("ru-RU")} ₽/мес · экономия{" "}
+                      {(plan.price * 12 - yearPrice(plan.price)).toLocaleString("ru-RU")} ₽
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-montserrat font-black text-3xl text-white">
+                        {plan.price.toLocaleString("ru-RU")}
+                      </span>
+                      <span className="text-white/55 text-sm">₽ / {plan.period}</span>
+                    </div>
+                    {plan.oldPrice && (
+                      <p className="text-white/35 text-xs line-through mt-1">{plan.oldPrice.toLocaleString("ru-RU")} ₽</p>
+                    )}
+                  </>
                 )}
               </div>
 

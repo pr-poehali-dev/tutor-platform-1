@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/context/AuthContext";
 import { useZnaika, formatZnaika, ZnaikaAchievement } from "@/context/ZnaikaContext";
+import ZnaikaShop from "@/components/znaika/ZnaikaShop";
 
 const LEVEL_NAMES = [
   "Новичок", "Любознательный", "Ученик", "Студент", "Знаток",
@@ -231,6 +232,11 @@ export default function Znaika() {
             <EarnRow icon="MessageSquare" title="Отзыв о курсе" reward="+100" hint="развёрнутый отзыв от 100 символов" />
             <EarnRow icon="Trophy" title="Достижения" reward="+50…+5000" hint="за прохождение этапов и марафонов" />
           </div>
+        </div>
+
+        {/* Магазин ЗНАЕК */}
+        <div className="mb-8">
+          <ZnaikaShop />
         </div>
 
         {/* Достижения */}
