@@ -14,6 +14,7 @@ export type GameEngine =
   | "guessnumber" // угадай число
   | "minesweeper" // сапёр для малышей
   | "reversi" // реверси (отелло)
+  | "corners" // уголки (перевести шашки в угол)
   | "nim"; // ним (забери последнюю)
 
 export interface GameInfo {
@@ -172,7 +173,7 @@ export const KIDS_GAMES: GameInfo[] = [
   },
   {
     slug: "corners",
-    engine: "checkers",
+    engine: "corners",
     title: "Уголки",
     emoji: "🔺🔻",
     color: "from-orange-400 to-red-500",

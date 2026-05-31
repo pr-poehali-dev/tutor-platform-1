@@ -13,6 +13,7 @@ import Chess from "./Chess";
 import Gomoku from "./Gomoku";
 import Connect4 from "./Connect4";
 import Reversi from "./Reversi";
+import Corners from "./Corners";
 import Memory from "./Memory";
 import Simon from "./Simon";
 import GuessNumber from "./GuessNumber";
@@ -27,6 +28,7 @@ const ADAPTIVE: Record<string, boolean> = {
   gomoku: true,
   connect4: true,
   reversi: true,
+  corners: true,
   nim: true,
 };
 
@@ -206,6 +208,9 @@ export default function GamePlay({
         )}
         {game.engine === "reversi" && (
           <Reversi onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
+        )}
+        {game.engine === "corners" && (
+          <Corners onSay={onSay} onWin={handleWin} onLoss={handleLoss} onThinking={handleThinking} level={level} />
         )}
         {game.engine === "memory" && <Memory onSay={onSay} onWin={handleWin} />}
         {game.engine === "simon" && <Simon onSay={onSay} onWin={handleWin} />}
