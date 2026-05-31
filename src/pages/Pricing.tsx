@@ -9,6 +9,7 @@ import PlanComparison from "@/components/pricing/PlanComparison";
 import PricingTestimonials from "@/components/pricing/PricingTestimonials";
 import PricingBundles from "@/components/pricing/PricingBundles";
 import PricingReferral from "@/components/pricing/PricingReferral";
+import ZnaikaPayBanner from "@/components/pricing/ZnaikaPayBanner";
 
 const PLANS = [
   {
@@ -259,6 +260,9 @@ export default function Pricing() {
             <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"></div>
           </div>
         </div>
+
+        {/* Баннер оплаты ЗНАЙКАМИ */}
+        {!promoOn && <ZnaikaPayBanner />}
 
         {/* Переключатель периода */}
         {!promoOn && (
