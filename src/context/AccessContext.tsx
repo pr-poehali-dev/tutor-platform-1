@@ -33,7 +33,8 @@ interface AccessState {
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
   buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string) => Promise<BuyCourseResult>;
-  buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year") => Promise<BuySubscriptionResult>;
+  buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year", couponCode?: string) => Promise<BuySubscriptionResult>;
+  validateCoupon: (couponCode: string, amountRub: number) => Promise<{ valid: boolean; percent?: number; discountRub?: number; finalRub?: number; message?: string }>;
   confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
 }
 
@@ -112,14 +113,14 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  const buySubscription = useCallback(async (planId: string, returnUrl: string, email?: string, period: "month" | "year" = "month"): Promise<BuySubscriptionResult> => {
+  const buySubscription = useCallback(async (planId: string, returnUrl: string, email?: string, period: "month" | "year" = "month", couponCode?: string): Promise<BuySubscriptionResult> => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Сначала войди в аккаунт" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=buy_subscription`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
-        body: JSON.stringify({ plan_id: planId, return_url: returnUrl, email, period }),
+        body: JSON.stringify({ plan_id: planId, return_url: returnUrl, email, period, coupon_code: couponCode }),
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, message: data.error || "Не получилось оформить подписку" };
@@ -138,6 +139,30 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: "Нет связи с сервером" };
     }
   }, [token, refreshAccess]);
+
+  const validateCoupon = useCallback(async (couponCode: string, amountRub: number) => {
+    const authToken = token || readToken();
+    if (!authToken) return { valid: false, message: "Сначала войди в аккаунт" };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=validate_coupon`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: JSON.stringify({ coupon_code: couponCode, amount_rub: amountRub }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        return { valid: false, message: data?.message || "Промокод не найден" };
+      }
+      return {
+        valid: true,
+        percent: data.percent,
+        discountRub: data.discount_rub,
+        finalRub: data.final_rub,
+      };
+    } catch {
+      return { valid: false, message: "Нет связи с сервером" };
+    }
+  }, [token]);
 
   const confirmDemoPurchase = useCallback(async (purchaseId: number, kind: "course" | "subscription" = "course") => {
     const authToken = token || readToken();
@@ -165,6 +190,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     refreshAccess,
     buyCourse,
     buySubscription,
+    validateCoupon,
     confirmDemoPurchase,
   };
 

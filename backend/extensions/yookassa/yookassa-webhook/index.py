@@ -145,6 +145,12 @@ def handler(event, context):
                     'headers': HEADERS,
                     'body': json.dumps({'error': 'Missing subscription_id in metadata'})
                 }
+            coupon_rid_raw = metadata.get('coupon_redemption_id')
+            try:
+                coupon_rid = int(coupon_rid_raw) if coupon_rid_raw is not None else None
+            except (TypeError, ValueError):
+                coupon_rid = None
+
             if payment_status == 'succeeded':
                 cur.execute(f"""
                     UPDATE {S}subscriptions
@@ -155,6 +161,13 @@ def handler(event, context):
                         updated_at = NOW()
                     WHERE id = %s AND status <> 'active'
                 """, (payment_id, str(period_days), sub_id))
+                # Гасим использованный промокод
+                if coupon_rid:
+                    cur.execute(f"""
+                        UPDATE {S}znaika_redemptions
+                        SET status = 'used', used_at = NOW()
+                        WHERE id = %s AND status = 'reserved'
+                    """, (coupon_rid,))
                 conn.commit()
             elif payment_status == 'canceled':
                 cur.execute(f"""
@@ -162,6 +175,13 @@ def handler(event, context):
                     SET status = 'canceled', updated_at = NOW()
                     WHERE id = %s AND status = 'pending'
                 """, (sub_id,))
+                # Возвращаем зарезервированный купон в активные
+                if coupon_rid:
+                    cur.execute(f"""
+                        UPDATE {S}znaika_redemptions
+                        SET status = 'active'
+                        WHERE id = %s AND status = 'reserved'
+                    """, (coupon_rid,))
                 conn.commit()
             return {
                 'statusCode': 200,

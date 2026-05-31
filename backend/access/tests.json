@@ -42,6 +42,15 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "validate_coupon без токена - 401",
+      "method": "POST",
+      "path": "/?action=validate_coupon",
+      "body": {"coupon_code": "ZN-TEST-CODE", "amount_rub": 1290},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Unknown action - 404",
       "method": "GET",
       "path": "/?action=unknown",

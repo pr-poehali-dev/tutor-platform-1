@@ -309,6 +309,57 @@ def handle_buy_course(token: str, body: dict) -> dict:
         conn.close()
 
 
+def lookup_coupon(cur, user_id: int, coupon_code: str):
+    """Возвращает (redemption_id, percent) активного скидочного купона пользователя или (None, 0)."""
+    code = (coupon_code or '').strip().upper()
+    if not code:
+        return None, 0
+    cur.execute(
+        "SELECT id, payload FROM znaika_redemptions "
+        "WHERE user_id = %s AND UPPER(coupon_code) = %s AND kind = 'discount_coupon' "
+        "AND status = 'active' LIMIT 1",
+        (user_id, code)
+    )
+    row = cur.fetchone()
+    if not row:
+        return None, 0
+    redemption_id, payload = row
+    try:
+        percent = int((payload or {}).get('percent') or 0)
+    except (TypeError, ValueError, AttributeError):
+        percent = 0
+    if percent <= 0 or percent > 100:
+        return None, 0
+    return redemption_id, percent
+
+
+def handle_validate_coupon(token: str, body: dict) -> dict:
+    """Предпросмотр скидки по промокоду для фронта (без списания)."""
+    coupon_code = (body.get('coupon_code') or '').strip()
+    base_amount_rub = body.get('amount_rub')
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+            rid, percent = lookup_coupon(cur, user_id, coupon_code)
+            if not rid:
+                return ok({'valid': False, 'message': 'Промокод не найден или уже использован'})
+            result = {'valid': True, 'percent': percent}
+            try:
+                amount = int(base_amount_rub)
+                if amount > 0:
+                    discount = amount * percent // 100
+                    result['discount_rub'] = discount
+                    result['final_rub'] = amount - discount
+            except (TypeError, ValueError):
+                pass
+            return ok(result)
+    finally:
+        conn.close()
+
+
 def handle_buy_subscription(token: str, body: dict) -> dict:
     """Создаёт pending-подписку и платёж ЮKassa. Возвращает payment_url."""
     plan_id = (body.get('plan_id') or '').strip()
@@ -318,14 +369,15 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
     return_url = (body.get('return_url') or '').strip()
     customer_email_override = (body.get('email') or '').strip()
 
+    coupon_code = (body.get('coupon_code') or '').strip()
+
     _, plan = resolve_plan(plan_id, period)
     if not plan:
         return err('Неизвестный тариф', 400)
     if not return_url.startswith('https://'):
         return err('return_url должен быть https', 400)
 
-    amount_kopecks = plan['price_kopecks']
-    amount_rub = amount_kopecks / 100
+    base_kopecks = plan['price_kopecks']
 
     shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
     secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
@@ -336,6 +388,15 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
             user_id = resolve_user(cur, token)
             if not user_id:
                 return err('Требуется вход', 401)
+
+            # Применяем промокод-скидку из магазина ЗНАЕК (если есть и валиден)
+            coupon_rid, coupon_percent = lookup_coupon(cur, user_id, coupon_code)
+            amount_kopecks = base_kopecks
+            if coupon_rid:
+                amount_kopecks = base_kopecks - (base_kopecks * coupon_percent // 100)
+                if amount_kopecks < 100:  # минимум 1 ₽ для платежа
+                    amount_kopecks = 100
+            amount_rub = amount_kopecks / 100
 
             # Если уже есть активная — сообщаем
             cur.execute(
@@ -369,6 +430,14 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                 (user_id, plan_id, amount_kopecks, plan['period_days'])
             )
             subscription_id = cur.fetchone()[0]
+
+            # Резервируем купон за этой подпиской (вернём в active, если платёж отменится)
+            if coupon_rid:
+                cur.execute(
+                    "UPDATE znaika_redemptions SET status = 'reserved', "
+                    "payload = payload || %s WHERE id = %s AND status = 'active'",
+                    (json.dumps({'reserved_subscription_id': subscription_id}), coupon_rid)
+                )
             conn.commit()
 
             if not shop_id or not secret_key:
@@ -390,6 +459,8 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     'period': period,
                     'period_days': str(plan['period_days']),
                 }
+                if coupon_rid:
+                    metadata['coupon_redemption_id'] = str(coupon_rid)
                 yk = create_yookassa_payment(
                     shop_id=shop_id,
                     secret_key=secret_key,
@@ -475,8 +546,15 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
                     "WHERE id = %s RETURNING expires_at",
                     (str(period_days), purchase_id)
                 )
-                conn.commit()
                 expires_at = cur.fetchone()[0]
+                # Гасим зарезервированный за этой подпиской купон
+                cur.execute(
+                    "UPDATE znaika_redemptions SET status = 'used', used_at = NOW() "
+                    "WHERE user_id = %s AND status = 'reserved' "
+                    "AND (payload->>'reserved_subscription_id') = %s",
+                    (user_id, str(purchase_id))
+                )
+                conn.commit()
                 return ok({'success': True, 'subscription_id': purchase_id,
                           'expires_at': expires_at.isoformat() if expires_at else None})
 
@@ -526,6 +604,8 @@ def handler(event: dict, context) -> dict:
             return handle_buy_course(token, body)
         if action == 'buy_subscription' and method == 'POST':
             return handle_buy_subscription(token, body)
+        if action == 'validate_coupon' and method == 'POST':
+            return handle_validate_coupon(token, body)
         if action == 'confirm_demo' and method == 'POST':
             return handle_confirm_demo(token, body)
         return err('Unknown action', 404)
