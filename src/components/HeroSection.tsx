@@ -72,7 +72,7 @@ export default function HeroSection() {
               <button
                 type="button"
                 onClick={() => {
-                  const el = document.getElementById("quick-quiz");
+                  const el = document.getElementById("journey");
                   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 className="group bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"

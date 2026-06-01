@@ -7,7 +7,7 @@ export const SectionSkeleton = () => (
 export const SECTION_LABELS: Record<string, string> = {
   hero: "Главная",
   journey: "Маршрут обучения",
-  ai: "ИИ-преподаватель",
+  "ai-teacher": "ИИ-преподаватель",
   leaderboard: "Рейтинг учеников",
   myspace: "Моё обучение",
 };

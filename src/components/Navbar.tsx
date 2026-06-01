@@ -5,9 +5,8 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import ZnaikaBadge from "@/components/znaika/ZnaikaBadge";
 
 const NAV_ITEMS = [
-  { label: "Маршрут",    short: "Маршрут",  icon: "Compass",     section: "journey" },
   { label: "ИИ-учитель", short: "ИИ",       icon: "Bot",         section: "ai-teacher" },
-  { label: "Прогресс",   short: "Прогресс", icon: "TrendingUp",  section: "progress" },
+  { label: "Маршрут",    short: "Маршрут",  icon: "Compass",     section: "journey" },
   { label: "Рейтинг",    short: "Рейтинг",  icon: "BarChart2",   section: "leaderboard" },
 ];
 

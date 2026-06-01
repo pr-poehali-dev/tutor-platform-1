@@ -114,7 +114,7 @@ export default function LeaderboardSection() {
                 <button
                   type="button"
                   onClick={() => {
-                    const el = document.getElementById("quick-quiz");
+                    const el = document.getElementById("journey");
                     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
                   className="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-10 py-4 rounded-2xl text-base hover:opacity-90 transition-all glow-purple"
@@ -132,25 +132,6 @@ export default function LeaderboardSection() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-10 px-4 border-t border-white/8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">🚀</div>
-              <span className="font-montserrat font-black text-lg gradient-text-purple">УчисьПро</span>
-            </div>
-            <div className="flex gap-6 text-white/40 text-sm">
-              <a href="#courses" className="hover:text-white/70 transition-colors">Курсы</a>
-              <a href="/pricing" className="hover:text-white/70 transition-colors">Тарифы</a>
-              <a href="/legal/offer" className="hover:text-white/70 transition-colors">Оферта</a>
-              <a href="/legal/privacy" className="hover:text-white/70 transition-colors">Конфиденциальность</a>
-            </div>
-            <p className="text-white/25 text-sm">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
-          </div>
-        </div>
-      </footer>
     </>
   );
 }
