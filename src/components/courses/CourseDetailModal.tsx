@@ -7,6 +7,7 @@ import LessonViewerModal from "./LessonViewerModal";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import useCourseCurriculum from "@/hooks/useCourseCurriculum";
+import { isPromoActive } from "@/components/promo/dobroConfig";
 
 interface Props {
   course: Course | null;
@@ -51,6 +52,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
 
   if (!course) return null;
 
+  const promoOn = isPromoActive();
   const fmt = FORMAT_CONFIG[course.format];
   const gradeLabel = GRADES.find(g => g.id === course.grade)?.label || course.grade;
 
@@ -414,7 +416,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
               <>
                 <p className="text-green-300 text-sm font-bold flex items-center gap-1.5">
                   <Icon name="CheckCircle2" size={14} />
-                  {hasSubscription ? "Открыто по подписке" : "Курс куплен"}
+                  {promoOn ? "Бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Открыто по подписке" : "Курс куплен"}
                 </p>
                 <p className="text-white/45 text-xs mt-0.5">Все уроки доступны во вкладке «Программа»</p>
               </>

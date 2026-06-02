@@ -11,7 +11,7 @@
       "method": "GET",
       "path": "/?action=check&course_id=1",
       "expectedStatus": 200,
-      "expectedBody": {"authenticated": false, "has_subscription": false, "course_access": false},
+      "expectedBody": {"authenticated": false, "has_subscription": false},
       "bodyMatcher": "partial"
     },
     {
@@ -24,20 +24,20 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Buy без токена - 401",
+      "name": "Buy курса во время акции ДОБРО - 409 (бесплатно)",
       "method": "POST",
       "path": "/?action=buy_course",
       "body": {"course_id": 1, "grade": "ege", "return_url": "https://example.com/ok"},
-      "expectedStatus": 401,
+      "expectedStatus": 409,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },
     {
-      "name": "Buy с невалидным return_url - 400",
+      "name": "Buy подписки во время акции ДОБРО - 409 (бесплатно)",
       "method": "POST",
-      "path": "/?action=buy_course",
-      "body": {"course_id": 1, "grade": "ege", "return_url": "http://example.com/ok"},
-      "expectedStatus": 400,
+      "path": "/?action=buy_subscription",
+      "body": {"plan_id": "pro", "return_url": "https://example.com/ok"},
+      "expectedStatus": 409,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },

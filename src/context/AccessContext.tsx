@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import func2url from "../../backend/func2url.json";
 import { useAuth } from "@/context/AuthContext";
+import { isPromoActive } from "@/components/promo/dobroConfig";
 
 const ACCESS_URL = (func2url as Record<string, string>).access;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -85,7 +86,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, refreshAccess]);
 
   const canAccessCourse = useCallback(
-    (courseId: number) => hasSubscription || purchasedCourseIds.includes(courseId),
+    // Во время акции «ДОБРО» все курсы доступны бесплатно для всех
+    (courseId: number) => isPromoActive() || hasSubscription || purchasedCourseIds.includes(courseId),
     [hasSubscription, purchasedCourseIds]
   );
 

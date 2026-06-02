@@ -6,6 +6,7 @@ import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesDat
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { useZnaika } from "@/context/ZnaikaContext";
+import { isPromoActive } from "@/components/promo/dobroConfig";
 import ZnaikaCheckoutWidget from "@/components/znaika/ZnaikaCheckoutWidget";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
@@ -55,6 +56,8 @@ export default function CourseCheckout() {
       openLogin();
     }
   }, [authLoading, isAuthenticated, openLogin]);
+
+
 
   // Возврат с ЮKassa: рефрешим доступ с лёгкими ретраями (webhook может задержаться)
   useEffect(() => {
@@ -116,6 +119,7 @@ export default function CourseCheckout() {
   const price = getCoursePrice(course);
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label || course.grade;
   const alreadyHasAccess = canAccessCourse(course.id);
+  const promoOn = isPromoActive();
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -271,9 +275,13 @@ export default function CourseCheckout() {
               <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-5">
                 <p className="text-green-300 font-bold text-sm flex items-center gap-2 mb-2">
                   <Icon name="CheckCircle2" size={18} />
-                  {hasSubscription ? "Курс уже открыт по подписке" : "Доступ к курсу открыт"}
+                  {promoOn ? "Открыто бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Курс уже открыт по подписке" : "Доступ к курсу открыт"}
                 </p>
-                <p className="text-white/70 text-sm">Все уроки курса доступны навсегда. Открывай из каталога и продолжай с любого места.</p>
+                <p className="text-white/70 text-sm">
+                  {promoOn
+                    ? "Во время акции все уроки этого курса открыты бесплатно — без оплаты и без карты. Учись прямо сейчас!"
+                    : "Все уроки курса доступны навсегда. Открывай из каталога и продолжай с любого места."}
+                </p>
                 <button
                   onClick={() => navigate("/")}
                   className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity"

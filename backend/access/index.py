@@ -35,6 +35,18 @@ SUBSCRIPTION_PLANS = {
 # Скидка на годовую оплату
 YEAR_DISCOUNT = 0.40
 
+# Акция «ДОБРО»: всё бесплатно, платежи на паузе.
+# Даты должны совпадать с фронтом (src/components/promo/dobroConfig.ts).
+PROMO_START_ISO = "2026-05-28T00:00:00+03:00"
+PROMO_END_ISO = "2026-06-15T23:59:59+03:00"
+
+
+def is_promo_active() -> bool:
+    now = datetime.now(timezone.utc)
+    start = datetime.fromisoformat(PROMO_START_ISO)
+    end = datetime.fromisoformat(PROMO_END_ISO)
+    return start <= now <= end
+
 
 def resolve_plan(plan_id: str, period: str):
     """Возвращает (base_plan_id, plan_dict) с учётом периода month/year.
@@ -125,23 +137,27 @@ def handle_check(token: str, course_id: int | None) -> dict:
     try:
         with conn.cursor() as cur:
             user_id = resolve_user(cur, token)
+            promo = is_promo_active()
             if not user_id:
                 return ok({
                     'authenticated': False,
                     'has_subscription': False,
                     'purchased_course_ids': [],
-                    'course_access': False,
+                    # Во время акции контент открыт даже гостям
+                    'course_access': promo,
+                    'promo_active': promo,
                 })
             has_sub = get_subscription_active(cur, user_id)
             purchased = get_purchased_courses(cur, user_id)
-            course_access = False
-            if course_id is not None:
+            course_access = promo
+            if not course_access and course_id is not None:
                 course_access = has_sub or (course_id in purchased)
             return ok({
                 'authenticated': True,
                 'has_subscription': has_sub,
                 'purchased_course_ids': purchased,
                 'course_access': course_access,
+                'promo_active': promo,
             })
     finally:
         conn.close()
@@ -187,6 +203,8 @@ def create_yookassa_payment(shop_id: str, secret_key: str, amount_rub: float,
 
 
 def handle_buy_course(token: str, body: dict) -> dict:
+    if is_promo_active():
+        return err('Во время акции ДОБРО все курсы бесплатны — оплата не нужна', 409)
     course_id = body.get('course_id')
     grade = (body.get('grade') or 'all').strip()
     title = (body.get('title') or 'Курс').strip()[:200]
@@ -362,6 +380,8 @@ def handle_validate_coupon(token: str, body: dict) -> dict:
 
 def handle_buy_subscription(token: str, body: dict) -> dict:
     """Создаёт pending-подписку и платёж ЮKassa. Возвращает payment_url."""
+    if is_promo_active():
+        return err('Во время акции ДОБРО подписка не нужна — всё открыто бесплатно', 409)
     plan_id = (body.get('plan_id') or '').strip()
     period = (body.get('period') or 'month').strip()
     if period not in ('month', 'year'):
