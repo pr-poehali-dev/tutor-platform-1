@@ -24,6 +24,10 @@ GRADE_PRICE_KOPECKS = {
     "all": 59000,
 }
 
+# Курсы, бесплатные навсегда — оплата за них не создаётся (доступ открыт всем).
+# Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте.
+FREE_FOREVER_COURSE_IDS = {2, 17, 37}
+
 # Тарифы подписки (server-side, нельзя подделать с клиента).
 # Годовая цена = 12 мес со скидкой 40% (платишь как за ~7 месяцев).
 SUBSCRIPTION_PLANS = {
@@ -138,18 +142,19 @@ def handle_check(token: str, course_id: int | None) -> dict:
         with conn.cursor() as cur:
             user_id = resolve_user(cur, token)
             promo = is_promo_active()
+            free_forever = course_id is not None and course_id in FREE_FOREVER_COURSE_IDS
             if not user_id:
                 return ok({
                     'authenticated': False,
                     'has_subscription': False,
                     'purchased_course_ids': [],
-                    # Во время акции контент открыт даже гостям
-                    'course_access': promo,
+                    # Бесплатные навсегда курсы и акция открывают доступ даже гостям
+                    'course_access': promo or free_forever,
                     'promo_active': promo,
                 })
             has_sub = get_subscription_active(cur, user_id)
             purchased = get_purchased_courses(cur, user_id)
-            course_access = promo
+            course_access = promo or free_forever
             if not course_access and course_id is not None:
                 course_access = has_sub or (course_id in purchased)
             return ok({
@@ -317,6 +322,9 @@ def handle_buy_course(token: str, body: dict) -> dict:
         course_id = int(course_id)
     except (TypeError, ValueError):
         return err('Не указан курс', 400)
+
+    if course_id in FREE_FOREVER_COURSE_IDS:
+        return err('Этот курс бесплатный навсегда — оплата не нужна', 409)
 
     if not return_url.startswith('https://'):
         return err('return_url должен быть https', 400)

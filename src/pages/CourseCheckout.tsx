@@ -125,6 +125,7 @@ export default function CourseCheckout() {
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label || course.grade;
   const alreadyHasAccess = canAccessCourse(course.id);
   const promoOn = isPromoActive();
+  const freeForever = !!course.freeForever;
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -280,11 +281,17 @@ export default function CourseCheckout() {
               <>
                 <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-5">
                   <p className="text-green-300 font-bold text-sm flex items-center gap-2 mb-2">
-                    <Icon name="CheckCircle2" size={18} />
-                    {promoOn ? "Открыто бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Курс открыт по подписке" : "Доступ к курсу открыт"}
+                    <Icon name={freeForever ? "Gift" : "CheckCircle2"} size={18} />
+                    {freeForever
+                      ? "Этот курс бесплатный навсегда 🎁"
+                      : promoOn ? "Открыто бесплатно по акции ДОБРО ❤️"
+                      : hasSubscription ? "Курс открыт по подписке"
+                      : "Доступ к курсу открыт"}
                   </p>
                   <p className="text-white/70 text-sm">
-                    {promoOn
+                    {freeForever
+                      ? "Все уроки доступны бесплатно — без оплаты, без карты и без ограничения по времени. Начинай в любой момент!"
+                      : promoOn
                       ? "Все уроки этого курса открыты бесплатно — без оплаты и без карты. Можно начинать прямо сейчас!"
                       : "Все уроки курса доступны. Открывай программу и продолжай с любого места."}
                   </p>
@@ -297,8 +304,8 @@ export default function CourseCheckout() {
                   </button>
                 </div>
 
-                {/* Ненавязчивое продление — только если доступ не бессрочный (не куплен курс) */}
-                {!hasSubscription && (
+                {/* Ненавязчивое продление — только если доступ не бессрочный и курс не бесплатный навсегда */}
+                {!hasSubscription && !freeForever && (
                   <RenewAccessCard />
                 )}
               </>

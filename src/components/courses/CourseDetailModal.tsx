@@ -415,8 +415,8 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
             {canAccessCourse(course.id) ? (
               <>
                 <p className="text-green-300 text-sm font-bold flex items-center gap-1.5">
-                  <Icon name="CheckCircle2" size={14} />
-                  {promoOn ? "Бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Открыто по подписке" : "Курс куплен"}
+                  <Icon name={course.freeForever ? "Gift" : "CheckCircle2"} size={14} />
+                  {course.freeForever ? "Бесплатно навсегда 🎁" : promoOn ? "Бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Открыто по подписке" : "Курс куплен"}
                 </p>
                 <p className="text-white/45 text-xs mt-0.5">Все уроки доступны во вкладке «Программа»</p>
               </>

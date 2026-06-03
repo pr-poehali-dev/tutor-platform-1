@@ -43,7 +43,11 @@ export default function CourseCardCompact({ course }: Props) {
               −{course.salePercent}%
             </span>
           )}
-          {promoOn ? (
+          {course.freeForever ? (
+            <span className="inline-flex items-center gap-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+              <Icon name="Gift" size={10} /> Бесплатно навсегда
+            </span>
+          ) : promoOn ? (
             <span className="inline-flex items-center gap-1 bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
               ❤️ Бесплатно
             </span>
@@ -72,7 +76,7 @@ export default function CourseCardCompact({ course }: Props) {
           <span className="flex items-center gap-1"><Icon name="Star" size={12} className="text-amber-400" /> {course.rating.toFixed(2)}</span>
         </div>
 
-        {!promoOn && !owned && todayCount > 0 && (
+        {!course.freeForever && !promoOn && !owned && todayCount > 0 && (
           <div className="flex items-center gap-1.5 text-[10px] text-emerald-300/90 mb-2.5">
             <span className="relative flex w-1.5 h-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -86,14 +90,16 @@ export default function CourseCardCompact({ course }: Props) {
         <div className="flex items-center justify-between pt-3 border-t border-white/8">
           <div>
             <p className="text-white/40 text-[10px] uppercase tracking-wider">Цена</p>
-            {promoOn ? (
+            {course.freeForever ? (
+              <p className="font-montserrat font-black text-lg text-emerald-300">Бесплатно</p>
+            ) : promoOn ? (
               <p className="font-montserrat font-black text-lg text-rose-300">Бесплатно</p>
             ) : (
               <p className="font-montserrat font-black text-lg text-white">{price.toLocaleString("ru-RU")} ₽</p>
             )}
           </div>
           <span className="inline-flex items-center gap-1.5 bg-purple-500/15 border border-purple-500/30 text-purple-200 text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-purple-500/25 transition-colors">
-            {promoOn || owned ? "Открыть" : "Купить"}
+            {course.freeForever || promoOn || owned ? "Открыть" : "Купить"}
             <Icon name="ArrowRight" size={12} />
           </span>
         </div>

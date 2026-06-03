@@ -70,6 +70,15 @@ export interface Course {
   salePercent?: number;
   trialAvailable: boolean;
   description: string;
+  /** Курс бесплатен навсегда — доступ открыт всем без оплаты, вне зависимости от акций. */
+  freeForever?: boolean;
+}
+
+/** Список курсов, бесплатных навсегда (доступ без оплаты и без подписки). */
+export const FREE_FOREVER_COURSE_IDS = [2, 17, 37];
+
+export function isCourseFreeForever(courseId: number): boolean {
+  return FREE_FOREVER_COURSE_IDS.includes(courseId);
 }
 
 export const COURSES: Course[] = [
@@ -122,6 +131,7 @@ export const COURSES: Course[] = [
     isHit: true,
     isSale: false,
     trialAvailable: true,
+    freeForever: true,
     description: "Объясняем через пиццу и шоколадки! 3/4 пиццы — это сколько кусков? 25% от 200 рублей — за минуту. Каждый урок начинается с реальной задачи из жизни. Никаких страшных формул — только понимание сути.",
   },
   {
@@ -505,6 +515,7 @@ export const COURSES: Course[] = [
     isHit: true,
     isSale: false,
     trialAvailable: true,
+    freeForever: true,
     description: "К концу месяца говоришь простыми фразами: о себе, семье, хобби. Короткие уроки и мгновенная практика. Пример: «I like pizza but I don't like olives» — после 3 урока сам строишь похожие предложения.",
   },
   {
@@ -1019,6 +1030,7 @@ export const COURSES: Course[] = [
     isHit: false,
     isSale: false,
     trialAvailable: true,
+    freeForever: true,
     description: "Курс для 1–4 класса по программе развития мышления. Учимся находить закономерности, решать ребусы и лабиринты, отличать истинные высказывания от ложных. Каждый урок — игра с подсказками от ИИ-методиста.",
   },
   {
