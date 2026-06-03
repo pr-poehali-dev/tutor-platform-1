@@ -8,6 +8,8 @@ import { useAccess } from "@/context/AccessContext";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import ZnaikaCheckoutWidget from "@/components/znaika/ZnaikaCheckoutWidget";
+import CourseDetailModal from "@/components/courses/CourseDetailModal";
+import RenewAccessCard from "@/components/courses/RenewAccessCard";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   SocialProof,
@@ -44,6 +46,7 @@ export default function CourseCheckout() {
   const [demoMode, setDemoMode] = useState(false);
   const [checkingReturn, setCheckingReturn] = useState(false);
   const [email, setEmail] = useState<string>(user?.email ?? "");
+  const [showCourse, setShowCourse] = useState(false);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -274,24 +277,31 @@ export default function CourseCheckout() {
                 </div>
               </div>
             ) : alreadyHasAccess || done ? (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-5">
-                <p className="text-green-300 font-bold text-sm flex items-center gap-2 mb-2">
-                  <Icon name="CheckCircle2" size={18} />
-                  {promoOn ? "Открыто бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Курс уже открыт по подписке" : "Доступ к курсу открыт"}
-                </p>
-                <p className="text-white/70 text-sm">
-                  {promoOn
-                    ? "Во время акции все уроки этого курса открыты бесплатно — без оплаты и без карты. Учись прямо сейчас!"
-                    : "Все уроки курса доступны навсегда. Открывай из каталога и продолжай с любого места."}
-                </p>
-                <button
-                  onClick={() => navigate("/")}
-                  className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity"
-                >
-                  <Icon name="Play" size={14} />
-                  Перейти к курсу
-                </button>
-              </div>
+              <>
+                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-5">
+                  <p className="text-green-300 font-bold text-sm flex items-center gap-2 mb-2">
+                    <Icon name="CheckCircle2" size={18} />
+                    {promoOn ? "Открыто бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Курс открыт по подписке" : "Доступ к курсу открыт"}
+                  </p>
+                  <p className="text-white/70 text-sm">
+                    {promoOn
+                      ? "Все уроки этого курса открыты бесплатно — без оплаты и без карты. Можно начинать прямо сейчас!"
+                      : "Все уроки курса доступны. Открывай программу и продолжай с любого места."}
+                  </p>
+                  <button
+                    onClick={() => setShowCourse(true)}
+                    className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity"
+                  >
+                    <Icon name="Play" size={14} />
+                    Начать обучение
+                  </button>
+                </div>
+
+                {/* Ненавязчивое продление — только если доступ не бессрочный (не куплен курс) */}
+                {!hasSubscription && (
+                  <RenewAccessCard />
+                )}
+              </>
             ) : returnedFromPayment && checkingReturn ? (
               <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-5 mb-5 text-center">
                 <Icon name="Loader2" size={28} className="animate-spin text-cyan-300 mx-auto mb-3" />
@@ -455,6 +465,14 @@ export default function CourseCheckout() {
           </div>
         </div>
       </div>
+
+      {showCourse && (
+        <CourseDetailModal
+          course={course}
+          onClose={() => setShowCourse(false)}
+          onStartWithAI={() => setShowCourse(false)}
+        />
+      )}
     </main>
   );
 }
