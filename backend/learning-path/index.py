@@ -572,8 +572,9 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=n
     ) + exclusion + variability_hint
 
-    # temperature повышена до 0.85 для большего разнообразия задач между запросами
-    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2600, temperature=0.85, timeout=50, retries=1)
+    # temperature повышена до 0.85 для большего разнообразия задач между запросами.
+    # timeout=22 без ретраев — чтобы уложиться в лимит Cloud Function (иначе 500 по таймауту).
+    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2000, temperature=0.85, timeout=22, retries=0)
     raw_tasks = data.get('tasks', []) if isinstance(data, dict) else []
 
     # нормализуем shown_set для проверки повторов на стороне сервера
@@ -598,8 +599,9 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         valid_tasks.append(t)
         shown_set.add(q_norm)
 
-    # Если задач не хватает — добиваем недостающие отдельным запросом с тем же исключением
-    if len(valid_tasks) < n:
+    # Если задач совсем мало (меньше половины) — ОДИН быстрый добивочный запрос.
+    # Короткий timeout без ретраев, чтобы суммарно уложиться в лимит Cloud Function.
+    if valid_tasks and len(valid_tasks) < max(2, n // 2):
         need = n - len(valid_tasks)
         try:
             prompt2 = (
@@ -610,7 +612,7 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
                 + f"\n\nДОПОЛНИТЕЛЬНО: {need} НОВЫХ задач, ОТЛИЧАЮЩИХСЯ от ранее данных. "
                   "Возьми другие числа и другой сюжет!"
             )
-            data2 = call_polza([{'role': 'user', 'content': prompt2}], max_tokens=1800, temperature=0.9, timeout=45, retries=1)
+            data2 = call_polza([{'role': 'user', 'content': prompt2}], max_tokens=1500, temperature=0.9, timeout=18, retries=0)
             extra = data2.get('tasks', []) if isinstance(data2, dict) else []
             for t in extra:
                 if len(valid_tasks) >= n:
@@ -699,7 +701,12 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
 - НЕ возвращай поле tasks — задачи отдельно
 - Примеры из жизни (деньги, скорость, спорт, еда)"""
 
-    data = call_polza([{'role': 'user', 'content': prompt_main}], max_tokens=2800, temperature=0.7, timeout=50, retries=1)
+    # timeout=20 без ретраев — теория генерируется отдельным запросом, надёжно укладывается в лимит функции.
+    # При сбое ИИ (таймаут/недоступность) не роняем функцию 500, а возвращаем понятную ошибку — фронт покажет «Попробовать снова».
+    try:
+        data = call_polza([{'role': 'user', 'content': prompt_main}], max_tokens=2400, temperature=0.7, timeout=20, retries=0)
+    except Exception:
+        return {'_error': 'Урок готовится дольше обычного. Попробуй ещё раз.'}
 
     if not isinstance(data, dict):
         data = {}
@@ -888,7 +895,21 @@ def handler(event, context):
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
-            result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=include_tasks, shown_questions=shown_questions)
+            try:
+                result = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=include_tasks, shown_questions=shown_questions)
+            except Exception as e:
+                print(f'[learning-path] generate_lesson failed: {str(e)[:200]}')
+                return {
+                    'statusCode': 503,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'Урок готовится дольше обычного. Попробуй ещё раз.'}, ensure_ascii=False),
+                }
+            if isinstance(result, dict) and result.get('_error'):
+                return {
+                    'statusCode': 503,
+                    'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': result['_error']}, ensure_ascii=False),
+                }
 
         elif action == 'generate_lesson_tasks':
             subject = body.get('subject', 'math')
@@ -905,7 +926,11 @@ def handler(event, context):
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
-            result = action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=shown_questions, n=n)
+            try:
+                result = action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=shown_questions, n=n)
+            except Exception as e:
+                print(f'[learning-path] generate_lesson_tasks failed: {str(e)[:200]}')
+                result = {'tasks': []}
 
         elif action == 'subjects':
             result = {

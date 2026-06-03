@@ -58,6 +58,8 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
   const [showResult, setShowResult] = useState(false);
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [tasksFailed, setTasksFailed] = useState(false);
 
   const narrator = useLessonNarrator();
 
@@ -73,7 +75,12 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, topic, lessonTitle]);
 
-  const loadTasksInBackground = async (lessonRef: Lesson) => {
+  const loadTasksInBackground = async (lessonRef: Lesson, attempt = 1) => {
+    const MAX_ATTEMPTS = 3;
+    setTasksLoading(true);
+    setTasksFailed(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55000);
     try {
       const res = await fetch(LEARNING_PATH_URL, {
         method: "POST",
@@ -85,12 +92,26 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           grade: mapGrade(grade),
           difficulty: "средний",
         }),
+        signal: controller.signal,
       });
       const data = await res.json();
-      if (!res.ok || !Array.isArray(data?.tasks)) return;
+      if (!res.ok || !Array.isArray(data?.tasks) || data.tasks.length === 0) {
+        throw new Error("no tasks");
+      }
       setLesson({ ...lessonRef, tasks: data.tasks });
+      setTasksLoading(false);
     } catch {
-      // тихо
+      if (attempt < MAX_ATTEMPTS) {
+        clearTimeout(timer);
+        // повторяем с небольшой паузой
+        setTimeout(() => loadTasksInBackground(lessonRef, attempt + 1), 1500);
+        return;
+      }
+      // Задачи не удалось получить — не зависаем, даём завершить урок
+      setTasksLoading(false);
+      setTasksFailed(true);
+    } finally {
+      clearTimeout(timer);
     }
   };
 
@@ -108,6 +129,10 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     setUserAnswer("");
     setHintsShown(0);
     setCorrectCount(0);
+    setTasksFailed(false);
+    setTasksLoading(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55000);
     try {
       const res = await fetch(LEARNING_PATH_URL, {
         method: "POST",
@@ -121,17 +146,24 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           lesson_title: lessonTitle,
           include_tasks: false,
         }),
+        signal: controller.signal,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
       const lessonData = data as Lesson;
+      // Гарантируем массив задач, чтобы UI не падал на lesson.tasks
+      if (!Array.isArray(lessonData.tasks)) lessonData.tasks = [];
       setLesson(lessonData);
-      if (!lessonData.tasks || lessonData.tasks.length === 0) {
+      if (lessonData.tasks.length === 0) {
         loadTasksInBackground(lessonData);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      const msg = e instanceof Error && e.name === "AbortError"
+        ? "Урок готовится дольше обычного. Попробуй ещё раз."
+        : (e instanceof Error ? e.message : "Ошибка");
+      setError(msg);
     } finally {
+      clearTimeout(timer);
       setIsLoading(false);
     }
   };
@@ -297,13 +329,42 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                 />
               )}
 
-              {phase === "tasks" && !currentTask && (
+              {phase === "tasks" && !currentTask && !tasksFailed && (
                 <LessonLoadingProgress
                   topic={topic}
                   accent={accent}
                   estimateSeconds={7}
                   title="Готовлю задачи для самопроверки"
                 />
+              )}
+
+              {phase === "tasks" && !currentTask && tasksFailed && (
+                <div className="text-center py-6">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
+                    <Icon name="CircleAlert" size={26} className="text-amber-300" />
+                  </div>
+                  <p className="text-white font-bold mb-1">Задачи не загрузились</p>
+                  <p className="text-white/55 text-sm mb-5 max-w-sm mx-auto">
+                    Теорию и примеры ты уже изучил. Можно попробовать снова или завершить урок.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => lesson && loadTasksInBackground(lesson)}
+                      className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+                    >
+                      <Icon name="RefreshCw" size={14} />
+                      Попробовать снова
+                    </button>
+                    <button
+                      onClick={() => setPhase("done")}
+                      className="inline-flex items-center gap-2 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-opacity hover:opacity-90"
+                      style={{ background: `linear-gradient(90deg, ${accent}, ${accent}cc)` }}
+                    >
+                      <Icon name="Check" size={14} />
+                      Завершить урок
+                    </button>
+                  </div>
+                </div>
               )}
 
               {phase === "done" && (
