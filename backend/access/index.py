@@ -202,6 +202,108 @@ def create_yookassa_payment(shop_id: str, secret_key: str, amount_rub: float,
         return json.loads(response.read().decode())
 
 
+def get_yookassa_payment(payment_id: str, shop_id: str, secret_key: str) -> dict | None:
+    """Запрашивает актуальный статус платежа в ЮKassa по его id."""
+    if not payment_id or not shop_id or not secret_key:
+        return None
+    auth = base64.b64encode(f"{shop_id}:{secret_key}".encode()).decode()
+    request = Request(
+        f"{YOOKASSA_API_URL}/{payment_id}",
+        headers={'Authorization': f'Basic {auth}', 'Content-Type': 'application/json'},
+        method='GET',
+    )
+    try:
+        with urlopen(request, timeout=15) as response:
+            return json.loads(response.read().decode())
+    except Exception:
+        return None
+
+
+def handle_sync_payment(token: str, body: dict) -> dict:
+    """Подстраховка на случай, если вебхук ЮKassa не пришёл.
+    Берёт незавершённые заказы пользователя, опрашивает ЮKassa напрямую и,
+    если оплата прошла — активирует доступ (подписку или курс)."""
+    shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
+    secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
+    if not shop_id or not secret_key:
+        return ok({'synced': False, 'reason': 'yookassa_not_configured'})
+
+    activated = []
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+
+            # ── Подписки: и pending, и недавно отменённые по таймауту ──
+            # Если деньги реально списаны (succeeded в ЮKassa), но webhook не дошёл
+            # и запись успела отмениться — восстанавливаем доступ.
+            cur.execute(
+                "SELECT id, payment_id, period_days FROM subscriptions "
+                "WHERE user_id = %s AND status IN ('pending', 'canceled') "
+                "AND payment_id IS NOT NULL AND created_at > NOW() - INTERVAL '7 days' "
+                "ORDER BY id DESC LIMIT 10",
+                (user_id,)
+            )
+            for sub_id, payment_id, period_days in cur.fetchall():
+                pay = get_yookassa_payment(payment_id, shop_id, secret_key)
+                if not pay:
+                    continue
+                status = pay.get('status', '')
+                if status == 'succeeded':
+                    cur.execute(
+                        "UPDATE subscriptions SET status = 'active', "
+                        "started_at = COALESCE(started_at, NOW()), "
+                        "expires_at = NOW() + (%s || ' days')::interval, updated_at = NOW() "
+                        "WHERE id = %s AND status <> 'active'",
+                        (str(period_days or 30), sub_id)
+                    )
+                    conn.commit()
+                    activated.append({'kind': 'subscription', 'id': sub_id})
+                elif status == 'canceled':
+                    cur.execute(
+                        "UPDATE subscriptions SET status = 'canceled', updated_at = NOW() "
+                        "WHERE id = %s AND status = 'pending'",
+                        (sub_id,)
+                    )
+                    conn.commit()
+
+            # ── Покупки курсов: и pending, и недавно отменённые по таймауту ──
+            cur.execute(
+                "SELECT id, payment_id, course_id FROM course_purchases "
+                "WHERE user_id = %s AND status IN ('pending', 'canceled') "
+                "AND payment_id IS NOT NULL AND created_at > NOW() - INTERVAL '7 days' "
+                "ORDER BY id DESC LIMIT 10",
+                (user_id,)
+            )
+            for purchase_id, payment_id, course_id in cur.fetchall():
+                pay = get_yookassa_payment(payment_id, shop_id, secret_key)
+                if not pay:
+                    continue
+                status = pay.get('status', '')
+                if status == 'succeeded':
+                    cur.execute(
+                        "UPDATE course_purchases SET status = 'paid', "
+                        "purchased_at = NOW(), updated_at = NOW() "
+                        "WHERE id = %s AND status <> 'paid'",
+                        (purchase_id,)
+                    )
+                    conn.commit()
+                    activated.append({'kind': 'course', 'id': purchase_id, 'course_id': course_id})
+                elif status == 'canceled':
+                    cur.execute(
+                        "UPDATE course_purchases SET status = 'canceled', updated_at = NOW() "
+                        "WHERE id = %s AND status = 'pending'",
+                        (purchase_id,)
+                    )
+                    conn.commit()
+
+            return ok({'synced': True, 'activated': activated})
+    finally:
+        conn.close()
+
+
 def handle_buy_course(token: str, body: dict) -> dict:
     if is_promo_active():
         return err('Во время акции ДОБРО все курсы бесплатны — оплата не нужна', 409)
@@ -628,6 +730,8 @@ def handler(event: dict, context) -> dict:
             return handle_validate_coupon(token, body)
         if action == 'confirm_demo' and method == 'POST':
             return handle_confirm_demo(token, body)
+        if action == 'sync_payment' and method == 'POST':
+            return handle_sync_payment(token, body)
         return err('Unknown action', 404)
     except psycopg2.Error as e:
         print(f'[access] DB error: {str(e)[:500]}')

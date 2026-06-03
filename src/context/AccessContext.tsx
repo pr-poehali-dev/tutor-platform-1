@@ -36,6 +36,7 @@ interface AccessState {
   buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string) => Promise<BuyCourseResult>;
   buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year", couponCode?: string) => Promise<BuySubscriptionResult>;
   validateCoupon: (couponCode: string, amountRub: number) => Promise<{ valid: boolean; percent?: number; discountRub?: number; finalRub?: number; message?: string }>;
+  syncPayment: () => Promise<{ synced: boolean; activated?: Array<{ kind: string; id: number; course_id?: number }> }>;
   confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
 }
 
@@ -166,6 +167,23 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
+  const syncPayment = useCallback(async () => {
+    const authToken = token || readToken();
+    if (!authToken) return { synced: false };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=sync_payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      await refreshAccess();
+      return { synced: !!data.synced, activated: data.activated };
+    } catch {
+      return { synced: false };
+    }
+  }, [token, refreshAccess]);
+
   const confirmDemoPurchase = useCallback(async (purchaseId: number, kind: "course" | "subscription" = "course") => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Требуется вход" };
@@ -193,6 +211,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     buyCourse,
     buySubscription,
     validateCoupon,
+    syncPayment,
     confirmDemoPurchase,
   };
 

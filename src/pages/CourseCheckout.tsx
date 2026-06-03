@@ -23,7 +23,7 @@ export default function CourseCheckout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
-  const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess } = useAccess();
+  const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess, syncPayment } = useAccess();
   const { earn: earnZnaika } = useZnaika();
   const { isReady, loaded: readyLoaded } = useReadyCourses();
 
@@ -65,7 +65,9 @@ export default function CourseCheckout() {
     let cancelled = false;
     setCheckingReturn(true);
     const tryRefresh = async (attempt: number) => {
-      await refreshAccess();
+      // syncPayment сам опрашивает ЮKassa напрямую — доступ выдаётся,
+      // даже если webhook от банка не пришёл.
+      await syncPayment();
       if (cancelled) return;
       if (canAccessCourse(course.id)) {
         setCheckingReturn(false);

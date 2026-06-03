@@ -51,6 +51,15 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "sync_payment без токена - 401",
+      "method": "POST",
+      "path": "/?action=sync_payment",
+      "body": {},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Unknown action - 404",
       "method": "GET",
       "path": "/?action=unknown",

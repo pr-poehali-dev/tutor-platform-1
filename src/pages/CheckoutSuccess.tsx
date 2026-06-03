@@ -10,7 +10,7 @@ export default function CheckoutSuccess() {
   const planParam = params.get("plan") || "";
   const demoSubId = params.get("demo");
   const { refresh } = useAuth();
-  const { hasSubscription, refreshAccess, confirmDemoPurchase } = useAccess();
+  const { hasSubscription, confirmDemoPurchase, syncPayment } = useAccess();
   const [status, setStatus] = useState<"checking" | "active" | "pending">("checking");
   const [demoActivating, setDemoActivating] = useState(false);
 
@@ -21,7 +21,8 @@ export default function CheckoutSuccess() {
     let attempt = 0;
     const tick = async () => {
       attempt += 1;
-      await refreshAccess();
+      // Опрашиваем ЮKassa напрямую и активируем подписку, даже если webhook не пришёл
+      await syncPayment();
       if (cancelled) return;
       if (hasSubscription) {
         setStatus("active");
@@ -102,7 +103,7 @@ export default function CheckoutSuccess() {
             )}
             <div className="mb-6">
               <button
-                onClick={() => { setStatus("checking"); refreshAccess(); }}
+                onClick={() => { setStatus("checking"); syncPayment(); }}
                 className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors"
               >
                 <Icon name="RefreshCw" size={14} />

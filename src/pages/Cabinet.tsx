@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
+import { useAccess } from "@/context/AccessContext";
 import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
 import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget";
 
@@ -21,6 +22,7 @@ function formatExpires(iso: string | null): string {
 
 export default function Cabinet() {
   const { user, subscription, loading, isAuthenticated, openLogin, logout } = useAuth();
+  const { syncPayment } = useAccess();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +30,11 @@ export default function Cabinet() {
       openLogin();
     }
   }, [loading, isAuthenticated, openLogin]);
+
+  // При входе в кабинет — подтягиваем «зависшие» оплаты напрямую из ЮKassa
+  useEffect(() => {
+    if (isAuthenticated) syncPayment();
+  }, [isAuthenticated, syncPayment]);
 
   if (loading) {
     return (
