@@ -53,7 +53,7 @@ export default function CheckoutSuccess() {
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white flex items-center justify-center px-4 py-10">
-      <Seo title="Оплата завершена — УЧИСЬПРО" description="Подписка активирована, чек отправлен на email." canonical="https://xn--h1agdcde2c.xn--p1ai/checkout/success" />
+      <Seo title="Оплата завершена — УЧИСЬПРО" description="Подписка активирована, чек отправлен на email." canonical="https://xn--h1agdcde2c.xn--p1ai/checkout/success" noindex />
 
       <div className="max-w-lg w-full text-center">
         {status === "active" ? (

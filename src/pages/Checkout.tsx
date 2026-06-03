@@ -202,6 +202,7 @@ export default function Checkout() {
         title={`Оплата тарифа «${plan.name}» — УЧИСЬПРО`}
         description={`Оформление подписки «${plan.name}» через ЮKassa. Безопасная оплата картой Visa, Mastercard, МИР или СБП.`}
         canonical={`https://xn--h1agdcde2c.xn--p1ai/checkout/${plan.id}`}
+        noindex
       />
 
       <div className="max-w-3xl mx-auto px-4 pt-10 md:pt-14">

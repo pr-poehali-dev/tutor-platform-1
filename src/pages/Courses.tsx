@@ -40,7 +40,7 @@ const COURSES_JSON_LD = [
     name: "Каталог онлайн-курсов УЧИСЬПРО",
     description: "Полный каталог онлайн-курсов для школьников 1–11 классов и подготовки к ОГЭ/ЕГЭ",
     numberOfItems: COURSES.length,
-    itemListElement: COURSES.slice(0, 20).map((c, idx) => ({
+    itemListElement: COURSES.map((c, idx) => ({
       "@type": "ListItem",
       position: idx + 1,
       item: {

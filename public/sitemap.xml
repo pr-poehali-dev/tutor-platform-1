@@ -92,6 +92,23 @@
   <url><loc>https://учисьпро.рф/courses/literature</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://учисьпро.рф/courses/geography</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://учисьпро.рф/courses/logic</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/courses/chinese</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/korean</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/datascience</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/product</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/courses/avangard</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/courses/roomscan</loc><lastmod>2026-06-03</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+
+  <!-- Бесплатные курсы (страницы курсов) -->
+  <url><loc>https://учисьпро.рф/course-checkout/2</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/17</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/37</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/50</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/51</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/52</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/53</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/54</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/55</loc><lastmod>2026-06-03</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
 
   <!-- Тренажёры задач -->
   <url><loc>https://учисьпро.рф/math-problems</loc><lastmod>2026-05-23</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>

@@ -19,12 +19,16 @@ interface Props {
   accent?: string;
 }
 
-const SUPPORTED_SUBJECTS = ["math", "physics", "english", "russian"];
+// Предметы, которые бэкенд learning-path понимает напрямую (есть в SUBJECT_TOPICS).
+const SUPPORTED_SUBJECTS = [
+  "math", "physics", "english", "russian",
+  "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
+];
 
 const mapSubject = (s: string): string => {
   if (SUPPORTED_SUBJECTS.includes(s)) return s;
   if (s === "literature") return "russian";
-  if (s === "chemistry" || s === "biology" || s === "cs") return "physics";
+  if (s === "chemistry" || s === "biology" || s === "cs" || s === "ai") return "physics";
   return "math";
 };
 
@@ -32,6 +36,7 @@ const mapGrade = (g: string): string => {
   if (["5-9", "10-11", "ege"].includes(g)) return g;
   if (g === "oge") return "5-9";
   if (g === "1-4") return "5-9";
+  if (g === "adult") return "10-11";
   return "5-9";
 };
 

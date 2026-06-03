@@ -24,6 +24,17 @@ const SUBJECT_ACCENTS: Record<string, string> = {
   history: "#eab308",
   geography: "#0ea5e9",
   society: "#8b5cf6",
+  ai: "#d946ef",
+  logic: "#f97316",
+  skills: "#fb7185",
+  career: "#14b8a6",
+  business: "#f59e0b",
+  chinese: "#dc2626",
+  korean: "#6366f1",
+  datascience: "#10b981",
+  product: "#a855f7",
+  avangard: "#06b6d4",
+  roomscan: "#f97316",
 };
 
 export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenDetail }: CourseCardProps) {

@@ -158,8 +158,8 @@ export default function AdminHub() {
                 {section.group}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {section.items.map((item) => (
-                  <Link key={item.path} to={item.path}>
+                {section.items.map((item, idx) => (
+                  <Link key={`${section.group}-${item.label}-${idx}`} to={item.path}>
                     <Card className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all p-4 h-full">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/15 to-cyan-500/10 border border-white/10 flex items-center justify-center flex-shrink-0">

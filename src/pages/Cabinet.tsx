@@ -75,7 +75,7 @@ export default function Cabinet() {
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white pb-16">
-      <Seo title="Личный кабинет — УЧИСЬПРО" description="Управление подпиской, профиль и прогресс ученика" canonical="https://xn--h1agdcde2c.xn--p1ai/cabinet" />
+      <Seo title="Личный кабинет — УЧИСЬПРО" description="Управление подпиской, профиль и прогресс ученика" canonical="https://xn--h1agdcde2c.xn--p1ai/cabinet" noindex />
 
       <div className="max-w-5xl mx-auto px-4 pt-10 md:pt-14">
         <Link to="/" className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-6 transition-colors">
