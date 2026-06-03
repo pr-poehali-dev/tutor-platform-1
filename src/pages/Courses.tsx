@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";
+import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   COURSES,
@@ -17,14 +18,15 @@ import {
 } from "@/components/courses/coursesData";
 import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
 
-type BadgeFilter = "all" | "new" | "hit" | "sale" | "trial";
+type BadgeFilter = "all" | "free" | "new" | "hit" | "sale" | "trial";
 
 const BADGES: { id: BadgeFilter; label: string; icon: string }[] = [
   { id: "all", label: "Все", icon: "Sparkle" },
+  { id: "free", label: "Бесплатные", icon: "Gift" },
   { id: "hit", label: "Хиты", icon: "Flame" },
   { id: "new", label: "Новинки", icon: "Sparkles" },
   { id: "sale", label: "Со скидкой", icon: "Tag" },
-  { id: "trial", label: "Есть пробный", icon: "Gift" },
+  { id: "trial", label: "Есть пробный", icon: "Star" },
 ];
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -94,11 +96,14 @@ const COURSES_JSON_LD = [
 ];
 
 export default function CoursesPage() {
+  const [searchParams] = useSearchParams();
+  const initialBadge: BadgeFilter =
+    searchParams.get("badge") === "free" ? "free" : "all";
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("all");
   const [grade, setGrade] = useState("all");
   const [format, setFormat] = useState("all");
-  const [badge, setBadge] = useState<BadgeFilter>("all");
+  const [badge, setBadge] = useState<BadgeFilter>(initialBadge);
   const [sort, setSort] = useState<SortKey>("popular");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -113,6 +118,7 @@ export default function CoursesPage() {
       if (subject !== "all" && c.subject !== subject) return false;
       if (grade !== "all" && c.grade !== grade) return false;
       if (format !== "all" && c.format !== format) return false;
+      if (badge === "free" && !c.freeForever) return false;
       if (badge === "hit" && !c.isHit) return false;
       if (badge === "new" && !c.isNew) return false;
       if (badge === "sale" && !c.isSale) return false;
@@ -233,6 +239,11 @@ export default function CoursesPage() {
           Школьная программа 1–11 классов и подготовка к ОГЭ/ЕГЭ. Найди свой курс — поиском, по предмету или классу.
         </p>
       </section>
+
+      {/* Бесплатные курсы — показываем, пока пользователь не начал искать/фильтровать */}
+      {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
+        <FreeCoursesBlock compact />
+      )}
 
       {/* Search + Filters */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-6" aria-label="Поиск и фильтрация курсов">

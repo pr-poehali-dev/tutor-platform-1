@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
 import SocialProofStrip from "@/components/SocialProofStrip";
+import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import CoursesTeaser from "@/components/CoursesTeaser";
 import PremiumTracks from "@/components/PremiumTracks";
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +22,9 @@ export default function HomeSections() {
 
       {/* 2. Доверие — цифры и результаты */}
       <SocialProofStrip />
+
+      {/* 2.5. Бесплатные курсы — точка входа для рекламного трафика */}
+      <FreeCoursesBlock />
 
       {/* Персональное пространство — только для вошедших */}
       {isAuthenticated && (
