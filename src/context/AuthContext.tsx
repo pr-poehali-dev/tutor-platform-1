@@ -9,6 +9,7 @@ export interface AuthUser {
   phone?: string | null;
   name?: string | null;
   email?: string | null;
+  avatar_url?: string | null;
   created_at?: string | null;
 }
 
@@ -29,6 +30,8 @@ interface AuthState {
   closeLogin: () => void;
   register: (email: string, password: string, name?: string) => Promise<{ ok: boolean; message?: string; isNew?: boolean }>;
   login: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>;
+  loginWithYandex: () => Promise<void>;
+  completeYandexLogin: (code: string) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -135,6 +138,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refresh]);
 
+  const loginWithYandex = useCallback(async () => {
+    try {
+      const res = await fetch(`${AUTH_URL}?action=yandex-url`, { method: "GET" });
+      const data = await res.json();
+      if (res.ok && data.auth_url) {
+        if (data.state) {
+          try { sessionStorage.setItem("yandex_oauth_state", data.state); } catch { /* ignore */ }
+        }
+        window.location.href = data.auth_url;
+      }
+    } catch {
+      // ignore — пользователь останется на странице
+    }
+  }, []);
+
+  const completeYandexLogin = useCallback(async (code: string) => {
+    try {
+      const res = await fetch(`${AUTH_URL}?action=yandex-callback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) {
+        return { ok: false, message: data.error || "Не удалось войти через Яндекс" };
+      }
+      saveToken(data.token);
+      setToken(data.token);
+      setUser(data.user ?? null);
+      await refresh();
+      return { ok: true };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [refresh]);
+
   const logout = useCallback(async () => {
     const currentToken = loadToken();
     if (currentToken) {
@@ -165,6 +204,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     closeLogin: () => setIsModalOpen(false),
     register,
     login,
+    loginWithYandex,
+    completeYandexLogin,
     logout,
     refresh,
   };
@@ -188,6 +229,8 @@ const AUTH_FALLBACK: AuthState = {
   closeLogin: () => {},
   register: async () => ({ ok: false, message: "Контекст ещё не готов" }),
   login: async () => ({ ok: false, message: "Контекст ещё не готов" }),
+  loginWithYandex: async () => {},
+  completeYandexLogin: async () => ({ ok: false, message: "Контекст ещё не готов" }),
   logout: async () => {},
   refresh: async () => {},
 };

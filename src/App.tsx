@@ -68,6 +68,7 @@ const KidsGamePlay = lazy(() => import("./pages/KidsGamePlay"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
+const YandexCallback = lazy(() => import("./pages/YandexCallback"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Znaika = lazy(() => import("./pages/Znaika"));
@@ -106,6 +107,7 @@ const App = () => (
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
                     <Route path="/admin/ads" element={<AdsManager />} />

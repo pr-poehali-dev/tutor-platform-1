@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
+import YandexLoginButton from "@/components/auth/YandexLoginButton";
 
 type Mode = "login" | "register";
 
@@ -213,6 +214,14 @@ export default function LoginModal() {
             )}
             {mode === "register" ? "Создать аккаунт" : "Войти"}
           </button>
+
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-white/35 text-xs">или</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          <YandexLoginButton />
 
           <p className="text-white/45 text-[11px] text-center mt-3 leading-relaxed">
             Продолжая, ты соглашаешься с{" "}

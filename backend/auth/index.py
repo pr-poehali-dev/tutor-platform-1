@@ -11,8 +11,16 @@ import re
 import secrets
 import hashlib
 import base64
+import urllib.request
+import urllib.parse
+import urllib.error
 from datetime import datetime, timedelta, timezone
 import psycopg2
+
+
+YANDEX_AUTH_URL = "https://oauth.yandex.ru/authorize"
+YANDEX_TOKEN_URL = "https://oauth.yandex.ru/token"
+YANDEX_INFO_URL = "https://login.yandex.ru/info"
 
 
 SESSION_TTL_DAYS = 30
@@ -187,7 +195,7 @@ def handle_me(token: str) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT s.user_id, s.expires_at, s.revoked_at, u.phone, u.name, u.email, u.created_at "
+                "SELECT s.user_id, s.expires_at, s.revoked_at, u.phone, u.name, u.email, u.created_at, u.avatar_url "
                 "FROM auth_sessions s JOIN auth_users u ON u.id = s.user_id "
                 "WHERE s.token = %s",
                 (token,)
@@ -195,7 +203,7 @@ def handle_me(token: str) -> dict:
             row = cur.fetchone()
             if not row:
                 return err('Сессия не найдена', 401)
-            user_id, expires_at, revoked_at, phone, name, email, created_at = row
+            user_id, expires_at, revoked_at, phone, name, email, created_at, avatar_url = row
             if revoked_at is not None or expires_at < datetime.now(timezone.utc):
                 return err('Сессия истекла', 401)
 
@@ -220,6 +228,7 @@ def handle_me(token: str) -> dict:
                     'phone': phone or None,
                     'name': name,
                     'email': email,
+                    'avatar_url': avatar_url,
                     'created_at': created_at.isoformat() if created_at else None
                 },
                 'subscription': subscription
@@ -239,6 +248,155 @@ def handle_logout(token: str) -> dict:
     finally:
         conn.close()
     return ok({'success': True})
+
+
+def handle_yandex_url() -> dict:
+    """Возвращает URL для редиректа пользователя на страницу авторизации Яндекса."""
+    client_id = os.environ.get('YANDEX_CLIENT_ID', '')
+    redirect_uri = os.environ.get('YANDEX_REDIRECT_URI', '')
+    if not client_id or not redirect_uri:
+        return err('Вход через Яндекс ещё не настроен', 503)
+    state = secrets.token_urlsafe(16)
+    params = urllib.parse.urlencode({
+        'response_type': 'code',
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'state': state,
+    })
+    return ok({'auth_url': f'{YANDEX_AUTH_URL}?{params}', 'state': state})
+
+
+def _yandex_exchange_code(code: str) -> dict | None:
+    """Меняет authorization code на access_token Яндекса."""
+    client_id = os.environ.get('YANDEX_CLIENT_ID', '')
+    client_secret = os.environ.get('YANDEX_CLIENT_SECRET', '')
+    redirect_uri = os.environ.get('YANDEX_REDIRECT_URI', '')
+    data = urllib.parse.urlencode({
+        'grant_type': 'authorization_code',
+        'code': code,
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'redirect_uri': redirect_uri,
+    }).encode('utf-8')
+    req = urllib.request.Request(YANDEX_TOKEN_URL, data=data, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        print(f'[auth] yandex token HTTP {e.code}: {e.read()[:200]}')
+        return None
+    except Exception as e:
+        print(f'[auth] yandex token error: {str(e)[:200]}')
+        return None
+
+
+def _yandex_get_user(access_token: str) -> dict | None:
+    """Получает профиль пользователя Яндекса по access_token."""
+    req = urllib.request.Request(
+        f'{YANDEX_INFO_URL}?format=json',
+        headers={'Authorization': f'OAuth {access_token}'},
+        method='GET',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        print(f'[auth] yandex info error: {str(e)[:200]}')
+        return None
+
+
+def handle_yandex_callback(body: dict, user_agent: str, ip: str) -> dict:
+    """Обмен code на профиль Яндекса, привязка/создание пользователя, выдача сессии.
+
+    Логика связывания:
+    1. По yandex_id — если найден, логиним.
+    2. По email — если найден, привязываем yandex_id к существующему аккаунту.
+    3. Иначе — создаём нового пользователя.
+    """
+    code = (body.get('code') or '').strip()
+    if not code:
+        return err('Не передан код авторизации')
+
+    token_data = _yandex_exchange_code(code)
+    if not token_data or not token_data.get('access_token'):
+        return err('Не удалось получить токен от Яндекса', 502)
+
+    profile = _yandex_get_user(token_data['access_token'])
+    if not profile or not profile.get('id'):
+        return err('Не удалось получить данные профиля Яндекса', 502)
+
+    yandex_id = str(profile['id'])
+    email = normalize_email(profile.get('default_email') or '')
+    name = (profile.get('real_name') or profile.get('display_name') or profile.get('first_name') or '').strip()[:120]
+    avatar_url = None
+    avatar_id = profile.get('default_avatar_id')
+    if avatar_id and not profile.get('is_avatar_empty', False):
+        avatar_url = f'https://avatars.yandex.net/get-yapic/{avatar_id}/islands-200'
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 1. По yandex_id
+            cur.execute(
+                "SELECT id, email, name FROM auth_users WHERE yandex_id = %s LIMIT 1",
+                (yandex_id,)
+            )
+            row = cur.fetchone()
+            is_new = False
+
+            if row:
+                user_id, db_email, db_name = row
+                cur.execute(
+                    "UPDATE auth_users SET last_login_at = NOW(), "
+                    "avatar_url = COALESCE(%s, avatar_url), "
+                    "name = COALESCE(NULLIF(name, ''), %s) WHERE id = %s",
+                    (avatar_url, name or None, user_id)
+                )
+                email = db_email or email
+                name = db_name or name
+            else:
+                # 2. По email — привязываем к существующему
+                existing = None
+                if email:
+                    cur.execute("SELECT id, name FROM auth_users WHERE LOWER(email) = %s LIMIT 1", (email,))
+                    existing = cur.fetchone()
+
+                if existing:
+                    user_id, db_name = existing
+                    cur.execute(
+                        "UPDATE auth_users SET yandex_id = %s, last_login_at = NOW(), "
+                        "avatar_url = COALESCE(%s, avatar_url), "
+                        "name = COALESCE(NULLIF(name, ''), %s) WHERE id = %s",
+                        (yandex_id, avatar_url, name or None, user_id)
+                    )
+                    name = db_name or name
+                else:
+                    # 3. Новый пользователь
+                    cur.execute(
+                        "INSERT INTO auth_users (email, name, yandex_id, avatar_url, phone, last_login_at) "
+                        "VALUES (%s, %s, %s, %s, '', NOW()) RETURNING id",
+                        (email or None, name or None, yandex_id, avatar_url)
+                    )
+                    user_id = cur.fetchone()[0]
+                    is_new = True
+
+            session_token = create_session(cur, user_id, user_agent, ip)
+            conn.commit()
+
+            return ok({
+                'success': True,
+                'token': session_token,
+                'is_new': is_new,
+                'user': {
+                    'id': user_id,
+                    'email': email or None,
+                    'name': name or None,
+                    'phone': None,
+                    'avatar_url': avatar_url,
+                }
+            })
+    finally:
+        conn.close()
 
 
 def handler(event: dict, context) -> dict:
@@ -270,6 +428,10 @@ def handler(event: dict, context) -> dict:
             return handle_logout(token)
         if action == 'me' and method == 'GET':
             return handle_me(token)
+        if action == 'yandex-url' and method == 'GET':
+            return handle_yandex_url()
+        if action == 'yandex-callback' and method == 'POST':
+            return handle_yandex_callback(body, user_agent, ip)
         return err('Unknown action', 404)
     except psycopg2.Error as e:
         print(f'[auth] DB error: {str(e)[:500]}')
