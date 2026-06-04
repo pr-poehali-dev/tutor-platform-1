@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { SHARE_TARGETS, ShareTarget, openShare } from "./shareTargets";
+import { SHARE_TARGETS, ShareTarget, openShare, buildShareText, buildShareMessage } from "./shareTargets";
 
 interface Props {
   url: string;
@@ -15,7 +15,7 @@ export default function ShareButtons({ url, title, summary = "" }: Props) {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(buildShareMessage(url, title, summary));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -26,7 +26,7 @@ export default function ShareButtons({ url, title, summary = "" }: Props) {
   const nativeShare = async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title, text: summary || title, url });
+        await navigator.share({ title, text: buildShareText(title, summary), url });
       } else {
         copy();
       }
@@ -72,16 +72,16 @@ export default function ShareButtons({ url, title, summary = "" }: Props) {
 
         <button
           onClick={copy}
-          title="Скопировать ссылку"
-          aria-label="Скопировать ссылку"
+          title="Скопировать текст со ссылкой"
+          aria-label="Скопировать текст со ссылкой"
           className={`flex items-center gap-2 border text-xs font-bold px-3 h-9 rounded-xl transition-all ${
             copied
               ? "bg-green-500/15 border-green-500/40 text-green-300"
               : "bg-white/[0.04] border-white/10 text-white/70 hover:bg-white/15 hover:border-white/30 hover:text-white"
           }`}
         >
-          <Icon name={copied ? "Check" : "Link"} size={15} />
-          <span className="hidden sm:inline">{copied ? "Скопировано" : "Ссылка"}</span>
+          <Icon name={copied ? "Check" : "Copy"} size={15} />
+          <span className="hidden sm:inline">{copied ? "Скопировано" : "Копировать текст"}</span>
         </button>
       </div>
     </div>

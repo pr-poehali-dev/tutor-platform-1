@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { SHARE_TARGETS, openShare } from "./shareTargets";
+import { SHARE_TARGETS, openShare, buildShareText, buildShareMessage } from "./shareTargets";
 
 interface Props {
   url: string;
@@ -32,7 +32,7 @@ export default function ShareMenuButton({ url, title, summary = "", className = 
   const toggle = (e: React.MouseEvent) => {
     stop(e);
     if (navigator.share && !open) {
-      navigator.share({ title, text: summary || title, url }).catch(() => setOpen(true));
+      navigator.share({ title, text: buildShareText(title, summary), url }).catch(() => setOpen(true));
       return;
     }
     setOpen((v) => !v);
@@ -41,7 +41,7 @@ export default function ShareMenuButton({ url, title, summary = "", className = 
   const copy = async (e: React.MouseEvent) => {
     stop(e);
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(buildShareMessage(url, title, summary));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch { /* empty */ }
@@ -80,8 +80,8 @@ export default function ShareMenuButton({ url, title, summary = "", className = 
               copied ? "text-green-300" : "text-white/80 hover:bg-white/10"
             }`}
           >
-            <Icon name={copied ? "Check" : "Link"} size={15} className="flex-shrink-0" />
-            {copied ? "Скопировано" : "Скопировать ссылку"}
+            <Icon name={copied ? "Check" : "Copy"} size={15} className="flex-shrink-0" />
+            {copied ? "Скопировано" : "Скопировать текст"}
           </button>
         </div>
       )}
