@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { FeedArticle, CATEGORY_META } from "./types";
+import ShareMenuButton from "./ShareMenuButton";
+import { articleUrl } from "./shareTargets";
 
 interface Props {
   article: FeedArticle;
@@ -68,6 +70,9 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
                 <Icon name="Languages" size={10} />
               </span>
             )}
+            <div className="absolute bottom-3 right-3">
+              <ShareMenuButton url={articleUrl(article.slug)} title={article.title} summary={article.summary} />
+            </div>
           </div>
           <div className="md:col-span-3 p-5 md:p-6">
             <h2 className="font-montserrat font-black text-white text-xl md:text-2xl leading-tight mb-2 group-hover:text-cyan-200 transition-colors">
@@ -166,6 +171,9 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
             <Icon name="Languages" size={10} />
           </span>
         )}
+        <div className="absolute bottom-3 right-3">
+          <ShareMenuButton url={articleUrl(article.slug)} title={article.title} summary={article.summary} />
+        </div>
       </div>
       <div className="p-4 md:p-5">
         <h3 className="font-montserrat font-black text-white text-base md:text-lg leading-tight mb-2 line-clamp-2 group-hover:text-cyan-200 transition-colors">
