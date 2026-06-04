@@ -214,6 +214,29 @@ export default function FeedArticlePage() {
           ))}
         </article>
 
+        {/* CTA олимпиады — для статей с тегом «олимпиада» */}
+        {article.tags && article.tags.some((t) => t.toLowerCase() === "олимпиада") && (
+          <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-purple-700/40 to-cyan-700/30 p-5 md:p-6 mb-8 text-center">
+            <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <div className="text-4xl mb-2">🏆</div>
+              <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+                Готов проверить свои силы?
+              </h3>
+              <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
+                Пройди мини-олимпиаду без ошибок и забери главный приз — 5000 ЗНАЕК.
+              </p>
+              <Link
+                to="/olympiad"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-amber-500/20"
+              >
+                <Icon name="Rocket" size={18} />
+                Участвовать в олимпиаде
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Теги */}
         {article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
