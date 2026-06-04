@@ -7,6 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { fetchArticle, fetchFeed } from "@/components/feed/api";
 import { FeedArticle as FeedArticleType, CATEGORY_META } from "@/components/feed/types";
 import ArticleCard from "@/components/feed/ArticleCard";
+import ShareButtons from "@/components/feed/ShareButtons";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -236,6 +237,13 @@ export default function FeedArticlePage() {
             </div>
           </div>
         )}
+
+        {/* Поделиться */}
+        <ShareButtons
+          url={`${SITE_URL}/feed/${article.slug}`}
+          title={article.title}
+          summary={article.summary}
+        />
 
         {/* Теги */}
         {article.tags && article.tags.length > 0 && (
