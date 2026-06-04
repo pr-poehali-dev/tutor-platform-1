@@ -23,12 +23,12 @@ interface Props {
 const SUPPORTED_SUBJECTS = [
   "math", "physics", "english", "russian",
   "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
+  "chemistry", "biology", "cs", "ai", "history", "society", "geography",
+  "logic", "skills", "career", "literature",
 ];
 
 const mapSubject = (s: string): string => {
   if (SUPPORTED_SUBJECTS.includes(s)) return s;
-  if (s === "literature") return "russian";
-  if (s === "chemistry" || s === "biology" || s === "cs" || s === "ai") return "physics";
   return "math";
 };
 
