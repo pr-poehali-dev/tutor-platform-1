@@ -9,8 +9,9 @@ import HistoryRow from "./HistoryRow";
 import UserStatsCard from "./UserStatsCard";
 import BadgesGrid from "./BadgesGrid";
 import ActivityHeatmap from "./ActivityHeatmap";
+import CertificatesGrid from "./CertificatesGrid";
 
-type Tab = "overview" | "my" | "favorites" | "history" | "badges";
+type Tab = "overview" | "my" | "certificates" | "favorites" | "history" | "badges";
 
 export default function MySpaceSection() {
   const user = useUser();
@@ -52,9 +53,12 @@ export default function MySpaceSection() {
 
   if (user.loaded && !hasAnyData) return null;
 
+  const certificatesCount = user.myCourses.filter((c) => c.status === "completed").length;
+
   const TABS: { id: Tab; label: string; icon: string; count?: number }[] = [
     { id: "overview", label: "Обзор", icon: "LayoutDashboard" },
     { id: "my", label: "Мои курсы", icon: "GraduationCap", count: user.myCourses.length },
+    { id: "certificates", label: "Сертификаты", icon: "Award", count: certificatesCount },
     { id: "favorites", label: "Избранное", icon: "Heart", count: user.favorites.length },
     { id: "history", label: "История", icon: "Clock", count: user.history.length },
     { id: "badges", label: "Достижения", icon: "Award", count: user.badges.length },
@@ -117,6 +121,10 @@ export default function MySpaceSection() {
           )}
 
           {tab === "my" && <MyCoursesRow myCourses={user.myCourses} coursesById={coursesById} />}
+
+          {tab === "certificates" && (
+            <CertificatesGrid myCourses={user.myCourses} coursesById={coursesById} />
+          )}
 
           {tab === "favorites" && (
             <FavoritesRow ids={user.favorites} coursesById={coursesById} onToggle={user.toggleFavorite} />
