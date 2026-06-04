@@ -72,6 +72,7 @@ const YandexCallback = lazy(() => import("./pages/YandexCallback"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Znaika = lazy(() => import("./pages/Znaika"));
+const Olympiad = lazy(() => import("./pages/Olympiad"));
 const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
@@ -156,6 +157,7 @@ const App = () => (
                     <Route path="/checkout/:planId" element={<Checkout />} />
                     <Route path="/course-checkout/:courseId" element={<CourseCheckout />} />
                     <Route path="/znaika" element={<Znaika />} />
+                    <Route path="/olympiad" element={<Olympiad />} />
                     <Route path="/admin" element={<AdminHub />} />
                     <Route path="/admin/sales" element={<SalesDashboard />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />

@@ -12,6 +12,7 @@ const NAV_ITEMS = [
 
 const NAV_LINKS = [
   { label: "Курсы",        short: "Курсы",   icon: "Library",        path: "/courses" },
+  { label: "Олимпиада",    short: "Олимп.",  icon: "Trophy",         path: "/olympiad" },
   { label: "Лента",        short: "Лента",   icon: "Newspaper",      path: "/feed" },
   { label: "Малыш 1+",     short: "Малыш",   icon: "Baby",           path: "/kids" },
   { label: "Рисовашка",    short: "Рис.",    icon: "Palette",        path: "/draw" },

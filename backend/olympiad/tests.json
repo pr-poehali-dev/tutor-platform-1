@@ -1,0 +1,40 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown action returns 400",
+      "method": "GET",
+      "path": "/?action=unknown",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Leaderboard works",
+      "method": "GET",
+      "path": "/?action=leaderboard",
+      "expectedStatus": 200,
+      "expectedBody": {"leaderboard": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Answer requires session",
+      "method": "POST",
+      "path": "/?action=answer",
+      "body": {"answer": 0},
+      "expectedStatus": 404
+    },
+    {
+      "name": "Start generates questions",
+      "method": "POST",
+      "path": "/?action=start",
+      "body": {"subject": "math", "grade": "5-9"},
+      "expectedStatus": 200,
+      "expectedBody": {"total": 7},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
