@@ -33,6 +33,23 @@
       "path": "/",
       "body": {"action": "generate_lesson_tasks", "subject": "math"},
       "expectedStatus": 400
+    },
+    {
+      "name": "ЕГЭ математика задачи DUMP",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "generate_lesson_tasks", "subject": "math", "topic": "Производные", "grade": "ege", "difficulty": "сложный", "n": 5},
+      "expectedStatus": 200,
+      "expectedBody": {"__dump__": "show"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "ОГЭ математика задачи",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "generate_lesson_tasks", "subject": "math", "topic": "Реальная математика", "grade": "oge", "difficulty": "средний", "n": 5},
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
     }
   ]
 }
