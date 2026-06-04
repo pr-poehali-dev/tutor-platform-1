@@ -194,14 +194,14 @@ SUBJECT_TOPICS = {
 }
 
 
-def call_polza(messages, max_tokens=900, temperature=0.7, timeout=50, retries=1):
+def call_polza(messages, max_tokens=900, temperature=0.7, timeout=50, retries=1, model='openai/gpt-4o-mini'):
     """Вызов polza.ai с заданными сообщениями + автоматический retry при таймауте"""
     api_key = os.environ.get('POLZA_API_KEY', '')
     if not api_key:
         raise Exception('POLZA_API_KEY не настроен')
 
     payload = json.dumps({
-        'model': 'openai/gpt-4o-mini',
+        'model': model,
         'messages': messages,
         'temperature': temperature,
         'max_tokens': max_tokens,
@@ -662,6 +662,58 @@ def _validate_task(task):
     return False, f'unknown type "{ttype}"'
 
 
+VERIFY_PROMPT_TEMPLATE = """Ты — строгий эксперт-проверяющий ЕГЭ/ОГЭ по предмету "{subject_name}".
+Тебе дан список задач в JSON. Для КАЖДОЙ задачи:
+1. РЕШИ её заново сам, с нуля, доведя до окончательного числа/значения.
+2. Сравни свой ответ с полем correct_answer_text.
+3. Если ответ НЕ сходится или вариант записан как невычисленное/неупрощённое выражение (например "e^π + sin(π)" вместо "−e^π", или "3e^0" вместо "3") — ИСПРАВЬ:
+   - пересчитай и упрости ВСЕ значения до конца: e^0=1, sin(π)=0, cos(π)=−1, ln(1)=0, корни и степени посчитай; никаких "e^0", "·1", "+0" в финальных вариантах;
+   - все 4 варианта запиши в одинаково упрощённом виде (либо все числа, либо все одинаково оформленные выражения);
+   - убедись, что среди options есть ТОЧНЫЙ правильный ответ;
+   - выставь correct_answer (индекс) на правильный вариант;
+   - выставь correct_answer_text = options[correct_answer];
+   - перепиши explanation как корректное пошаговое решение, приводящее к этому ответу.
+4. Если задачу невозможно сделать корректной и однозначно решаемой — поставь "valid": false.
+   Все исправленные/верные задачи помечай "valid": true.
+
+ВЕРНИ строго JSON в ТОЙ ЖЕ структуре, что и вход, добавив в каждую задачу поле "valid" (true/false):
+{{"tasks": [ {{...та же задача с исправленными полями и "valid": true/false...}} ]}}
+
+ЗАДАЧИ ДЛЯ ПРОВЕРКИ:
+{tasks_json}"""
+
+
+def _verify_and_fix_tasks(subject_name, tasks, timeout=22):
+    """Второй проход: умная модель перерешивает задачи и исправляет ошибки в ответах.
+    Возвращает список задач, прошедших проверку (valid=true). При сбое — исходные задачи.
+    """
+    if not tasks:
+        return tasks
+    try:
+        tasks_json = json.dumps({'tasks': tasks}, ensure_ascii=False)
+        prompt = VERIFY_PROMPT_TEMPLATE.format(subject_name=subject_name, tasks_json=tasks_json)
+        data = call_polza(
+            [{'role': 'user', 'content': prompt}],
+            max_tokens=2500, temperature=0.1, timeout=timeout, retries=0,
+            model='openai/gpt-4o',
+        )
+        checked = data.get('tasks', []) if isinstance(data, dict) else []
+        result = []
+        for t in checked:
+            if not isinstance(t, dict):
+                continue
+            if t.get('valid') is False:
+                continue
+            t.pop('valid', None)
+            ok, _ = _validate_task(t)
+            if ok:
+                result.append(t)
+        # если проверка зачем-то всё забраковала — лучше вернуть исходные (хоть что-то)
+        return result if result else tasks
+    except Exception:
+        return tasks
+
+
 def _build_exclusion_block(shown_questions):
     """Готовит блок промпта со списком уже показанных задач (для исключения повторов)."""
     if not shown_questions:
@@ -699,9 +751,17 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         exam_block=_exam_format_block(grade),
     ) + exclusion + variability_hint
 
+    # Для ЕГЭ/ОГЭ задачи важна максимальная точность ответов — генерируем умной моделью (gpt-4o)
+    # и затем прогоняем второй проход самопроверки. Для обычных уроков — быстрая модель.
+    is_exam = grade in ('ege', 'oge')
+    gen_model = 'openai/gpt-4o' if is_exam else 'openai/gpt-4o-mini'
+
     # temperature повышена до 0.85 для большего разнообразия задач между запросами.
     # timeout=22 без ретраев — чтобы уложиться в лимит Cloud Function (иначе 500 по таймауту).
-    data = call_polza([{'role': 'user', 'content': prompt}], max_tokens=2000, temperature=0.85, timeout=22, retries=0)
+    data = call_polza(
+        [{'role': 'user', 'content': prompt}],
+        max_tokens=2000, temperature=0.85, timeout=22, retries=0, model=gen_model,
+    )
     raw_tasks = data.get('tasks', []) if isinstance(data, dict) else []
 
     # нормализуем shown_set для проверки повторов на стороне сервера
@@ -756,7 +816,14 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         except Exception:
             pass
 
-    return valid_tasks[:n]
+    result = valid_tasks[:n]
+
+    # Второй проход самопроверки — только для ЕГЭ/ОГЭ, где критична точность ответов.
+    # Умная модель перерешивает задачи и исправляет ошибки в ответах/вариантах.
+    if is_exam and result:
+        result = _verify_and_fix_tasks(subject_name, result, timeout=22)
+
+    return result[:n]
 
 
 def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True, shown_questions=None):
