@@ -16,6 +16,7 @@ export const SUBJECTS = [
   { id: "skills", label: "Soft Skills", emoji: "💎" },
   { id: "career", label: "Профориентация", emoji: "🧭" },
   { id: "business", label: "Бизнес и MBA", emoji: "💼" },
+  { id: "marketing", label: "Интернет-маркетинг", emoji: "📣" },
   { id: "chinese", label: "Китайский язык", emoji: "🐉" },
   { id: "korean", label: "Корейский язык", emoji: "🇰🇷" },
   { id: "datascience", label: "Data Science", emoji: "📊" },
@@ -81,7 +82,7 @@ export interface Course {
 }
 
 /** Список курсов, бесплатных навсегда (доступ без оплаты и без подписки). */
-export const FREE_FOREVER_COURSE_IDS = [2, 17, 37, 50, 51, 52, 53, 54, 55];
+export const FREE_FOREVER_COURSE_IDS = [2, 17, 37, 50, 51, 52, 53, 54, 55, 57];
 
 export function isCourseFreeForever(courseId: number): boolean {
   return FREE_FOREVER_COURSE_IDS.includes(courseId);
@@ -1557,6 +1558,44 @@ export const COURSES: Course[] = [
     trialAvailable: true,
     description:
       "Самый понятный курс тригонометрии: от тригонометрического круга до отбора корней в задаче 13 профильного ЕГЭ. Все формулы выводим, а не зубрим — синус и косинус оживают на единичной окружности. Формулы отображаются как в учебнике: sin²x + cos²x = 1, со степенями, дробями и корнями. 6 модулей, 32 урока с теорией, практикой и тренажёрами.",
+  },
+
+  // ─── ИНТЕРНЕТ-МАРКЕТИНГ (бесплатный курс для заработка) ───────────────────
+  {
+    id: 57,
+    subject: "marketing",
+    title: "Профессия интернет-маркетолог: заработок на рекламе и рассылках",
+    tutor: "ИИ-методист Марина",
+    tutorAvatar: "📣",
+    tutorBadge: "Практика на реальных сервисах",
+    grade: "adult",
+    format: "online",
+    price: 0,
+    priceUnit: "за курс",
+    rating: 5.0,
+    reviews: 0,
+    students: 0,
+    lessons: 40,
+    duration: "30 мин",
+    tags: [
+      "Интернет-маркетинг",
+      "Контекстная реклама",
+      "Email-маркетинг",
+      "Воронки продаж",
+      "Аналитика",
+      "Первые клиенты",
+      "Фриланс",
+      "Заработок",
+    ],
+    color: "from-fuchsia-600 to-orange-500",
+    emoji: "📣",
+    isNew: true,
+    isHit: true,
+    isSale: false,
+    trialAvailable: true,
+    freeForever: true,
+    description:
+      "Бесплатный практический курс с нуля до первых денег в интернет-маркетинге. Учим настраивать рекламу и email-рассылки на реальных российских сервисах, собирать воронки продаж и анализировать результат. Каждый модуль — это навык, который можно сразу продавать. В финале — пошаговая инструкция, как найти первых клиентов и начать зарабатывать на фрилансе или в найме. 8 модулей, 40 уроков, практика на mat-ad.ru и mail-ka.ru.",
   },
 ];
 

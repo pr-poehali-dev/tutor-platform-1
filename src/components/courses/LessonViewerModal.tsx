@@ -24,7 +24,7 @@ const SUPPORTED_SUBJECTS = [
   "math", "physics", "english", "russian",
   "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
   "chemistry", "biology", "cs", "ai", "history", "society", "geography",
-  "logic", "skills", "career", "literature",
+  "logic", "skills", "career", "literature", "marketing",
 ];
 
 const mapSubject = (s: string): string => {
