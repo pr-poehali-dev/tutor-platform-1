@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
 import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget";
+import ConsultationRequest from "@/components/cabinet/ConsultationRequest";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -170,6 +171,9 @@ export default function Cabinet() {
             <p className="text-white/55 text-sm">Пройди квиз и получи персональный план</p>
           </Link>
         </div>
+
+        {/* Заявка на консультацию — закрывает узкое место воронки */}
+        <ConsultationRequest />
 
         {!hasActiveSub && (
           <div className="mt-8 rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-cyan-500/10 p-6 md:p-8 text-center">
