@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating, getCourseDisclaimers, examBadgeLabel } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, examBadgeLabel } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
-import { useAuth } from "@/context/AuthContext";
-import { useAccess } from "@/context/AccessContext";
 import useCourseCurriculum from "@/hooks/useCourseCurriculum";
 import { isPromoActive } from "@/components/promo/dobroConfig";
+import CourseDetailHeader from "./detail/CourseDetailHeader";
+import CourseDetailAbout from "./detail/CourseDetailAbout";
+import CourseDetailProgram from "./detail/CourseDetailProgram";
+import CourseDetailReviews from "./detail/CourseDetailReviews";
+import CourseDetailFooter from "./detail/CourseDetailFooter";
 
 interface Props {
   course: Course | null;
@@ -16,9 +19,6 @@ interface Props {
 }
 
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
-  const navigate = useNavigate();
-  const { isAuthenticated, openLogin } = useAuth();
-  const { canAccessCourse, hasSubscription } = useAccess();
   const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
   const [openLesson, setOpenLesson] = useState<{ title: string; topic: string } | null>(null);
@@ -94,27 +94,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
         <div className="p-6 md:p-10 max-h-[90vh] md:max-h-[85vh] overflow-y-auto">
 
           {/* Header */}
-          <div className="flex flex-col md:flex-row gap-5 mb-6">
-            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${course.color} flex items-center justify-center text-4xl md:text-5xl flex-shrink-0`}>
-              {course.emoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                {course.isHit && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/20">🔥 Хит</span>}
-                {course.isNew && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">✨ Новый</span>}
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${fmt.color}`}>{fmt.label}</span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/8 text-white/60 border border-white/10">{gradeLabel}</span>
-              </div>
-              <h2 className="font-montserrat font-black text-xl md:text-3xl text-white mb-2 leading-snug">{course.title}</h2>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/55">
-                <span className="flex items-center gap-1"><span className="text-yellow-400">⭐</span> {course.rating} · {course.reviews.toLocaleString("ru-RU")} оценок</span>
-                <span>•</span>
-                <span>{course.students.toLocaleString("ru-RU")} учеников</span>
-                <span>•</span>
-                <span>{course.lessons} уроков по {course.duration}</span>
-              </div>
-            </div>
-          </div>
+          <CourseDetailHeader course={course} fmt={fmt} gradeLabel={gradeLabel} />
 
           {/* Tabs */}
           <div className="flex gap-1 mb-6 border-b border-white/8 overflow-x-auto -mx-1 px-1">
@@ -140,269 +120,25 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
 
           {/* About tab */}
           {activeTab === "about" && (
-            <div className="animate-fade-in space-y-6">
-              {/* Description */}
-              <div className="bg-white/4 border border-white/8 rounded-2xl p-5">
-                <h3 className="font-montserrat font-black text-base text-white mb-2 flex items-center gap-2">
-                  <span>📖</span> Кратко о курсе
-                </h3>
-                <p className="text-white/70 text-sm leading-relaxed">{course.description}</p>
-              </div>
-
-              {/* Плашка формата экзамена — только для экзаменационных курсов */}
-              {examLabel && (
-                <div className="flex items-start gap-3 bg-cyan-500/8 border border-cyan-500/25 rounded-2xl p-4">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <Icon name="ClipboardCheck" size={18} className="text-cyan-300" />
-                  </div>
-                  <div>
-                    <p className="font-montserrat font-bold text-white text-sm mb-0.5">{examLabel}</p>
-                    <p className="text-white/60 text-xs leading-relaxed">
-                      Задачи формулируются как в реальных вариантах ФИПИ, с пошаговым разбором решения и проверкой ответов — чтобы готовиться именно к тому, что встретится на экзамене.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Outcomes */}
-              <div>
-                <h3 className="font-montserrat font-black text-base text-white mb-3 flex items-center gap-2">
-                  <span>🎯</span> Что освоишь
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {detail.outcomes.map((o, i) => (
-                    <div key={i} className="flex items-start gap-2.5 bg-white/4 rounded-xl p-3">
-                      <div className="w-5 h-5 rounded-full bg-green-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Icon name="Check" size={11} className="text-green-400" />
-                      </div>
-                      <span className="text-white/75 text-sm">{o}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* For whom */}
-              <div>
-                <h3 className="font-montserrat font-black text-base text-white mb-3 flex items-center gap-2">
-                  <span>👥</span> Кому подойдёт
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {detail.forWhom.map((f, i) => (
-                    <span key={i} className="text-sm text-white/70 bg-white/5 border border-white/8 rounded-xl px-3 py-2">
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <h3 className="font-montserrat font-black text-base text-white mb-3 flex items-center gap-2">
-                  <span>🏷️</span> Темы курса
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {course.tags.map(tag => (
-                    <span key={tag} className="text-xs text-purple-300 bg-purple-500/10 border border-purple-500/25 rounded-lg px-2.5 py-1.5">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* AI teacher badge */}
-              <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/25 rounded-2xl p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-2xl flex-shrink-0">
-                  🤖
-                </div>
-                <div>
-                  <p className="font-montserrat font-bold text-white text-sm">Преподаёт ИИ-методист</p>
-                  <p className="text-white/55 text-xs">{course.tutorBadge} · доступен круглосуточно · подстраивается под твой уровень</p>
-                </div>
-              </div>
-
-              {/* Юридическая информация и соблюдение законов РФ */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Icon name="ShieldCheck" size={16} className="text-emerald-300" />
-                  <h4 className="font-montserrat font-bold text-white text-sm">
-                    Юридическая информация · соответствует законодательству РФ
-                  </h4>
-                </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10 border border-white/15 text-white/85 font-bold">
-                    <Icon name="UserCheck" size={12} />
-                    {getAgeRating(course)}
-                  </span>
-                  <span className="text-white/55 text-[11px]">
-                    Возрастная маркировка согласно 436-ФЗ
-                  </span>
-                </div>
-                <ul className="space-y-1.5 pt-1">
-                  {getCourseDisclaimers(course).map((d, i) => (
-                    <li key={i} className="flex gap-2 text-white/55 text-[11px] leading-relaxed">
-                      <Icon name="Info" size={12} className="text-white/40 flex-shrink-0 mt-0.5" />
-                      <span>{d}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-white/35 text-[10px] pt-1 border-t border-white/10">
-                  Платформа работает в соответствии с 273-ФЗ «Об образовании в РФ», 152-ФЗ «О персональных данных», 38-ФЗ «О рекламе» и иными нормативными актами РФ.
-                </p>
-              </div>
-            </div>
+            <CourseDetailAbout course={course} detail={detail} examLabel={examLabel} />
           )}
 
           {/* Program tab */}
           {activeTab === "program" && (
-            <div className="animate-fade-in">
-              {real.generating && (
-                <div className="mb-4 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 border border-purple-500/30 rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/25 flex items-center justify-center flex-shrink-0">
-                    <Icon name="Loader2" size={16} className="animate-spin text-purple-200" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-bold">ИИ-методист готовит программу под тебя</p>
-                    <p className="text-white/55 text-xs">Несколько секунд — собирает темы по ФГОС и расставляет по сложности</p>
-                  </div>
-                </div>
-              )}
-              {real.curriculum && (
-                <div className="mb-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3 flex items-center gap-3">
-                  <Icon name="ShieldCheck" size={16} className="text-emerald-300 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white text-xs font-bold">Программа курса · версия {real.curriculum.version || 1} · {real.curriculum.estimated_hours}ч общего обучения</p>
-                    {real.curriculum.methodology && (
-                      <p className="text-white/55 text-xs">{real.curriculum.methodology.slice(0, 120)}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-              <p className="text-white/50 text-xs mb-4">
-                Программа делится на {detail.modules.length} {detail.modules.length === 1 ? "модуль" : "модуля"}. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
-              </p>
-              <div className="flex flex-col gap-2">
-                {detail.modules.map(m => {
-                  const isExpanded = expandedModule === m.id;
-                  return (
-                    <div key={m.id} className={`border rounded-2xl transition-all ${isExpanded ? "border-purple-500/40 bg-purple-500/5" : "border-white/10 bg-white/3"}`}>
-                      <button
-                        onClick={() => setExpandedModule(isExpanded ? null : m.id)}
-                        className="w-full p-4 flex items-center gap-3 text-left"
-                      >
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-montserrat font-black text-sm flex-shrink-0 ${
-                          isExpanded ? "bg-purple-500 text-white" : "bg-white/8 text-white/70"
-                        }`}>
-                          {m.id}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-montserrat font-bold text-white text-sm">{m.title}</p>
-                          <p className="text-white/40 text-xs">{m.lessons.length} уроков</p>
-                        </div>
-                        <Icon name={isExpanded ? "ChevronUp" : "ChevronDown"} size={16} className="text-white/40" />
-                      </button>
-                      {isExpanded && (
-                        <div className="px-4 pb-4 pl-16 flex flex-col gap-2 animate-fade-in">
-                          {m.lessons.map(l => {
-                            const topicFromTags = l.topics?.[0] || course.tags[0] || course.title;
-                            const isFirstLesson = m.id === 1 && l.num === 1;
-                            const userHasAccess = canAccessCourse(course.id);
-                            const isFree = isFirstLesson || userHasAccess;
-
-                            const handleLessonClick = () => {
-                              if (isFree) {
-                                setOpenLesson({ title: l.title, topic: topicFromTags });
-                                return;
-                              }
-                              if (!isAuthenticated) {
-                                openLogin();
-                                return;
-                              }
-                              navigate(`/course-checkout/${course.id}`);
-                            };
-
-                            return (
-                              <button
-                                key={l.num}
-                                onClick={handleLessonClick}
-                                className={`flex items-start gap-3 py-2.5 px-2 -mx-2 rounded-xl border-t border-white/5 first:border-t-0 transition-colors text-left group ${
-                                  isFree ? "hover:bg-white/5" : "hover:bg-amber-500/5"
-                                }`}
-                              >
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
-                                  isFree
-                                    ? "bg-white/5 group-hover:bg-purple-500/30 text-white/60 group-hover:text-white"
-                                    : "bg-amber-500/10 text-amber-300/80"
-                                }`}>
-                                  {isFree ? l.num : <Icon name="Lock" size={12} />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm transition-colors ${isFree ? "text-white/85 group-hover:text-white" : "text-white/55"}`}>{l.title}</p>
-                                  <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                    <span className="text-white/35 text-xs flex items-center gap-1">
-                                      <Icon name="Clock" size={11} /> {l.duration}
-                                    </span>
-                                    {isFirstLesson && !userHasAccess && (
-                                      <span className="text-green-400 text-xs flex items-center gap-1 font-semibold">
-                                        <Icon name="Gift" size={11} /> Бесплатно
-                                      </span>
-                                    )}
-                                    {!isFree && (
-                                      <span className="text-amber-300/80 group-hover:text-amber-200 text-xs flex items-center gap-1 transition-colors">
-                                        <Icon name="Lock" size={11} /> Открыть после оплаты
-                                      </span>
-                                    )}
-                                    {isFree && !isFirstLesson && userHasAccess && (
-                                      <span className="text-green-400/80 text-xs flex items-center gap-1">
-                                        {hasSubscription ? "По подписке" : "Курс куплен"}
-                                      </span>
-                                    )}
-                                    {isFree && (
-                                      <span className="text-purple-300/70 group-hover:text-purple-200 text-xs flex items-center gap-1 transition-colors">
-                                        <Icon name="Play" size={11} /> Открыть урок
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <CourseDetailProgram
+              course={course}
+              detail={detail}
+              generating={real.generating}
+              curriculum={real.curriculum}
+              expandedModule={expandedModule}
+              setExpandedModule={setExpandedModule}
+              setOpenLesson={setOpenLesson}
+            />
           )}
 
           {/* Reviews tab */}
           {activeTab === "reviews" && (
-            <div className="animate-fade-in">
-              <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-xl p-3 mb-5 text-yellow-200/85 text-xs">
-                ℹ️ Отзывы публикуются обезличенно. Указаны только инициалы и город ученика — в соответствии с требованиями Федерального закона №152-ФЗ «О персональных данных».
-              </div>
-              <div className="flex flex-col gap-3">
-                {detail.reviews.map((r, i) => (
-                  <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 flex items-center justify-center font-bold text-sm text-white flex-shrink-0">
-                        {r.initials.split(" ").map(p => p[0]).join("")}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold">{r.initials}</p>
-                        <p className="text-white/40 text-xs">{r.city} · {r.grade} · {r.date}</p>
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, j) => (
-                          <span key={j} className={`text-sm ${j < r.rating ? "text-yellow-400" : "text-white/15"}`}>★</span>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-white/75 text-sm leading-relaxed">{r.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <CourseDetailReviews detail={detail} />
           )}
 
           {/* Legal disclaimer */}
@@ -426,69 +162,13 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
         </div>
 
         {/* Sticky footer with CTA */}
-        <div className="border-t border-white/10 bg-card/95 backdrop-blur-md p-4 md:p-5 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            {canAccessCourse(course.id) ? (
-              <>
-                <p className="text-green-300 text-sm font-bold flex items-center gap-1.5">
-                  <Icon name={course.freeForever ? "Gift" : "CheckCircle2"} size={14} />
-                  {course.freeForever ? "Бесплатно навсегда 🎁" : promoOn ? "Бесплатно по акции ДОБРО ❤️" : hasSubscription ? "Открыто по подписке" : "Курс куплен"}
-                </p>
-                <p className="text-white/45 text-xs mt-0.5">Все уроки доступны во вкладке «Программа»</p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-montserrat font-black text-2xl text-white">
-                    {getCoursePrice(course).toLocaleString("ru-RU")} ₽
-                  </span>
-                  <span className="text-white/45 text-xs">за полный курс</span>
-                </div>
-                <p className="text-green-400 text-xs flex items-center gap-1 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
-                  Первый урок без оплаты
-                </p>
-              </>
-            )}
-          </div>
-          {canAccessCourse(course.id) ? (
-            <button
-              onClick={() => {
-                setActiveTab("program");
-                setExpandedModule(1);
-              }}
-              className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity"
-            >
-              <Icon name="Play" size={16} />
-              <span className="hidden sm:inline">К программе</span>
-              <span className="sm:hidden">Учить</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onStartWithAI(course)}
-                className="hidden md:flex items-center gap-2 bg-white/8 border border-white/15 text-white text-sm font-medium px-4 py-3 rounded-2xl hover:bg-white/12 transition-colors"
-              >
-                <Icon name="Gift" size={14} />
-                Пробный урок
-              </button>
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    openLogin();
-                    return;
-                  }
-                  navigate(`/course-checkout/${course.id}`);
-                }}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
-              >
-                <Icon name="CreditCard" size={16} />
-                <span className="hidden sm:inline">Купить курс</span>
-                <span className="sm:hidden">Купить</span>
-              </button>
-            </div>
-          )}
-        </div>
+        <CourseDetailFooter
+          course={course}
+          promoOn={promoOn}
+          onStartWithAI={onStartWithAI}
+          setActiveTab={setActiveTab}
+          setExpandedModule={setExpandedModule}
+        />
 
       </div>
 
