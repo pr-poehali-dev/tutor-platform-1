@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating, getCourseDisclaimers } from "./coursesData";
+import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating, getCourseDisclaimers, examBadgeLabel } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
 import { useAuth } from "@/context/AuthContext";
@@ -55,6 +55,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
   const promoOn = isPromoActive();
   const fmt = FORMAT_CONFIG[course.format];
   const gradeLabel = GRADES.find(g => g.id === course.grade)?.label || course.grade;
+  const examLabel = examBadgeLabel(course);
 
   const template = getCourseDetail(course);
   const detail = real.modules.length > 0
@@ -147,6 +148,21 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
                 </h3>
                 <p className="text-white/70 text-sm leading-relaxed">{course.description}</p>
               </div>
+
+              {/* Плашка формата экзамена — только для экзаменационных курсов */}
+              {examLabel && (
+                <div className="flex items-start gap-3 bg-cyan-500/8 border border-cyan-500/25 rounded-2xl p-4">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                    <Icon name="ClipboardCheck" size={18} className="text-cyan-300" />
+                  </div>
+                  <div>
+                    <p className="font-montserrat font-bold text-white text-sm mb-0.5">{examLabel}</p>
+                    <p className="text-white/60 text-xs leading-relaxed">
+                      Задачи формулируются как в реальных вариантах ФИПИ, с пошаговым разбором решения и проверкой ответов — чтобы готовиться именно к тому, что встретится на экзамене.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Outcomes */}
               <div>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, SUBJECTS, getCoursePrice } from "@/components/courses/coursesData";
+import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";
 import { getTodayPurchases } from "@/components/courses/CheckoutBoosters";
 import { isPromoActive } from "@/components/promo/dobroConfig";
@@ -17,6 +17,7 @@ export default function CourseCardCompact({ course }: Props) {
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label || course.grade;
   const subjectLabel = SUBJECTS.find((s) => s.id === course.subject)?.label || course.subject;
   const todayCount = getTodayPurchases(course.id, course.students);
+  const examLabel = examBadgeLabel(course);
 
   return (
     <Link
@@ -68,7 +69,14 @@ export default function CourseCardCompact({ course }: Props) {
           </div>
         </div>
 
-        <p className="text-white/55 text-xs leading-relaxed line-clamp-3 mb-4 flex-1">{course.description}</p>
+        <p className="text-white/55 text-xs leading-relaxed line-clamp-3 mb-3 flex-1">{course.description}</p>
+
+        {examLabel && (
+          <div className="inline-flex items-center gap-1.5 self-start bg-cyan-500/10 border border-cyan-500/25 text-cyan-200 text-[11px] font-semibold px-2.5 py-1 rounded-lg mb-3">
+            <Icon name="ClipboardCheck" size={12} className="flex-shrink-0" />
+            {examLabel}
+          </div>
+        )}
 
         <div className="flex items-center gap-3 text-white/55 text-xs mb-4">
           <span className="flex items-center gap-1"><Icon name="GraduationCap" size={12} /> {gradeLabel}</span>

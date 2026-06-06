@@ -88,6 +88,31 @@ export function isCourseFreeForever(courseId: number): boolean {
   return FREE_FOREVER_COURSE_IDS.includes(courseId);
 }
 
+/** Точные науки, где 10–11 классы готовятся к ЕГЭ. */
+const EXACT_SCIENCE_SUBJECTS = ["math", "physics", "chemistry", "cs"];
+
+/**
+ * Курс готовит к реальному экзамену и его задания — в формате ОГЭ/ЕГЭ (КИМ ФИПИ).
+ * Согласовано с логикой генерации задач на бэкенде:
+ * - grade ege/oge — всегда экзаменационный;
+ * - точные науки 10–11 классов — тоже (подготовка к ЕГЭ).
+ */
+export function isExamCourse(course: Course): boolean {
+  if (course.grade === "ege" || course.grade === "oge") return true;
+  if (course.grade === "10-11" && EXACT_SCIENCE_SUBJECTS.includes(course.subject)) return true;
+  return false;
+}
+
+/** Короткая подпись формата экзамена для бейджа курса. */
+export function examBadgeLabel(course: Course): string | null {
+  if (course.grade === "ege") return "Задания в формате ЕГЭ";
+  if (course.grade === "oge") return "Задания в формате ОГЭ";
+  if (course.grade === "10-11" && EXACT_SCIENCE_SUBJECTS.includes(course.subject)) {
+    return "Задания в формате ЕГЭ";
+  }
+  return null;
+}
+
 export const COURSES: Course[] = [
   // ─── МАТЕМАТИКА ────────────────────────────────────────────────────────────
   {
