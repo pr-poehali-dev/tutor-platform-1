@@ -69,21 +69,17 @@ export default function HeroSection() {
 
             {/* CTA — один главный, один второстепенный */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-fade-in-up animate-delay-300">
-              <button
-                type="button"
-                onClick={() => {
-                  const el = document.getElementById("journey");
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+              <Link
+                to="/courses"
                 className="group bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
               >
-                <span>Подобрать маршрут</span>
+                <span>Начать бесплатно</span>
                 <Icon
                   name="ArrowRight"
                   size={18}
                   className="group-hover:translate-x-1 transition-transform"
                 />
-              </button>
+              </Link>
               <Link
                 to="/exam-bank"
                 className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-white/15 bg-white/5 text-white hover:bg-white/10 hover:border-white/25 transition-all font-medium text-base backdrop-blur-sm"

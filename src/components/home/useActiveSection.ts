@@ -13,7 +13,7 @@ export function useActiveSection() {
 
   // Автообновление activeSection при скролле
   useEffect(() => {
-    const ids = ["myspace", "ai-teacher", "journey", "leaderboard"];
+    const ids = ["myspace", "ai-teacher", "leaderboard"];
     const observers: IntersectionObserver[] = [];
     ids.forEach((id) => {
       const el = document.getElementById(id);

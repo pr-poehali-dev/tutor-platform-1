@@ -6,7 +6,6 @@ import ZnaikaBadge from "@/components/znaika/ZnaikaBadge";
 
 const NAV_ITEMS = [
   { label: "ИИ-учитель", short: "ИИ",       icon: "Bot",         section: "ai-teacher" },
-  { label: "Маршрут",    short: "Маршрут",  icon: "Compass",     section: "journey" },
   { label: "Рейтинг",    short: "Рейтинг",  icon: "BarChart2",   section: "leaderboard" },
 ];
 
