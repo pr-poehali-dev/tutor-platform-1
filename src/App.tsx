@@ -14,6 +14,7 @@ import { AccessProvider } from "@/context/AccessContext";
 import { ZnaikaProvider } from "@/context/ZnaikaContext";
 import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
+import VisitTracker from "@/components/analytics/VisitTracker";
 import UtmTracker from "@/components/ads/UtmTracker";
 import DobroTopBar from "@/components/promo/DobroTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -94,6 +95,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <YandexMetrika />
+            <VisitTracker />
             <UtmTracker />
             <DobroTopBar />
             <AuthProvider>

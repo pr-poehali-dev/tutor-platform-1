@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "Записать визит",
+      "method": "POST",
+      "path": "/",
+      "body": {"visitor_id": "test-visitor-1", "path": "/feed", "is_new_visitor": true},
+      "expectedStatus": 200
+    },
+    {
+      "name": "Сводка трафика",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
