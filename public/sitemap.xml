@@ -248,6 +248,23 @@
     </image:image>
   </url>
 
+  <!-- Статья: бесплатный курс по интернет-маркетингу -->
+  <url>
+    <loc>https://учисьпро.рф/feed/besplatnyy-kurs-internet-marketolog-zarabotok</loc>
+    <lastmod>2026-06-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/f7745ea4-4480-4882-bf41-d78210b10a79.jpg</image:loc>
+      <image:title>Бесплатный курс «Профессия интернет-маркетолог»: реклама, рассылки и заработок</image:title>
+    </image:image>
+  </url>
+
+  <!-- Новые курсы 2026: интернет-маркетинг и тригонометрия -->
+  <url><loc>https://учисьпро.рф/courses/marketing</loc><lastmod>2026-06-06</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/57</loc><lastmod>2026-06-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/56</loc><lastmod>2026-06-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+
   <!-- Поиск по сайту -->
   <url>
     <loc>https://учисьпро.рф/search</loc>
