@@ -68,6 +68,7 @@ const KidsGames = lazy(() => import("./pages/KidsGames"));
 const KidsGamePlay = lazy(() => import("./pages/KidsGamePlay"));
 const MyRussia = lazy(() => import("./pages/MyRussia"));
 const MyRussiaItem = lazy(() => import("./pages/MyRussiaItem"));
+const Homework = lazy(() => import("./pages/Homework"));
 const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
@@ -156,6 +157,7 @@ const App = () => (
                     <Route path="/kids/my-russia" element={<MyRussia />} />
                     <Route path="/kids/my-russia/:id" element={<MyRussiaItem />} />
                     <Route path="/kids/:age" element={<KidsAge />} />
+                    <Route path="/homework" element={<Homework />} />
                     <Route path="/exam-bank" element={<ExamBank />} />
                     <Route path="/score-calculator" element={<ScoreCalculator />} />
                     <Route path="/cabinet" element={<Cabinet />} />

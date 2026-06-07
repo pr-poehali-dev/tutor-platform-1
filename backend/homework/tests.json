@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Unknown action returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "nope"},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Check without auth returns 401",
+      "method": "POST",
+      "path": "/?action=check",
+      "body": {"action": "check", "image_base64": "iVBORw0KGgo=", "mode": "solve"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "History without auth returns 401",
+      "method": "GET",
+      "path": "/?action=history",
+      "expectedStatus": 401
+    }
+  ]
+}
