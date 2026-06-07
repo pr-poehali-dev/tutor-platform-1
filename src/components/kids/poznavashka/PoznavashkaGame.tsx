@@ -30,7 +30,26 @@ function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => 
   );
 }
 
-export default function PoznavashkaGame() {
+interface Props {
+  /** Набор миров для викторины. По умолчанию — миры Познавашки. */
+  worlds?: PoznavashkaWorld[];
+  /** Источник для начисления ЗНАЕК (для аналитики). */
+  earnSource?: string;
+  /** Подпись начисления ЗНАЕК (перед названием мира). */
+  earnLabel?: string;
+  /** Приветствие Ксюши на карте миров. */
+  mapGreeting?: string;
+  /** Приветствие с эмодзи (в облачке речи). */
+  mapGreetingRich?: string;
+}
+
+export default function PoznavashkaGame({
+  worlds = POZNAVASHKA_WORLDS,
+  earnSource = "poznavashka",
+  earnLabel = "Познавашка",
+  mapGreeting = "Привет! Я Ксюша. Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.",
+  mapGreetingRich = "Привет! Я Ксюша 🌸 Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.",
+}: Props = {}) {
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
   const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
@@ -83,9 +102,9 @@ export default function PoznavashkaGame() {
       // Финиш — начисляем ЗНАЙКИ за правильные ответы
       if (isAuthenticated && earnedZnaiki > 0) {
         await earn(
-          "poznavashka",
+          earnSource,
           earnedZnaiki,
-          `Познавашка: ${world.title}`
+          `${earnLabel}: ${world.title}`
         );
       }
       setPhase("result");
@@ -97,8 +116,7 @@ export default function PoznavashkaGame() {
     setShowHint(false);
   };
 
-  const MAP_GREETING =
-    "Привет! Я Ксюша. Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения.";
+  const MAP_GREETING = mapGreeting;
 
   // Озвучка приветствия на карте миров
   useEffect(() => {
@@ -140,7 +158,7 @@ export default function PoznavashkaGame() {
         </div>
         <div className="mb-8">
           <KsushaSays
-            text="Привет! Я Ксюша 🌸 Давай вместе узнаем, как устроен наш волшебный мир! Выбирай страну для приключения."
+            text={mapGreetingRich}
             size="lg"
             speaking={speaking}
             onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
@@ -148,7 +166,7 @@ export default function PoznavashkaGame() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-10">
-          {POZNAVASHKA_WORLDS.map((w) => (
+          {worlds.map((w) => (
             <button
               key={w.slug}
               onClick={() => startWorld(w)}

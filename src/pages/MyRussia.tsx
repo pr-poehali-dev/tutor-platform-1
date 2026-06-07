@@ -11,6 +11,8 @@ import {
   RUSSIA_AGES,
   RussiaCategory,
 } from "@/components/kids/myRussiaData";
+import { MY_RUSSIA_QUIZ } from "@/components/kids/myRussiaQuizData";
+import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
 import type { AgeRange } from "@/components/kids/libraryData";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -235,6 +237,31 @@ export default function MyRussia() {
           </p>
         </div>
       </section>
+
+      {/* Викторина «Угадай про Россию» — на движке Познавашки, с начислением ЗНАЕК */}
+      <section className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 pb-4">
+        <div className="text-center mb-2">
+          <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/25 rounded-full px-3 py-1 mb-3">
+            <Icon name="Sparkles" size={13} className="text-amber-300" />
+            <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Игра · собирай ЗНАЙКИ</span>
+          </div>
+          <h2 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">
+            Угадай про Россию
+          </h2>
+          <p className="text-white/60 text-sm md:text-base max-w-2xl mx-auto">
+            Что узнал — проверь в весёлой викторине! Отвечай на вопросы про традиции, природу и историю
+            и зарабатывай <span className="text-amber-300 font-bold">ЗНАЙКИ</span> за каждый верный ответ.
+          </p>
+        </div>
+      </section>
+
+      <PoznavashkaGame
+        worlds={MY_RUSSIA_QUIZ}
+        earnSource="my-russia-quiz"
+        earnLabel="Моя Россия"
+        mapGreeting="Привет! Я Ксюша. Давай проверим, что ты знаешь про Россию. Выбирай тему для викторины!"
+        mapGreetingRich="Привет! Я Ксюша 🌸 Давай проверим, что ты знаешь про Россию. Выбирай тему для викторины!"
+      />
 
       <SiteFooter />
       <NannyFox />
