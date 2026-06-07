@@ -7,7 +7,9 @@ import { VideoScene } from "@/components/video/VideoStudioPlayer";
 import VideoStudioPreview from "@/components/admin/video-studio/VideoStudioPreview";
 import VideoStudioSceneEditor from "@/components/admin/video-studio/VideoStudioSceneEditor";
 import VideoStudioSidebar from "@/components/admin/video-studio/VideoStudioSidebar";
+import VideoStudioFinalize from "@/components/admin/video-studio/VideoStudioFinalize";
 import { Project, loadProjects, saveProjects } from "@/components/admin/video-studio/types";
+import { LESSON_TEMPLATES, LessonTemplate } from "@/components/admin/video-studio/templates";
 
 const STORYBOARD_URL = (func2url as Record<string, string>)["video-storyboard"];
 const RENDER_URL = (func2url as Record<string, string>)["video-render"];
@@ -164,6 +166,15 @@ export default function VideoStudio() {
     setPhase("ready");
   };
 
+  const applyTemplate = (t: LessonTemplate) => {
+    setDuration(t.duration);
+    setStyle(t.style);
+    setVoice(t.voice);
+    setAgeGroup(t.ageGroup);
+    setTopic((prev) => (prev.trim() ? prev : t.topicHint));
+    setError(null);
+  };
+
   const exportJson = () => {
     const data = JSON.stringify({ title, topic, style, duration_sec: duration, scenes }, null, 2);
     const blob = new Blob([data], { type: "application/json" });
@@ -197,9 +208,27 @@ export default function VideoStudio() {
         <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-3 leading-tight">
           Создавай видеоролики <span className="gradient-text-purple">с ИИ</span>
         </h1>
-        <p className="text-white/65 text-base md:text-lg max-w-3xl mb-8">
+        <p className="text-white/65 text-base md:text-lg max-w-3xl mb-6">
           Опиши тему — ИИ напишет сценарий, нарисует кадры (FLUX), озвучит голосом. Получается реалистичный ролик 30 сек – 3 мин для любого курса.
         </p>
+
+        {/* Шаблоны — быстрый старт */}
+        <div className="mb-8">
+          <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Быстрый старт по шаблону</p>
+          <div className="flex flex-wrap gap-2">
+            {LESSON_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => applyTemplate(t)}
+                title={t.description}
+                className="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/40 text-white/80 text-xs font-medium px-3 py-2 rounded-xl transition-all"
+              >
+                <span>{t.emoji}</span>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid lg:grid-cols-[1fr_400px] gap-6">
           {/* Левая колонка — превью и редактор */}
@@ -220,6 +249,19 @@ export default function VideoStudio() {
               onRenderOneScene={renderOneScene}
               onRemoveScene={removeScene}
             />
+
+            {scenes.length > 0 && phase === "ready" && (
+              <VideoStudioFinalize
+                scenes={scenes}
+                title={title || topic}
+                topic={topic}
+                subject={subject}
+                ageGroup={ageGroup}
+                style={style}
+                voice={voice}
+                duration={duration}
+              />
+            )}
           </div>
 
           {/* Правая колонка — настройки */}
