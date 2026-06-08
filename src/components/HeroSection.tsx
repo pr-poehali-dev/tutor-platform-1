@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 const HERO_IMAGE =
-  "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/0994044b-25d5-4180-a660-45350695aeb1.jpg";
+  "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
 
 const TRUST_POINTS = [
   { icon: "Zap", text: "Первый урок — за 30 секунд" },
@@ -94,13 +94,13 @@ export default function HeroSection() {
 
           {/* RIGHT — фотография */}
           <div className="lg:col-span-5 relative animate-fade-in-up animate-delay-200">
-            {/* Чистое фото в рамке — не более 25% высоты экрана */}
-            <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl shadow-purple-500/20 max-h-[25vh] lg:max-h-[60vh]">
+            {/* Чистое фото целиком, без обрезки смысла */}
+            <div className="relative mx-auto rounded-3xl overflow-hidden border border-white/15 shadow-2xl shadow-purple-500/20 max-w-[55vw] sm:max-w-xs lg:max-w-none">
               <img
                 src={HERO_IMAGE}
                 alt="Счастливые выпускники с отличными результатами ЕГЭ"
                 loading="eager"
-                className="w-full h-full max-h-[25vh] lg:max-h-[60vh] object-cover object-top"
+                className="w-full aspect-square object-cover"
               />
             </div>
           </div>
