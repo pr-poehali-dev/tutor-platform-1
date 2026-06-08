@@ -92,9 +92,9 @@ export default function HeroSection() {
             </ul>
           </div>
 
-          {/* RIGHT — превью продукта */}
+          {/* RIGHT — фотография */}
           <div className="lg:col-span-5 relative animate-fade-in-up animate-delay-200">
-            {/* Фрейм с фотографией — не более 25% высоты экрана */}
+            {/* Чистое фото в рамке — не более 25% высоты экрана */}
             <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl shadow-purple-500/20 max-h-[25vh] lg:max-h-[60vh]">
               <img
                 src={HERO_IMAGE}
@@ -102,54 +102,6 @@ export default function HeroSection() {
                 loading="eager"
                 className="w-full h-full max-h-[25vh] lg:max-h-[60vh] object-cover object-top"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
-
-              {/* Внутренний UI-мок: чат с ИИ */}
-              <div className="absolute left-3 right-3 bottom-3 rounded-2xl bg-background/85 backdrop-blur-xl border border-white/15 p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
-                    <Icon name="Bot" size={14} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-white leading-tight">
-                      ИИ-репетитор Юра
-                    </p>
-                    <p className="text-[10px] text-emerald-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      онлайн
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-white/85 leading-relaxed">
-                  «Нашёл у тебя 3 темы, на которых теряются баллы. Начнём с
-                  производных — это даст +8 баллов за неделю.»
-                </p>
-              </div>
-            </div>
-
-            {/* Плавающие карточки достижений */}
-            <div className="absolute -left-3 md:-left-6 top-[18%] bg-card/95 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 animate-float shadow-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center">
-                  <Icon name="Zap" size={16} className="text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white">+120 XP</div>
-                  <div className="text-[10px] text-white/60">за урок</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute -right-3 md:-right-6 top-[55%] bg-card/95 backdrop-blur-md border border-white/15 rounded-2xl p-2.5 animate-float-delayed shadow-xl">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center">
-                  <Icon name="Flame" size={16} className="text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white">7 дней</div>
-                  <div className="text-[10px] text-white/60">стрик подряд</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
