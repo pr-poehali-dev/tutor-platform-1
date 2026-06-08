@@ -15,6 +15,14 @@
     </image:image>
   </url>
 
+  <!-- Скачать приложение (PWA) -->
+  <url>
+    <loc>https://учисьпро.рф/app</loc>
+    <lastmod>2026-06-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Якорные секции главной -->
   <url>
     <loc>https://учисьпро.рф/#journey</loc>

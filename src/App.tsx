@@ -18,6 +18,7 @@ import VisitTracker from "@/components/analytics/VisitTracker";
 import UtmTracker from "@/components/ads/UtmTracker";
 import DobroTopBar from "@/components/promo/DobroTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import InstallBanner from "@/components/pwa/InstallBanner";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -80,6 +81,7 @@ const Olympiad = lazy(() => import("./pages/Olympiad"));
 const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
+const AppDownload = lazy(() => import("./pages/AppDownload"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -169,11 +171,13 @@ const App = () => (
                     <Route path="/admin" element={<AdminHub />} />
                     <Route path="/admin/sales" element={<SalesDashboard />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
+                    <Route path="/app" element={<AppDownload />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
                 </ErrorBoundary>
+                <InstallBanner />
                 <LoginModal />
               </AccessProvider>
               </ZnaikaProvider>

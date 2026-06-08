@@ -25,6 +25,7 @@ export default function SiteFooter() {
           <nav aria-label="Полезные ссылки">
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link to="/app" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">📱 Скачать приложение</Link></li>
               <li><Link to="/search" className="text-white/70 hover:text-white transition-colors">🔎 Поиск по сайту</Link></li>
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
               <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
