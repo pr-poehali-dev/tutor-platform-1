@@ -8,6 +8,7 @@ import LessonViewerHeader from "./lessonViewer/LessonViewerHeader";
 import LessonViewerTheory from "./lessonViewer/LessonViewerTheory";
 import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
 import LessonViewerTasks, { LessonViewerDone } from "./lessonViewer/LessonViewerTasks";
+import LessonVoiceChat from "./LessonVoiceChat";
 
 interface Props {
   open: boolean;
@@ -417,6 +418,20 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           accent={accent}
         />
       </div>
+
+      {lesson && !isLoading && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <LessonVoiceChat
+            subject={subjectId}
+            grade={grade}
+            courseTitle={lessonTitle}
+            topic={topic}
+            lessonTitle={lessonTitle}
+            accent={accent}
+            onOpen={() => narrator.stop()}
+          />
+        </div>
+      )}
     </div>
   );
 }
