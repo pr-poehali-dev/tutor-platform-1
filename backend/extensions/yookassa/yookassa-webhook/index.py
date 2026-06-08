@@ -107,19 +107,24 @@ def handler(event, context):
     shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
     secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
 
-    if shop_id and secret_key:
-        verified_payment = verify_payment_via_api(payment_id, shop_id, secret_key)
-        if not verified_payment:
-            return {
-                'statusCode': 400,
-                'headers': HEADERS,
-                'body': json.dumps({'error': 'Payment verification failed'})
-            }
-        # Use verified status instead of webhook data
-        payment_status = verified_payment.get('status', '')
-    else:
-        # Fallback to webhook data (less secure, only if credentials missing)
-        payment_status = payment_object.get('status', '')
+    if not shop_id or not secret_key:
+        # Без ключей подтверждать платёж по телу запроса небезопасно (подделка уведомления).
+        print('[yookassa-webhook] credentials missing — rejecting unverified webhook')
+        return {
+            'statusCode': 503,
+            'headers': HEADERS,
+            'body': json.dumps({'error': 'Payment verification unavailable'})
+        }
+
+    verified_payment = verify_payment_via_api(payment_id, shop_id, secret_key)
+    if not verified_payment:
+        return {
+            'statusCode': 400,
+            'headers': HEADERS,
+            'body': json.dumps({'error': 'Payment verification failed'})
+        }
+    # Use verified status from YooKassa API instead of webhook data
+    payment_status = verified_payment.get('status', '')
 
     S = get_schema()
     conn = get_connection()

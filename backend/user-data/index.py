@@ -12,10 +12,6 @@ from datetime import date, datetime, timedelta
 SCHEMA = 't_p78828167_tutor_platform_1'
 
 
-def esc(s: str) -> str:
-    return str(s).replace("'", "''")
-
-
 def cors_headers():
     return {
         'Access-Control-Allow-Origin': '*',
@@ -38,18 +34,21 @@ def toggle_favorite(uid: str, course_id: int):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT id FROM {SCHEMA}.user_favorites WHERE user_uid = '{esc(uid)}' AND course_id = {int(course_id)}"
+                f"SELECT id FROM {SCHEMA}.user_favorites WHERE user_uid = %s AND course_id = %s",
+                (uid, int(course_id)),
             )
             existing = cur.fetchone()
             if existing:
                 cur.execute(
-                    f"DELETE FROM {SCHEMA}.user_favorites WHERE user_uid = '{esc(uid)}' AND course_id = {int(course_id)}"
+                    f"DELETE FROM {SCHEMA}.user_favorites WHERE user_uid = %s AND course_id = %s",
+                    (uid, int(course_id)),
                 )
                 conn.commit()
                 return {'favorited': False}
             else:
                 cur.execute(
-                    f"INSERT INTO {SCHEMA}.user_favorites (user_uid, course_id) VALUES ('{esc(uid)}', {int(course_id)})"
+                    f"INSERT INTO {SCHEMA}.user_favorites (user_uid, course_id) VALUES (%s, %s)",
+                    (uid, int(course_id)),
                 )
                 conn.commit()
                 return {'favorited': True}
@@ -62,7 +61,8 @@ def list_favorites(uid: str):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT course_id FROM {SCHEMA}.user_favorites WHERE user_uid = '{esc(uid)}' ORDER BY created_at DESC"
+                f"SELECT course_id FROM {SCHEMA}.user_favorites WHERE user_uid = %s ORDER BY created_at DESC",
+                (uid,),
             )
             ids = [r[0] for r in cur.fetchall()]
         return {'course_ids': ids}
@@ -77,8 +77,9 @@ def track_view(uid: str, course_id: int):
         with conn.cursor() as cur:
             cur.execute(
                 f"INSERT INTO {SCHEMA}.user_course_history (user_uid, course_id) "
-                f"VALUES ('{esc(uid)}', {int(course_id)}) "
-                f"ON CONFLICT (user_uid, course_id) DO UPDATE SET viewed_at = NOW()"
+                f"VALUES (%s, %s) "
+                f"ON CONFLICT (user_uid, course_id) DO UPDATE SET viewed_at = NOW()",
+                (uid, int(course_id)),
             )
             conn.commit()
         return {'ok': True}
@@ -92,7 +93,8 @@ def list_history(uid: str, limit: int = 20):
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT course_id, viewed_at FROM {SCHEMA}.user_course_history "
-                f"WHERE user_uid = '{esc(uid)}' ORDER BY viewed_at DESC LIMIT {int(limit)}"
+                f"WHERE user_uid = %s ORDER BY viewed_at DESC LIMIT %s",
+                (uid, int(limit)),
             )
             rows = [{'course_id': r[0], 'viewed_at': r[1].isoformat() if r[1] else None} for r in cur.fetchall()]
         return {'history': rows}
@@ -108,8 +110,9 @@ def start_course(uid: str, course_id: int, subject: str, grade: str, course_titl
             cur.execute(
                 f"INSERT INTO {SCHEMA}.user_my_courses "
                 f"(user_uid, course_id, subject, grade, course_title) "
-                f"VALUES ('{esc(uid)}', {int(course_id)}, '{esc(subject)}', '{esc(grade)}', '{esc(course_title)}') "
-                f"ON CONFLICT (user_uid, course_id) DO UPDATE SET last_activity_at = NOW(), status = 'active'"
+                f"VALUES (%s, %s, %s, %s, %s) "
+                f"ON CONFLICT (user_uid, course_id) DO UPDATE SET last_activity_at = NOW(), status = 'active'",
+                (uid, int(course_id), subject, grade, course_title),
             )
             conn.commit()
         return {'ok': True}
@@ -122,14 +125,22 @@ def update_progress(uid: str, course_id: int, progress: int):
     try:
         with conn.cursor() as cur:
             p = max(0, min(100, int(progress)))
-            status_sql = "'completed'" if p >= 100 else "'active'"
-            completed_sql = "NOW()" if p >= 100 else "NULL"
-            cur.execute(
-                f"UPDATE {SCHEMA}.user_my_courses SET progress_percent = {p}, "
-                f"status = {status_sql}, last_activity_at = NOW(), "
-                f"completed_at = COALESCE(completed_at, {completed_sql}) "
-                f"WHERE user_uid = '{esc(uid)}' AND course_id = {int(course_id)}"
-            )
+            status_val = 'completed' if p >= 100 else 'active'
+            if p >= 100:
+                cur.execute(
+                    f"UPDATE {SCHEMA}.user_my_courses SET progress_percent = %s, "
+                    f"status = %s, last_activity_at = NOW(), "
+                    f"completed_at = COALESCE(completed_at, NOW()) "
+                    f"WHERE user_uid = %s AND course_id = %s",
+                    (p, status_val, uid, int(course_id)),
+                )
+            else:
+                cur.execute(
+                    f"UPDATE {SCHEMA}.user_my_courses SET progress_percent = %s, "
+                    f"status = %s, last_activity_at = NOW() "
+                    f"WHERE user_uid = %s AND course_id = %s",
+                    (p, status_val, uid, int(course_id)),
+                )
             conn.commit()
         return {'ok': True}
     finally:
@@ -143,8 +154,9 @@ def list_my_courses(uid: str):
             cur.execute(
                 f"SELECT course_id, subject, grade, course_title, status, progress_percent, "
                 f"last_activity_at, started_at, completed_at "
-                f"FROM {SCHEMA}.user_my_courses WHERE user_uid = '{esc(uid)}' "
-                f"ORDER BY last_activity_at DESC"
+                f"FROM {SCHEMA}.user_my_courses WHERE user_uid = %s "
+                f"ORDER BY last_activity_at DESC",
+                (uid,),
             )
             rows = []
             for r in cur.fetchall():
@@ -170,18 +182,19 @@ def log_activity(uid: str, minutes: int = 0, lessons: int = 0, tasks: int = 0, x
             cur.execute(
                 f"INSERT INTO {SCHEMA}.user_activity_log "
                 f"(user_uid, activity_date, minutes_spent, lessons_completed, tasks_solved, xp_earned) "
-                f"VALUES ('{esc(uid)}', '{today}', {int(minutes)}, {int(lessons)}, {int(tasks)}, {int(xp)}) "
+                f"VALUES (%s, %s, %s, %s, %s, %s) "
                 f"ON CONFLICT (user_uid, activity_date) DO UPDATE SET "
                 f"minutes_spent = {SCHEMA}.user_activity_log.minutes_spent + EXCLUDED.minutes_spent, "
                 f"lessons_completed = {SCHEMA}.user_activity_log.lessons_completed + EXCLUDED.lessons_completed, "
                 f"tasks_solved = {SCHEMA}.user_activity_log.tasks_solved + EXCLUDED.tasks_solved, "
-                f"xp_earned = {SCHEMA}.user_activity_log.xp_earned + EXCLUDED.xp_earned"
+                f"xp_earned = {SCHEMA}.user_activity_log.xp_earned + EXCLUDED.xp_earned",
+                (uid, today, int(minutes), int(lessons), int(tasks), int(xp)),
             )
             # Обновим суммарную статистику + streak
             cur.execute(
                 f"INSERT INTO {SCHEMA}.user_stats "
                 f"(user_uid, total_xp, lessons_completed, tasks_solved, streak_days, last_active_date) "
-                f"VALUES ('{esc(uid)}', {int(xp)}, {int(lessons)}, {int(tasks)}, 1, '{today}') "
+                f"VALUES (%s, %s, %s, %s, 1, %s) "
                 f"ON CONFLICT (user_uid) DO UPDATE SET "
                 f"total_xp = {SCHEMA}.user_stats.total_xp + EXCLUDED.total_xp, "
                 f"lessons_completed = {SCHEMA}.user_stats.lessons_completed + EXCLUDED.lessons_completed, "
@@ -191,7 +204,8 @@ def log_activity(uid: str, minutes: int = 0, lessons: int = 0, tasks: int = 0, x
                 f"  WHEN {SCHEMA}.user_stats.last_active_date = CURRENT_DATE - INTERVAL '1 day' THEN {SCHEMA}.user_stats.streak_days + 1 "
                 f"  ELSE 1 END, "
                 f"last_active_date = CURRENT_DATE, "
-                f"level = GREATEST(1, ({SCHEMA}.user_stats.total_xp + EXCLUDED.total_xp) / 500 + 1)"
+                f"level = GREATEST(1, ({SCHEMA}.user_stats.total_xp + EXCLUDED.total_xp) / 500 + 1)",
+                (uid, int(xp), int(lessons), int(tasks), today),
             )
             conn.commit()
         return {'ok': True}
@@ -205,7 +219,8 @@ def get_stats(uid: str):
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT total_xp, level, lessons_completed, tasks_solved, streak_days, last_active_date "
-                f"FROM {SCHEMA}.user_stats WHERE user_uid = '{esc(uid)}'"
+                f"FROM {SCHEMA}.user_stats WHERE user_uid = %s",
+                (uid,),
             )
             r = cur.fetchone()
             stats = {
@@ -220,8 +235,9 @@ def get_stats(uid: str):
             cur.execute(
                 f"SELECT activity_date, minutes_spent, lessons_completed, tasks_solved, xp_earned "
                 f"FROM {SCHEMA}.user_activity_log "
-                f"WHERE user_uid = '{esc(uid)}' AND activity_date >= CURRENT_DATE - INTERVAL '120 days' "
-                f"ORDER BY activity_date ASC"
+                f"WHERE user_uid = %s AND activity_date >= CURRENT_DATE - INTERVAL '120 days' "
+                f"ORDER BY activity_date ASC",
+                (uid,),
             )
             activity = []
             for row in cur.fetchall():
@@ -232,7 +248,8 @@ def get_stats(uid: str):
             # Бейджи
             cur.execute(
                 f"SELECT badge_id, earned_at FROM {SCHEMA}.user_badges "
-                f"WHERE user_uid = '{esc(uid)}' ORDER BY earned_at DESC"
+                f"WHERE user_uid = %s ORDER BY earned_at DESC",
+                (uid,),
             )
             badges = [{'id': r[0], 'earned_at': r[1].isoformat() if r[1] else None} for r in cur.fetchall()]
         return {'stats': stats, 'activity': activity, 'badges': badges}
@@ -246,8 +263,9 @@ def award_badge(uid: str, badge_id: str):
         with conn.cursor() as cur:
             cur.execute(
                 f"INSERT INTO {SCHEMA}.user_badges (user_uid, badge_id) "
-                f"VALUES ('{esc(uid)}', '{esc(badge_id)}') "
-                f"ON CONFLICT (user_uid, badge_id) DO NOTHING RETURNING id"
+                f"VALUES (%s, %s) "
+                f"ON CONFLICT (user_uid, badge_id) DO NOTHING RETURNING id",
+                (uid, badge_id),
             )
             row = cur.fetchone()
             conn.commit()
@@ -309,5 +327,6 @@ def handler(event, context):
             'body': json.dumps(result, ensure_ascii=False, default=str),
         }
     except Exception as e:
+        print(f"[user-data] error: {type(e).__name__}: {str(e)[:300]}")
         return {'statusCode': 500, 'headers': {'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': str(e)}, ensure_ascii=False)}
+                'body': json.dumps({'error': 'Внутренняя ошибка сервера'}, ensure_ascii=False)}

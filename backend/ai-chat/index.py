@@ -18,6 +18,44 @@ import urllib.parse
 import urllib.error
 from datetime import datetime
 
+try:
+    import psycopg2  # есть в окружении; используется только для rate-limit
+except Exception:  # pragma: no cover
+    psycopg2 = None
+
+
+# Лимит сообщений ИИ-чату на один IP в час (защита от слива бюджета на API)
+CHAT_RATE_PER_HOUR = 60
+
+
+def check_rate_limit(ip: str) -> bool:
+    """True — можно продолжать, False — лимит исчерпан. Сбои БД не блокируют чат."""
+    dsn = os.environ.get('DATABASE_URL', '')
+    if not dsn or not psycopg2 or not ip:
+        return True
+    schema = 't_p78828167_tutor_platform_1'
+    hour_key = datetime.now().strftime('%Y%m%d%H')
+    bucket = f"ai-chat:{ip}:{hour_key}"
+    try:
+        conn = psycopg2.connect(dsn)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"INSERT INTO {schema}.rate_limit_counter (bucket_key, hits) "
+                    f"VALUES (%s, 1) "
+                    f"ON CONFLICT (bucket_key) DO UPDATE SET hits = {schema}.rate_limit_counter.hits + 1 "
+                    f"RETURNING hits",
+                    (bucket,),
+                )
+                hits = cur.fetchone()[0]
+                conn.commit()
+                return hits <= CHAT_RATE_PER_HOUR
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[ai-chat] rate-limit check skipped: {type(e).__name__}")
+        return True
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ПРОМПТЫ ЭКСПЕРТОВ — детально, с принципами и forbidden patterns
@@ -449,6 +487,18 @@ def handler(event, context):
                 'body': json.dumps({'error': 'Сообщение не может быть пустым'}, ensure_ascii=False),
             }
 
+        # Защита от злоупотребления: лимит запросов на IP в час
+        try:
+            client_ip = (event.get('requestContext', {}) or {}).get('identity', {}).get('sourceIp', '')
+        except Exception:
+            client_ip = ''
+        if not check_rate_limit(client_ip):
+            return {
+                'statusCode': 429,
+                'headers': {'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Слишком много запросов. Сделай паузу и попробуй через час.'}, ensure_ascii=False),
+            }
+
         base_prompt = TEACHER_PROMPTS.get(teacher_id, TEACHER_PROMPTS['alex'])
 
         # ─── RAG: знание сайта ───
@@ -603,8 +653,9 @@ def handler(event, context):
         }
 
     except Exception as e:
+        print(f"[ai-chat] error: {type(e).__name__}: {str(e)[:300]}")
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Внутренняя ошибка сервиса'}, ensure_ascii=False),
         }

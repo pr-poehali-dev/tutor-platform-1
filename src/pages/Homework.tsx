@@ -6,6 +6,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/context/AuthContext";
+import { printHomeworkPdf } from "@/lib/homeworkPdf";
 
 const HOMEWORK_URL = (func2url as Record<string, string>).homework;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -181,6 +182,21 @@ export default function Homework() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const savePdf = () => {
+    if (!result) return;
+    const subjLabel = SUBJECTS.find((s) => s.id === subject)?.label || subject;
+    const gradeLabel = GRADES.find((g) => g.id === grade)?.label || grade;
+    printHomeworkPdf({
+      title: mode === "review" ? "Проверка решения" : "Разбор задачи",
+      subjectLabel: subjLabel,
+      gradeLabel,
+      modeLabel: mode === "review" ? "Проверка решения" : "Решение задачи",
+      verdict: result.isCorrect === true ? "correct" : result.isCorrect === false ? "errors" : "review",
+      resultText: result.text,
+      images: photos.map((p) => p.preview),
+    });
   };
 
   if (!loading && !isAuthenticated) {
@@ -389,6 +405,13 @@ export default function Homework() {
               {result.isCorrect === false && <span className="inline-flex items-center gap-1.5 text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-full px-3 py-1 text-sm font-bold"><Icon name="CircleAlert" size={14} /> Есть ошибки</span>}
               {result.isCorrect === null && <span className="inline-flex items-center gap-1.5 text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 rounded-full px-3 py-1 text-sm font-bold"><Icon name="BookOpen" size={14} /> Разбор задачи</span>}
               {result.fromCache && <span className="text-white/35 text-[11px]">· мгновенно из кэша</span>}
+              <button
+                onClick={savePdf}
+                className="ml-auto inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors"
+              >
+                <Icon name="FileDown" size={14} />
+                Сохранить в PDF
+              </button>
             </div>
             <div className="text-white/85 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{result.text}</div>
           </div>
