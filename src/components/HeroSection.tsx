@@ -10,21 +10,13 @@ const TRUST_POINTS = [
   { icon: "ShieldCheck", text: "Данные на серверах в РФ" },
 ];
 
-const SUBJECTS_QUICK = [
-  { label: "Математика", emoji: "📐" },
-  { label: "Русский", emoji: "📚" },
-  { label: "Физика", emoji: "⚛️" },
-  { label: "Информатика", emoji: "💻" },
-  { label: "Обществознание", emoji: "🏛️" },
-];
-
 const AVATAR_COLORS = ["#a855f7", "#06b6d4", "#f59e0b", "#ec4899", "#10b981"];
 
 export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative pt-24 md:pt-28 pb-12 px-4 overflow-hidden"
+      className="relative pt-10 md:pt-14 pb-12 px-4 overflow-hidden"
     >
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
@@ -67,30 +59,23 @@ export default function HeroSection() {
               без ожидания.
             </p>
 
-            {/* CTA — один главный, один второстепенный */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-fade-in-up animate-delay-300">
+            {/* CTA — одно главное действие */}
+            <div className="mb-6 animate-fade-in-up animate-delay-300">
               <Link
                 to="/courses"
-                className="group bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl text-base flex items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
+                className="group inline-flex bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-2xl text-base items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
               >
-                <span>Начать бесплатно</span>
+                <span>Начать учиться бесплатно</span>
                 <Icon
                   name="ArrowRight"
                   size={18}
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
-              <Link
-                to="/exam-bank"
-                className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-white/15 bg-white/5 text-white hover:bg-white/10 hover:border-white/25 transition-all font-medium text-base backdrop-blur-sm"
-              >
-                <Icon name="Library" size={16} className="text-purple-300" />
-                Посмотреть задания ЕГЭ
-              </Link>
             </div>
 
             {/* Trust-маркеры */}
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 mb-8 animate-fade-in-up animate-delay-400">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 animate-fade-in-up animate-delay-400">
               {TRUST_POINTS.map((p) => (
                 <li
                   key={p.text}
@@ -105,36 +90,17 @@ export default function HeroSection() {
                 </li>
               ))}
             </ul>
-
-            {/* Быстрый выбор предмета */}
-            <div className="animate-fade-in-up animate-delay-500">
-              <p className="text-white/60 text-xs font-medium uppercase tracking-wide mb-2">
-                Готовимся к экзаменам по
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SUBJECTS_QUICK.map((s) => (
-                  <Link
-                    key={s.label}
-                    to="/exam-bank"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white/85 hover:bg-white/10 hover:border-white/20 transition-all"
-                  >
-                    <span>{s.emoji}</span>
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* RIGHT — превью продукта */}
           <div className="lg:col-span-5 relative animate-fade-in-up animate-delay-200">
-            {/* Фрейм с фотографией */}
-            <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl shadow-purple-500/20">
+            {/* Фрейм с фотографией — не более 25% высоты экрана */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl shadow-purple-500/20 max-h-[25vh] lg:max-h-[60vh]">
               <img
                 src={HERO_IMAGE}
                 alt="Счастливые выпускники с отличными результатами ЕГЭ"
                 loading="eager"
-                className="w-full aspect-[4/5] object-cover"
+                className="w-full h-full max-h-[25vh] lg:max-h-[60vh] object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
 
