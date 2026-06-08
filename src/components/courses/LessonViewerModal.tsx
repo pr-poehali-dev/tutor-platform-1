@@ -17,6 +17,8 @@ interface Props {
   grade: string;              // 5-9 / 10-11 / ege / oge / 1-4
   lessonTitle: string;        // название урока из программы курса
   accent?: string;
+  // Вызывается один раз при завершении урока (фаза done) — для сохранения прогресса
+  onComplete?: (correct: number, total: number) => void;
 }
 
 // Предметы, которые бэкенд learning-path понимает напрямую (есть в SUBJECT_TOPICS).
@@ -42,7 +44,7 @@ const mapGrade = (g: string): string => {
 
 type Phase = "theory" | "examples" | "tasks" | "done";
 
-export default function LessonViewerModal({ open, onClose, subjectId, topic, grade, lessonTitle, accent = "#a855f7" }: Props) {
+export default function LessonViewerModal({ open, onClose, subjectId, topic, grade, lessonTitle, accent = "#a855f7", onComplete }: Props) {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +207,19 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     if (text) narrator.speak(text);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lesson, phase, theoryIdx, exampleIdx, taskIdx, showResult, narrator.enabled, narrator.voiceId, open]);
+
+  // Сообщаем наверх о завершении урока (один раз при входе в фазу done)
+  const [completeReported, setCompleteReported] = useState(false);
+  useEffect(() => {
+    if (phase === "done" && lesson && !completeReported) {
+      setCompleteReported(true);
+      onComplete?.(correctCount, lesson.tasks.length);
+    }
+    if (phase !== "done" && completeReported) {
+      setCompleteReported(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, lesson]);
 
   if (!open) return null;
 

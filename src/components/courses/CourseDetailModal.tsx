@@ -4,7 +4,10 @@ import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, examBadgeLabel } from "./coursesData";
 import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
+import ModuleQuizModal from "./ModuleQuizModal";
 import useCourseCurriculum from "@/hooks/useCourseCurriculum";
+import useCourseProgress, { lessonKey, quizKey } from "@/hooks/useCourseProgress";
+import { SUBJECTS } from "@/components/journey/journeyData";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import CourseDetailHeader from "./detail/CourseDetailHeader";
 import CourseDetailAbout from "./detail/CourseDetailAbout";
@@ -21,7 +24,10 @@ interface Props {
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
   const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
-  const [openLesson, setOpenLesson] = useState<{ title: string; topic: string } | null>(null);
+  const [openLesson, setOpenLesson] = useState<{ title: string; topic: string; moduleId: number; num: number } | null>(null);
+  const [openQuiz, setOpenQuiz] = useState<{ moduleId: number; title: string; topics: string[] } | null>(null);
+
+  const progress = useCourseProgress(course?.id ?? null, !!course);
 
   useEffect(() => {
     if (course) {
@@ -53,6 +59,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
   if (!course) return null;
 
   const promoOn = isPromoActive();
+  const subjectAccent = SUBJECTS.find(s => s.id === course.subject)?.accent || "#a855f7";
   const fmt = FORMAT_CONFIG[course.format];
   const gradeLabel = GRADES.find(g => g.id === course.grade)?.label || course.grade;
   const examLabel = examBadgeLabel(course);
@@ -133,6 +140,10 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
               expandedModule={expandedModule}
               setExpandedModule={setExpandedModule}
               setOpenLesson={setOpenLesson}
+              isLessonDone={progress.isLessonDone}
+              moduleProgress={progress.moduleProgress}
+              getQuiz={progress.getQuiz}
+              setOpenQuiz={setOpenQuiz}
             />
           )}
 
@@ -180,6 +191,39 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
           topic={openLesson.topic}
           grade={course.grade}
           lessonTitle={openLesson.title}
+          accent={subjectAccent}
+          onComplete={(correct, total) => {
+            progress.completeLesson({
+              courseId: course.id,
+              key: lessonKey(openLesson.moduleId, openLesson.num),
+              title: openLesson.title,
+              moduleId: openLesson.moduleId,
+              score: correct,
+              total,
+            });
+          }}
+        />
+      )}
+
+      {openQuiz && (
+        <ModuleQuizModal
+          open={!!openQuiz}
+          onClose={() => setOpenQuiz(null)}
+          subjectId={course.subject}
+          grade={course.grade}
+          moduleTitle={openQuiz.title}
+          topics={openQuiz.topics}
+          accent={subjectAccent}
+          onFinish={(correct, total) => {
+            progress.saveQuiz({
+              courseId: course.id,
+              key: quizKey(openQuiz.moduleId),
+              title: `Квиз: ${openQuiz.title}`,
+              moduleId: openQuiz.moduleId,
+              score: correct,
+              total,
+            });
+          }}
         />
       )}
     </div>

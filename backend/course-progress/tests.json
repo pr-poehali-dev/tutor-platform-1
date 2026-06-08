@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET without token returns 401",
+      "method": "GET",
+      "path": "/?course_id=1",
+      "expectedStatus": 401
+    },
+    {
+      "name": "POST without token returns 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "complete_lesson", "course_id": 1, "lesson_key": "m1-l1"},
+      "expectedStatus": 401
+    }
+  ]
+}
