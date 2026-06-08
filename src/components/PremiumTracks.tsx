@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import SectionHeading from "@/components/home/SectionHeading";
 
 interface Track {
   to: string;
@@ -160,21 +161,13 @@ export default function PremiumTracks() {
       className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16"
       aria-label="Премиум-треки: поступление в МГУ и журфак"
     >
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/30 rounded-full px-4 py-1.5 mb-4">
-          <Icon name="Crown" size={14} className="text-amber-300" />
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-200">
-            Премиум-треки
-          </span>
-        </div>
-        <h2 className="font-montserrat font-black text-3xl md:text-4xl mb-3">
-          Углублённая подготовка к топ-вузам России
-        </h2>
-        <p className="text-white/65 text-base md:text-lg max-w-3xl mx-auto">
-          Авторские программы для тех, кто целится в МГУ, ВШЭ, СПбГУ. ИИ-стратег,
-          индивидуальный план, разбор по официальным критериям ФИПИ.
-        </p>
-      </div>
+      <SectionHeading
+        accent="amber"
+        badgeIcon="Crown"
+        badge="Премиум-треки"
+        title="Углублённая подготовка к топ-вузам России"
+        subtitle="Авторские программы для тех, кто целится в МГУ, ВШЭ, СПбГУ. ИИ-стратег, индивидуальный план, разбор по официальным критериям ФИПИ."
+      />
 
       <div className="grid md:grid-cols-2 gap-5">
         {TRACKS.map((t) => (

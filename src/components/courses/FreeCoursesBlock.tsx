@@ -24,14 +24,14 @@ export default function FreeCoursesBlock({ compact = false }: Props) {
       <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.08] via-transparent to-cyan-500/[0.06] p-6 md:p-10">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/35 rounded-full px-3.5 py-1 mb-3">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-3.5 py-1 mb-3">
               <Icon name="Gift" size={13} className="text-emerald-300" />
-              <span className="text-xs text-emerald-300 font-bold uppercase tracking-wider">Бесплатно навсегда</span>
+              <span className="text-[11px] text-emerald-200 font-bold uppercase tracking-wider">Бесплатно навсегда</span>
             </div>
-            <h2 id="free-courses-title" className="font-montserrat font-black text-2xl md:text-4xl text-white leading-tight">
+            <h2 id="free-courses-title" className="font-montserrat font-black text-3xl md:text-4xl text-white leading-tight">
               Начни учиться <span className="gradient-text-purple">бесплатно</span> — прямо сейчас
             </h2>
-            <p className="text-white/60 text-sm md:text-base mt-2 max-w-xl">
+            <p className="text-white/65 text-sm md:text-base mt-3 max-w-2xl">
               Эти курсы открыты полностью и навсегда: без оплаты, без карты и без ограничения по времени. Заходи и учись.
             </p>
           </div>

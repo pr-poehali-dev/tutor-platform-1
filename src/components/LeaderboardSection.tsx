@@ -1,3 +1,5 @@
+import SectionHeading from "@/components/home/SectionHeading";
+
 const LEADERBOARD = [
   { rank: 1, name: "Алекс М.", avatar: "🦁", points: 9840, badge: "🥇" },
   { rank: 2, name: "Соня К.", avatar: "🦊", points: 8720, badge: "🥈" },
@@ -12,12 +14,13 @@ export default function LeaderboardSection() {
       {/* Leaderboard */}
       <section id="leaderboard" className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-10">
-            <p className="text-yellow-400 text-sm font-semibold uppercase tracking-widest mb-2">Рейтинг</p>
-            <h2 className="font-montserrat font-black text-3xl md:text-4xl text-white">
-              Топ <span className="gradient-text-purple">лидеров</span>
-            </h2>
-          </div>
+          <SectionHeading
+            accent="amber"
+            badgeIcon="Trophy"
+            badge="Рейтинг"
+            title={<>Топ <span className="gradient-text-purple">лидеров</span></>}
+            subtitle="Зарабатывай XP за уроки и задания, поднимайся в таблице и соревнуйся с учениками со всей России."
+          />
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-card/60 backdrop-blur-sm border border-white/10 rounded-3xl overflow-hidden">

@@ -138,15 +138,15 @@ export default function AITeacher() {
         {/* Header */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-12">
           <div className="order-2 md:order-1">
-            <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-4 py-1.5 mb-4">
+            <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/30 rounded-full px-3.5 py-1 mb-3">
               <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse inline-block"></span>
-              <span className="text-sm text-purple-300 font-medium">Работает в реальном времени · с голосом</span>
+              <span className="text-[11px] text-purple-200 font-bold uppercase tracking-wider">В реальном времени · с голосом</span>
             </div>
-            <h2 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4">
+            <h2 className="font-montserrat font-black text-3xl md:text-4xl text-white leading-tight">
               Твой персональный{" "}
               <span className="gradient-text-purple">ИИ‑преподаватель</span>
             </h2>
-            <p className="text-white/55 text-lg">
+            <p className="text-white/65 text-sm md:text-base mt-3">
               Умные ответы, живой голос, бесконечное терпение. Доступен круглосуточно и подстраивается под твой темп.
             </p>
           </div>
