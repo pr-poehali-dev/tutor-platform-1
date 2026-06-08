@@ -114,12 +114,20 @@ def build_prompt(mode: str, subject: str, grade: str) -> str:
     subj = SUBJECTS.get(subject, subject or 'школьный предмет')
     grd = GRADES.get(grade, grade or 'школьная программа')
     common = (
-        "Ты — опытный российский учитель и репетитор. Отвечай по-русски, по школьной программе РФ (ФГОС). "
-        f"Предмет: {subj}. Уровень: {grd}. "
-        "На фото — задание из учебника/тетради. Сначала кратко распознай условие. "
-        "Если на фото несколько задач — разбери каждую. "
-        "Будь точным: если на фото нечитаемо или это не учебное задание — честно скажи об этом. "
-        "Пиши понятным языком для ученика, без воды и без лишних вступлений."
+        "Ты — опытный российский учитель и репетитор с отличным зрением. "
+        "Отвечай по-русски, по школьной программе РФ (ФГОС). "
+        f"Предмет: {subj}. Уровень: {grd}.\n\n"
+        "ШАГ 1 — РАСПОЗНАВАНИЕ. Очень внимательно рассмотри фотографию. "
+        "Прочитай ВЕСЬ текст на изображении, включая рукописный почерк, формулы, "
+        "числа, индексы, степени, дроби, знаки и условные обозначения. "
+        "Распознавай даже неаккуратный или бледный почерк, текст под углом и с бликами. "
+        "В начале ответа ОБЯЗАТЕЛЬНО приведи блок «Распознано:» — кратко выпиши условие "
+        "(или решение ученика), как ты его прочитал с фото. "
+        "Если на фото несколько задач — распознай и разбери каждую по порядку.\n\n"
+        "Будь точным. Только если фото действительно нечитаемо (слишком размыто/темно/обрезано) "
+        "или на нём вообще нет учебного задания — честно скажи об этом и подскажи, "
+        "как переснять (ближе, ровнее, при хорошем свете). "
+        "Пиши понятным языком для ученика, без воды и лишних вступлений."
     )
     if mode == 'review':
         return common + (
@@ -138,23 +146,25 @@ def build_prompt(mode: str, subject: str, grade: str) -> str:
     )
 
 
-def call_vision(prompt: str, image_b64: str, content_type: str) -> str:
-    api_key = os.environ.get('POLZA_API_KEY', '')
-    if not api_key:
-        raise RuntimeError('POLZA_API_KEY не настроен')
-    data_url = f"data:{content_type or 'image/jpeg'};base64,{image_b64}"
+# Модели по приоритету: сильная для распознавания фото/рукописи + запасная.
+VISION_MODELS = ('openai/gpt-4o', 'openai/gpt-4o-mini')
+
+
+def _vision_request(model: str, prompt: str, data_url: str, api_key: str) -> str:
+    """Один запрос к vision-модели. detail=high — анализ фото в полном разрешении
+    (критично для распознавания рукописного текста и условий из учебника)."""
     messages = [{
         'role': 'user',
         'content': [
             {'type': 'text', 'text': prompt},
-            {'type': 'image_url', 'image_url': {'url': data_url}},
+            {'type': 'image_url', 'image_url': {'url': data_url, 'detail': 'high'}},
         ],
     }]
     payload = json.dumps({
-        'model': 'openai/gpt-4o-mini',
+        'model': model,
         'messages': messages,
-        'temperature': 0.3,
-        'max_tokens': 900,
+        'temperature': 0.2,
+        'max_tokens': 1500,
     }).encode('utf-8')
     req = urllib.request.Request(
         'https://api.polza.ai/api/v1/chat/completions',
@@ -162,9 +172,40 @@ def call_vision(prompt: str, image_b64: str, content_type: str) -> str:
         headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
         method='POST',
     )
-    with urllib.request.urlopen(req, timeout=60) as response:
+    with urllib.request.urlopen(req, timeout=90) as response:
         result = json.loads(response.read().decode('utf-8'))
         return result['choices'][0]['message']['content'].strip()
+
+
+def call_vision(prompt: str, image_b64: str, content_type: str) -> str:
+    api_key = os.environ.get('POLZA_API_KEY', '')
+    if not api_key:
+        raise RuntimeError('POLZA_API_KEY не настроен')
+    data_url = f"data:{content_type or 'image/jpeg'};base64,{image_b64}"
+
+    last_error = None
+    for model in VISION_MODELS:
+        try:
+            text = _vision_request(model, prompt, data_url, api_key)
+            if text:
+                return text
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode('utf-8', errors='ignore')[:300]
+            last_error = e
+            print(f"[homework] vision HTTPError model={model} code={e.code} detail={detail}")
+            # 400/404 — модель недоступна у провайдера, пробуем следующую
+            if e.code in (400, 404, 422):
+                continue
+            # другие ошибки — тоже пробуем запасную модель
+            continue
+        except Exception as e:
+            last_error = e
+            print(f"[homework] vision error model={model}: {type(e).__name__}: {str(e)[:200]}")
+            continue
+
+    if isinstance(last_error, Exception):
+        raise last_error
+    raise RuntimeError('Vision-модель не вернула ответ')
 
 
 def detect_verdict(text: str):
@@ -251,9 +292,11 @@ def handle_check(token: str, body: dict) -> dict:
                 result_text = call_vision(prompt, image_b64, content_type)
             except urllib.error.HTTPError as e:
                 detail = e.read().decode('utf-8', errors='ignore')[:200]
-                return err(f'Ошибка ИИ ({e.code}). Попробуй ещё раз. {detail}', 502)
+                print(f"[homework] check failed HTTP {e.code}: {detail}")
+                return err(f'Сервис распознавания временно недоступен (код {e.code}). Попробуй ещё раз через минуту.', 502)
             except Exception as e:
-                return err(f'Не удалось обработать фото: {str(e)[:150]}', 502)
+                print(f"[homework] check failed: {type(e).__name__}: {str(e)[:200]}")
+                return err(f'Не удалось распознать фото: {str(e)[:150]}', 502)
 
             is_correct = detect_verdict(result_text) if mode == 'review' else None
 
