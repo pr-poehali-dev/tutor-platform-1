@@ -62,9 +62,7 @@ export default function Homework() {
   const [mode, setMode] = useState<Mode>("solve");
   const [subject, setSubject] = useState("math");
   const [grade, setGrade] = useState("5-9");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [contentType, setContentType] = useState("image/jpeg");
-  const [imageB64, setImageB64] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<{ preview: string; b64: string; type: string }[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ text: string; isCorrect: boolean | null; fromCache: boolean } | null>(null);
@@ -93,35 +91,60 @@ export default function Homework() {
     if (isAuthenticated) loadHistory();
   }, [isAuthenticated, loadHistory]);
 
+  const MAX_PHOTOS = 5;
+
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Фото слишком большое (макс. 8 МБ). Сними поближе или сожми.");
-      return;
-    }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     setError(null);
     setResult(null);
-    setContentType(file.type || "image/jpeg");
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setPreview(dataUrl);
-      setImageB64(dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl);
-    };
-    reader.readAsDataURL(file);
+
+    const slotsLeft = MAX_PHOTOS - photos.length;
+    if (slotsLeft <= 0) {
+      setError(`Можно загрузить не больше ${MAX_PHOTOS} фото.`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    const toAdd = files.slice(0, slotsLeft);
+
+    toAdd.forEach((file) => {
+      if (file.size > 8 * 1024 * 1024) {
+        setError("Одно из фото больше 8 МБ. Сними поближе или сожми.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const b64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+        setPhotos((prev) =>
+          prev.length >= MAX_PHOTOS
+            ? prev
+            : [...prev, { preview: dataUrl, b64, type: file.type || "image/jpeg" }]
+        );
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (files.length > slotsLeft) {
+      setError(`Добавлены первые ${slotsLeft} фото — лимит ${MAX_PHOTOS}.`);
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setResult(null);
   };
 
   const reset = () => {
-    setPreview(null);
-    setImageB64(null);
+    setPhotos([]);
     setResult(null);
     setError(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const submit = async () => {
-    if (!imageB64) {
+    if (photos.length === 0) {
       setError("Сначала загрузи фото задания.");
       return;
     }
@@ -139,8 +162,8 @@ export default function Homework() {
         headers: { "Content-Type": "application/json", "X-Auth-Token": t },
         body: JSON.stringify({
           action: "check",
-          image_base64: imageB64,
-          content_type: contentType,
+          images_base64: photos.map((p) => p.b64),
+          content_types: photos.map((p) => p.type),
           mode,
           subject,
           grade,
@@ -278,10 +301,11 @@ export default function Homework() {
             type="file"
             accept="image/*"
             capture="environment"
+            multiple
             onChange={onPickFile}
             className="hidden"
           />
-          {!preview ? (
+          {photos.length === 0 ? (
             <button
               onClick={() => fileRef.current?.click()}
               className="w-full border-2 border-dashed border-white/15 hover:border-purple-500/50 rounded-2xl py-10 flex flex-col items-center gap-3 transition-colors group"
@@ -290,17 +314,44 @@ export default function Homework() {
                 <Icon name="Camera" size={26} className="text-white" />
               </div>
               <p className="text-white font-bold">Сфотографировать или выбрать фото</p>
-              <p className="text-white/45 text-xs">JPG, PNG до 8 МБ · можно прямо с камеры телефона</p>
+              <p className="text-white/45 text-xs">JPG, PNG до 8 МБ · до {MAX_PHOTOS} фото · можно с камеры телефона</p>
             </button>
           ) : (
-            <div className="relative">
-              <img src={preview} alt="Задание" className="w-full max-h-[420px] object-contain rounded-2xl border border-white/10 bg-black/30" />
-              <button
-                onClick={reset}
-                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
-              >
-                <Icon name="X" size={16} />
-              </button>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">
+                  Фото задания · {photos.length}/{MAX_PHOTOS}
+                </p>
+                <button onClick={reset} className="text-white/50 hover:text-white text-xs inline-flex items-center gap-1 transition-colors">
+                  <Icon name="Trash2" size={12} /> Очистить всё
+                </button>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {photos.map((p, i) => (
+                  <div key={i} className="relative aspect-square group">
+                    <img src={p.preview} alt={`Фото ${i + 1}`} className="w-full h-full object-cover rounded-xl border border-white/10 bg-black/30" />
+                    <span className="absolute bottom-1 left-1 bg-black/65 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">{i + 1}</span>
+                    <button
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/65 hover:bg-rose-500/90 flex items-center justify-center text-white transition-colors"
+                    >
+                      <Icon name="X" size={12} />
+                    </button>
+                  </div>
+                ))}
+                {photos.length < MAX_PHOTOS && (
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="aspect-square rounded-xl border-2 border-dashed border-white/15 hover:border-purple-500/50 flex flex-col items-center justify-center gap-1 text-white/55 hover:text-white transition-colors"
+                  >
+                    <Icon name="Plus" size={20} />
+                    <span className="text-[10px] font-semibold">Ещё фото</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-white/35 text-[11px] mt-2">
+                💡 Несколько фото = одно задание целиком (например, разворот тетради или длинное решение).
+              </p>
             </div>
           )}
 
@@ -313,7 +364,7 @@ export default function Homework() {
 
           <button
             onClick={submit}
-            disabled={busy || !preview}
+            disabled={busy || photos.length === 0}
             className="mt-5 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold px-6 py-4 rounded-2xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-lg"
           >
             {busy ? (

@@ -110,13 +110,21 @@ def upload_to_s3(image_bytes: bytes, image_hash: str, content_type: str) -> str:
     return f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
 
 
-def build_prompt(mode: str, subject: str, grade: str) -> str:
+def build_prompt(mode: str, subject: str, grade: str, image_count: int = 1) -> str:
     subj = SUBJECTS.get(subject, subject or 'школьный предмет')
     grd = GRADES.get(grade, grade or 'школьная программа')
+    multi = ""
+    if image_count > 1:
+        multi = (
+            f"\nВНИМАНИЕ: прикреплено {image_count} фотографии — это части одного задания "
+            "или одного решения (например, разворот тетради или несколько страниц). "
+            "Рассмотри ВСЕ фото вместе как единое целое, в порядке их следования, "
+            "и дай один связный разбор.\n"
+        )
     common = (
         "Ты — опытный российский учитель и репетитор с отличным зрением. "
         "Отвечай по-русски, по школьной программе РФ (ФГОС). "
-        f"Предмет: {subj}. Уровень: {grd}.\n\n"
+        f"Предмет: {subj}. Уровень: {grd}.{multi}\n\n"
         "ШАГ 1 — РАСПОЗНАВАНИЕ. Очень внимательно рассмотри фотографию. "
         "Прочитай ВЕСЬ текст на изображении, включая рукописный почерк, формулы, "
         "числа, индексы, степени, дроби, знаки и условные обозначения. "
@@ -150,21 +158,18 @@ def build_prompt(mode: str, subject: str, grade: str) -> str:
 VISION_MODELS = ('openai/gpt-4o', 'openai/gpt-4o-mini')
 
 
-def _vision_request(model: str, prompt: str, data_url: str, api_key: str) -> str:
-    """Один запрос к vision-модели. detail=high — анализ фото в полном разрешении
-    (критично для распознавания рукописного текста и условий из учебника)."""
-    messages = [{
-        'role': 'user',
-        'content': [
-            {'type': 'text', 'text': prompt},
-            {'type': 'image_url', 'image_url': {'url': data_url, 'detail': 'high'}},
-        ],
-    }]
+def _vision_request(model: str, prompt: str, data_urls: list, api_key: str) -> str:
+    """Один запрос к vision-модели с одним или несколькими фото. detail=high —
+    анализ в полном разрешении (критично для рукописного текста и условий)."""
+    content = [{'type': 'text', 'text': prompt}]
+    for url in data_urls:
+        content.append({'type': 'image_url', 'image_url': {'url': url, 'detail': 'high'}})
+    messages = [{'role': 'user', 'content': content}]
     payload = json.dumps({
         'model': model,
         'messages': messages,
         'temperature': 0.2,
-        'max_tokens': 1500,
+        'max_tokens': 1800,
     }).encode('utf-8')
     req = urllib.request.Request(
         'https://api.polza.ai/api/v1/chat/completions',
@@ -172,21 +177,25 @@ def _vision_request(model: str, prompt: str, data_url: str, api_key: str) -> str
         headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
         method='POST',
     )
-    with urllib.request.urlopen(req, timeout=90) as response:
+    with urllib.request.urlopen(req, timeout=120) as response:
         result = json.loads(response.read().decode('utf-8'))
         return result['choices'][0]['message']['content'].strip()
 
 
-def call_vision(prompt: str, image_b64: str, content_type: str) -> str:
+def call_vision(prompt: str, images: list) -> str:
+    """images — список dict {b64, content_type}. Поддерживает 1..N фото."""
     api_key = os.environ.get('POLZA_API_KEY', '')
     if not api_key:
         raise RuntimeError('POLZA_API_KEY не настроен')
-    data_url = f"data:{content_type or 'image/jpeg'};base64,{image_b64}"
+    data_urls = [
+        f"data:{img.get('content_type') or 'image/jpeg'};base64,{img['b64']}"
+        for img in images
+    ]
 
     last_error = None
     for model in VISION_MODELS:
         try:
-            text = _vision_request(model, prompt, data_url, api_key)
+            text = _vision_request(model, prompt, data_urls, api_key)
             if text:
                 return text
         except urllib.error.HTTPError as e:
@@ -226,26 +235,47 @@ def count_today(cur, user_id: int) -> int:
     return cur.fetchone()[0]
 
 
+MAX_IMAGES = 5
+
+
 def handle_check(token: str, body: dict) -> dict:
-    image_raw = body.get('image_base64') or ''
     mode = body.get('mode', 'solve')
     if mode not in ('solve', 'review'):
         mode = 'solve'
     subject = (body.get('subject') or '')[:40]
     grade = (body.get('grade') or '')[:20]
-    if not image_raw:
-        return err('Нужно фото задания (image_base64)')
 
-    image_b64 = strip_data_url(image_raw)
-    content_type = body.get('content_type') or 'image/jpeg'
-    try:
-        image_bytes = base64.b64decode(image_b64)
-    except Exception:
-        return err('Некорректное изображение')
-    if len(image_bytes) > 8 * 1024 * 1024:
-        return err('Фото слишком большое (макс. 8 МБ). Сожми снимок и попробуй снова.')
+    # Поддержка нескольких фото (images_base64) + обратная совместимость (image_base64)
+    raw_list = body.get('images_base64')
+    types_list = body.get('content_types') or []
+    if not raw_list:
+        single = body.get('image_base64')
+        if not single:
+            return err('Нужно фото задания')
+        raw_list = [single]
+        types_list = [body.get('content_type') or 'image/jpeg']
 
-    image_hash = hashlib.sha256(image_bytes).hexdigest()
+    if not isinstance(raw_list, list) or len(raw_list) == 0:
+        return err('Нужно фото задания')
+    if len(raw_list) > MAX_IMAGES:
+        return err(f'Можно загрузить не больше {MAX_IMAGES} фото за раз.')
+
+    images = []          # [{b64, content_type, bytes}]
+    hashes = []
+    for i, raw in enumerate(raw_list):
+        b64 = strip_data_url(raw or '')
+        ctype = (types_list[i] if i < len(types_list) else None) or 'image/jpeg'
+        try:
+            img_bytes = base64.b64decode(b64)
+        except Exception:
+            return err(f'Фото №{i + 1} повреждено. Перезагрузи его.')
+        if len(img_bytes) > 8 * 1024 * 1024:
+            return err(f'Фото №{i + 1} слишком большое (макс. 8 МБ). Сожми снимок.')
+        images.append({'b64': b64, 'content_type': ctype, 'bytes': img_bytes})
+        hashes.append(hashlib.sha256(img_bytes).hexdigest())
+
+    # Общий хэш набора фото — для кэширования
+    image_hash = hashlib.sha256('|'.join(hashes).encode()).hexdigest()
     cache_key = f"{image_hash}:{mode}:{subject}:{grade}"
 
     conn = get_db()
@@ -280,16 +310,16 @@ def handle_check(token: str, body: dict) -> dict:
                     'from_cache': True, 'check_id': check_id, 'mode': mode,
                 })
 
-            # 2) Загружаем фото в S3
+            # 2) Загружаем фото в S3 (первое — обложка для истории)
             try:
-                image_url = upload_to_s3(image_bytes, image_hash, content_type)
-            except Exception as e:
+                image_url = upload_to_s3(images[0]['bytes'], image_hash, images[0]['content_type'])
+            except Exception:
                 image_url = None  # не блокируем проверку, если S3 недоступен
 
-            # 3) Vision-разбор через ИИ
-            prompt = build_prompt(mode, subject, grade)
+            # 3) Vision-разбор через ИИ (все фото одним запросом)
+            prompt = build_prompt(mode, subject, grade, len(images))
             try:
-                result_text = call_vision(prompt, image_b64, content_type)
+                result_text = call_vision(prompt, images)
             except urllib.error.HTTPError as e:
                 detail = e.read().decode('utf-8', errors='ignore')[:200]
                 print(f"[homework] check failed HTTP {e.code}: {detail}")
