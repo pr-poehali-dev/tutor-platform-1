@@ -108,8 +108,11 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
         setIsTranscribing(true);
         try {
           const audioB64 = await blobToBase64(blob);
-          // Передаём фактический формат — STT должен его уметь распаковать
+          // Передаём фактический формат — STT должен его уметь распаковать.
+          // ВАЖНО: Chrome пишет в WebM (не OGG!) — Yandex его не поймёт как oggopus,
+          // поэтому помечаем webm отдельно, чтобы бэкенд не навязывал неверный format.
           const format = realMime.includes("mp4") ? "mp4"
+                       : realMime.includes("webm") ? "webm"
                        : realMime.includes("ogg") ? "oggopus"
                        : "oggopus";
           const res = await fetch(STT_URL, {
