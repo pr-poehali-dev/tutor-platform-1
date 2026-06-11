@@ -54,6 +54,7 @@ export default function GamePlay({
   onReward,
   isAuthenticated,
   onLogin,
+  mouthLevelRef,
 }: {
   game: GameInfo;
   bubble: string;
@@ -69,6 +70,8 @@ export default function GamePlay({
   onReward: () => void;
   isAuthenticated: boolean;
   onLogin: () => void;
+  // Живой уровень речи 0..1 для синхронизации губ Ксюши
+  mouthLevelRef?: React.MutableRefObject<number>;
 }) {
   const { level, winsToNext, registerWin, registerLoss } = useGameLevel(game.slug);
   const adaptive = ADAPTIVE[game.engine];
@@ -162,6 +165,7 @@ export default function GamePlay({
           text={bubble}
           speaking={speaking}
           emotion={bubbleEmotion}
+          mouthLevelRef={mouthLevelRef}
           onReplay={voiceEnabled ? () => onSpeak(bubble) : undefined}
         />
       </div>

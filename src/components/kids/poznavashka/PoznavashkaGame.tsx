@@ -52,7 +52,7 @@ export default function PoznavashkaGame({
 }: Props = {}) {
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
-  const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
+  const { speak, chirp, stop, toggle, enabled, speaking, mouthLevelRef } = useKsushaVoice();
 
   const [phase, setPhase] = useState<Phase>("map");
   const [world, setWorld] = useState<PoznavashkaWorld | null>(null);
@@ -161,6 +161,7 @@ export default function PoznavashkaGame({
             text={mapGreetingRich}
             size="lg"
             speaking={speaking}
+            mouthLevelRef={mouthLevelRef}
             onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
           />
         </div>
@@ -305,6 +306,7 @@ export default function PoznavashkaGame({
             text={question.question}
             speaking={speaking}
             emotion={qEmotion}
+            mouthLevelRef={mouthLevelRef}
             onReplay={enabled ? () => speak(question.question) : undefined}
           />
         </div>

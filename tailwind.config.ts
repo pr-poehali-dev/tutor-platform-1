@@ -129,6 +129,12 @@ export default {
 				'ksusha-sad': {
 					'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
 					'50%': { transform: 'translateY(3px) rotate(2deg)' }
+				},
+				'ksusha-talk': {
+					'0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+					'25%': { transform: 'translateY(-2px) rotate(0.8deg)' },
+					'50%': { transform: 'translateY(0) rotate(0deg)' },
+					'75%': { transform: 'translateY(-1.5px) rotate(-0.8deg)' }
 				}
 			},
 			animation: {
@@ -143,6 +149,7 @@ export default {
 				'ksusha-happy': 'ksusha-happy 0.7s ease-in-out 2',
 				'ksusha-idea': 'ksusha-idea 0.6s ease-in-out',
 				'ksusha-sad': 'ksusha-sad 1.5s ease-in-out infinite',
+				'ksusha-talk': 'ksusha-talk 1.6s ease-in-out infinite',
 			}
 		}
 	},

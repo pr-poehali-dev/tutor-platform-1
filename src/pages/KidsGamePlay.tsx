@@ -24,7 +24,7 @@ export default function KidsGamePlay() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [overrideUntil, setOverrideUntil] = useState<number>(0);
 
-  const { speak, chirp, stop, toggle, enabled, speaking } = useKsushaVoice();
+  const { speak, chirp, stop, toggle, enabled, speaking, mouthLevelRef } = useKsushaVoice();
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
 
@@ -128,6 +128,7 @@ export default function KidsGamePlay() {
         onReward={handleWin}
         isAuthenticated={isAuthenticated}
         onLogin={openLogin}
+        mouthLevelRef={mouthLevelRef}
       />
 
       {/* Перелинковка на другие игры */}

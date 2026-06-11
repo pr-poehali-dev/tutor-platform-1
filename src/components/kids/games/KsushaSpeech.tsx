@@ -7,18 +7,21 @@ export default function KsushaSpeech({
   speaking = false,
   emotion,
   onReplay,
+  mouthLevelRef,
 }: {
   text: string;
   size?: "sm" | "md" | "lg";
   speaking?: boolean;
   emotion?: KsushaEmotion;
   onReplay?: () => void;
+  // Живой уровень речи 0..1 для синхронизации губ (из useKsushaVoice)
+  mouthLevelRef?: React.MutableRefObject<number>;
 }) {
   // Если эмоция не задана явно — показываем «говорит» во время озвучки, иначе спокойствие
   const emo: KsushaEmotion = emotion ?? (speaking ? "speaking" : "idle");
   return (
     <div className="flex items-end gap-3">
-      <KsushaAvatar emotion={emo} size={size} />
+      <KsushaAvatar emotion={emo} size={size} mouthLevelRef={mouthLevelRef} />
       <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
         {text}
         {onReplay && (

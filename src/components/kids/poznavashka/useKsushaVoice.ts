@@ -24,6 +24,77 @@ export function useKsushaVoice() {
   const [enabled, setEnabled] = useState(true);
   const [speaking, setSpeaking] = useState(false);
 
+  // ── Липсинк: живой уровень громкости речи 0..1 для движка мимики ──
+  // Аватар Ксюши читает mouthLevelRef каждый кадр и открывает рот ровно
+  // настолько, насколько громкий звук сейчас звучит.
+  const mouthLevelRef = useRef(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const mouthRafRef = useRef(0);
+  // Кэш источников: один MediaElementAudioSource на каждый <audio>,
+  // иначе браузер кидает ошибку при повторном подключении.
+  const sourceMapRef = useRef<WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>>(
+    new WeakMap()
+  );
+
+  const stopMouthLoop = useCallback(() => {
+    if (mouthRafRef.current) {
+      cancelAnimationFrame(mouthRafRef.current);
+      mouthRafRef.current = 0;
+    }
+    mouthLevelRef.current = 0;
+  }, []);
+
+  // Подключаем <audio> к анализатору и каждый кадр считаем амплитуду речи
+  const startMouthLoop = useCallback(
+    (audio: HTMLAudioElement) => {
+      try {
+        const AC: typeof AudioContext =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        const ctx = audioCtxRef.current;
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.6;
+
+        let source = sourceMapRef.current.get(audio);
+        if (!source) {
+          source = ctx.createMediaElementSource(audio);
+          sourceMapRef.current.set(audio, source);
+        }
+        source.connect(analyser);
+        analyser.connect(ctx.destination);
+        analyserRef.current = analyser;
+
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          const a = analyserRef.current;
+          if (!a) return;
+          a.getByteFrequencyData(data);
+          // Средне-низкие частоты (голос), нормализуем в 0..1
+          let sum = 0;
+          const n = Math.min(48, data.length);
+          for (let i = 2; i < n; i++) sum += data[i];
+          const avg = sum / (n - 2) / 255;
+          // Нелинейно — речь выразительнее
+          mouthLevelRef.current = Math.min(1, Math.pow(avg * 1.7, 0.85));
+          mouthRafRef.current = requestAnimationFrame(tick);
+        };
+        stopMouthLoop();
+        mouthRafRef.current = requestAnimationFrame(tick);
+      } catch {
+        // Если Web Audio недоступен — движок мимики включит псевдо-липсинк
+        mouthLevelRef.current = 0;
+      }
+    },
+    [stopMouthLoop]
+  );
+
   const stop = useCallback(() => {
     // Любая текущая загрузка речи становится неактуальной
     speakIdRef.current++;
@@ -37,8 +108,9 @@ export function useKsushaVoice() {
       chirpRef.current.pause();
       chirpRef.current = null;
     }
+    stopMouthLoop();
     setSpeaking(false);
-  }, []);
+  }, [stopMouthLoop]);
 
   const speak = useCallback(
     async (rawText: string) => {
@@ -71,20 +143,26 @@ export function useKsushaVoice() {
         const audio = new Audio(audioSrc);
         audioRef.current = audio;
         setSpeaking(true);
+        // Запускаем реальный липсинк по громкости речи
+        startMouthLoop(audio);
         audio.onended = () => {
+          stopMouthLoop();
           if (myId === speakIdRef.current) setSpeaking(false);
         };
         audio.onerror = () => {
+          stopMouthLoop();
           if (myId === speakIdRef.current) setSpeaking(false);
         };
         await audio.play().catch(() => {
+          stopMouthLoop();
           if (myId === speakIdRef.current) setSpeaking(false);
         });
       } catch {
+        stopMouthLoop();
         if (myId === speakIdRef.current) setSpeaking(false);
       }
     },
-    [enabled, stop]
+    [enabled, stop, startMouthLoop, stopMouthLoop]
   );
 
   // Короткий звук-эмоция («оп!», «хм-м») — играет негромко и не прерывает
@@ -128,5 +206,5 @@ export function useKsushaVoice() {
 
   useEffect(() => stop, [stop]);
 
-  return { speak, chirp, stop, toggle, enabled, speaking };
+  return { speak, chirp, stop, toggle, enabled, speaking, mouthLevelRef };
 }
