@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useKsushaVoice } from "./useKsushaVoice";
+import { useKsushaVideos } from "@/components/kids/games/useKsushaVideos";
 import KsushaSays from "@/components/kids/games/KsushaSpeech";
 import type { KsushaEmotion } from "@/components/kids/games/KsushaAvatar";
 import {
@@ -53,6 +54,8 @@ export default function PoznavashkaGame({
   const { earn } = useZnaika();
   const { isAuthenticated, openLogin } = useAuth();
   const { speak, chirp, stop, toggle, enabled, speaking, mouthLevelRef } = useKsushaVoice();
+  // Готовые «говорящие» ролики Ксюши (если сгенерированы) — phrase_key → url
+  const ksushaVideos = useKsushaVideos();
 
   const [phase, setPhase] = useState<Phase>("map");
   const [world, setWorld] = useState<PoznavashkaWorld | null>(null);
@@ -166,6 +169,7 @@ export default function PoznavashkaGame({
             size="lg"
             speaking={speaking}
             mouthLevelRef={mouthLevelRef}
+            videoUrl={ksushaVideos["greeting"]}
             onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
           />
         </div>

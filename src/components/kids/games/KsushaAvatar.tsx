@@ -28,6 +28,7 @@ export default function KsushaAvatar({
   size = "md",
   mouthLevelRef,
   gesture,
+  videoUrl,
 }: {
   emotion?: KsushaEmotion;
   size?: "sm" | "md" | "lg";
@@ -35,6 +36,8 @@ export default function KsushaAvatar({
   mouthLevelRef?: React.MutableRefObject<number>;
   // Одноразовый жест: короткий тёплый кивок картинки
   gesture?: { type: KsushaGesture; id: number };
+  // Готовый «говорящий» ролик Ксюши (lip-sync). Если задан — играем видео
+  videoUrl?: string;
 }) {
   const dim =
     size === "lg" ? "w-24 h-24" : size === "sm" ? "w-12 h-12" : "w-16 h-16";
@@ -42,8 +45,23 @@ export default function KsushaAvatar({
 
   // ── Мягкая «живость» картинки на requestAnimationFrame ──
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const emoRef = useRef<KsushaEmotion>(emotion);
   emoRef.current = emotion;
+
+  // Управление воспроизведением ролика: говорит — играем, молчит — на первом кадре
+  const speaking = emotion === "speaking";
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !videoUrl) return;
+    if (speaking) {
+      v.currentTime = 0;
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+      v.currentTime = 0;
+    }
+  }, [speaking, videoUrl]);
 
   // Очередь жеста (короткий кивок при смене id)
   const gReq = useRef<number>(0);
@@ -109,14 +127,27 @@ export default function KsushaAvatar({
       <div
         className={`relative w-full h-full rounded-full border-4 overflow-hidden bg-amber-50 shadow-lg transition-all duration-300 ${RING[emotion]}`}
       >
-        <img
-          ref={imgRef}
-          src={KSUSHA_AVATAR}
-          alt="Ксюша"
-          draggable={false}
-          className="w-full h-full object-cover scale-[1.06] will-change-transform select-none"
-          style={{ transformOrigin: "center 60%" }}
-        />
+        {videoUrl ? (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            poster={KSUSHA_AVATAR}
+            muted
+            playsInline
+            loop
+            preload="auto"
+            className="w-full h-full object-cover scale-[1.06] select-none"
+          />
+        ) : (
+          <img
+            ref={imgRef}
+            src={KSUSHA_AVATAR}
+            alt="Ксюша"
+            draggable={false}
+            className="w-full h-full object-cover scale-[1.06] will-change-transform select-none"
+            style={{ transformOrigin: "center 60%" }}
+          />
+        )}
       </div>
       {badge && (
         <span
