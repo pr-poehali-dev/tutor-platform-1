@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import KsushaSpeech, { SoundToggle } from "./KsushaSpeech";
-import { KsushaEmotion } from "./KsushaAvatar";
+import type { KsushaEmotion } from "./KsushaAvatar";
 import { GameInfo } from "./gamesData";
 import { useGameLevel } from "./useGameLevel";
 import TicTacToe from "./TicTacToe";

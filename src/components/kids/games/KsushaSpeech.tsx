@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
-import KsushaAvatar, { KsushaEmotion, KsushaGesture } from "./KsushaAvatar";
+import KsushaAvatar from "./KsushaAvatar";
+import type { KsushaEmotion, KsushaGesture } from "./KsushaAvatar";
 
 export default function KsushaSpeech({
   text,

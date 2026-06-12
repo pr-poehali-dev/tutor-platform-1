@@ -94,9 +94,8 @@ export default function KsushaCharacter({
     let mouthSmooth = 0;
     // лёгкое подпрыгивание при радости
     let bob = 0;
-    // активный жест
-    const gType: KsushaGesture | null = null;
-    const gStart = 0;
+    // активный жест (объект, чтобы поля можно было менять в loop)
+    const g: { type: KsushaGesture | null; start: number } = { type: null, start: 0 };
     const G_DUR: Record<KsushaGesture, number> = { wink: 380, nod: 650 };
 
     const EYE_DX = 30;   // отступ глаза от центра
@@ -118,14 +117,14 @@ export default function KsushaCharacter({
       const req = gestureReq.current;
       if (req) {
         gestureReq.current = null;
-        gType = req.type;
-        gStart = now;
+        g.type = req.type;
+        g.start = now;
       }
       // Прогресс жеста 0..1 (или -1, если жеста нет)
       let gP = -1;
-      if (gType) {
-        gP = (now - gStart) / G_DUR[gType];
-        if (gP >= 1) { gType = null; gP = -1; }
+      if (g.type) {
+        gP = (now - g.start) / G_DUR[g.type];
+        if (gP >= 1) { g.type = null; gP = -1; }
       }
 
       // ── Голова: дыхание + покачивание + наклон эмоции + кивок ──
@@ -136,7 +135,7 @@ export default function KsushaCharacter({
       bob = lerp(bob, wantBob ? 1 : 0, 0.12);
       const jump = wantBob ? Math.abs(Math.sin(t * 6)) * 5 * bob : 0;
       // кивок: голова опускается и возвращается (полтора качка)
-      const nod = gType === "nod" ? Math.sin(gP * Math.PI * 1.5) * 9 : 0;
+      const nod = g.type === "nod" ? Math.sin(gP * Math.PI * 1.5) * 9 : 0;
       if (headRef.current) {
         headRef.current.setAttribute(
           "transform",
@@ -160,7 +159,7 @@ export default function KsushaCharacter({
 
       // ── Подмигивание: закрывается только правый глаз ──
       // 0→1→0 за время жеста, плавно через синус
-      const winkClose = gType === "wink" ? Math.sin(gP * Math.PI) : 0;
+      const winkClose = g.type === "wink" ? Math.sin(gP * Math.PI) : 0;
       const openL = open;
       const openR = Math.max(0.04, open * (1 - winkClose));
 
@@ -231,7 +230,7 @@ export default function KsushaCharacter({
         const w = 22;
         const o = mouthSmooth * 20;          // высота раскрытия
         // улыбка/грусть + хитринка при подмигивании + тёплая улыбка при кивке
-        const gestureSmile = winkClose * 4 + (gType === "nod" ? Math.sin(gP * Math.PI) * 3 : 0);
+        const gestureSmile = winkClose * 4 + (g.type === "nod" ? Math.sin(gP * Math.PI) * 3 : 0);
         const sm = cur.smile * 9 + gestureSmile;
         // углы рта поднимаются при улыбке
         const lx = cx - w, rx = cx + w;

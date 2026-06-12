@@ -4,7 +4,7 @@ import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useKsushaVoice } from "./useKsushaVoice";
 import KsushaSays from "@/components/kids/games/KsushaSpeech";
-import { KsushaEmotion } from "@/components/kids/games/KsushaAvatar";
+import type { KsushaEmotion } from "@/components/kids/games/KsushaAvatar";
 import {
   POZNAVASHKA_WORLDS,
   ZNAIKI_PER_CORRECT,

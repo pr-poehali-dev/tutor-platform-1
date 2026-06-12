@@ -1,4 +1,5 @@
-import KsushaCharacter, { KsushaGesture } from "./KsushaCharacter";
+import KsushaCharacter from "./KsushaCharacter";
+import type { KsushaGesture } from "./KsushaCharacter";
 
 export type KsushaEmotion = "idle" | "thinking" | "happy" | "idea" | "sad" | "speaking";
 export type { KsushaGesture };
