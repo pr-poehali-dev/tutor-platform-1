@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
 import { PRINCIPLES, REVIEWS, FAQ_ITEMS, GAMES_FAQ } from "./kidsLandingData";
 import { KIDS_GAMES } from "@/components/kids/games/gamesData";
+import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 
 export default function KidsContent() {
   return (
@@ -14,11 +15,9 @@ export default function KidsContent() {
           className="group block relative overflow-hidden rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-emerald-500/15 hover:border-amber-400/50 transition-all"
         >
           <div className="flex flex-col sm:flex-row items-center gap-5 p-6 md:p-8">
-            <img
-              src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/bd414e9f-28a3-45ca-a1e3-27e06993a99f.png"
-              alt="Ксюша"
-              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-amber-300/60 shadow-xl shadow-amber-500/20 object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
-            />
+            <div className="flex-shrink-0 group-hover:scale-105 transition-transform">
+              <KsushaAvatar emotion="happy" size="lg" />
+            </div>
             <div className="flex-1 text-center sm:text-left">
               <span className="inline-block text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
                 Игра · Новинка
