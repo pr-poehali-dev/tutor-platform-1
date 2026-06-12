@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import KsushaAvatar, { KsushaEmotion } from "./KsushaAvatar";
+import KsushaAvatar, { KsushaEmotion, KsushaGesture } from "./KsushaAvatar";
 
 export default function KsushaSpeech({
   text,
@@ -8,6 +8,7 @@ export default function KsushaSpeech({
   emotion,
   onReplay,
   mouthLevelRef,
+  gesture,
 }: {
   text: string;
   size?: "sm" | "md" | "lg";
@@ -16,12 +17,14 @@ export default function KsushaSpeech({
   onReplay?: () => void;
   // Живой уровень речи 0..1 для синхронизации губ (из useKsushaVoice)
   mouthLevelRef?: React.MutableRefObject<number>;
+  // Одноразовый жест (подмигнуть/кивнуть)
+  gesture?: { type: KsushaGesture; id: number };
 }) {
   // Если эмоция не задана явно — показываем «говорит» во время озвучки, иначе спокойствие
   const emo: KsushaEmotion = emotion ?? (speaking ? "speaking" : "idle");
   return (
     <div className="flex items-end gap-3">
-      <KsushaAvatar emotion={emo} size={size} mouthLevelRef={mouthLevelRef} />
+      <KsushaAvatar emotion={emo} size={size} mouthLevelRef={mouthLevelRef} gesture={gesture} />
       <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
         {text}
         {onReplay && (

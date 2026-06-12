@@ -77,6 +77,8 @@ export default function GamePlay({
   const adaptive = ADAPTIVE[game.engine];
 
   const [emotion, setEmotion] = useState<KsushaEmotion>("idle");
+  // Одноразовый жест Ксюши (подмигнуть/кивнуть)
+  const [gesture, setGesture] = useState<{ type: "wink" | "nod"; id: number }>();
   const timers = useRef<number[]>([]);
 
   const clearTimers = useCallback(() => {
@@ -101,6 +103,8 @@ export default function GamePlay({
             setEmotion("idea");
             onChirp?.("Оп!", 0.8);
             onSay(rnd(IDEA_PHRASES));
+            // Кивок согласия — «придумала ход!»
+            setGesture({ type: "nod", id: Date.now() });
           }, 1100)
         );
       } else {
@@ -114,6 +118,8 @@ export default function GamePlay({
     clearTimers();
     setEmotion("happy");
     onChirp?.("Оп-па!", 0.85);
+    // Победный подмиг
+    setGesture({ type: "wink", id: Date.now() });
     onReward();
     if (!adaptive) return;
     const { leveledUp, level: newLevel } = registerWin();
@@ -166,6 +172,7 @@ export default function GamePlay({
           speaking={speaking}
           emotion={bubbleEmotion}
           mouthLevelRef={mouthLevelRef}
+          gesture={gesture}
           onReplay={voiceEnabled ? () => onSpeak(bubble) : undefined}
         />
       </div>

@@ -33,14 +33,20 @@ const POSES: Record<KsushaEmotion, Pose> = {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+// Одноразовые жесты — короткие действия поверх эмоции.
+export type KsushaGesture = "wink" | "nod";
+
 export default function KsushaCharacter({
   emotion,
   mouthLevelRef,
   speaking,
+  gesture,
 }: {
   emotion: KsushaEmotion;
   mouthLevelRef?: React.MutableRefObject<number>;
   speaking: boolean;
+  // Каждое новое значение (с уникальным id) проигрывает жест один раз
+  gesture?: { type: KsushaGesture; id: number };
 }) {
   const headRef = useRef<SVGGElement | null>(null);
   const lEye = useRef<SVGGElement | null>(null);
@@ -61,6 +67,14 @@ export default function KsushaCharacter({
   emoRef.current = emotion;
   spkRef.current = speaking;
 
+  // Очередь жеста: при смене id запускаем анимацию один раз
+  const gestureReq = useRef<{ type: KsushaGesture; at: number } | null>(null);
+  const lastGestureId = useRef<number>(-1);
+  if (gesture && gesture.id !== lastGestureId.current) {
+    lastGestureId.current = gesture.id;
+    gestureReq.current = { type: gesture.type, at: performance.now() };
+  }
+
   useEffect(() => {
     let raf = 0;
     const start = performance.now();
@@ -80,6 +94,10 @@ export default function KsushaCharacter({
     let mouthSmooth = 0;
     // лёгкое подпрыгивание при радости
     let bob = 0;
+    // активный жест
+    const gType: KsushaGesture | null = null;
+    const gStart = 0;
+    const G_DUR: Record<KsushaGesture, number> = { wink: 380, nod: 650 };
 
     const EYE_DX = 30;   // отступ глаза от центра
     const EYE_Y = 92;    // вертикаль глаз
@@ -96,17 +114,33 @@ export default function KsushaCharacter({
       cur.cheek = lerp(cur.cheek, P.cheek, k);
       cur.headTilt = lerp(cur.headTilt, P.headTilt, k);
 
-      // ── Голова: дыхание + покачивание + наклон эмоции ──
+      // ── Запуск нового жеста ──
+      const req = gestureReq.current;
+      if (req) {
+        gestureReq.current = null;
+        gType = req.type;
+        gStart = now;
+      }
+      // Прогресс жеста 0..1 (или -1, если жеста нет)
+      let gP = -1;
+      if (gType) {
+        gP = (now - gStart) / G_DUR[gType];
+        if (gP >= 1) { gType = null; gP = -1; }
+      }
+
+      // ── Голова: дыхание + покачивание + наклон эмоции + кивок ──
       const breathe = Math.sin(t * 1.6) * 1.6;
       const sway = Math.sin(t * 0.9) * 1.4;
       // подпрыгивание для happy/idea
       const wantBob = emoRef.current === "happy" || emoRef.current === "idea";
       bob = lerp(bob, wantBob ? 1 : 0, 0.12);
       const jump = wantBob ? Math.abs(Math.sin(t * 6)) * 5 * bob : 0;
+      // кивок: голова опускается и возвращается (полтора качка)
+      const nod = gType === "nod" ? Math.sin(gP * Math.PI * 1.5) * 9 : 0;
       if (headRef.current) {
         headRef.current.setAttribute(
           "transform",
-          `translate(${sway} ${breathe - jump}) rotate(${cur.headTilt} 100 100)`
+          `translate(${sway} ${breathe - jump + nod}) rotate(${cur.headTilt} 100 100)`
         );
       }
 
@@ -124,6 +158,12 @@ export default function KsushaCharacter({
       }
       const open = Math.max(0.04, cur.eyeOpen * blink);
 
+      // ── Подмигивание: закрывается только правый глаз ──
+      // 0→1→0 за время жеста, плавно через синус
+      const winkClose = gType === "wink" ? Math.sin(gP * Math.PI) : 0;
+      const openL = open;
+      const openR = Math.max(0.04, open * (1 - winkClose));
+
       // ── Взгляд ──
       if (now >= nextGaze) {
         const thinking = emoRef.current === "thinking";
@@ -135,8 +175,8 @@ export default function KsushaCharacter({
       gy = lerp(gy, gty, 0.18);
 
       // ── Веки (масштаб глаза по вертикали) ──
-      if (lEye.current) lEye.current.setAttribute("transform", `translate(${100 - EYE_DX} ${EYE_Y}) scale(1 ${open}) translate(${-(100 - EYE_DX)} ${-EYE_Y})`);
-      if (rEye.current) rEye.current.setAttribute("transform", `translate(${100 + EYE_DX} ${EYE_Y}) scale(1 ${open}) translate(${-(100 + EYE_DX)} ${-EYE_Y})`);
+      if (lEye.current) lEye.current.setAttribute("transform", `translate(${100 - EYE_DX} ${EYE_Y}) scale(1 ${openL}) translate(${-(100 - EYE_DX)} ${-EYE_Y})`);
+      if (rEye.current) rEye.current.setAttribute("transform", `translate(${100 + EYE_DX} ${EYE_Y}) scale(1 ${openR}) translate(${-(100 + EYE_DX)} ${-EYE_Y})`);
 
       // зрачки следуют за взглядом
       const pyd = gy * (open > 0.3 ? 1 : 0);
@@ -190,7 +230,9 @@ export default function KsushaCharacter({
         const my = MOUTH_Y;
         const w = 22;
         const o = mouthSmooth * 20;          // высота раскрытия
-        const sm = cur.smile * 9;            // улыбка/грусть
+        // улыбка/грусть + хитринка при подмигивании + тёплая улыбка при кивке
+        const gestureSmile = winkClose * 4 + (gType === "nod" ? Math.sin(gP * Math.PI) * 3 : 0);
+        const sm = cur.smile * 9 + gestureSmile;
         // углы рта поднимаются при улыбке
         const lx = cx - w, rx = cx + w;
         const cy = my - sm;
@@ -227,17 +269,32 @@ export default function KsushaCharacter({
           <stop offset="100%" stopColor="#ffcfae" />
         </radialGradient>
         <linearGradient id="ks-hair" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8b5a2b" />
-          <stop offset="100%" stopColor="#6f4420" />
+          <stop offset="0%" stopColor="#b5731f" />
+          <stop offset="55%" stopColor="#9a5a18" />
+          <stop offset="100%" stopColor="#7c4512" />
         </linearGradient>
         <linearGradient id="ks-bg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#fff4e0" />
           <stop offset="100%" stopColor="#ffe0c2" />
         </linearGradient>
+        {/* Фирменный янтарно-оранжевый — одежда и бант */}
+        <linearGradient id="ks-brand" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#f97316" />
+        </linearGradient>
       </defs>
 
       {/* фон-кружок */}
       <circle cx="100" cy="100" r="100" fill="url(#ks-bg)" />
+
+      {/* Одежда/плечи в фирменном цвете — не качается с головой */}
+      <g>
+        <path d="M48 200 C48 168 70 156 100 156 C130 156 152 168 152 200 Z" fill="url(#ks-brand)" />
+        {/* воротник */}
+        <path d="M88 158 L100 172 L112 158 L106 154 L100 162 L94 154 Z" fill="#fff" opacity="0.85" />
+        {/* пуговка-звёздочка */}
+        <circle cx="100" cy="184" r="4" fill="#fff" opacity="0.9" />
+      </g>
 
       <g ref={headRef}>
         {/* задние волосы */}
@@ -258,11 +315,11 @@ export default function KsushaCharacter({
         <path d="M52 86 C60 64 84 60 100 62 C90 70 74 74 64 92 C58 92 54 90 52 86 Z" fill="url(#ks-hair)" opacity="0.9" />
         <path d="M148 86 C140 64 116 60 100 62 C110 70 126 74 136 92 C142 92 146 90 148 86 Z" fill="url(#ks-hair)" opacity="0.9" />
 
-        {/* бантик */}
+        {/* бантик — фирменный янтарно-оранжевый */}
         <g>
-          <path d="M138 60 l16 -9 0 18 z" fill="#ff5d8f" />
-          <path d="M154 60 l16 -9 0 18 z" fill="#ff5d8f" />
-          <circle cx="154" cy="60" r="5" fill="#ff86ad" />
+          <path d="M138 60 l16 -9 0 18 z" fill="url(#ks-brand)" />
+          <path d="M154 60 l16 -9 0 18 z" fill="url(#ks-brand)" />
+          <circle cx="154" cy="60" r="5.5" fill="#fcd34d" />
         </g>
 
         {/* щёки */}

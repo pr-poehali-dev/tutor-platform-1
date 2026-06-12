@@ -62,6 +62,8 @@ export default function PoznavashkaGame({
   const [showHint, setShowHint] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [earnedZnaiki, setEarnedZnaiki] = useState(0);
+  // Одноразовый жест Ксюши (подмигнуть/кивнуть). id обновляем при каждом запуске.
+  const [gesture, setGesture] = useState<{ type: "wink" | "nod"; id: number }>();
 
   const startWorld = (w: PoznavashkaWorld) => {
     setWorld(w);
@@ -85,6 +87,8 @@ export default function PoznavashkaGame({
       setCorrectCount((c) => c + 1);
       setEarnedZnaiki((z) => z + ZNAIKI_PER_CORRECT);
       chirp("Оп-па!", 0.85);
+      // Ксюша одобрительно подмигивает за правильный ответ
+      setGesture({ type: "wink", id: Date.now() });
     } else {
       setVerdict("wrong");
       chirp("Хм-м-м", 0.55);
@@ -307,6 +311,7 @@ export default function PoznavashkaGame({
             speaking={speaking}
             emotion={qEmotion}
             mouthLevelRef={mouthLevelRef}
+            gesture={gesture}
             onReplay={enabled ? () => speak(question.question) : undefined}
           />
         </div>

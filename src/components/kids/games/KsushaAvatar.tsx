@@ -1,6 +1,7 @@
-import KsushaCharacter from "./KsushaCharacter";
+import KsushaCharacter, { KsushaGesture } from "./KsushaCharacter";
 
 export type KsushaEmotion = "idle" | "thinking" | "happy" | "idea" | "sad" | "speaking";
+export type { KsushaGesture };
 
 // Пузырёк-эмодзи над головой для наглядной эмоции
 const BADGE: Partial<Record<KsushaEmotion, string>> = {
@@ -23,11 +24,14 @@ export default function KsushaAvatar({
   emotion = "idle",
   size = "md",
   mouthLevelRef,
+  gesture,
 }: {
   emotion?: KsushaEmotion;
   size?: "sm" | "md" | "lg";
   // Живой уровень речи 0..1 для синхронизации рта (из useKsushaVoice)
   mouthLevelRef?: React.MutableRefObject<number>;
+  // Одноразовый жест (подмигнуть/кивнуть). Меняй id, чтобы проиграть снова
+  gesture?: { type: KsushaGesture; id: number };
 }) {
   const dim =
     size === "lg" ? "w-24 h-24" : size === "sm" ? "w-12 h-12" : "w-16 h-16";
@@ -42,6 +46,7 @@ export default function KsushaAvatar({
           emotion={emotion}
           mouthLevelRef={mouthLevelRef}
           speaking={emotion === "speaking"}
+          gesture={gesture}
         />
       </div>
       {badge && (
