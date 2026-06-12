@@ -22,7 +22,7 @@ export interface PoznavashkaWorld {
 }
 
 export const KSUSHA_AVATAR =
-  "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/bd414e9f-28a3-45ca-a1e3-27e06993a99f.png";
+  "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/87a4c173-ed41-4204-8216-2fb7b28f2381.png";
 
 export const ZNAIKI_PER_CORRECT = 5;
 
