@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import KsushaSpeech, { SoundToggle } from "./KsushaSpeech";
 import type { KsushaEmotion } from "./KsushaAvatar";
+import { useKsushaVideos } from "./useKsushaVideos";
 import { GameInfo } from "./gamesData";
 import { useGameLevel } from "./useGameLevel";
 import TicTacToe from "./TicTacToe";
@@ -49,6 +50,7 @@ export default function GamePlay({
   onSay,
   onShowText,
   onChirp,
+  onStopVoice,
   onBack,
   backHref = "/kids/games",
   onReward,
@@ -65,6 +67,8 @@ export default function GamePlay({
   onSay: (text: string) => void;
   onShowText: (text: string) => void;
   onChirp?: (text: string, volume?: number) => void;
+  // Остановить TTS-озвучку (нужно, когда вместо неё играет озвученный ролик)
+  onStopVoice?: () => void;
   onBack: () => void;
   backHref?: string;
   onReward: () => void;
@@ -81,12 +85,32 @@ export default function GamePlay({
   const [gesture, setGesture] = useState<{ type: "wink" | "nod"; id: number }>();
   const timers = useRef<number[]>([]);
 
+  // Готовые «говорящие» ролики Ксюши (с её голосом)
+  const ksushaVideos = useKsushaVideos();
+  // Какой ролик сейчас проигрывается со звуком (null — обычная картинка/TTS)
+  const [activeVideoKey, setActiveVideoKey] = useState<string | null>(null);
+
   const clearTimers = useCallback(() => {
     timers.current.forEach((t) => clearTimeout(t));
     timers.current = [];
   }, []);
 
   useEffect(() => clearTimers, [clearTimers]);
+
+  // Запоминаем реплику, при которой запущен ролик. Когда появляется
+  // СЛЕДУЮЩАЯ новая реплика — гасим видео и возвращаем обычный аватар.
+  const videoBubbleRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (videoBubbleRef.current !== null && bubble !== videoBubbleRef.current) {
+      setActiveVideoKey(null);
+      videoBubbleRef.current = null;
+    }
+     
+  }, [bubble]);
+  useEffect(() => {
+    if (activeVideoKey) videoBubbleRef.current = bubble;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVideoKey]);
 
   // Игра сообщает, что Ксюша "думает" над ходом
   const handleThinking = useCallback(
@@ -120,6 +144,12 @@ export default function GamePlay({
     onChirp?.("Оп-па!", 0.85);
     // Победный подмиг
     setGesture({ type: "wink", id: Date.now() });
+    // Если есть озвученный ролик победы — Ксюша похвалит голосом,
+    // а синтез речи глушим, чтобы голоса не накладывались
+    if (ksushaVideos["great_job"]) {
+      setActiveVideoKey("great_job");
+      onStopVoice?.();
+    }
     onReward();
     if (!adaptive) return;
     const { leveledUp, level: newLevel } = registerWin();
@@ -137,12 +167,26 @@ export default function GamePlay({
   const handleLoss = () => {
     clearTimers();
     setEmotion("sad");
+    // Если есть озвученный ролик поддержки — Ксюша подбодрит голосом
+    if (ksushaVideos["try_more"]) {
+      setActiveVideoKey("try_more");
+      onStopVoice?.();
+    }
     if (adaptive) registerLoss();
   };
 
-  // Эмоция пузыря: приоритет у заданного состояния, иначе — "говорит"/спокойствие
-  const bubbleEmotion: KsushaEmotion =
-    emotion !== "idle" ? emotion : speaking ? "speaking" : "idle";
+  // Активный ролик (с голосом Ксюши) для текущего момента
+  const activeVideo = activeVideoKey ? ksushaVideos[activeVideoKey] : undefined;
+
+  // Эмоция пузыря: приоритет у заданного состояния, иначе — "говорит"/спокойствие.
+  // Пока играет озвученный ролик — держим эмоцию "speaking", чтобы видео шло.
+  const bubbleEmotion: KsushaEmotion = activeVideo
+    ? "speaking"
+    : emotion !== "idle"
+    ? emotion
+    : speaking
+    ? "speaking"
+    : "idle";
 
   return (
     <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-6">
@@ -173,7 +217,23 @@ export default function GamePlay({
           emotion={bubbleEmotion}
           mouthLevelRef={mouthLevelRef}
           gesture={gesture}
-          onReplay={voiceEnabled ? () => onSpeak(bubble) : undefined}
+          videoUrl={activeVideo}
+          videoSound={!!activeVideo}
+          onVideoEnded={() => {
+            setActiveVideoKey(null);
+            videoBubbleRef.current = null;
+          }}
+          onReplay={
+            activeVideo
+              ? () => {
+                  const key = activeVideoKey;
+                  setActiveVideoKey(null);
+                  setTimeout(() => setActiveVideoKey(key), 30);
+                }
+              : voiceEnabled
+              ? () => onSpeak(bubble)
+              : undefined
+          }
         />
       </div>
 

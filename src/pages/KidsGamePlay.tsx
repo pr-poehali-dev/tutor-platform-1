@@ -124,6 +124,7 @@ export default function KidsGamePlay() {
         onSay={say}
         onShowText={showText}
         onChirp={chirp}
+        onStopVoice={stop}
         onBack={() => stop()}
         onReward={handleWin}
         isAuthenticated={isAuthenticated}
