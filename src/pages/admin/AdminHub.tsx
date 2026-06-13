@@ -56,6 +56,7 @@ const SECTIONS: Section[] = [
     items: [
       { label: "Контент курсов", path: "/admin/courses-content", icon: "BookOpen", description: "Редактирование уроков и модулей" },
       { label: "Видео-студия", path: "/admin/video-studio", icon: "Film", description: "Генерация видеоуроков" },
+      { label: "Движок оживления Ксюши", path: "/admin/ksusha-engine", icon: "Sparkles", description: "Генерация говорящих роликов маскота одной кнопкой" },
       { label: "Лаборатория ИИ", path: "/admin/ai-lab", icon: "Atom", description: "Эволюция и обучение моделей" },
       { label: "Лента (модерация)", path: "/admin/feed", icon: "Newspaper", description: "Управление статьями в ленте" },
     ],

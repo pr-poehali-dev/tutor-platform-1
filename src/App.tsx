@@ -79,6 +79,7 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Znaika = lazy(() => import("./pages/Znaika"));
 const Olympiad = lazy(() => import("./pages/Olympiad"));
 const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
+const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
@@ -121,6 +122,7 @@ const App = () => (
                     <Route path="/admin/ads" element={<AdsManager />} />
                     <Route path="/admin/site-health" element={<SiteHealth />} />
                     <Route path="/admin/video-studio" element={<VideoStudio />} />
+                    <Route path="/admin/ksusha-engine" element={<KsushaEngine />} />
                     <Route path="/admin/ai-lab" element={<AIEvolutionLab />} />
                     <Route path="/admin/courses-content" element={<CoursesContent />} />
                     <Route path="/mgu-track" element={<MGUTrack />} />
