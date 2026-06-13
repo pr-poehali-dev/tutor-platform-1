@@ -29,6 +29,8 @@ export default function KsushaAvatar({
   mouthLevelRef,
   gesture,
   videoUrl,
+  videoSound = false,
+  onVideoEnded,
 }: {
   emotion?: KsushaEmotion;
   size?: "sm" | "md" | "lg";
@@ -38,6 +40,10 @@ export default function KsushaAvatar({
   gesture?: { type: KsushaGesture; id: number };
   // Готовый «говорящий» ролик Ксюши (lip-sync). Если задан — играем видео
   videoUrl?: string;
+  // Включить звук ролика (голос Ксюши). По умолчанию выкл (для автоплея-превью)
+  videoSound?: boolean;
+  // Колбэк по окончании ролика (когда звук включён и видео не зациклено)
+  onVideoEnded?: () => void;
 }) {
   const dim =
     size === "lg" ? "w-24 h-24" : size === "sm" ? "w-12 h-12" : "w-16 h-16";
@@ -54,6 +60,7 @@ export default function KsushaAvatar({
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !videoUrl) return;
+    v.muted = !videoSound;
     if (speaking) {
       v.currentTime = 0;
       v.play().catch(() => {});
@@ -61,7 +68,7 @@ export default function KsushaAvatar({
       v.pause();
       v.currentTime = 0;
     }
-  }, [speaking, videoUrl]);
+  }, [speaking, videoUrl, videoSound]);
 
   // Очередь жеста (короткий кивок при смене id)
   const gReq = useRef<number>(0);
@@ -132,10 +139,11 @@ export default function KsushaAvatar({
             ref={videoRef}
             src={videoUrl}
             poster={KSUSHA_AVATAR}
-            muted
+            muted={!videoSound}
             playsInline
-            loop
+            loop={!videoSound}
             preload="auto"
+            onEnded={onVideoEnded}
             className="w-full h-full object-cover scale-[1.06] select-none"
           />
         ) : (

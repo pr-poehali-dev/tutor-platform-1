@@ -11,6 +11,8 @@ export default function KsushaSpeech({
   mouthLevelRef,
   gesture,
   videoUrl,
+  videoSound,
+  onVideoEnded,
 }: {
   text: string;
   size?: "sm" | "md" | "lg";
@@ -23,12 +25,16 @@ export default function KsushaSpeech({
   gesture?: { type: KsushaGesture; id: number };
   // Готовый «говорящий» ролик Ксюши для этой фразы
   videoUrl?: string;
+  // Воспроизводить голос из ролика (со звуком)
+  videoSound?: boolean;
+  // Колбэк по окончании ролика
+  onVideoEnded?: () => void;
 }) {
   // Если эмоция не задана явно — показываем «говорит» во время озвучки, иначе спокойствие
   const emo: KsushaEmotion = emotion ?? (speaking ? "speaking" : "idle");
   return (
     <div className="flex items-end gap-3">
-      <KsushaAvatar emotion={emo} size={size} mouthLevelRef={mouthLevelRef} gesture={gesture} videoUrl={videoUrl} />
+      <KsushaAvatar emotion={emo} size={size} mouthLevelRef={mouthLevelRef} gesture={gesture} videoUrl={videoUrl} videoSound={videoSound} onVideoEnded={onVideoEnded} />
       <div className="relative bg-white text-slate-800 rounded-3xl rounded-bl-md px-5 py-3 pr-12 shadow-xl font-bold text-base md:text-lg leading-snug">
         {text}
         {onReplay && (

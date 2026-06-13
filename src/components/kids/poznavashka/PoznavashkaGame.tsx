@@ -124,13 +124,25 @@ export default function PoznavashkaGame({
   };
 
   const MAP_GREETING = mapGreeting;
+  // Готовый «говорящий» ролик приветствия (с голосом Ксюши)
+  const greetingVideo = ksushaVideos["greeting"];
+  // true — ролик приветствия сейчас проигрывается (со звуком)
+  const [greetingPlaying, setGreetingPlaying] = useState(false);
 
-  // Озвучка приветствия на карте миров
+  // Перезапуск ролика приветствия со звуком (по тапу пользователя)
+  const replayGreeting = () => {
+    setGreetingPlaying(false);
+    setTimeout(() => setGreetingPlaying(true), 30);
+  };
+
+  // Озвучка приветствия на карте миров.
+  // Если есть готовый ролик с голосом — не дублируем синтезом речи.
   useEffect(() => {
-    if (phase === "map") speak(MAP_GREETING);
-    else stop();
+    if (phase === "map") {
+      if (!greetingVideo) speak(MAP_GREETING);
+    } else stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [phase, greetingVideo]);
 
   // Озвучка вопроса при его появлении
   useEffect(() => {
@@ -167,10 +179,18 @@ export default function PoznavashkaGame({
           <KsushaSays
             text={mapGreetingRich}
             size="lg"
-            speaking={speaking}
+            speaking={greetingVideo ? greetingPlaying : speaking}
             mouthLevelRef={mouthLevelRef}
-            videoUrl={ksushaVideos["greeting"]}
-            onReplay={enabled ? () => speak(MAP_GREETING) : undefined}
+            videoUrl={greetingVideo}
+            videoSound={!!greetingVideo}
+            onVideoEnded={() => setGreetingPlaying(false)}
+            onReplay={
+              greetingVideo
+                ? replayGreeting
+                : enabled
+                ? () => speak(MAP_GREETING)
+                : undefined
+            }
           />
         </div>
 
