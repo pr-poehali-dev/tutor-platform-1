@@ -33,6 +33,15 @@
       "path": "/",
       "body": {"action": "generate_lesson_tasks", "subject": "math"},
       "expectedStatus": 400
+    },
+    {
+      "name": "warmup с пустым списком возвращает 200",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "warmup", "items": []},
+      "expectedStatus": 200,
+      "expectedBody": {"warmed": 0},
+      "bodyMatcher": "partial"
     }
   ]
 }

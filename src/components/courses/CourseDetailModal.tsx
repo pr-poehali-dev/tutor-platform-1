@@ -6,6 +6,7 @@ import { getCourseDetail } from "./courseDetailsData";
 import LessonViewerModal from "./LessonViewerModal";
 import ModuleQuizModal from "./ModuleQuizModal";
 import useCourseCurriculum from "@/hooks/useCourseCurriculum";
+import useLessonWarmup from "@/hooks/useLessonWarmup";
 import useCourseProgress, { lessonKey, quizKey } from "@/hooks/useCourseProgress";
 import { SUBJECTS } from "@/components/journey/journeyData";
 import { isPromoActive } from "@/components/promo/dobroConfig";
@@ -56,6 +57,10 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
     description: course?.description,
     format: course?.format,
   }, true);
+
+  // Фоновый прогрев первого превью-урока: пока пользователь читает программу,
+  // урок тихо генерируется и оседает в кэш — открыв его, ученик не ждёт.
+  useLessonWarmup(course?.subject ?? "", course?.grade ?? "", real.lessons, !!course && real.lessons.length > 0);
 
   if (!course) return null;
 

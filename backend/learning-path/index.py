@@ -1057,6 +1057,69 @@ def action_generate_task(subject, topic, difficulty, completed_tasks):
     return data
 
 
+def _map_grade_warmup(g):
+    """Приводит grade курса к тем, что понимает генератор (как на фронте)."""
+    g = str(g or '').strip()
+    if g in ('5-9', '10-11', 'ege'):
+        return g
+    if g in ('oge', '1-4'):
+        return '5-9'
+    if g == 'adult':
+        return '10-11'
+    return '5-9'
+
+
+def action_warmup(body):
+    """Прогрев кэша уроков: заранее генерируем теорию+примеры для списка уроков,
+    чтобы у ученика урок открывался мгновенно (из кэша).
+
+    Принимает items: [{subject, grade, topic, lesson_title}], греет максимум `limit`
+    ещё не закэшированных уроков за один вызов (по умолчанию 1 — чтобы уложиться
+    в таймаут функции, т.к. генерация одного урока ~20с).
+    Возвращает по каждому статус: cached | warmed | error.
+    """
+    items = body.get('items') or []
+    if not isinstance(items, list):
+        items = []
+    limit = int(body.get('limit', 1))
+    difficulty = body.get('difficulty', 'средний')
+
+    results = []
+    warmed = 0
+    for it in items:
+        subject = str(it.get('subject', 'math'))
+        grade = _map_grade_warmup(it.get('grade', '5-9'))
+        topic = str(it.get('topic', '')).strip()
+        lesson_title = str(it.get('lesson_title', '')).strip()
+        if not topic:
+            results.append({'topic': topic, 'status': 'skip', 'reason': 'no_topic'})
+            continue
+
+        # Уже в кэше — пропускаем (быстро, без вызова ИИ)
+        existing = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
+        if existing:
+            results.append({'subject': subject, 'topic': topic, 'status': 'cached'})
+            continue
+
+        # Достигли лимита генераций за этот вызов — остальные оставляем на следующий
+        if warmed >= limit:
+            results.append({'subject': subject, 'topic': topic, 'status': 'pending'})
+            continue
+
+        try:
+            data = action_generate_lesson(subject, topic, grade, difficulty, lesson_title, include_tasks=False)
+            if isinstance(data, dict) and data.get('_error'):
+                results.append({'subject': subject, 'topic': topic, 'status': 'error', 'reason': 'ai_busy'})
+            else:
+                warmed += 1
+                results.append({'subject': subject, 'topic': topic, 'status': 'warmed'})
+        except Exception as e:
+            results.append({'subject': subject, 'topic': topic, 'status': 'error', 'reason': str(e)[:120]})
+
+    pending = sum(1 for r in results if r['status'] == 'pending')
+    return {'warmed': warmed, 'pending': pending, 'results': results}
+
+
 def action_report_task(body):
     """Сохранить жалобу пользователя на некорректную задачу"""
     dsn = os.environ.get('DATABASE_URL', '')
@@ -1221,6 +1284,16 @@ def handler(event, context):
                     for k, v in SUBJECT_TOPICS.items()
                 ]
             }
+
+        elif action == 'warmup':
+            try:
+                result = action_warmup(body)
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': {'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': str(e)}, ensure_ascii=False),
+                }
 
         elif action == 'report_task':
             try:

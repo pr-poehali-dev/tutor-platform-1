@@ -280,7 +280,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
             <LessonLoadingProgress
               topic={topic}
               accent={accent}
-              estimateSeconds={12}
+              estimateSeconds={18}
             />
           )}
 
