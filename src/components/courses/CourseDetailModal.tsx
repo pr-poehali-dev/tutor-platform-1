@@ -13,6 +13,7 @@ import CourseDetailHeader from "./detail/CourseDetailHeader";
 import CourseDetailAbout from "./detail/CourseDetailAbout";
 import CourseDetailProgram from "./detail/CourseDetailProgram";
 import CourseDetailReviews from "./detail/CourseDetailReviews";
+import CourseDetailMaterials from "./detail/CourseDetailMaterials";
 import CourseDetailFooter from "./detail/CourseDetailFooter";
 
 interface Props {
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
-  const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about">("about");
+  const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about" | "materials">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
   const [openLesson, setOpenLesson] = useState<{ title: string; topic: string; moduleId: number; num: number } | null>(null);
   const [openQuiz, setOpenQuiz] = useState<{ moduleId: number; title: string; topics: string[] } | null>(null);
@@ -108,6 +109,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
             {[
               { id: "about", label: "О курсе", icon: "Info" },
               { id: "program", label: "Программа", icon: "ListChecks" },
+              { id: "materials", label: "Материалы", icon: "Files" },
               { id: "reviews", label: "Отзывы", icon: "MessageSquare" },
             ].map(t => (
               <button
@@ -145,6 +147,11 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
               getQuiz={progress.getQuiz}
               setOpenQuiz={setOpenQuiz}
             />
+          )}
+
+          {/* Materials tab */}
+          {activeTab === "materials" && (
+            <CourseDetailMaterials course={course} />
           )}
 
           {/* Reviews tab */}
