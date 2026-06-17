@@ -20,6 +20,20 @@ export function buildShareMessage(url: string, title: string, summary = ""): str
   return `${buildShareText(title, summary)}\n\n${url}`;
 }
 
+/**
+ * Приводит URL к ASCII (punycode-домен): https://учисьпро.рф/… → https://xn--h1agdcde2c.xn--p1ai/…
+ * Нужно для соцсетей-парсеров (ВКонтакте, Одноклассники, X), которые не понимают
+ * кириллический домен и из-за этого открывают свою ленту вместо окна «Поделиться».
+ * Браузерный URL сам кодирует домен в punycode.
+ */
+export function toAsciiUrl(url: string): string {
+  try {
+    return new URL(url).href;
+  } catch {
+    return url;
+  }
+}
+
 export const SHARE_TARGETS: ShareTarget[] = [
   {
     name: "Telegram",
@@ -31,7 +45,7 @@ export const SHARE_TARGETS: ShareTarget[] = [
     name: "ВКонтакте",
     icon: "Share2",
     color: "hover:bg-[#0077FF]/20 hover:border-[#0077FF]/40 hover:text-[#6aa8ff]",
-    build: (u) => `https://vk.com/share.php?url=${encodeURIComponent(u)}`,
+    build: (u) => `https://vk.com/share.php?url=${encodeURIComponent(toAsciiUrl(u))}`,
   },
   {
     name: "WhatsApp",
@@ -44,19 +58,19 @@ export const SHARE_TARGETS: ShareTarget[] = [
     icon: "Users",
     color: "hover:bg-[#EE8208]/20 hover:border-[#EE8208]/40 hover:text-[#ffae5c]",
     build: (u, t, s) =>
-      `https://connect.ok.ru/offer?url=${encodeURIComponent(u)}&title=${encodeURIComponent(buildShareText(t, s))}`,
+      `https://connect.ok.ru/offer?url=${encodeURIComponent(toAsciiUrl(u))}&title=${encodeURIComponent(buildShareText(t, s))}`,
   },
   {
     name: "TenChat",
     icon: "Briefcase",
     color: "hover:bg-[#2B5CE6]/20 hover:border-[#2B5CE6]/40 hover:text-[#7d9bff]",
-    build: (u) => `https://tenchat.ru/?share=${encodeURIComponent(u)}`,
+    build: (u) => `https://tenchat.ru/?share=${encodeURIComponent(toAsciiUrl(u))}`,
   },
   {
     name: "Twitter / X",
     icon: "Twitter",
     color: "hover:bg-white/15 hover:border-white/30 hover:text-white",
-    build: (u, t, s) => `https://x.com/intent/tweet?url=${encodeURIComponent(u)}&text=${encodeURIComponent(buildShareText(t, s))}`,
+    build: (u, t, s) => `https://x.com/intent/tweet?url=${encodeURIComponent(toAsciiUrl(u))}&text=${encodeURIComponent(buildShareText(t, s))}`,
   },
 ];
 
