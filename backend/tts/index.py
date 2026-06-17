@@ -364,6 +364,33 @@ VOICE_MAP = {
         'speed': '0.95',
         'pitch_shift': 0,
     },
+    # ─── Психологическая помощь: Ксюша — мягкий, тёплый, спокойный голос ───
+    # alena + friendly даёт самую тёплую женскую интонацию. Речь чуть замедлена
+    # (0.94–0.97) — спокойно, бережно, без спешки, чтобы человеку было уютно.
+    'psy_parent': {
+        'voice': 'alena',
+        'role': 'friendly',
+        'speed': '0.96',
+        'pitch_shift': 0,
+    },
+    'psy_teen': {
+        'voice': 'alena',
+        'role': 'friendly',
+        'speed': '0.98',  # чуть живее — на равных с подростком
+        'pitch_shift': 0,
+    },
+    'psy_veteran': {
+        'voice': 'alena',
+        'role': 'friendly',
+        'speed': '0.93',  # медленнее и спокойнее — максимально бережно
+        'pitch_shift': 0,
+    },
+    'psy_self': {
+        'voice': 'alena',
+        'role': 'friendly',
+        'speed': '0.96',
+        'pitch_shift': 0,
+    },
     # Няня Лиса поёт нараспев — мягко и медленно, но без коверканья речи
     'fox_song': {
         'voice': 'alena',

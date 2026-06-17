@@ -166,10 +166,13 @@ export default function Psychology() {
 
           {/* Живой чат-помощник */}
           <div>
-            <h2 className="font-montserrat font-bold text-xl text-white flex items-center gap-2 mb-4">
+            <h2 className="font-montserrat font-bold text-xl text-white flex items-center gap-2 mb-2">
               <Icon name="MessageCircleHeart" size={20} className="text-white/60" />
               Поговорить с помощником
             </h2>
+            <p className="text-white/50 text-sm mb-4 flex items-center gap-1.5">
+              <Icon name="Mic" size={13} /> Можно писать или говорить голосом — Ксюша ответит мягким голосом
+            </p>
             <PsyChat section={active} />
           </div>
         </div>

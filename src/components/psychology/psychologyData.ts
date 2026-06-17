@@ -1,6 +1,7 @@
 import func2url from "../../../backend/func2url.json";
 
 export const AI_CHAT_URL = (func2url as Record<string, string>)["ai-chat"];
+export const TTS_URL = (func2url as Record<string, string>)["tts"];
 
 export interface PsyScenario {
   /** Заголовок типовой ситуации */
