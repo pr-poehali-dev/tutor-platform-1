@@ -31,8 +31,7 @@ export const SHARE_TARGETS: ShareTarget[] = [
     name: "ВКонтакте",
     icon: "Share2",
     color: "hover:bg-[#0077FF]/20 hover:border-[#0077FF]/40 hover:text-[#6aa8ff]",
-    build: (u, t, s) =>
-      `https://vk.com/share.php?url=${encodeURIComponent(u)}&title=${encodeURIComponent(t)}&comment=${encodeURIComponent(s || "")}`,
+    build: (u) => `https://vk.com/share.php?url=${encodeURIComponent(u)}`,
   },
   {
     name: "WhatsApp",
@@ -51,14 +50,13 @@ export const SHARE_TARGETS: ShareTarget[] = [
     name: "TenChat",
     icon: "Briefcase",
     color: "hover:bg-[#2B5CE6]/20 hover:border-[#2B5CE6]/40 hover:text-[#7d9bff]",
-    build: (u, t, s) =>
-      `https://tenchat.ru/share?url=${encodeURIComponent(u)}&title=${encodeURIComponent(t)}&text=${encodeURIComponent(s || "")}`,
+    build: (u) => `https://tenchat.ru/?share=${encodeURIComponent(u)}`,
   },
   {
     name: "Twitter / X",
     icon: "Twitter",
     color: "hover:bg-white/15 hover:border-white/30 hover:text-white",
-    build: (u, t, s) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(u)}&text=${encodeURIComponent(buildShareText(t, s))}`,
+    build: (u, t, s) => `https://x.com/intent/tweet?url=${encodeURIComponent(u)}&text=${encodeURIComponent(buildShareText(t, s))}`,
   },
 ];
 
@@ -67,7 +65,8 @@ export function openShare(target: ShareTarget, url: string, title: string, summa
   window.open(link, "_blank", "noopener,noreferrer,width=640,height=560");
 }
 
-export const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+// Кириллический домен — в соцсетях выглядит понятно и вызывает доверие.
+export const SITE_URL = "https://учисьпро.рф";
 
 export function articleUrl(slug: string): string {
   return `${SITE_URL}/feed/${slug}`;

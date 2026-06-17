@@ -8,8 +8,7 @@ import { fetchArticle, fetchFeed } from "@/components/feed/api";
 import { FeedArticle as FeedArticleType, CATEGORY_META } from "@/components/feed/types";
 import ArticleCard from "@/components/feed/ArticleCard";
 import ShareButtons from "@/components/feed/ShareButtons";
-
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+import { articleUrl } from "@/components/feed/shareTargets";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "";
@@ -95,7 +94,7 @@ export default function FeedArticlePage() {
       },
       publisher: { "@type": "Organization", name: "УЧИСЬПРО" },
       image: article.cover_url || undefined,
-      mainEntityOfPage: `${SITE_URL}/feed/${article.slug}`,
+      mainEntityOfPage: articleUrl(article.slug),
       inLanguage: "ru",
       articleSection: meta.label,
     },
@@ -106,7 +105,7 @@ export default function FeedArticlePage() {
       <Seo
         title={`${article.title} | Лента УЧИСЬПРО`}
         description={article.summary || article.title}
-        canonical={`${SITE_URL}/feed/${article.slug}`}
+        canonical={articleUrl(article.slug)}
         image={article.cover_url || undefined}
         jsonLd={jsonLd}
       />
@@ -240,7 +239,7 @@ export default function FeedArticlePage() {
 
         {/* Поделиться */}
         <ShareButtons
-          url={`${SITE_URL}/feed/${article.slug}`}
+          url={articleUrl(article.slug)}
           title={article.title}
           summary={article.summary}
         />

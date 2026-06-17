@@ -65,7 +65,7 @@ export default function ShareButtons({ url, title, summary = "" }: Props) {
             aria-label="Поделиться через другие приложения"
             className="flex items-center gap-2 bg-white/[0.04] border border-white/10 text-white/70 text-xs font-bold px-3 h-9 rounded-xl transition-all hover:bg-white/15 hover:border-white/30 hover:text-white"
           >
-            <Icon name="MoreHorizontal" size={15} />
+            <Icon name="Ellipsis" size={15} />
             <span className="hidden sm:inline">Ещё</span>
           </button>
         )}
