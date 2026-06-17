@@ -23,11 +23,16 @@ const mapGrade = (g: string): string => {
 // Чтобы не греть один и тот же урок повторно в рамках сессии.
 const warmedKeys = new Set<string>();
 
+// Сколько первых уроков прогреваем заранее (открытие станет почти мгновенным).
+const WARMUP_COUNT = 6;
+
 /**
- * Фоновый «прогрев» урока: пока пользователь читает программу курса,
- * тихо запускаем генерацию первого превью-урока, чтобы он осел в кэш.
+ * Фоновый «прогрев» уроков: пока пользователь читает программу курса,
+ * тихо генерируем первые несколько уроков, чтобы они осели в кэш.
  * Когда ученик откроет урок — материал придёт почти мгновенно.
  *
+ * Греем уроки ПОСЛЕДОВАТЕЛЬНО (по одному за запрос, с паузой), чтобы не
+ * перегружать бэкенд: генерация одного урока ~20с, поэтому шлём по очереди.
  * Полностью бесшумный: без UI, без влияния на интерфейс. Ошибки игнорируются.
  */
 export default function useLessonWarmup(
@@ -42,21 +47,33 @@ export default function useLessonWarmup(
     if (!enabled || startedRef.current) return;
     if (!lessons || lessons.length === 0) return;
 
-    // Берём первый превью-урок, иначе — первый урок программы.
-    const target = lessons.find((l) => l.is_preview) || lessons[0];
-    const topic = target?.topics?.[0] || target?.lesson_title;
-    if (!topic) return;
-
     const subj = mapSubject(subject);
     const gr = mapGrade(grade);
-    const key = `${subj}|${gr}|${topic}|${target.lesson_title}`;
-    if (warmedKeys.has(key)) return;
 
-    warmedKeys.add(key);
+    // Превью-уроки в начало (они доступны без оплаты — их откроют первыми),
+    // затем остальные по порядку. Берём первые WARMUP_COUNT уникальных.
+    const ordered = [...lessons].sort(
+      (a, b) => Number(!!b.is_preview) - Number(!!a.is_preview),
+    );
+    const targets: { topic: string; lesson_title: string }[] = [];
+    for (const l of ordered) {
+      const topic = l?.topics?.[0] || l?.lesson_title;
+      if (!topic) continue;
+      const key = `${subj}|${gr}|${topic}|${l.lesson_title}`;
+      if (warmedKeys.has(key)) continue;
+      warmedKeys.add(key);
+      targets.push({ topic, lesson_title: l.lesson_title });
+      if (targets.length >= WARMUP_COUNT) break;
+    }
+    if (targets.length === 0) return;
+
     startedRef.current = true;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    // Небольшая задержка — не мешаем загрузке основной страницы.
-    const timer = setTimeout(() => {
+    const warmOne = (idx: number) => {
+      if (cancelled || idx >= targets.length) return;
+      const t = targets[idx];
       const controller = new AbortController();
       const abort = setTimeout(() => controller.abort(), 50000);
       fetch(LEARNING_PATH_URL, {
@@ -65,19 +82,29 @@ export default function useLessonWarmup(
         body: JSON.stringify({
           action: "warmup",
           limit: 1,
-          items: [
-            { subject: subj, grade: gr, topic, lesson_title: target.lesson_title },
-          ],
+          items: [{ subject: subj, grade: gr, topic: t.topic, lesson_title: t.lesson_title }],
         }),
         signal: controller.signal,
       })
         .catch(() => {
-          // тихо — это фоновая оптимизация, ошибки не важны
-          warmedKeys.delete(key);
+          // тихо — это фоновая оптимизация
+          warmedKeys.delete(`${subj}|${gr}|${t.topic}|${t.lesson_title}`);
         })
-        .finally(() => clearTimeout(abort));
-    }, 1500);
+        .finally(() => {
+          clearTimeout(abort);
+          if (!cancelled) {
+            // следующий урок — после паузы, чтобы не нагружать бэкенд
+            timers.push(setTimeout(() => warmOne(idx + 1), 1200));
+          }
+        });
+    };
 
-    return () => clearTimeout(timer);
+    // Небольшая стартовая задержка — не мешаем загрузке основной страницы.
+    timers.push(setTimeout(() => warmOne(0), 1500));
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
   }, [enabled, subject, grade, lessons]);
 }
