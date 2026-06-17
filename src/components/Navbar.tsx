@@ -19,6 +19,7 @@ const NAV_LINKS = [
   { label: "ОГЭ и ЕГЭ",    short: "ЕГЭ",     icon: "GraduationCap",  path: "/exam-bank" },
   { label: "Познай себя",  short: "Тест",    icon: "Compass",        path: "/know-yourself" },
   { label: "Выпускник",    short: "ВУЗы",    icon: "Award",          path: "/graduate" },
+  { label: "Психологу",    short: "Психо",   icon: "HeartHandshake", path: "/psychology" },
 ];
 
 interface NavbarProps {

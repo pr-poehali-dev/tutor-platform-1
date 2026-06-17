@@ -84,6 +84,7 @@ const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
+const Psychology = lazy(() => import("./pages/Psychology"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -138,6 +139,7 @@ const App = () => (
                     <Route path="/graduate/prep/:subject/:universityId/:facultyId" element={<GraduatePrep />} />
                     <Route path="/know-yourself" element={<KnowYourself />} />
                     <Route path="/know-yourself/result" element={<KnowYourselfResult />} />
+                    <Route path="/psychology" element={<Psychology />} />
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />
