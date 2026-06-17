@@ -61,7 +61,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
           </Link>
 
           {/* На md показываем только иконки, на lg — короткие подписи, на xl — полные */}
-          <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center min-w-0 flex-nowrap overflow-hidden">
+          <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center min-w-0 flex-nowrap">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.section}
