@@ -58,13 +58,36 @@ export default function ExamBank() {
         description="Большая база заданий ОГЭ и ЕГЭ за 2020-2025 годы по математике, русскому, физике, информатике и обществознанию. Пошаговые решения, теория и типичные ошибки."
         canonical="https://xn--h1agdcde2c.xn--p1ai/exam-bank"
         keywords="ОГЭ, ЕГЭ, задания, разбор, 2024, 2025, математика, русский, физика, информатика, обществознание"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Главная", item: "https://учисьпро.рф/" },
+              { "@type": "ListItem", position: 2, name: "Сборник заданий ОГЭ и ЕГЭ", item: "https://учисьпро.рф/exam-bank" },
+            ],
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "LearningResource",
+            name: "Сборник заданий ОГЭ и ЕГЭ 2020–2025 с разбором",
+            description:
+              "База реальных заданий ОГЭ и ЕГЭ по математике, русскому, физике, информатике и обществознанию с пошаговыми решениями и теорией.",
+            educationalLevel: "ОГЭ, ЕГЭ",
+            learningResourceType: "Сборник заданий с решениями",
+            inLanguage: "ru",
+            isAccessibleForFree: true,
+            provider: { "@type": "Organization", name: "УЧИСЬПРО", url: "https://учисьпро.рф" },
+            about: SUBJECTS.map((s) => s.name),
+          },
+        ]}
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Breadcrumbs
           items={[
-            { name: "Главная", url: "/" },
-            { name: "Сборник заданий ОГЭ и ЕГЭ", url: "/exam-bank" },
+            { label: "Главная", href: "/" },
+            { label: "Сборник заданий ОГЭ и ЕГЭ", href: "/exam-bank" },
           ]}
         />
 

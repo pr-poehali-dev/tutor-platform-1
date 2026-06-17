@@ -86,13 +86,22 @@ export default function FeedArticlePage() {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: article.title,
+      description: article.summary || article.title,
       datePublished: article.published_at,
+      dateModified: article.published_at || article.created_at,
       dateCreated: article.created_at,
       author: {
         "@type": article.source_kind === "user" ? "Person" : "Organization",
         name: article.author_display_name || article.source_name || "УЧИСЬПРО",
       },
-      publisher: { "@type": "Organization", name: "УЧИСЬПРО" },
+      publisher: {
+        "@type": "Organization",
+        name: "УЧИСЬПРО",
+        logo: {
+          "@type": "ImageObject",
+          url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg",
+        },
+      },
       image: article.cover_url || undefined,
       mainEntityOfPage: articleUrl(article.slug),
       inLanguage: "ru",
@@ -107,6 +116,14 @@ export default function FeedArticlePage() {
         description={article.summary || article.title}
         canonical={articleUrl(article.slug)}
         image={article.cover_url || undefined}
+        type="article"
+        article={{
+          publishedTime: article.published_at,
+          modifiedTime: article.published_at,
+          author: article.author_display_name || article.source_name || "УЧИСЬПРО",
+          section: meta.label,
+          tags: article.tags,
+        }}
         jsonLd={jsonLd}
       />
 

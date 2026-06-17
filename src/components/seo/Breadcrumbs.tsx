@@ -12,7 +12,13 @@ interface Props {
   className?: string;
 }
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
+
+/** Полный абсолютный URL для крошки (для JSON-LD item) */
+function absUrl(href?: string): string {
+  if (!href) return "";
+  return href.startsWith("http") ? href : `${SITE_URL}${href}`;
+}
 
 /**
  * Хлебные крошки + автоматический BreadcrumbList в JSON-LD для Google/Яндекс.
@@ -28,7 +34,8 @@ export default function Breadcrumbs({ items, className = "" }: Props) {
       "@type": "ListItem",
       position: i + 1,
       name: c.label,
-      ...(c.href ? { item: c.href.startsWith("http") ? c.href : `${SITE_URL}${c.href}` } : {}),
+      // item указываем у всех элементов (Google рекомендует, в т.ч. для последнего)
+      ...(c.href ? { item: absUrl(c.href) } : {}),
     })),
   };
 

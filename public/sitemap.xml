@@ -349,4 +349,53 @@
     <priority>0.85</priority>
   </url>
 
+  <!-- Психологическая помощь онлайн (бесплатно, без регистрации) -->
+  <url>
+    <loc>https://учисьпро.рф/psychology</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/6745f0fb-9a72-4462-8ff8-26de14d1f8d9.jpg</image:loc>
+      <image:title>Психологическая помощь онлайн: родителям, подросткам, участникам СВО и близким</image:title>
+    </image:image>
+  </url>
+
+  <!-- Олимпиада с призами -->
+  <url>
+    <loc>https://учисьпро.рф/olympiad</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Новые курсы 2026: ИИ-направления для взрослых -->
+  <url><loc>https://учисьпро.рф/courses/prompteng</loc><lastmod>2026-06-17</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/courses/neuroincome</loc><lastmod>2026-06-17</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/63</loc><lastmod>2026-06-17</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/64</loc><lastmod>2026-06-17</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://учисьпро.рф/course-checkout/65</loc><lastmod>2026-06-17</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+
+  <!-- Новые статьи Ленты -->
+  <url>
+    <loc>https://учисьпро.рф/feed/besplatnyy-kurs-neyroseti-s-nulya-ot-pervogo-prompta-do-svoego-proekta</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/1df1d3ba-e686-49f5-8f29-e7cbcb102d94.jpg</image:loc>
+      <image:title>Бесплатный курс «Нейросети с нуля»</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://учисьпро.рф/feed/besplatnaya-psihologicheskaya-pomoshch-onlayn-vy-ne-odni</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/6745f0fb-9a72-4462-8ff8-26de14d1f8d9.jpg</image:loc>
+      <image:title>Бесплатная психологическая помощь онлайн</image:title>
+    </image:image>
+  </url>
+
 </urlset>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import PsyChat from "@/components/psychology/PsyChat";
 import { PSY_SECTIONS, PSY_EMERGENCY } from "@/components/psychology/psychologyData";
@@ -46,6 +47,16 @@ const PSY_FAQ = [
   },
 ];
 
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: PSY_FAQ.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 export default function Psychology() {
   const [activeSlug, setActiveSlug] = useState(PSY_SECTIONS[0].slug);
   const active = PSY_SECTIONS.find((s) => s.slug === activeSlug) || PSY_SECTIONS[0];
@@ -57,7 +68,7 @@ export default function Psychology() {
         description="Бесплатный ИИ-помощник психолог и наставник без регистрации. Поддержка для родителей, школьников и подростков, участников СВО и их близких. Помощь при тревоге, выгорании, стрессе и одиночестве — бережно и конфиденциально."
         canonical={CANONICAL}
         keywords="психологическая помощь онлайн, бесплатный психолог, помощь подростку, помощь родителям, психолог для участников СВО, поддержка при тревоге, выгорание, телефон доверия"
-        jsonLd={JSON_LD}
+        jsonLd={[...JSON_LD, FAQ_JSON_LD]}
       />
 
       {/* Простой топ */}
@@ -73,8 +84,18 @@ export default function Psychology() {
         </div>
       </header>
 
+      {/* Хлебные крошки */}
+      <div className="max-w-4xl mx-auto px-5 md:px-8 pt-4">
+        <Breadcrumbs
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Психологическая помощь" },
+          ]}
+        />
+      </div>
+
       {/* Герой */}
-      <section className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-10 pb-4 text-center">
+      <section className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-6 pb-4 text-center">
         <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/25 rounded-full px-3 py-1 mb-4">
           <Icon name="HeartHandshake" size={14} className="text-emerald-300" />
           <span className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Бесплатно · без регистрации</span>
