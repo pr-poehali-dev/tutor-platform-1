@@ -6,6 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 
 const SITE_URL = "https://учисьпро.рф";
 const CANONICAL = `${SITE_URL}/kids/about`;
+const COVER = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/c663289c-23ff-46f7-83c5-57ebe0279244.jpg";
 
 const SECTIONS = [
   {
@@ -102,6 +103,7 @@ export default function KidsAbout() {
         "Что такое модуль «Малыш» в УЧИСЬПРО: чтение, логика, игры, песни, библиотека из 30 озвученных произведений и народная культура. Развитие ребёнка через игру с няней-Лисой и Ксюшей.",
       inLanguage: "ru",
       url: CANONICAL,
+      image: COVER,
       author: { "@type": "Organization", name: "УЧИСЬПРО" },
       publisher: { "@type": "Organization", name: "УЧИСЬПРО" },
     },
@@ -113,6 +115,7 @@ export default function KidsAbout() {
         title="Модуль «Малыш» — развивающие занятия для детей от 1 до 6 лет | УЧИСЬПРО"
         description="«Малыш» — это чтение, логика, игры, песни, библиотека из 30 озвученных сказок и народная культура. Развитие ребёнка от 2 лет и школьников 6+ через игру. Безопасно, тепло, бесплатно."
         canonical={CANONICAL}
+        image={COVER}
         type="article"
         keywords="развитие детей от 2 лет, занятия для малышей, подготовка к школе, аудиосказки для детей, учим читать дошкольника, развивающие игры для детей, модуль малыш учисьпро"
         jsonLd={jsonLd}
@@ -166,6 +169,24 @@ export default function KidsAbout() {
           добрая Лиса-няня и умная Ксюша. Они читают сказки, поют песенки, играют в умные игры и потихоньку,
           без скуки и принуждения, готовят малыша к школе и к жизни.
         </p>
+
+        {/* Обложка */}
+        <figure className="relative mb-8 rounded-3xl overflow-hidden border border-white/12 shadow-2xl shadow-pink-500/20">
+          <img
+            src={COVER}
+            alt="Лиса-няня читает сказку малышам в уютной детской — модуль «Малыш» УЧИСЬПРО"
+            loading="eager"
+            decoding="async"
+            width={1024}
+            height={1024}
+            className="w-full aspect-[16/10] object-cover"
+          />
+          <figcaption className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-5 py-3">
+            <span className="text-white/85 text-xs md:text-sm font-medium">
+              Лиса-няня читает сказки, поёт песенки и играет с малышами
+            </span>
+          </figcaption>
+        </figure>
 
         <div className="flex flex-wrap gap-3 mb-12">
           <Link

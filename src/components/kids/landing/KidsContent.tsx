@@ -12,9 +12,15 @@ export default function KidsContent() {
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
         <Link
           to="/kids/about"
-          className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 px-4 py-3 transition-all"
+          className="group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 p-2.5 pr-4 transition-all"
         >
-          <span className="text-2xl flex-shrink-0">🦊</span>
+          <img
+            src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/c663289c-23ff-46f7-83c5-57ebe0279244.jpg"
+            alt="Лиса-няня с малышами"
+            loading="lazy"
+            decoding="async"
+            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+          />
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm">Что такое «Малыш» и как он развивает ребёнка</p>
             <p className="text-white/50 text-xs">Коротко о подходе, разделах и возрастах — для родителей</p>
