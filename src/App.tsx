@@ -59,6 +59,7 @@ const Status = lazy(() => import("./pages/Status"));
 const PromoDobro = lazy(() => import("./pages/PromoDobro"));
 const PromoVideo = lazy(() => import("./pages/PromoVideo"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
+const KidsAbout = lazy(() => import("./pages/KidsAbout"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
 const KidsLibrary = lazy(() => import("./pages/KidsLibrary"));
@@ -154,6 +155,7 @@ const App = () => (
                     <Route path="/promo/dobro" element={<PromoDobro />} />
                     <Route path="/promo/video" element={<PromoVideo />} />
                     <Route path="/kids" element={<KidsLanding />} />
+                    <Route path="/kids/about" element={<KidsAbout />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />
                     <Route path="/kids/library/:id" element={<KidsLibraryItem />} />

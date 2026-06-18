@@ -8,6 +8,21 @@ import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 export default function KidsContent() {
   return (
     <>
+      {/* О модуле — короткая ссылка на статью-лонгрид */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
+        <Link
+          to="/kids/about"
+          className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 px-4 py-3 transition-all"
+        >
+          <span className="text-2xl flex-shrink-0">🦊</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm">Что такое «Малыш» и как он развивает ребёнка</p>
+            <p className="text-white/50 text-xs">Коротко о подходе, разделах и возрастах — для родителей</p>
+          </div>
+          <Icon name="ArrowRight" size={16} className="text-white/40 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+        </Link>
+      </section>
+
       {/* Учусь читать — флагманский бесплатный курс чтения с Ксюшей */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-4">
         <Link
