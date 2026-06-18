@@ -53,10 +53,32 @@ export default function FreeCoursesBlock({ compact = false }: Props) {
         </ul>
 
         {!compact && (
-          <div className="mt-8 flex items-center justify-center gap-2 text-white/45 text-xs">
-            <Icon name="ShieldCheck" size={14} className="text-emerald-400" />
-            Никаких скрытых платежей. Платные курсы — только по желанию, как продолжение.
-          </div>
+          <>
+            {/* Мост к подписке: бесплатное затянуло — предлагаем полный доступ */}
+            <div className="mt-8 rounded-2xl border border-purple-500/30 bg-gradient-to-r from-purple-500/15 to-cyan-500/10 p-5 md:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="font-montserrat font-bold text-white text-base md:text-lg mb-1">
+                  Понравилось? Открой все курсы и ИИ-репетитора
+                </p>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  Полный каталог, персональный маршрут и голосовой репетитор 24/7 — по подписке.
+                  Первые 7 дней без риска, вернём деньги по запросу.
+                </p>
+              </div>
+              <Link
+                to="/pricing"
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-sm px-6 py-3 rounded-2xl hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0"
+              >
+                Смотреть тарифы
+                <Icon name="ArrowRight" size={15} />
+              </Link>
+            </div>
+
+            <div className="mt-5 flex items-center justify-center gap-2 text-white/45 text-xs">
+              <Icon name="ShieldCheck" size={14} className="text-emerald-400" />
+              Никаких скрытых платежей. Платные курсы — только по желанию, как продолжение.
+            </div>
+          </>
         )}
       </div>
     </section>

@@ -24,20 +24,20 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Buy курса во время акции ДОБРО - 409 (бесплатно)",
+      "name": "Buy курса без токена - 401 (требуется вход)",
       "method": "POST",
       "path": "/?action=buy_course",
       "body": {"course_id": 1, "grade": "ege", "return_url": "https://example.com/ok"},
-      "expectedStatus": 409,
+      "expectedStatus": 401,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },
     {
-      "name": "Buy подписки во время акции ДОБРО - 409 (бесплатно)",
+      "name": "Buy подписки без токена - 401 (требуется вход)",
       "method": "POST",
       "path": "/?action=buy_subscription",
       "body": {"plan_id": "pro", "return_url": "https://example.com/ok"},
-      "expectedStatus": 409,
+      "expectedStatus": 401,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
     },

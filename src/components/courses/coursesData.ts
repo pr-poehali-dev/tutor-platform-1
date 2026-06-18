@@ -1990,10 +1990,13 @@ export const GRADE_PRICE: Record<string, number> = {
 };
 
 export function getCoursePrice(course: Course): number {
+  // Бесплатные навсегда курсы стоят 0 — без цены и зачёркивания.
+  if (course.freeForever || isCourseFreeForever(course.id)) return 0;
   return GRADE_PRICE[course.grade] ?? 590;
 }
 
 export function getCoursePriceLabel(course: Course): string {
   const price = getCoursePrice(course);
+  if (price === 0) return "Бесплатно";
   return `${price.toLocaleString("ru-RU")} ₽`;
 }

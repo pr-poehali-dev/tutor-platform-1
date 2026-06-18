@@ -234,18 +234,33 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
         {/* Price + CTA */}
         <div className="mt-auto flex items-center gap-3">
           <div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-montserrat font-black text-xl text-white">
-                {realPrice.toLocaleString("ru-RU")}
-              </span>
-              <span className="text-white text-sm">₽</span>
-            </div>
-            <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
-            <div className="text-white/40 text-xs">за полный курс</div>
-            <div className="flex items-center gap-1 mt-1 text-emerald-400/90 text-[11px] font-medium">
-              <Icon name="ShieldCheck" size={12} />
-              Возврат 7 дней
-            </div>
+            {realPrice === 0 ? (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-montserrat font-black text-xl text-emerald-400">Бесплатно</span>
+                </div>
+                <div className="text-white/40 text-xs">полный доступ навсегда</div>
+                <div className="flex items-center gap-1 mt-1 text-emerald-400/90 text-[11px] font-medium">
+                  <Icon name="Gift" size={12} />
+                  Без оплаты и карты
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-montserrat font-black text-xl text-white">
+                    {realPrice.toLocaleString("ru-RU")}
+                  </span>
+                  <span className="text-white text-sm">₽</span>
+                </div>
+                <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
+                <div className="text-white/40 text-xs">за полный курс</div>
+                <div className="flex items-center gap-1 mt-1 text-emerald-400/90 text-[11px] font-medium">
+                  <Icon name="ShieldCheck" size={12} />
+                  Возврат 7 дней
+                </div>
+              </>
+            )}
           </div>
           <div className="ml-auto flex gap-1.5">
             <button
