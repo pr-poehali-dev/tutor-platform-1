@@ -16,6 +16,7 @@ import {
   DiscountTimer,
   MoneyBackGuarantee,
   TrustBadges,
+  SecurePaymentBadge,
 } from "@/components/courses/CheckoutBoosters";
 
 const DISCOUNT_PERCENT = 15;
@@ -407,6 +408,9 @@ export default function CourseCheckout() {
                     </p>
                   </div>
                 </div>
+
+                {/* Защита платежа ЮKassa + платёжные системы */}
+                <SecurePaymentBadge />
 
                 {error && (
                   <p className="mb-4 text-rose-300 text-sm flex items-center gap-1.5">

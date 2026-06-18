@@ -101,7 +101,6 @@ export default function HeroSection() {
                 alt="Счастливые выпускники с отличными результатами ЕГЭ"
                 loading="eager"
                 decoding="async"
-                fetchPriority="high"
                 width={640}
                 height={640}
                 className="w-full aspect-square object-cover"

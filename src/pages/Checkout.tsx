@@ -269,6 +269,17 @@ export default function Checkout() {
                 </div>
               ))}
             </div>
+            <div className="flex items-center justify-center gap-1.5 flex-wrap mt-4 pt-4 border-t border-white/10">
+              <span className="text-white/40 text-[11px] mr-1">Принимаем:</span>
+              {["Мир", "Visa", "Mastercard", "СБП"].map((m) => (
+                <span
+                  key={m}
+                  className="bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-white/75 text-[11px] font-semibold"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

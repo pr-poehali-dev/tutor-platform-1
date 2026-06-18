@@ -148,6 +148,40 @@ export function MoneyBackGuarantee() {
   );
 }
 
+/** Значок защищённой оплаты ЮKassa + принимаемые платёжные системы. */
+export function SecurePaymentBadge() {
+  const methods = ["Мир", "Visa", "Mastercard", "СБП"];
+  return (
+    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 mb-4">
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+          <Icon name="ShieldCheck" size={18} className="text-emerald-300" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-white text-sm font-bold leading-tight">Оплата защищена ЮKassa</p>
+          <p className="text-white/50 text-[11px] leading-tight mt-0.5">
+            Данные карты шифруются и не хранятся на сайте
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {methods.map((m) => (
+          <span
+            key={m}
+            className="bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-white/75 text-[11px] font-semibold"
+          >
+            {m}
+          </span>
+        ))}
+        <span className="flex items-center gap-1 text-white/45 text-[11px] ml-auto">
+          <Icon name="Lock" size={11} />
+          SSL-шифрование
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /** Маленькие бейджи доверия под кнопкой. */
 export function TrustBadges() {
   const badges = [
