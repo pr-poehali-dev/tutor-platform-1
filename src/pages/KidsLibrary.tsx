@@ -13,6 +13,7 @@ import {
   filterLibrary,
 } from "@/components/kids/libraryData";
 import NannyFox from "@/components/kids/NannyFox";
+import KidsHeroCover from "@/components/kids/KidsHeroCover";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -96,6 +97,15 @@ export default function KidsLibrary() {
         <p className="text-white/65 text-base md:text-lg max-w-2xl mb-6">
           Для малышей от 2 лет и старше: народные сказки, Пушкин, Толстой, Крылов, Ушинский, Жуковский — классика из общественного достояния. Слушайте вместе: тёплый голос Лисы прочтёт каждый фрагмент.
         </p>
+
+        <div className="max-w-3xl mb-7">
+          <KidsHeroCover
+            src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/1bfa35eb-730d-47ca-a661-4971a2b0745f.jpg"
+            alt="Лиса читает сказки детям, герои сказок оживают над книгой"
+            caption="30 произведений с тёплой озвучкой — слушайте вместе"
+            glow="shadow-pink-500/20"
+          />
+        </div>
 
         {/* Поиск */}
         <div className="relative mb-5">

@@ -11,6 +11,7 @@ import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 import { READING_WORLDS, PARENT_READING_TIPS } from "@/components/kids/reading/readingData";
+import KidsHeroCover from "@/components/kids/KidsHeroCover";
 
 const CANONICAL = `${SITE_URL}/kids/reading`;
 
@@ -109,6 +110,15 @@ export default function KidsReading() {
           самостоятельного чтения предложений. 10 ступенек, по слогам и с озвучкой.
           За каждый верный ответ — <span className="text-amber-300 font-bold">ЗНАЙКИ</span>.
         </p>
+      </section>
+
+      <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-2">
+        <KidsHeroCover
+          src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/607d326b-3de2-489b-a6c1-dde1b64d5747.jpg"
+          alt="Лиса учит малыша читать по буквам и слогам"
+          caption="Шаг за шагом — от первой буквы до чтения предложений"
+          glow="shadow-emerald-500/20"
+        />
       </section>
 
       {/* Игра-курс: переиспользуем движок Познавашки с данными чтения */}

@@ -16,6 +16,7 @@ import {
 } from "@/components/kids/songsData";
 import SongPlayer from "@/components/kids/SongPlayer";
 import NannyFox from "@/components/kids/NannyFox";
+import KidsHeroCover from "@/components/kids/KidsHeroCover";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -104,6 +105,15 @@ export default function KidsSongs() {
         <p className="text-white/65 text-base md:text-lg max-w-2xl mb-6">
           Учим вместе! Народные «Ладушки» и «Сорока-белобока», пальчиковые игры, авторские песенки про <b className="text-white">красный трактор и весёлые машинки</b>, считалочки и колыбельные. Каждая строка подсвечивается во время песни, рядом — подсказка-движение для малыша.
         </p>
+
+        <div className="max-w-3xl mb-7">
+          <KidsHeroCover
+            src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/1e67ce8e-495c-45ec-8c02-c83c3c504571.jpg"
+            alt="Лиса поёт и играет с малышами под музыку"
+            caption="Поём, хлопаем и танцуем вместе с Лисой"
+            glow="shadow-amber-500/20"
+          />
+        </div>
 
         {/* Поиск */}
         <div className="relative mb-5">

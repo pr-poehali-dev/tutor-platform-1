@@ -11,6 +11,7 @@ import { useScreenTime } from "@/components/kids/useScreenTime";
 import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 import { KIDS_GAMES } from "@/components/kids/games/gamesData";
+import KidsHeroCover from "@/components/kids/KidsHeroCover";
 
 const CANONICAL = `${SITE_URL}/kids/games`;
 
@@ -89,6 +90,15 @@ export default function KidsGames() {
           Ксюша научит играть в любимые игры и сыграет вместе с тобой! За каждую победу —
           <span className="text-amber-300 font-bold"> ЗНАЙКИ</span>.
         </p>
+      </section>
+
+      <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-2">
+        <KidsHeroCover
+          src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/f46de704-b6d1-47cf-8b87-d26af09b5eae.jpg"
+          alt="Лиса играет с ребёнком в шахматы и настольные игры"
+          caption="Умные игры вместе с Ксюшей — за каждую победу ЗНАЙКИ"
+          glow="shadow-cyan-500/20"
+        />
       </section>
 
       {/* ВЫБОР ИГРЫ */}
