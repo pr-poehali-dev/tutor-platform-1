@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { isPromoActive } from "@/components/promo/dobroConfig";
+import { PaymentSteps } from "@/components/courses/CheckoutBoosters";
 
 type PlanId = "trial" | "base" | "pro" | "family";
 
@@ -404,6 +405,8 @@ export default function Checkout() {
             . Подтверждаю, что мне больше 14 лет или согласие даёт законный представитель.
           </span>
         </label>
+
+        {!isFree && <PaymentSteps />}
 
         {displayError && (
           <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-200 text-sm flex items-start gap-2">

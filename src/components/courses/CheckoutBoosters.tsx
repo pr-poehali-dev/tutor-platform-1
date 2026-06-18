@@ -148,6 +148,38 @@ export function MoneyBackGuarantee() {
   );
 }
 
+/** Три простых шага оплаты — снимает страх перед кнопкой. */
+export function PaymentSteps() {
+  const steps = [
+    { icon: "MousePointerClick", text: "Нажми «Оплатить»" },
+    { icon: "CreditCard", text: "Введи карту на ЮKassa" },
+    { icon: "Unlock", text: "Доступ откроется сразу" },
+  ];
+  return (
+    <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-4 mb-4">
+      <p className="text-white/55 text-[11px] uppercase tracking-wider font-semibold mb-3 flex items-center gap-1.5">
+        <Icon name="Clock" size={12} className="text-white/45" />
+        Оплата займёт меньше минуты
+      </p>
+      <div className="flex items-center gap-1.5">
+        {steps.map((s, i) => (
+          <div key={s.text} className="flex items-center gap-1.5 flex-1">
+            <div className="flex items-start gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
+                <Icon name={s.icon} size={13} className="text-purple-300" />
+              </div>
+              <span className="text-white/70 text-[11px] leading-tight pt-0.5">{s.text}</span>
+            </div>
+            {i < steps.length - 1 && (
+              <Icon name="ChevronRight" size={12} className="text-white/25 flex-shrink-0" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Значок защищённой оплаты ЮKassa + принимаемые платёжные системы. */
 export function SecurePaymentBadge() {
   const methods = ["Мир", "Visa", "Mastercard", "СБП"];
