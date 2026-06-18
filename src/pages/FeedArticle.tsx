@@ -231,6 +231,29 @@ export default function FeedArticlePage() {
           ))}
         </article>
 
+        {/* CTA «Малыш» — для статей про детей/дошкольников */}
+        {article.tags && article.tags.some((t) => ["дети", "развитие детей", "дошкольное образование", "аудиосказки"].includes(t.toLowerCase())) && (
+          <div className="relative overflow-hidden rounded-2xl border border-pink-400/30 bg-gradient-to-br from-pink-600/30 via-rose-500/20 to-amber-500/20 p-5 md:p-6 mb-8 text-center">
+            <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-pink-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <div className="text-4xl mb-2">🦊</div>
+              <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+                Откройте «Малыш» прямо сейчас
+              </h3>
+              <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
+                Сказки с озвучкой, обучение чтению, умные игры и песни для детей от 2 лет. Бесплатно, без карты — первое занятие за полминуты.
+              </p>
+              <Link
+                to="/kids"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-pink-500/20"
+              >
+                <Icon name="Sparkles" size={18} />
+                Войти в Малыша
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* CTA олимпиады — для статей с тегом «олимпиада» */}
         {article.tags && article.tags.some((t) => t.toLowerCase() === "олимпиада") && (
           <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-purple-700/40 to-cyan-700/30 p-5 md:p-6 mb-8 text-center">
