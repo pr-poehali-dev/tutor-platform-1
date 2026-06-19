@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { kidsApi, ParentControls } from "./kidsApi";
+import MaxConnectCard from "./MaxConnectCard";
 
 interface Props {
   onClose: () => void;
@@ -197,6 +198,9 @@ export default function ParentSettingsModal({ onClose }: Props) {
               />
             </button>
           </label>
+
+          {/* Уведомления в MAX */}
+          <MaxConnectCard />
 
           {/* PIN-код */}
           <div className="border-t border-white/10 pt-5">
