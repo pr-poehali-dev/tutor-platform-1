@@ -235,9 +235,11 @@ def handle_webhook(conn, body: dict) -> dict:
         mbody = msg.get('body', {})
         text = (mbody.get('text') or '').strip()
         sender = msg.get('sender', {})
-        user_name = sender.get('name') or sender.get('username')
+        user_name = (sender.get('name') or sender.get('first_name')
+                     or sender.get('username') or '')
         recipient = msg.get('recipient', {})
-        chat_id = recipient.get('chat_id') or sender.get('user_id')
+        chat_id = (recipient.get('chat_id') or recipient.get('user_id')
+                   or sender.get('user_id'))
     except Exception:
         pass
 
