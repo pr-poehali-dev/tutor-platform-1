@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "name": "Ping health-check",
+      "method": "GET",
+      "path": "/?action=ping",
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true, "service": "max-channel-agent"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "cron requires secret",
+      "method": "POST",
+      "path": "/?action=cron",
+      "body": {},
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "status requires secret",
+      "method": "GET",
+      "path": "/?action=status",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "channel_webhook accepts empty",
+      "method": "POST",
+      "path": "/?action=channel_webhook",
+      "body": {},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
