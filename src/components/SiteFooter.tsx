@@ -19,6 +19,15 @@ export default function SiteFooter() {
               Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ. Учись когда удобно — на учисьпро.рф.
             </p>
             <p className="text-white/55 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
+            <a
+              href="https://max.ru/id631205241205_biz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 hover:from-sky-400 hover:to-blue-500 transition-colors"
+            >
+              <Icon name="Send" size={16} aria-hidden="true" />
+              Подписаться на канал в MAX
+            </a>
           </section>
 
           {/* Tools */}
@@ -50,6 +59,7 @@ export default function SiteFooter() {
               <li><Link to="/reviews" className="text-yellow-200 hover:text-yellow-100 transition-colors font-bold">⭐ Отзывы учеников</Link></li>
               <li><Link to="/referral" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🎁 Приведи друга — +7 дней</Link></li>
               <li><a href="https://t.me/+QgiLIa1gFRY4Y2Iy" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">💬 Telegram-сообщество</a></li>
+              <li><a href="https://max.ru/id631205241205_biz" target="_blank" rel="noopener noreferrer" className="text-sky-200 hover:text-sky-100 transition-colors font-bold">📢 Канал в MAX</a></li>
             </ul>
           </nav>
 
