@@ -26,6 +26,7 @@ MAX_API_BASE = "https://botapi.max.ru"
 POLZA_URL = "https://api.polza.ai/api/v1/chat/completions"
 POLZA_MODEL = "openai/gpt-4o-mini"
 SITE_URL = "https://учисьпро.рф"
+CHANNEL_LINK = "https://max.ru/id631205241205_biz"
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 
 CATEGORY_EMOJI = {
@@ -83,6 +84,35 @@ def max_send_to_channel(chat_id: int, text: str) -> tuple:
         return False, f'HTTP {e.code}: {body[:300]}'
     except Exception as e:
         return False, str(e)[:300]
+
+
+def max_send_to_user(user_id: int, text: str) -> tuple:
+    """Личное сообщение пользователю в MAX (по user_id). Возвращает (ok, error)."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    if not token:
+        return False, 'MAX_BOT_TOKEN not set'
+    url = f"{MAX_API_BASE}/messages?user_id={user_id}"
+    payload = json.dumps({'text': text}).encode('utf-8')
+    req = urllib.request.Request(url, data=payload, method='POST',
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': token})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            resp.read()
+        return True, None
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', 'ignore')
+        return False, f'HTTP {e.code}: {body[:300]}'
+    except Exception as e:
+        return False, str(e)[:300]
+
+
+def welcome_text() -> str:
+    return ("👋 Здравствуйте! Это бот платформы «Учисьпро».\n\n"
+            "Подпишитесь на наш канал — там образовательные новости, идеи для учёбы "
+            "и полезные материалы для детей и родителей:\n"
+            f"📢 {CHANNEL_LINK}\n\n"
+            f"✨ Платформа: {SITE_URL}")
 
 
 # ---------- ИИ-генерация текста поста ----------
@@ -283,17 +313,52 @@ def handle_cron(conn) -> dict:
                'weekly_digest': digest_posted})
 
 
+def already_welcomed(conn, user_id: int) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM " + t('max_welcomed_users') + " WHERE user_id=%s", (user_id,))
+        return cur.fetchone() is not None
+
+
+def mark_welcomed(conn, user_id: int):
+    with conn.cursor() as cur:
+        cur.execute("INSERT INTO " + t('max_welcomed_users') +
+                    " (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING", (user_id,))
+        conn.commit()
+
+
+def extract_dm_user_id(body: dict) -> int:
+    """Достаёт user_id из апдекта личного диалога с ботом."""
+    msg = body.get('message') or {}
+    sender = (msg.get('sender') or body.get('user') or body.get('from') or {})
+    uid = sender.get('user_id') or body.get('user_id')
+    # учитываем только личные диалоги, не каналы/группы
+    chat = (msg.get('recipient') or body.get('chat') or {})
+    ctype = chat.get('chat_type') or chat.get('type')
+    if ctype and ctype not in ('dialog', 'private'):
+        return 0
+    return int(uid) if uid else 0
+
+
 def handle_channel_webhook(conn, body: dict) -> dict:
-    """Автодетект chat_id канала: когда бота добавляют в канал."""
+    """Автодетект канала + автоприветствие в личке с приглашением в канал."""
     update_type = body.get('update_type', '')
     chat = body.get('chat') or {}
     chat_id = chat.get('chat_id') or body.get('chat_id')
     title = chat.get('title')
-    # типичные события: bot_added, chat_title_changed и т.п.
-    if chat_id and update_type in ('bot_added', 'chat_membership', 'bot_started') :
+
+    # 1) Автоприветствие: человек написал боту или нажал «Старт»
+    if update_type in ('bot_started', 'message_created', 'message_callback'):
+        uid = extract_dm_user_id(body)
+        if uid and not already_welcomed(conn, uid):
+            success, error = max_send_to_user(uid, welcome_text())
+            if success:
+                mark_welcomed(conn, uid)
+            return ok({'ok': success, 'welcomed_user': uid, 'error': error})
+
+    # 2) Автодетект chat_id канала: когда бота добавляют в канал
+    if chat_id and update_type in ('bot_added', 'chat_membership'):
         save_channel_id(conn, int(chat_id), title)
         return ok({'ok': True, 'linked_chat_id': chat_id})
-    # на всякий случай — если в апдейте есть канал с chat_id
     if chat_id and chat.get('type') in ('channel', 'chat'):
         save_channel_id(conn, int(chat_id), title)
         return ok({'ok': True, 'linked_chat_id': chat_id})
