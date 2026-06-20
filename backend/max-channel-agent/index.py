@@ -36,6 +36,16 @@ CATEGORY_EMOJI = {
 
 MAX_ARTICLES_PER_RUN = 3  # не спамить канал за один прогон
 
+# Призы конкурсов чередуются по неделям (цикл из 3 призов)
+CONTEST_PRIZES = [
+    {'kind': 'znaiki', 'label': '500 знаек на счёт платформы 🪙',
+     'theme': 'учебный лайфхак или интересный факт'},
+    {'kind': 'course', 'label': 'любой курс платформы в подарок 🎓',
+     'theme': 'идея, как сделать учёбу ребёнка интереснее'},
+    {'kind': 'subscription', 'label': '2 недели премиум-доступа к платформе ✨',
+     'theme': 'история успеха или цель в учёбе'},
+]
+
 
 def cors_headers() -> dict:
     return {
@@ -189,6 +199,121 @@ def make_weekly_digest(titles: list) -> str:
     return f"{body}\n\n✨ Открыть платформу: {SITE_URL}"
 
 
+# ---------- Конкурсы / движ ----------
+
+def make_contest_announcement(prize_label: str, theme: str) -> str:
+    prompt = (
+        "Напиши задорный пост-анонс еженедельного конкурса в канале образовательной платформы УЧИСЬПРО. "
+        f"Тема конкурса: участники в комментариях делятся на тему «{theme}». "
+        f"Главный приз победителю за самую большую активность: {prize_label}. "
+        "Объясни просто: пиши в комментариях, чем активнее участвуешь всю неделю — тем выше шанс победить. "
+        "Итоги — в пятницу. 2–3 коротких абзаца, бодрый тон, 2–4 эмодзи. Без ссылок."
+    )
+    body = call_polza(SMM_SYSTEM, prompt, max_tokens=380)
+    if not body:
+        body = ("🎉 Запускаем конкурс недели!\n\n"
+                f"Делитесь в комментариях на тему: {theme}. "
+                "Чем активнее участвуешь всю неделю — тем выше шанс победить!\n\n"
+                f"🏆 Приз: {prize_label}. Итоги — в пятницу!")
+    return f"🎁 КОНКУРС НЕДЕЛИ\n\n{body}\n\n💬 Участвуй в комментариях прямо сейчас!"
+
+
+def make_contest_reminder(prize_label: str) -> str:
+    return ("⏳ Конкурс недели в разгаре!\n\n"
+            "Ещё есть время поучаствовать — пиши в комментариях, проявляй активность. "
+            f"Победителя за активность ждёт приз: {prize_label}\n\n"
+            "🔥 Итоги уже в пятницу — не упусти шанс!")
+
+
+def make_contest_results(winner_name: str, prize_label: str) -> str:
+    who = winner_name or "наш самый активный участник"
+    return ("🏆 ИТОГИ КОНКУРСА НЕДЕЛИ!\n\n"
+            f"Победитель за активность — {who}! 🎉\n"
+            f"Приз: {prize_label}\n\n"
+            "Спасибо всем, кто участвовал! Совсем скоро — новый конкурс. "
+            f"Оставайся с нами 👉 {SITE_URL}")
+
+
+def get_active_contest(conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, week_ref, prize_kind, prize_label FROM " + t('max_contests') +
+            " WHERE status='active' ORDER BY id DESC LIMIT 1"
+        )
+        return cur.fetchone()
+
+
+def start_contest_if_needed(conn, chat_id: int, week_ref: str, week_index: int) -> bool:
+    """Понедельник: запускаем новый конкурс недели, если его ещё нет."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM " + t('max_contests') + " WHERE week_ref=%s", (week_ref,))
+        if cur.fetchone():
+            return False
+    prize = CONTEST_PRIZES[week_index % len(CONTEST_PRIZES)]
+    text = make_contest_announcement(prize['label'], prize['theme'])
+    success, error = max_send_to_channel(chat_id, text)
+    if not success:
+        return False
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO " + t('max_contests') +
+            " (week_ref, title, description, prize_kind, prize_label, status) "
+            "VALUES (%s,%s,%s,%s,%s,'active') ON CONFLICT (week_ref) DO NOTHING",
+            (week_ref, f"Конкурс недели {week_ref}", prize['theme'], prize['kind'], prize['label'])
+        )
+        conn.commit()
+    log_post(conn, 'contest_start', week_ref, None, chat_id, text, True, None)
+    return True
+
+
+def finish_contest(conn, chat_id: int) -> bool:
+    """Пятница: подводим итоги активного конкурса и объявляем победителя."""
+    contest = get_active_contest(conn)
+    if not contest:
+        return False
+    cid, week_ref, prize_kind, prize_label = contest
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT user_id, user_name, activity_count FROM " + t('max_contest_entries') +
+            " WHERE contest_id=%s ORDER BY activity_count DESC, updated_at ASC LIMIT 1",
+            (cid,)
+        )
+        top = cur.fetchone()
+    winner_id = top[0] if top else None
+    winner_name = top[1] if top else None
+    text = make_contest_results(winner_name, prize_label)
+    success, error = max_send_to_channel(chat_id, text)
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE " + t('max_contests') + " SET status='finished', winner_user_id=%s, "
+            "winner_name=%s, finished_at=NOW() WHERE id=%s",
+            (winner_id, winner_name, cid)
+        )
+        conn.commit()
+    log_post(conn, 'contest_finish', week_ref, None, chat_id, text, success, error)
+    return success
+
+
+def record_contest_activity(conn, user_id: int, user_name: str, message: str):
+    """Засчитываем активность пользователя в текущем конкурсе."""
+    contest = get_active_contest(conn)
+    if not contest:
+        return
+    cid = contest[0]
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO " + t('max_contest_entries') +
+            " (contest_id, user_id, user_name, activity_count, last_message, updated_at) "
+            "VALUES (%s,%s,%s,1,%s,NOW()) "
+            "ON CONFLICT (contest_id, user_id) DO UPDATE SET "
+            "activity_count = " + t('max_contest_entries') + ".activity_count + 1, "
+            "user_name = COALESCE(EXCLUDED.user_name, " + t('max_contest_entries') + ".user_name), "
+            "last_message = EXCLUDED.last_message, updated_at = NOW()",
+            (cid, user_id, user_name, (message or '')[:500])
+        )
+        conn.commit()
+
+
 # ---------- chat_id канала ----------
 
 def get_channel_id(conn) -> int:
@@ -308,9 +433,33 @@ def handle_cron(conn) -> dict:
             log_post(conn, 'weekly_digest', ref, None, chat_id, text, success, error)
             digest_posted = success
 
+    # 3) Движ: еженедельный конкурс с призами
+    iso = today.isocalendar()
+    week_ref = f"{iso[0]}-W{iso[1]:02d}"
+    contest_started = False
+    contest_finished = False
+    contest_reminded = False
+    weekday = today.weekday()
+
+    if weekday == 0:  # понедельник — старт конкурса
+        contest_started = start_contest_if_needed(conn, chat_id, week_ref, iso[1])
+    elif weekday == 2:  # среда — напоминание
+        contest = get_active_contest(conn)
+        if contest and not already_posted(conn, 'contest_reminder', week_ref):
+            text = make_contest_reminder(contest[3])
+            success, _ = max_send_to_channel(chat_id, text)
+            log_post(conn, 'contest_reminder', week_ref, None, chat_id, text, success, None)
+            contest_reminded = success
+    elif weekday == 4:  # пятница — итоги
+        if not already_posted(conn, 'contest_finish', week_ref):
+            contest_finished = finish_contest(conn, chat_id)
+
     return ok({'ok': True, 'channel_chat_id': chat_id,
                'articles_posted': posted_articles, 'skipped': skipped,
-               'weekly_digest': digest_posted})
+               'weekly_digest': digest_posted,
+               'contest_started': contest_started,
+               'contest_reminded': contest_reminded,
+               'contest_finished': contest_finished})
 
 
 def already_welcomed(conn, user_id: int) -> bool:
@@ -339,12 +488,30 @@ def extract_dm_user_id(body: dict) -> int:
     return int(uid) if uid else 0
 
 
+def extract_sender(body: dict) -> tuple:
+    """Достаёт (user_id, имя, текст) отправителя из любого апдейта с сообщением."""
+    msg = body.get('message') or {}
+    sender = (msg.get('sender') or body.get('user') or body.get('from') or {})
+    uid = sender.get('user_id') or body.get('user_id')
+    name = (sender.get('name') or sender.get('first_name')
+            or sender.get('username') or '')
+    text = ((msg.get('body') or {}).get('text')
+            or msg.get('text') or body.get('text') or '')
+    return (int(uid) if uid else 0, name, text)
+
+
 def handle_channel_webhook(conn, body: dict) -> dict:
-    """Автодетект канала + автоприветствие в личке с приглашением в канал."""
+    """Автодетект канала + автоприветствие + учёт активности в конкурсе."""
     update_type = body.get('update_type', '')
     chat = body.get('chat') or {}
     chat_id = chat.get('chat_id') or body.get('chat_id')
     title = chat.get('title')
+
+    # 0) Любое сообщение от человека = активность в конкурсе
+    if update_type in ('message_created', 'message_callback'):
+        suid, sname, stext = extract_sender(body)
+        if suid:
+            record_contest_activity(conn, suid, sname, stext)
 
     # 1) Автоприветствие: человек написал боту или нажал «Старт»
     if update_type in ('bot_started', 'message_created', 'message_callback'):
@@ -393,6 +560,80 @@ def is_cron_authorized(headers: dict) -> bool:
     return auth == f'Bearer {secret}'
 
 
+def is_admin(headers: dict) -> bool:
+    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
+    return pin == os.environ.get('ADMIN_PIN', '7777')
+
+
+def handle_dashboard(conn) -> dict:
+    """Полная сводка для панели управления каналом."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT channel_chat_id, channel_title, enabled FROM " + t('max_channel_config') + " WHERE id=1")
+        cfg = cur.fetchone()
+        cur.execute("SELECT count(*) FROM " + t('max_channel_posts') + " WHERE ok=TRUE")
+        posted = cur.fetchone()[0]
+        cur.execute("SELECT count(*) FROM " + t('max_welcomed_users'))
+        welcomed = cur.fetchone()[0]
+        cur.execute("SELECT kind, ok, created_at, ref_key FROM " + t('max_channel_posts') +
+                    " ORDER BY id DESC LIMIT 8")
+        recent = [{'kind': r[0], 'ok': r[1], 'at': r[2].isoformat() if r[2] else None, 'ref': r[3]}
+                  for r in cur.fetchall()]
+        # активный конкурс
+        cur.execute("SELECT id, week_ref, prize_label, started_at FROM " + t('max_contests') +
+                    " WHERE status='active' ORDER BY id DESC LIMIT 1")
+        ac = cur.fetchone()
+        active = None
+        leaders = []
+        if ac:
+            cur.execute("SELECT user_name, activity_count FROM " + t('max_contest_entries') +
+                        " WHERE contest_id=%s ORDER BY activity_count DESC, updated_at ASC LIMIT 5", (ac[0],))
+            leaders = [{'name': r[0] or 'Участник', 'count': r[1]} for r in cur.fetchall()]
+            cur.execute("SELECT count(*) FROM " + t('max_contest_entries') + " WHERE contest_id=%s", (ac[0],))
+            participants = cur.fetchone()[0]
+            active = {'week_ref': ac[1], 'prize_label': ac[2],
+                      'started_at': ac[3].isoformat() if ac[3] else None,
+                      'participants': participants, 'leaders': leaders}
+        # история конкурсов
+        cur.execute("SELECT week_ref, prize_label, winner_name, finished_at FROM " + t('max_contests') +
+                    " WHERE status='finished' ORDER BY id DESC LIMIT 6")
+        history = [{'week_ref': r[0], 'prize_label': r[1], 'winner': r[2] or '—',
+                    'finished_at': r[3].isoformat() if r[3] else None} for r in cur.fetchall()]
+    return ok({
+        'channel_linked': bool(cfg and cfg[0]),
+        'channel_title': cfg[1] if cfg else None,
+        'channel_link': CHANNEL_LINK,
+        'enabled': cfg[2] if cfg else None,
+        'total_posted': posted,
+        'welcomed_users': welcomed,
+        'has_bot_token': bool(os.environ.get('MAX_BOT_TOKEN')),
+        'post_window': f'{POST_HOUR_FROM}:00–{POST_HOUR_TO}:00 МСК',
+        'recent': recent,
+        'active_contest': active,
+        'contest_history': history,
+    })
+
+
+def handle_admin_action(conn, action: str) -> dict:
+    chat_id = get_channel_id(conn)
+    if action == 'toggle':
+        with conn.cursor() as cur:
+            cur.execute("UPDATE " + t('max_channel_config') +
+                        " SET enabled = NOT COALESCE(enabled, TRUE), updated_at=NOW() WHERE id=1 RETURNING enabled")
+            new_state = cur.fetchone()[0]
+            conn.commit()
+        return ok({'ok': True, 'enabled': new_state})
+    if not chat_id:
+        return ok({'ok': False, 'reason': 'channel_not_linked'})
+    if action == 'start_now':
+        iso = datetime.now(MSK).date().isocalendar()
+        started = start_contest_if_needed(conn, chat_id, f"{iso[0]}-W{iso[1]:02d}", iso[1])
+        return ok({'ok': started, 'note': 'started' if started else 'already_running'})
+    if action == 'finish_now':
+        finished = finish_contest(conn, chat_id)
+        return ok({'ok': finished})
+    return err('Неизвестное действие', 404)
+
+
 def handler(event: dict, context) -> dict:
     """ИИ-агент канала MAX: сам пишет и публикует посты (новости Ленты + дайджест)."""
     method = event.get('httpMethod', 'GET')
@@ -427,6 +668,17 @@ def handler(event: dict, context) -> dict:
             if action == 'cron':
                 return handle_cron(conn)
             return handle_status(conn)
+        finally:
+            conn.close()
+
+    if action in ('dashboard', 'toggle', 'start_now', 'finish_now'):
+        if not is_admin(headers):
+            return err('forbidden', 403)
+        conn = get_db()
+        try:
+            if action == 'dashboard':
+                return handle_dashboard(conn)
+            return handle_admin_action(conn, action)
         finally:
             conn.close()
 

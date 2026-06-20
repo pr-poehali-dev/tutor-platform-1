@@ -39,6 +39,7 @@ const SECTIONS: Section[] = [
   {
     group: "Маркетинг и продвижение",
     items: [
+      { label: "Канал в MAX", path: "/admin/max-channel", icon: "Send", description: "ИИ-агент канала: посты, конкурсы с призами, статистика и автопилот" },
       { label: "Промо-ролики для соцсетей", path: "/promo/video", icon: "Clapperboard", description: "Генерация видеообзоров с озвучкой для VK, TikTok, YouTube Shorts" },
       { label: "Акция ДОБРО", path: "/promo/dobro", icon: "Heart", description: "Лендинг бесплатной акции до 15.06" },
       { label: "Рекламные кампании", path: "/admin/ads", icon: "Megaphone", description: "Управление UTM, креативами и лендингами" },

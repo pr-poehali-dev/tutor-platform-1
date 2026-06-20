@@ -39,6 +39,23 @@
       "expectedStatus": 200,
       "expectedBody": {"ok": true},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "dashboard requires admin pin",
+      "method": "GET",
+      "path": "/?action=dashboard",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "toggle requires admin pin",
+      "method": "POST",
+      "path": "/?action=toggle",
+      "body": {},
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }
