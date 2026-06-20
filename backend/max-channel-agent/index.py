@@ -14,8 +14,13 @@ import os
 import urllib.request
 import urllib.error
 import urllib.parse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 import psycopg2
+
+# Окно публикаций по Москве (UTC+3): постим с 9:00 до 21:00 МСК
+MSK = timezone(timedelta(hours=3))
+POST_HOUR_FROM = 9
+POST_HOUR_TO = 21
 
 MAX_API_BASE = "https://botapi.max.ru"
 POLZA_URL = "https://api.polza.ai/api/v1/chat/completions"
@@ -221,6 +226,12 @@ def handle_cron(conn) -> dict:
         return ok({'ok': False, 'reason': 'channel_not_linked',
                    'hint': 'Добавьте бота в канал или задайте секрет MAX_CHANNEL_ID'})
 
+    now_msk = datetime.now(MSK)
+    if not (POST_HOUR_FROM <= now_msk.hour < POST_HOUR_TO):
+        return ok({'ok': True, 'skipped_quiet_hours': True,
+                   'msk_hour': now_msk.hour,
+                   'window': f'{POST_HOUR_FROM}:00–{POST_HOUR_TO}:00 МСК'})
+
     posted_articles = 0
     skipped = 0
 
@@ -250,7 +261,7 @@ def handle_cron(conn) -> dict:
 
     # 2) Еженедельный дайджест (по понедельникам, один раз в неделю)
     digest_posted = False
-    today = date.today()
+    today = now_msk.date()
     if today.weekday() == 0:  # понедельник
         iso = today.isocalendar()
         ref = f"{iso[0]}-W{iso[1]:02d}"
