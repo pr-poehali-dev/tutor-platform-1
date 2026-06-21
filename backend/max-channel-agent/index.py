@@ -5,6 +5,7 @@
 
 Эндпоинты:
 GET/POST /?action=cron            header Authorization: Bearer CRON_SECRET -> цикл автопостинга
+GET      /?action=tick                                                     -> ленивый дневной автозапуск (не чаще 1 раза в сутки)
 POST     /?action=channel_webhook                                          -> автодетект chat_id канала
 GET      /?action=status          header Authorization: Bearer CRON_SECRET -> диагностика
 GET      /?action=ping                                                     -> health-check
@@ -97,17 +98,27 @@ def sanitize_message(text: str) -> str:
 IMG_STYLE = (
     "bright cheerful cartoon illustration, friendly characters, vivid colors, "
     "soft rounded shapes, educational theme for kids, flat vector style, "
-    "high quality, no text"
+    "high quality, clean illustration without any text, no letters, no words, "
+    "no captions, no typography, no inscriptions, text-free image"
+)
+
+# Жёсткий негатив-промпт: запрещаем любой текст на картинке (особенно кривой английский)
+IMG_NEGATIVE = (
+    "text, letters, words, captions, typography, inscriptions, watermark, "
+    "signature, labels, numbers, logo, gibberish text, distorted letters"
 )
 
 
 def generate_image_bytes(scene: str) -> bytes:
-    """Генерирует яркую мультяшную картинку через бесплатный FLUX (Pollinations)."""
+    """Генерирует яркую мультяшную картинку через бесплатный FLUX (Pollinations).
+    Текст на изображении запрещён (no text), чтобы не появлялись кривые англ. надписи."""
     prompt = f"{scene}, {IMG_STYLE}"
     encoded = urllib.parse.quote(prompt)
+    neg = urllib.parse.quote(IMG_NEGATIVE)
     seed = abs(hash(scene)) % 100000
     url = (f"https://image.pollinations.ai/prompt/{encoded}"
-           f"?width=1024&height=1024&seed={seed}&nologo=true&model=flux")
+           f"?width=1024&height=1024&seed={seed}&nologo=true&model=flux"
+           f"&negative_prompt={neg}")
     req = urllib.request.Request(
         url, headers={'User-Agent': 'Mozilla/5.0 UchisproBot/1.0', 'Accept': 'image/*'},
         method='GET')
@@ -680,6 +691,30 @@ def handle_cron(conn) -> dict:
                'contest_finished': contest_finished})
 
 
+def handle_tick(conn) -> dict:
+    """Ленивый дневной автозапуск без внешнего планировщика.
+    Вызывается с фронта при заходе на сайт, но реальный прогон бота
+    выполняется НЕ ЧАЩЕ одного раза в сутки (по дате МСК)."""
+    today_msk = datetime.now(MSK).date()
+
+    with conn.cursor() as cur:
+        # атомарно «занимаем» сегодняшний день: обновляем маркер только если ещё не запускались сегодня
+        cur.execute(
+            "UPDATE " + t('max_channel_cron') +
+            " SET last_tick_date=%s, last_tick_at=NOW() "
+            "WHERE id=1 AND (last_tick_date IS NULL OR last_tick_date < %s)",
+            (today_msk, today_msk)
+        )
+        claimed = cur.rowcount > 0
+        conn.commit()
+
+    if not claimed:
+        return ok({'ok': True, 'skipped_already_ran_today': True, 'date': str(today_msk)})
+
+    # выполняем обычный дневной цикл (учитывает тихие часы и enabled-канал)
+    return handle_cron(conn)
+
+
 def already_welcomed(conn, user_id: int) -> bool:
     with conn.cursor() as cur:
         cur.execute("SELECT 1 FROM " + t('max_welcomed_users') + " WHERE user_id=%s", (user_id,))
@@ -874,6 +909,13 @@ def handler(event: dict, context) -> dict:
 
     if method == 'GET' and action in ('', 'ping'):
         return ok({'ok': True, 'service': 'max-channel-agent'})
+
+    if action == 'tick':
+        conn = get_db()
+        try:
+            return handle_tick(conn)
+        finally:
+            conn.close()
 
     if action == 'channel_webhook':
         conn = get_db()

@@ -3,6 +3,18 @@ import { FeedArticle, FeedCategory, FeedListResponse } from "./types";
 
 const FEED_URL = (func2url as Record<string, string>)["feed"];
 const CURATOR_URL = (func2url as Record<string, string>)["feed-curator"];
+const MAX_AGENT_URL = (func2url as Record<string, string>)["max-channel-agent"];
+
+/** Ленивый дневной запуск бота канала MAX.
+ *  Бэкенд сам ограничивает реальный прогон до 1 раза в сутки. */
+export async function tickMaxChannel(): Promise<void> {
+  if (!MAX_AGENT_URL) return;
+  try {
+    await fetch(`${MAX_AGENT_URL}?action=tick`);
+  } catch {
+    /* тихо игнорируем — это фоновая задача */
+  }
+}
 
 /** Авто-запуск парсера если лента пустая (на бэке стоит rate-limit 30 мин). */
 export async function seedIfEmpty(): Promise<{ ok: boolean; auto_seeded?: boolean; fetched?: number }> {

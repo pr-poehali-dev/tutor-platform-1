@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import ArticleCard from "@/components/feed/ArticleCard";
-import { fetchFeed, seedIfEmpty, keepAlive } from "@/components/feed/api";
+import { fetchFeed, seedIfEmpty, keepAlive, tickMaxChannel } from "@/components/feed/api";
 import { CATEGORY_META, FeedArticle, FeedCategory } from "@/components/feed/types";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -21,6 +21,11 @@ export default function Feed() {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Ленивый дневной запуск бота канала MAX (бэкенд не чаще 1 раза в сутки)
+  useEffect(() => {
+    tickMaxChannel();
+  }, []);
 
   useEffect(() => {
     setPage(1);
