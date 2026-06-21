@@ -84,11 +84,19 @@ export default function MaxChannelDashboard() {
       const res = await fetch(`${URL}?action=dashboard`, {
         headers: { "X-Admin-Pin": p },
       });
-      if (!res.ok) throw new Error("forbidden");
+      if (res.status === 403) {
+        sessionStorage.removeItem(PIN_KEY);
+        localStorage.removeItem(PIN_KEY);
+        setUnlocked(false);
+        setError("Неверный PIN — войди заново");
+        setData(null);
+        return;
+      }
+      if (!res.ok) throw new Error("failed");
       setData(await res.json());
       setError("");
     } catch {
-      setError("Не удалось загрузить данные");
+      setError("Не удалось загрузить данные. Попробуй обновить.");
     } finally {
       setLoading(false);
     }
@@ -96,7 +104,7 @@ export default function MaxChannelDashboard() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem(PIN_KEY) || localStorage.getItem(PIN_KEY);
-    if (saved) {
+    if (saved === ADMIN_PIN) {
       setPin(saved);
       setUnlocked(true);
       load(saved);
