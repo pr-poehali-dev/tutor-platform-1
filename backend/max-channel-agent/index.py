@@ -51,7 +51,7 @@ def cors_headers() -> dict:
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Pin',
         'Access-Control-Max-Age': '86400',
         'Content-Type': 'application/json',
     }
