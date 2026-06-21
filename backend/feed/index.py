@@ -19,7 +19,10 @@ import psycopg2
 
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
-ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants'}
+ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants', 'literature'}
+
+# Бесплатный дневной лимит чтения разборов произведений
+LITERATURE_DAILY_LIMIT = 5
 
 
 def cors_headers() -> dict:
@@ -180,7 +183,7 @@ def handle_list(qs: dict) -> dict:
         conn.close()
 
 
-def handle_item(qs: dict) -> dict:
+def handle_item(qs: dict, token: str = '', ip: str = '') -> dict:
     slug = (qs.get('slug') or '').strip()
     if not slug:
         return err('slug обязателен', 400)
@@ -195,12 +198,73 @@ def handle_item(qs: dict) -> dict:
             row = cur.fetchone()
             if not row:
                 return err('Статья не найдена', 404)
+
+            article = serialize_article(row, detail=True)
+
+            # Разборы произведений: бесплатно не более 5 в день
+            if article.get('category') == 'literature':
+                limited = check_literature_limit(cur, conn, slug, token, ip)
+                if limited is not None:
+                    return limited
+
             # Инкремент просмотров
             cur.execute("UPDATE feed_articles SET views = views + 1 WHERE id = %s", (row[0],))
             conn.commit()
-            return ok({'item': serialize_article(row, detail=True)})
+            return ok({'item': article})
     finally:
         conn.close()
+
+
+def reader_key_for(cur, token: str, ip: str) -> str:
+    """Ключ читателя: по аккаунту (если вошёл) иначе по IP."""
+    if token:
+        user_id = resolve_user(cur, token)
+        if user_id:
+            return f'u{user_id}'
+    return f'ip{ip or "unknown"}'
+
+
+def check_literature_limit(cur, conn, slug: str, token: str, ip: str):
+    """Проверяет дневной лимит разборов. Возвращает dict-ответ при блокировке,
+    иначе None (доступ разрешён) и фиксирует факт чтения."""
+    rkey = reader_key_for(cur, token, ip)
+
+    # Уже читал этот разбор сегодня — пропускаем без списания лимита
+    cur.execute(
+        "SELECT 1 FROM feed_literature_reads "
+        "WHERE reader_key = %s AND article_slug = %s AND read_date = CURRENT_DATE LIMIT 1",
+        (rkey, slug)
+    )
+    if cur.fetchone():
+        return None
+
+    # Сколько разных разборов прочитано сегодня
+    cur.execute(
+        "SELECT COUNT(*) FROM feed_literature_reads "
+        "WHERE reader_key = %s AND read_date = CURRENT_DATE",
+        (rkey,)
+    )
+    used = cur.fetchone()[0]
+    if used >= LITERATURE_DAILY_LIMIT:
+        return ok({
+            'limited': True,
+            'limit': LITERATURE_DAILY_LIMIT,
+            'used': used,
+            'message': (
+                f'На сегодня бесплатный лимит разборов исчерпан '
+                f'({LITERATURE_DAILY_LIMIT} в день). Возвращайся завтра — '
+                f'или открой полный доступ на платформе УЧИСЬПРО.'
+            ),
+        }, 200)
+
+    # Фиксируем чтение
+    cur.execute(
+        "INSERT INTO feed_literature_reads (reader_key, article_slug) VALUES (%s, %s) "
+        "ON CONFLICT (reader_key, article_slug, read_date) DO NOTHING",
+        (rkey, slug)
+    )
+    conn.commit()
+    return None
 
 
 def handle_submit(token: str, body: dict) -> dict:
@@ -386,7 +450,8 @@ def handler(event: dict, context) -> dict:
     if action == 'list':
         return handle_list(qs)
     if action == 'item':
-        return handle_item(qs)
+        ip = ((event.get('requestContext') or {}).get('identity') or {}).get('sourceIp', '')
+        return handle_item(qs, token, ip)
     if action == 'submit' and method == 'POST':
         return handle_submit(token, body)
     if action == 'pending':

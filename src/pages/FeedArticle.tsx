@@ -24,23 +24,31 @@ export default function FeedArticlePage() {
   const [related, setRelated] = useState<FeedArticleType[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [limited, setLimited] = useState<{ limit?: number; message?: string } | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     setNotFound(false);
+    setLimited(null);
     setArticle(null);
     window.scrollTo(0, 0);
     fetchArticle(slug).then((data) => {
-      if (!data) {
+      if (data.limited) {
+        setLimited({ limit: data.limit, message: data.message });
+        setLoading(false);
+        return;
+      }
+      if (!data.item) {
         setNotFound(true);
         setLoading(false);
         return;
       }
-      setArticle(data);
+      const item = data.item;
+      setArticle(item);
       // Подгружаем 3 связанных по той же категории
-      fetchFeed(data.category, 1).then((res) => {
-        setRelated(res.items.filter((a) => a.id !== data.id).slice(0, 3));
+      fetchFeed(item.category, 1).then((res) => {
+        setRelated(res.items.filter((a) => a.id !== item.id).slice(0, 3));
       });
       setLoading(false);
     });
@@ -52,6 +60,39 @@ export default function FeedArticlePage() {
         <div className="text-center">
           <Icon name="Loader2" size={32} className="animate-spin mx-auto mb-3 text-cyan-300" />
           <p className="text-white/55 text-sm">Загружаю статью...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (limited) {
+    return (
+      <div className="min-h-screen bg-mesh flex items-center justify-center text-white px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">📖</div>
+          <h1 className="font-montserrat font-black text-2xl mb-2">
+            Лимит на сегодня исчерпан
+          </h1>
+          <p className="text-white/70 text-sm mb-6">
+            {limited.message ||
+              `Бесплатно доступно ${limited.limit || 5} разборов произведений в день. Возвращайся завтра или открой полный доступ на платформе.`}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => navigate("/")}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold text-sm"
+            >
+              <Icon name="Sparkles" size={14} />
+              Открыть полный доступ
+            </button>
+            <button
+              onClick={() => navigate("/feed")}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/8 hover:bg-white/15 text-white font-bold text-sm"
+            >
+              <Icon name="ArrowLeft" size={14} />
+              В ленту
+            </button>
+          </div>
         </div>
       </div>
     );

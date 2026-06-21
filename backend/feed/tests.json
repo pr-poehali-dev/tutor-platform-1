@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/?action=list",
       "expectedStatus": 200,
-      "expectedBody": {"items": [], "total": 0},
+      "expectedBody": {"page": 1, "per_page": 12},
       "bodyMatcher": "partial"
     },
     {

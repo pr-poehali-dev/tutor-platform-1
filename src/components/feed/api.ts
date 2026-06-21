@@ -91,11 +91,24 @@ export async function fetchFeed(category?: FeedCategory | "all", page = 1): Prom
   return await res.json();
 }
 
-export async function fetchArticle(slug: string): Promise<FeedArticle | null> {
-  const res = await fetch(`${FEED_URL}?action=item&slug=${encodeURIComponent(slug)}`);
-  if (!res.ok) return null;
+export interface ArticleResult {
+  item: FeedArticle | null;
+  limited?: boolean;
+  limit?: number;
+  message?: string;
+}
+
+export async function fetchArticle(slug: string): Promise<ArticleResult> {
+  const t = authToken();
+  const headers: Record<string, string> = {};
+  if (t) headers["X-Auth-Token"] = t;
+  const res = await fetch(`${FEED_URL}?action=item&slug=${encodeURIComponent(slug)}`, { headers });
+  if (!res.ok) return { item: null };
   const data = await res.json();
-  return data.item || null;
+  if (data.limited) {
+    return { item: null, limited: true, limit: data.limit, message: data.message };
+  }
+  return { item: data.item || null };
 }
 
 export interface SubmitPayload {
