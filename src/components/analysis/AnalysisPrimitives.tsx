@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { QUIZ } from "./revizorData";
+import { AnalysisQuizItem } from "./types";
 
 export function Section({ id, icon, title, children }: { id: string; icon: string; title: string; children: React.ReactNode }) {
   return (
@@ -46,11 +46,11 @@ export function Callout({
   );
 }
 
-export function Quiz() {
+export function Quiz({ items }: { items: AnalysisQuizItem[] }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   return (
     <div className="space-y-4">
-      {QUIZ.map((item, qi) => {
+      {items.map((item, qi) => {
         const chosen = answers[qi];
         return (
           <div key={qi} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">

@@ -49,6 +49,11 @@ const ExamChecklist = lazy(() => import("./pages/ExamChecklist"));
 const Feed = lazy(() => import("./pages/Feed"));
 const FeedArticle = lazy(() => import("./pages/FeedArticle"));
 const PremiumRevizor = lazy(() => import("./pages/PremiumRevizor"));
+const PremiumOnegin = lazy(() => import("./pages/PremiumOnegin"));
+const PremiumGeroy = lazy(() => import("./pages/PremiumGeroy"));
+const PremiumMertvyeDushi = lazy(() => import("./pages/PremiumMertvyeDushi"));
+const PremiumPrestuplenie = lazy(() => import("./pages/PremiumPrestuplenie"));
+const PremiumVoynaIMir = lazy(() => import("./pages/PremiumVoynaIMir"));
 const FeedSubmit = lazy(() => import("./pages/FeedSubmit"));
 const AdminFeed = lazy(() => import("./pages/admin/AdminFeed"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
@@ -147,6 +152,11 @@ const App = () => (
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />
                     <Route path="/feed/razbor-revizor-gogol" element={<PremiumRevizor />} />
+                    <Route path="/feed/razbor-evgeniy-onegin-pushkin" element={<PremiumOnegin />} />
+                    <Route path="/feed/razbor-geroy-nashego-vremeni-lermontov" element={<PremiumGeroy />} />
+                    <Route path="/feed/razbor-mertvye-dushi-gogol" element={<PremiumMertvyeDushi />} />
+                    <Route path="/feed/razbor-prestuplenie-i-nakazanie-dostoevskiy" element={<PremiumPrestuplenie />} />
+                    <Route path="/feed/razbor-voyna-i-mir-tolstoy" element={<PremiumVoynaIMir />} />
                     <Route path="/feed/:slug" element={<FeedArticle />} />
                     <Route path="/admin/feed" element={<AdminFeed />} />
                     <Route path="/search" element={<SearchResults />} />

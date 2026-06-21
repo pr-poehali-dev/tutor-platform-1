@@ -22,7 +22,7 @@ ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
 ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants', 'literature'}
 
 # Бесплатный дневной лимит чтения разборов произведений
-LITERATURE_DAILY_LIMIT = 5
+LITERATURE_DAILY_LIMIT = 1
 
 
 def cors_headers() -> dict:

@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { COVER, SECTIONS } from "./revizorData";
+import { AnalysisData, ANALYSIS_SECTIONS } from "./types";
 
-interface RevizorHeroProps {
+interface AnalysisHeroProps {
+  data: AnalysisData;
   progress: number;
-  active: string;
   tocOpen: boolean;
   setTocOpen: React.Dispatch<React.SetStateAction<boolean>>;
   scrollTo: (id: string) => void;
 }
 
-export default function RevizorHero({ progress, active, tocOpen, setTocOpen, scrollTo }: RevizorHeroProps) {
+export default function AnalysisHero({ data, progress, tocOpen, setTocOpen, scrollTo }: AnalysisHeroProps) {
   return (
     <>
       {/* Прогресс чтения */}
@@ -41,7 +41,7 @@ export default function RevizorHero({ progress, active, tocOpen, setTocOpen, scr
       {/* HERO */}
       <header className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0">
-          <img src={COVER} alt="Ревизор. Гоголь" className="w-full h-full object-cover opacity-30" />
+          <img src={data.cover} alt={`${data.title}. ${data.author}`} className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0b1020]/60 via-[#0b1020]/85 to-[#0b1020]" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-12 pb-14 text-center">
@@ -49,16 +49,16 @@ export default function RevizorHero({ progress, active, tocOpen, setTocOpen, scr
             <Icon name="Crown" size={14} />
             Эталонный разбор
           </div>
-          <p className="text-amber-300/90 font-montserrat font-bold tracking-wider uppercase text-sm mb-3">Н. В. Гоголь</p>
+          <p className="text-amber-300/90 font-montserrat font-bold tracking-wider uppercase text-sm mb-3">{data.author}</p>
           <h1 className="font-montserrat font-black text-5xl md:text-7xl leading-[0.95] mb-5">
-            <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-rose-300 bg-clip-text text-transparent">Ревизор</span>
+            <span className={`bg-gradient-to-r ${data.titleGradient} bg-clip-text text-transparent`}>{data.title}</span>
           </h1>
           <p className="text-white/70 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
-            Комедия в пяти действиях, в которой целый город сошёл с ума от страха. Полный разбор: от первой реплики до знаменитой немой сцены.
+            {data.subtitle}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             {[
-              { icon: "Clock", label: "18 мин чтения" },
+              { icon: "Clock", label: data.readingTime },
               { icon: "Layers", label: "10 разделов" },
               { icon: "GraduationCap", label: "Готовит к ЕГЭ и ОГЭ" },
             ].map((b) => (
@@ -85,7 +85,7 @@ export default function RevizorHero({ progress, active, tocOpen, setTocOpen, scr
         </button>
         {tocOpen && (
           <div className="px-3 pb-3 grid grid-cols-1 gap-1">
-            {SECTIONS.map((s, i) => (
+            {ANALYSIS_SECTIONS.map((s, i) => (
               <button
                 key={s.id}
                 onClick={() => scrollTo(s.id)}
@@ -102,13 +102,13 @@ export default function RevizorHero({ progress, active, tocOpen, setTocOpen, scr
   );
 }
 
-export function RevizorSidebar({ active, scrollTo }: { active: string; scrollTo: (id: string) => void }) {
+export function AnalysisSidebar({ active, scrollTo }: { active: string; scrollTo: (id: string) => void }) {
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-24">
         <div className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4 px-3">Содержание</div>
         <nav className="space-y-1">
-          {SECTIONS.map((s, i) => (
+          {ANALYSIS_SECTIONS.map((s, i) => (
             <button
               key={s.id}
               onClick={() => scrollTo(s.id)}
