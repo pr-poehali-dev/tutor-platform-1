@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import func2url from "../../../backend/func2url.json";
 
-const URL = (func2url as Record<string, string>)["max-channel-agent"];
+const AGENT_URL = (func2url as Record<string, string>)["max-channel-agent"];
 const PIN_KEY = "uchispro_admin_pin_v1";
 const ADMIN_PIN = "7777";
 
@@ -81,7 +81,7 @@ export default function MaxChannelDashboard() {
   const load = useCallback(async (p: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${URL}?action=dashboard`, {
+      const res = await fetch(`${AGENT_URL}?action=dashboard`, {
         headers: { "X-Admin-Pin": p },
       });
       if (res.status === 403) {
@@ -125,7 +125,7 @@ export default function MaxChannelDashboard() {
   const act = async (action: string) => {
     setBusy(action);
     try {
-      await fetch(`${URL}?action=${action}`, {
+      await fetch(`${AGENT_URL}?action=${action}`, {
         method: "POST",
         headers: { "X-Admin-Pin": pin, "Content-Type": "application/json" },
         body: "{}",
