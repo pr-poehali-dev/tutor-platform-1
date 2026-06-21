@@ -48,6 +48,7 @@ const KnowYourselfResult = lazy(() => import("./pages/KnowYourselfResult"));
 const ExamChecklist = lazy(() => import("./pages/ExamChecklist"));
 const Feed = lazy(() => import("./pages/Feed"));
 const FeedArticle = lazy(() => import("./pages/FeedArticle"));
+const PremiumRevizor = lazy(() => import("./pages/PremiumRevizor"));
 const FeedSubmit = lazy(() => import("./pages/FeedSubmit"));
 const AdminFeed = lazy(() => import("./pages/admin/AdminFeed"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
@@ -145,6 +146,7 @@ const App = () => (
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />
+                    <Route path="/feed/razbor-revizor-gogol" element={<PremiumRevizor />} />
                     <Route path="/feed/:slug" element={<FeedArticle />} />
                     <Route path="/admin/feed" element={<AdminFeed />} />
                     <Route path="/search" element={<SearchResults />} />
