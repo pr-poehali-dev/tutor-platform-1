@@ -362,21 +362,75 @@ SEED_POSTS = [
 ]
 
 
-def seed_initial_posts(conn, chat_id: int) -> dict:
-    """Разовая публикация стартового набора постов + анонс первого конкурса."""
+SEED_POSTS_2 = [
+    {
+        "ref": "malysh",
+        "scene": "happy toddler reading, colorful alphabet, cute fox mascot, nursery",
+        "fallback": (
+            "🦊 Модуль «Малыш» — для самых маленьких!\n\n"
+            "Обучение чтению, добрые аудиосказки, песенки и умные игры для детей 2–6 лет. "
+            "Всё бережно и по возрасту — малыш учится играя.\n\n"
+            f"Загляните 👉 {SITE_URL}"
+        ),
+        "prompt": (
+            "Напиши тёплый пост для родителей про модуль «Малыш» платформы УЧИСЬПРО: обучение чтению, "
+            "аудиосказки, песни и умные игры для детей 2–6 лет. Подчеркни бережный подход и обучение через игру. "
+            "2 коротких абзаца, тёплый тон, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+    {
+        "ref": "exam_prep",
+        "scene": "high school student preparing for exam, confident, books, charts",
+        "fallback": (
+            "🎯 Подготовка к ЕГЭ и ОГЭ без стресса\n\n"
+            "Персональный ИИ-репетитор разберёт сложные темы, подтянет слабые места и составит план. "
+            "Занимайся в своём темпе — и иди на экзамен уверенно!\n\n"
+            f"Начни сегодня 👉 {SITE_URL}"
+        ),
+        "prompt": (
+            "Напиши мотивирующий пост про подготовку к ЕГЭ и ОГЭ на платформе УЧИСЬПРО с персональным ИИ-репетитором: "
+            "разбор сложных тем, работа над слабыми местами, индивидуальный план, занятия в своём темпе. "
+            "2 коротких абзаца, поддерживающий тон, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+    {
+        "ref": "motivation",
+        "scene": "morning motivation, sunrise, open book, cup, cozy desk, inspiration",
+        "fallback": (
+            "🌅 Маленький шаг каждый день — большой результат к финишу\n\n"
+            "Не нужно учить всё сразу. 20–30 минут в день дают больше, чем редкие марафоны. "
+            "Главное — регулярность. С чего начнёшь сегодня? Поделись в комментариях! 💬"
+        ),
+        "prompt": (
+            "Напиши короткий мотивирующий пост про пользу регулярных занятий (немного, но каждый день). "
+            "Поддержи читателя и в конце мягко позови поделиться планами в комментариях. "
+            "2 абзаца, вдохновляющий тон, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+]
+
+
+def publish_seed_set(conn, chat_id: int, posts: list, seed_kind: str) -> list:
+    """Публикует набор постов с картинками, помечая их в логе, чтобы не повторять."""
     published = []
-    for post in SEED_POSTS:
+    for post in posts:
         ref = post["ref"]
-        if already_posted(conn, 'seed', ref):
+        if already_posted(conn, seed_kind, ref):
             continue
         text = call_polza(SMM_SYSTEM, post["prompt"], max_tokens=360) or post["fallback"]
         if ref == "welcome":
             text = f"{text}\n\n📢 Подписывайся и зови друзей!"
-        img = make_post_image(post["scene"], f"seed-{ref}")
+        img = make_post_image(post["scene"], f"{seed_kind}-{ref}")
         success, error = max_send_to_channel(chat_id, text, img)
-        log_post(conn, 'seed', ref, None, chat_id, text, success, error)
+        log_post(conn, seed_kind, ref, None, chat_id, text, success, error)
         if success:
             published.append(ref)
+    return published
+
+
+def seed_initial_posts(conn, chat_id: int) -> dict:
+    """Разовая публикация стартового набора постов + анонс первого конкурса."""
+    published = publish_seed_set(conn, chat_id, SEED_POSTS, 'seed')
 
     # Запускаем первый конкурс, если активного ещё нет
     contest_started = False
@@ -385,6 +439,12 @@ def seed_initial_posts(conn, chat_id: int) -> dict:
         contest_started = start_contest_if_needed(conn, chat_id, f"{iso[0]}-W{iso[1]:02d}", iso[1])
 
     return ok({'ok': True, 'published': published, 'contest_started': contest_started})
+
+
+def seed_second_posts(conn, chat_id: int) -> dict:
+    """Публикация второго набора постов (новые темы)."""
+    published = publish_seed_set(conn, chat_id, SEED_POSTS_2, 'seed2')
+    return ok({'ok': True, 'published': published})
 
 
 def get_active_contest(conn):
@@ -791,6 +851,8 @@ def handle_admin_action(conn, action: str) -> dict:
         return ok({'ok': finished})
     if action == 'seed_posts':
         return seed_initial_posts(conn, chat_id)
+    if action == 'seed_posts_2':
+        return seed_second_posts(conn, chat_id)
     return err('Неизвестное действие', 404)
 
 
@@ -831,7 +893,7 @@ def handler(event: dict, context) -> dict:
         finally:
             conn.close()
 
-    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts'):
+    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts', 'seed_posts_2'):
         if not is_admin(headers):
             return err('forbidden', 403)
         conn = get_db()

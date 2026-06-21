@@ -232,7 +232,7 @@ export default function MaxChannelDashboard() {
             </Card>
 
             {/* Быстрое наполнение канала */}
-            {data.total_posted < 5 && (
+            {data.total_posted < 3 && (
               <Card className="border border-sky-400/25 bg-gradient-to-br from-sky-500/[0.07] to-transparent p-5 mb-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -240,7 +240,7 @@ export default function MaxChannelDashboard() {
                     <div>
                       <div className="font-bold text-white">Наполнить канал стартовыми постами</div>
                       <div className="text-white/50 text-xs mt-0.5">
-                        Агент сразу выложит приветствие, рассказ о платформе, полезный лайфхак и запустит первый конкурс
+                        Приветствие, рассказ о платформе, полезный лайфхак и запуск первого конкурса
                       </div>
                     </div>
                   </div>
@@ -254,6 +254,28 @@ export default function MaxChannelDashboard() {
                 </div>
               </Card>
             )}
+
+            {/* Второй набор постов */}
+            <Card className="border border-violet-400/25 bg-gradient-to-br from-violet-500/[0.07] to-transparent p-5 mb-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Icon name="Sparkles" size={20} className="text-violet-400 mt-0.5" />
+                  <div>
+                    <div className="font-bold text-white">Опубликовать следующий набор постов</div>
+                    <div className="text-white/50 text-xs mt-0.5">
+                      Новые темы с картинками: модуль «Малыш», подготовка к ЕГЭ и ОГЭ, мотивация на учёбу
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => act("seed_posts_2")}
+                  disabled={busy === "seed_posts_2"}
+                  className="bg-gradient-to-r from-violet-500 to-purple-600"
+                >
+                  {busy === "seed_posts_2" ? "Публикую…" : "Опубликовать набор"}
+                </Button>
+              </div>
+            </Card>
 
             {/* Метрики */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
