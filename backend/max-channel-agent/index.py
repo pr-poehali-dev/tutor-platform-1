@@ -234,6 +234,76 @@ def make_contest_results(winner_name: str, prize_label: str) -> str:
             f"Оставайся с нами 👉 {SITE_URL}")
 
 
+SEED_POSTS = [
+    {
+        "ref": "welcome",
+        "fallback": (
+            "🚀 Добро пожаловать в канал УЧИСЬПРО!\n\n"
+            "Здесь — образовательные новости, лайфхаки для учёбы, разборы и конкурсы с призами 🎁 "
+            "для детей, школьников и родителей.\n\n"
+            f"✨ Наша платформа: {SITE_URL}"
+        ),
+        "prompt": (
+            "Напиши тёплый приветственный пост — первый пост в новом канале образовательной платформы УЧИСЬПРО. "
+            "Расскажи, что в канале будет: образовательные новости, лайфхаки по учёбе, разборы и еженедельные "
+            "конкурсы с призами для детей, школьников и родителей. Пригласи остаться. 2 абзаца, тёплый тон, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+    {
+        "ref": "about_platform",
+        "fallback": (
+            "📚 Что такое УЧИСЬПРО?\n\n"
+            "Это онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, "
+            "адаптивные программы, подготовка к ЕГЭ и ОГЭ, а ещё модуль «Малыш» для детей 2–6 лет.\n\n"
+            f"Учись когда удобно 👉 {SITE_URL}"
+        ),
+        "prompt": (
+            "Напиши пост-знакомство с платформой УЧИСЬПРО для канала. Кратко и цепляюще: персональный ИИ-репетитор, "
+            "голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ, модуль «Малыш» для детей 2–6 лет. "
+            "2 коротких абзаца, дружелюбно, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+    {
+        "ref": "study_tip",
+        "fallback": (
+            "💡 Лайфхак для учёбы: правило 25 минут\n\n"
+            "Учись концентрированно 25 минут, потом 5 минут отдыхай. "
+            "Такие короткие подходы помогают мозгу не уставать и лучше запоминать материал. "
+            "Попробуй сегодня — и расскажи в комментариях, как зашло! 🧠"
+        ),
+        "prompt": (
+            "Напиши полезный пост-лайфхак для учёбы школьников (например про технику Помодоро/короткие подходы "
+            "или как лучше запоминать). Конкретный совет, который можно применить сегодня. В конце — мягко позови "
+            "поделиться мнением в комментариях. 2 абзаца, 2–3 эмодзи. Без ссылок."
+        ),
+    },
+]
+
+
+def seed_initial_posts(conn, chat_id: int) -> dict:
+    """Разовая публикация стартового набора постов + анонс первого конкурса."""
+    published = []
+    for post in SEED_POSTS:
+        ref = post["ref"]
+        if already_posted(conn, 'seed', ref):
+            continue
+        text = call_polza(SMM_SYSTEM, post["prompt"], max_tokens=360) or post["fallback"]
+        if ref == "welcome":
+            text = f"{text}\n\n📢 Подписывайся и зови друзей!"
+        success, error = max_send_to_channel(chat_id, text)
+        log_post(conn, 'seed', ref, None, chat_id, text, success, error)
+        if success:
+            published.append(ref)
+
+    # Запускаем первый конкурс, если активного ещё нет
+    contest_started = False
+    if not get_active_contest(conn):
+        iso = datetime.now(MSK).date().isocalendar()
+        contest_started = start_contest_if_needed(conn, chat_id, f"{iso[0]}-W{iso[1]:02d}", iso[1])
+
+    return ok({'ok': True, 'published': published, 'contest_started': contest_started})
+
+
 def get_active_contest(conn):
     with conn.cursor() as cur:
         cur.execute(
@@ -631,6 +701,8 @@ def handle_admin_action(conn, action: str) -> dict:
     if action == 'finish_now':
         finished = finish_contest(conn, chat_id)
         return ok({'ok': finished})
+    if action == 'seed_posts':
+        return seed_initial_posts(conn, chat_id)
     return err('Неизвестное действие', 404)
 
 
@@ -671,7 +743,7 @@ def handler(event: dict, context) -> dict:
         finally:
             conn.close()
 
-    if action in ('dashboard', 'toggle', 'start_now', 'finish_now'):
+    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts'):
         if not is_admin(headers):
             return err('forbidden', 403)
         conn = get_db()
