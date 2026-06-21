@@ -73,26 +73,14 @@ def t(name: str) -> str:
     return f'{SCHEMA}.{name}'
 
 
-# Разрешены: русские буквы, цифры, пробелы, перевод строки и базовая пунктуация
-_ALLOWED_CHARS = set(
-    "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-    "0123456789"
-    " \n.,!?:;-—()«»\"'%"
-)
-
-
 def sanitize_text(text: str) -> str:
-    """Оставляет только русские буквы, цифры и базовую пунктуацию.
-
-    Удаляет эмодзи и прочие символы. Ссылки (латиница в URL) сохраняем отдельно,
-    поэтому очищаем только тело сообщения до ссылок — здесь чистим весь текст.
-    """
+    """Нормализует текст поста: убирает управляющие символы и лишние пробелы.
+    Эмодзи и русские буквы сохраняются — они добавляют живости."""
     if not text:
         return ''
-    cleaned = ''.join(ch for ch in text if ch in _ALLOWED_CHARS)
-    # убираем лишние пробелы, оставляя переводы строк
+    # удаляем только невидимые управляющие символы (кроме перевода строки)
+    cleaned = ''.join(ch for ch in text if ch == '\n' or ord(ch) >= 32)
     lines = [' '.join(line.split()) for line in cleaned.split('\n')]
-    # схлопываем 3+ пустых строки до двух
     result = '\n'.join(lines)
     while '\n\n\n' in result:
         result = result.replace('\n\n\n', '\n\n')
@@ -100,42 +88,91 @@ def sanitize_text(text: str) -> str:
 
 
 def sanitize_message(text: str) -> str:
-    """Чистит весь текст от эмодзи и спецсимволов, но строки со ссылкой
-    (содержащие http) оставляет нетронутыми, чтобы URL не сломался."""
-    if not text:
+    """Финальная нормализация текста перед отправкой в MAX."""
+    return sanitize_text(text)
+
+
+# ---------- Генерация картинок ----------
+
+IMG_STYLE = (
+    "bright cheerful cartoon illustration, friendly characters, vivid colors, "
+    "soft rounded shapes, educational theme for kids, flat vector style, "
+    "high quality, no text"
+)
+
+
+def generate_image_bytes(scene: str) -> bytes:
+    """Генерирует яркую мультяшную картинку через бесплатный FLUX (Pollinations)."""
+    prompt = f"{scene}, {IMG_STYLE}"
+    encoded = urllib.parse.quote(prompt)
+    seed = abs(hash(scene)) % 100000
+    url = (f"https://image.pollinations.ai/prompt/{encoded}"
+           f"?width=1024&height=1024&seed={seed}&nologo=true&model=flux")
+    req = urllib.request.Request(
+        url, headers={'User-Agent': 'Mozilla/5.0 UchisproBot/1.0', 'Accept': 'image/*'},
+        method='GET')
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            return resp.read()
+    except Exception:
+        return b''
+
+
+def upload_image_to_s3(data: bytes, key: str) -> str:
+    """Загружает картинку в S3 и возвращает CDN-URL. Пустая строка при ошибке."""
+    if not data:
         return ''
-    out = []
-    for line in text.split('\n'):
-        if 'http' in line.lower():
-            out.append(line.strip())
-        else:
-            out.append(sanitize_text(line))
-    result = '\n'.join(out)
-    while '\n\n\n' in result:
-        result = result.replace('\n\n\n', '\n\n')
-    return result.strip()
+    try:
+        import boto3
+        s3 = boto3.client(
+            's3', endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+        s3.put_object(Bucket='files', Key=key, Body=data,
+                      ContentType='image/png', CacheControl='public, max-age=86400')
+        return f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+    except Exception:
+        return ''
+
+
+def make_post_image(scene: str, ref: str) -> str:
+    """Полный цикл: генерация картинки + загрузка в S3. Возвращает CDN-URL или ''."""
+    data = generate_image_bytes(scene)
+    if not data:
+        return ''
+    ts = datetime.now(MSK).strftime('%Y%m%d-%H%M%S')
+    safe_ref = ''.join(c for c in ref if c.isalnum() or c in '-_')[:40] or 'post'
+    return upload_image_to_s3(data, f"max-channel/{safe_ref}-{ts}.png")
 
 
 # ---------- MAX Bot API ----------
 
-def max_send_to_channel(chat_id: int, text: str) -> tuple:
-    """Публикация поста в канал MAX. Возвращает (ok, error)."""
+def max_send_to_channel(chat_id: int, text: str, image_url: str = '') -> tuple:
+    """Публикация поста в канал MAX (с картинкой, если задана). Возвращает (ok, error)."""
     token = os.environ.get('MAX_BOT_TOKEN', '')
     if not token:
         return False, 'MAX_BOT_TOKEN not set'
     url = f"{MAX_API_BASE}/messages?chat_id={chat_id}"
-    payload = json.dumps({'text': sanitize_message(text)}).encode('utf-8')
+    body_obj = {'text': sanitize_message(text)}
+    if image_url:
+        body_obj['attachments'] = [{'type': 'image', 'payload': {'url': image_url}}]
+    payload = json.dumps(body_obj).encode('utf-8')
     req = urllib.request.Request(url, data=payload, method='POST',
                                  headers={'Content-Type': 'application/json',
                                           'Authorization': token})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             resp.read()
         return True, None
     except urllib.error.HTTPError as e:
-        body = e.read().decode('utf-8', 'ignore')
-        return False, f'HTTP {e.code}: {body[:300]}'
+        err_body = e.read().decode('utf-8', 'ignore')
+        # если картинка не принялась — повторяем без неё, чтобы пост точно вышел
+        if image_url:
+            return max_send_to_channel(chat_id, text, '')
+        return False, f'HTTP {e.code}: {err_body[:300]}'
     except Exception as e:
+        if image_url:
+            return max_send_to_channel(chat_id, text, '')
         return False, str(e)[:300]
 
 
@@ -161,11 +198,11 @@ def max_send_to_user(user_id: int, text: str) -> tuple:
 
 
 def welcome_text() -> str:
-    return ("Здравствуйте! Это бот платформы Учисьпро.\n\n"
+    return ("👋 Здравствуйте! Это бот платформы «Учисьпро».\n\n"
             "Подпишитесь на наш канал — там образовательные новости, идеи для учёбы "
             "и полезные материалы для детей и родителей:\n"
-            f"{CHANNEL_LINK}\n\n"
-            f"Платформа: {SITE_URL}")
+            f"📢 {CHANNEL_LINK}\n\n"
+            f"✨ Платформа: {SITE_URL}")
 
 
 # ---------- ИИ-генерация текста поста ----------
@@ -204,14 +241,13 @@ SMM_SYSTEM = (
     "Ты — SMM-редактор образовательной платформы УЧИСЬПРО для детей и школьников. "
     "Пишешь короткие цепляющие посты для канала в мессенджере MAX. "
     "Стиль: живой, тёплый, дружелюбный, без канцелярита и кликбейта. "
-    "1–3 коротких абзаца. Без хэштегов. "
-    "ВАЖНО: не используй эмодзи, смайлики и любые специальные символы. "
-    "Пиши только русскими буквами и обычными знаками препинания. "
+    "1–3 коротких абзаца, добавляй 1–3 уместных эмодзи для настроения. Без хэштегов. "
     "Не выдумывай фактов сверх данных. Пиши только на русском языке."
 )
 
 
 def make_article_post(title: str, summary: str, category: str, url: str) -> str:
+    emoji = CATEGORY_EMOJI.get(category, '📰')
     prompt = (
         f"Напиши пост-анонс новой статьи для канала. Заголовок: «{title}». "
         f"О чём статья: {summary or title}. "
@@ -221,7 +257,7 @@ def make_article_post(title: str, summary: str, category: str, url: str) -> str:
     body = call_polza(SMM_SYSTEM, prompt, max_tokens=320)
     if not body:
         body = (f"{title}\n\n{(summary or '').strip()}").strip()
-    return f"{sanitize_text(body)}\n\nЧитать: {url}"
+    return f"{emoji} {sanitize_text(body)}\n\n👉 Читать: {url}"
 
 
 def make_weekly_digest(titles: list) -> str:
@@ -236,10 +272,10 @@ def make_weekly_digest(titles: list) -> str:
     )
     body = call_polza(SMM_SYSTEM, prompt, max_tokens=420)
     if not body:
-        body = ("Новая неделя — новый повод учиться с удовольствием!\n\n"
-                "В УЧИСЬПРО есть всё: модуль Малыш для самых маленьких, подготовка к школе и ЕГЭ, "
+        body = ("🌟 Новая неделя — новый повод учиться с удовольствием!\n\n"
+                "В УЧИСЬПРО есть всё: модуль «Малыш» для самых маленьких, подготовка к школе и ЕГЭ, "
                 "ИИ-репетиторы и бесплатная Лента образовательных новостей.")
-    return f"{sanitize_text(body)}\n\nОткрыть платформу: {SITE_URL}"
+    return f"{sanitize_text(body)}\n\n✨ Открыть платформу: {SITE_URL}"
 
 
 # ---------- Конкурсы / движ ----------
@@ -254,72 +290,73 @@ def make_contest_announcement(prize_label: str, theme: str) -> str:
     )
     body = call_polza(SMM_SYSTEM, prompt, max_tokens=380)
     if not body:
-        body = ("Запускаем конкурс недели!\n\n"
+        body = ("🎉 Запускаем конкурс недели!\n\n"
                 f"Делитесь в комментариях на тему: {theme}. "
                 "Чем активнее участвуешь всю неделю — тем выше шанс победить!\n\n"
-                f"Приз: {prize_label}. Итоги — в пятницу!")
-    return f"КОНКУРС НЕДЕЛИ\n\n{sanitize_text(body)}\n\nУчаствуй в комментариях прямо сейчас!"
+                f"🏆 Приз: {prize_label}. Итоги — в пятницу!")
+    return f"🎁 КОНКУРС НЕДЕЛИ\n\n{sanitize_text(body)}\n\n💬 Участвуй в комментариях прямо сейчас!"
 
 
 def make_contest_reminder(prize_label: str) -> str:
-    return sanitize_text(
-        "Конкурс недели в разгаре!\n\n"
-        "Ещё есть время поучаствовать — пиши в комментариях, проявляй активность. "
-        f"Победителя за активность ждёт приз: {prize_label}\n\n"
-        "Итоги уже в пятницу — не упусти шанс!")
+    return ("⏳ Конкурс недели в разгаре!\n\n"
+            "Ещё есть время поучаствовать — пиши в комментариях, проявляй активность. "
+            f"Победителя за активность ждёт приз: {prize_label}\n\n"
+            "🔥 Итоги уже в пятницу — не упусти шанс!")
 
 
 def make_contest_results(winner_name: str, prize_label: str) -> str:
-    who = sanitize_text(winner_name) or "наш самый активный участник"
-    return sanitize_text(
-        "ИТОГИ КОНКУРСА НЕДЕЛИ!\n\n"
-        f"Победитель за активность — {who}!\n"
-        f"Приз: {prize_label}\n\n"
-        "Спасибо всем, кто участвовал! Совсем скоро — новый конкурс. "
-    ) + f"\nОставайся с нами: {SITE_URL}"
+    who = winner_name or "наш самый активный участник"
+    return ("🏆 ИТОГИ КОНКУРСА НЕДЕЛИ!\n\n"
+            f"Победитель за активность — {who}! 🎉\n"
+            f"Приз: {prize_label}\n\n"
+            "Спасибо всем, кто участвовал! Совсем скоро — новый конкурс. "
+            f"Оставайся с нами 👉 {SITE_URL}")
 
 
 SEED_POSTS = [
     {
         "ref": "welcome",
+        "scene": "welcome banner, rocket, happy kids, books, school, friendly",
         "fallback": (
-            "Добро пожаловать в канал УЧИСЬПРО!\n\n"
-            "Здесь образовательные новости, лайфхаки для учёбы, разборы и конкурсы с призами "
+            "🚀 Добро пожаловать в канал УЧИСЬПРО!\n\n"
+            "Здесь образовательные новости, лайфхаки для учёбы, разборы и конкурсы с призами 🎁 "
             "для детей, школьников и родителей.\n\n"
-            f"Наша платформа: {SITE_URL}"
+            f"✨ Наша платформа: {SITE_URL}"
         ),
         "prompt": (
             "Напиши тёплый приветственный пост — первый пост в новом канале образовательной платформы УЧИСЬПРО. "
             "Расскажи, что в канале будет: образовательные новости, лайфхаки по учёбе, разборы и еженедельные "
-            "конкурсы с призами для детей, школьников и родителей. Пригласи остаться. 2 абзаца, тёплый тон. Без ссылок."
+            "конкурсы с призами для детей, школьников и родителей. Пригласи остаться. 2 абзаца, тёплый тон, 2–3 эмодзи. Без ссылок."
         ),
     },
     {
         "ref": "about_platform",
+        "scene": "online learning platform, tablet, AI tutor, smiling student",
         "fallback": (
-            "Что такое УЧИСЬПРО?\n\n"
+            "📚 Что такое УЧИСЬПРО?\n\n"
             "Это онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, "
-            "адаптивные программы, подготовка к ЕГЭ и ОГЭ, а ещё модуль Малыш для детей 2–6 лет.\n\n"
-            f"Учись когда удобно: {SITE_URL}"
+            "адаптивные программы, подготовка к ЕГЭ и ОГЭ, а ещё модуль «Малыш» для детей 2–6 лет.\n\n"
+            f"Учись когда удобно 👉 {SITE_URL}"
         ),
         "prompt": (
             "Напиши пост-знакомство с платформой УЧИСЬПРО для канала. Кратко и цепляюще: персональный ИИ-репетитор, "
-            "голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ, модуль Малыш для детей 2–6 лет. "
-            "2 коротких абзаца, дружелюбно. Без ссылок."
+            "голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ, модуль «Малыш» для детей 2–6 лет. "
+            "2 коротких абзаца, дружелюбно, 2–3 эмодзи. Без ссылок."
         ),
     },
     {
         "ref": "study_tip",
+        "scene": "study tip, timer, focused student at desk, lightbulb idea",
         "fallback": (
-            "Лайфхак для учёбы: правило 25 минут\n\n"
+            "💡 Лайфхак для учёбы: правило 25 минут\n\n"
             "Учись концентрированно 25 минут, потом 5 минут отдыхай. "
             "Такие короткие подходы помогают мозгу не уставать и лучше запоминать материал. "
-            "Попробуй сегодня и расскажи в комментариях, как зашло!"
+            "Попробуй сегодня и расскажи в комментариях, как зашло! 🧠"
         ),
         "prompt": (
             "Напиши полезный пост-лайфхак для учёбы школьников (например про технику коротких подходов "
             "или как лучше запоминать). Конкретный совет, который можно применить сегодня. В конце — мягко позови "
-            "поделиться мнением в комментариях. 2 абзаца. Без ссылок."
+            "поделиться мнением в комментариях. 2 абзаца, 2–3 эмодзи. Без ссылок."
         ),
     },
 ]
@@ -334,8 +371,9 @@ def seed_initial_posts(conn, chat_id: int) -> dict:
             continue
         text = call_polza(SMM_SYSTEM, post["prompt"], max_tokens=360) or post["fallback"]
         if ref == "welcome":
-            text = f"{text}\n\nПодписывайся и зови друзей!"
-        success, error = max_send_to_channel(chat_id, text)
+            text = f"{text}\n\n📢 Подписывайся и зови друзей!"
+        img = make_post_image(post["scene"], f"seed-{ref}")
+        success, error = max_send_to_channel(chat_id, text, img)
         log_post(conn, 'seed', ref, None, chat_id, text, success, error)
         if success:
             published.append(ref)
@@ -366,7 +404,8 @@ def start_contest_if_needed(conn, chat_id: int, week_ref: str, week_index: int) 
             return False
     prize = CONTEST_PRIZES[week_index % len(CONTEST_PRIZES)]
     text = make_contest_announcement(prize['label'], prize['theme'])
-    success, error = max_send_to_channel(chat_id, text)
+    img = make_post_image("gift box, prize, celebration, confetti, contest banner", f"contest-{week_ref}")
+    success, error = max_send_to_channel(chat_id, text, img)
     if not success:
         return False
     with conn.cursor() as cur:
@@ -397,7 +436,8 @@ def finish_contest(conn, chat_id: int) -> bool:
     winner_id = top[0] if top else None
     winner_name = top[1] if top else None
     text = make_contest_results(winner_name, prize_label)
-    success, error = max_send_to_channel(chat_id, text)
+    img = make_post_image("winner trophy, golden cup, celebration, confetti", f"winner-{week_ref}")
+    success, error = max_send_to_channel(chat_id, text, img)
     with conn.cursor() as cur:
         cur.execute(
             "UPDATE " + t('max_contests') + " SET status='finished', winner_user_id=%s, "
@@ -522,7 +562,8 @@ def handle_cron(conn) -> dict:
     for aid, slug, title, summary, category in rows:
         url = f"{SITE_URL}/feed/{slug}"
         text = make_article_post(title, summary, category, url)
-        success, error = max_send_to_channel(chat_id, text)
+        img = make_post_image(f"illustration about: {title}", f"article-{slug}")
+        success, error = max_send_to_channel(chat_id, text, img)
         log_post(conn, 'feed_article', slug, aid, chat_id, text, success, error)
         if success:
             posted_articles += 1
@@ -544,7 +585,8 @@ def handle_cron(conn) -> dict:
                 )
                 titles = [r[0] for r in cur.fetchall()]
             text = make_weekly_digest(titles)
-            success, error = max_send_to_channel(chat_id, text)
+            img = make_post_image("happy children learning, books, school, new week", f"digest-{ref}")
+            success, error = max_send_to_channel(chat_id, text, img)
             log_post(conn, 'weekly_digest', ref, None, chat_id, text, success, error)
             digest_posted = success
 
@@ -562,7 +604,8 @@ def handle_cron(conn) -> dict:
         contest = get_active_contest(conn)
         if contest and not already_posted(conn, 'contest_reminder', week_ref):
             text = make_contest_reminder(contest[3])
-            success, _ = max_send_to_channel(chat_id, text)
+            img = make_post_image("hourglass, clock, reminder, contest, bright", f"remind-{week_ref}")
+            success, _ = max_send_to_channel(chat_id, text, img)
             log_post(conn, 'contest_reminder', week_ref, None, chat_id, text, success, None)
             contest_reminded = success
     elif weekday == 4:  # пятница — итоги
