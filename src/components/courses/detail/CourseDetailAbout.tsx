@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { Course, getAgeRating, getCourseDisclaimers } from "@/components/courses/coursesData";
 import { CourseDetail } from "@/components/courses/courseDetailsData";
+import CourseDetailValue from "./CourseDetailValue";
 
 interface Props {
   course: Course;
@@ -64,6 +65,9 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
           ))}
         </div>
       </div>
+
+      {/* Ценность курса: как устроено обучение, что входит, частые вопросы */}
+      <CourseDetailValue course={course} />
 
       {/* Tags */}
       <div>
