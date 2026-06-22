@@ -2097,20 +2097,21 @@ export const GRADE_PRICE: Record<string, number> = {
 };
 
 // Цены профессиональных курсов для взрослых (grade: "adult") по направлению.
-// Стратегия: эталонный продукт по цене КРАТНО ниже конкурентов
-// (Skillbox/Эдюсон/GeekBrains берут 34 000–156 000 ₽ за аналоги).
-// Это позволяет зарабатывать и при этом оставаться самым доступным предложением на рынке.
+// Стратегия (план развития): премиальное позиционирование. Слишком низкая цена
+// обесценивает продукт, поэтому держим достойную стоимость — но всё равно
+// в 8–30 раз дешевле конкурентов (Skillbox/Эдюсон/GeekBrains: 34 000–156 000 ₽).
+// Это формирует ценность и ведёт к цели по выручке.
 export const ADULT_SUBJECT_PRICE: Record<string, number> = {
-  ai: 2990,           // нейросети для работы (у конкурентов 34 000–75 000 ₽)
-  cs: 3490,           // программирование / Python-разработка (у конкурентов от 80 000 ₽)
-  datascience: 3490,  // аналитика данных / Data Science (у конкурентов от 60 000 ₽)
-  product: 2990,      // продакт-менеджмент
-  marketing: 2490,    // интернет-маркетинг
-  business: 2990,     // бизнес и MBA
-  prompteng: 2490,    // промпт-инженер
-  neuroincome: 1990,  // заработок на нейросетях
-  design: 1990,       // дизайн
-  smartmach: 2990,    // цифровое производство
+  ai: 5990,           // нейросети для работы (у конкурентов 34 000–75 000 ₽)
+  cs: 6990,           // программирование / Python-разработка (у конкурентов от 80 000 ₽)
+  datascience: 6990,  // аналитика данных / Data Science (у конкурентов от 60 000 ₽)
+  product: 5990,      // продакт-менеджмент
+  marketing: 4990,    // интернет-маркетинг
+  business: 5990,     // бизнес и MBA
+  prompteng: 4990,    // промпт-инженер
+  neuroincome: 3990,  // заработок на нейросетях
+  design: 3990,       // дизайн
+  smartmach: 5990,    // цифровое производство
 };
 
 export function getCoursePrice(course: Course): number {
@@ -2118,7 +2119,7 @@ export function getCoursePrice(course: Course): number {
   if (course.freeForever || isCourseFreeForever(course.id)) return 0;
   // Профессиональные курсы для взрослых — отдельная цена по направлению.
   if (course.grade === "adult") {
-    return ADULT_SUBJECT_PRICE[course.subject] ?? 1990;
+    return ADULT_SUBJECT_PRICE[course.subject] ?? 3990;
   }
   return GRADE_PRICE[course.grade] ?? 590;
 }
