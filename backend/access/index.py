@@ -24,6 +24,36 @@ GRADE_PRICE_KOPECKS = {
     "all": 59000,
 }
 
+# Цены профессиональных курсов для взрослых (grade='adult') по направлению, в копейках.
+# СИНХРОНИЗИРОВАНО с ADULT_SUBJECT_PRICE на фронте (src/components/courses/coursesData.ts).
+# Subject берётся из БД (course_curricula) по course_id — цену нельзя подделать с клиента.
+ADULT_SUBJECT_PRICE_KOPECKS = {
+    "ai": 599000,
+    "cs": 699000,
+    "datascience": 699000,
+    "product": 599000,
+    "marketing": 499000,
+    "business": 599000,
+    "prompteng": 499000,
+    "neuroincome": 399000,
+    "design": 399000,
+    "smartmach": 599000,
+    "tenders": 699000,
+    "ved": 799000,
+    "sales": 599000,
+}
+ADULT_DEFAULT_KOPECKS = 399000
+
+
+def get_course_subject(cur, course_id: int):
+    """Возвращает subject курса из БД (для расчёта цены adult-курсов)."""
+    cur.execute(
+        "SELECT subject FROM course_curricula WHERE course_id = %s LIMIT 1",
+        (course_id,)
+    )
+    row = cur.fetchone()
+    return row[0] if row else None
+
 # Курсы, бесплатные навсегда — оплата за них не создаётся (доступ открыт всем).
 # Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте.
 FREE_FOREVER_COURSE_IDS = {2, 17, 37, 50, 51, 52, 53, 54, 55, 57, 61, 62, 63, 64, 65}
@@ -392,9 +422,6 @@ def handle_buy_course(token: str, body: dict) -> dict:
     if not return_url.startswith('https://'):
         return err('return_url должен быть https', 400)
 
-    amount_kopecks = GRADE_PRICE_KOPECKS.get(grade, GRADE_PRICE_KOPECKS['all'])
-    amount_rub = amount_kopecks / 100
-
     shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
     secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
 
@@ -404,6 +431,14 @@ def handle_buy_course(token: str, body: dict) -> dict:
             user_id = resolve_user(cur, token)
             if not user_id:
                 return err('Требуется вход', 401)
+
+            # Цена: для adult-курсов — по направлению (subject из БД), иначе — по grade.
+            if grade == 'adult':
+                subject = get_course_subject(cur, course_id) or ''
+                amount_kopecks = ADULT_SUBJECT_PRICE_KOPECKS.get(subject, ADULT_DEFAULT_KOPECKS)
+            else:
+                amount_kopecks = GRADE_PRICE_KOPECKS.get(grade, GRADE_PRICE_KOPECKS['all'])
+            amount_rub = amount_kopecks / 100
 
             cur.execute(
                 "SELECT id FROM course_purchases WHERE user_id = %s AND course_id = %s AND status = 'paid' LIMIT 1",

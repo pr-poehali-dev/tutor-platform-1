@@ -2221,6 +2221,9 @@ export const ADULT_SUBJECT_PRICE: Record<string, number> = {
   neuroincome: 3990,  // заработок на нейросетях
   design: 3990,       // дизайн
   smartmach: 5990,    // цифровое производство
+  tenders: 6990,      // тендеры и госзакупки (удалённая профессия)
+  ved: 7990,          // ВЭД и таможня (дефицитная высокооплачиваемая профессия)
+  sales: 5990,        // продажи B2B (массовая удалённая профессия)
 };
 
 export function getCoursePrice(course: Course): number {
