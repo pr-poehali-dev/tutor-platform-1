@@ -458,6 +458,31 @@ def seed_second_posts(conn, chat_id: int) -> dict:
     return ok({'ok': True, 'published': published})
 
 
+REFERRAL_POST_TEXT = (
+    "🎁 Приведи друга — получите по +7 дней подписки каждый!\n\n"
+    "Учиться вместе веселее и выгоднее. Всё просто:\n"
+    "1️⃣ Возьми свой промокод в личном кабинете\n"
+    "2️⃣ Поделись с другом\n"
+    "3️⃣ Друг регистрируется — и вы ОБА получаете +7 дней бесплатной подписки\n\n"
+    "♾️ Лимита нет — приглашай хоть весь класс и копи бесплатные дни!\n\n"
+    f"Забрать промокод 👉 {SITE_URL}/referral"
+)
+
+
+def post_referral(conn, chat_id: int, ref_key: str = 'v1') -> dict:
+    """Разовая публикация поста о реферальной программе в канал.
+    Дедуп по ref_key: повторная отправка той же версии не дублируется."""
+    if already_posted(conn, 'referral', ref_key):
+        return ok({'ok': True, 'already_posted': True, 'ref_key': ref_key})
+    img = make_post_image(
+        "two happy friends giving a high five, gift boxes, golden coins, "
+        "calendar with bonus days, confetti, referral program, joyful",
+        f"referral-{ref_key}")
+    success, error = max_send_to_channel(chat_id, REFERRAL_POST_TEXT, img)
+    log_post(conn, 'referral', ref_key, None, chat_id, REFERRAL_POST_TEXT, success, error)
+    return ok({'ok': success, 'error': error, 'ref_key': ref_key})
+
+
 def get_active_contest(conn):
     with conn.cursor() as cur:
         cur.execute(
@@ -902,6 +927,8 @@ def handle_admin_action(conn, action: str) -> dict:
         return seed_initial_posts(conn, chat_id)
     if action == 'seed_posts_2':
         return seed_second_posts(conn, chat_id)
+    if action == 'post_referral':
+        return post_referral(conn, chat_id)
     return err('Неизвестное действие', 404)
 
 
@@ -949,7 +976,7 @@ def handler(event: dict, context) -> dict:
         finally:
             conn.close()
 
-    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts', 'seed_posts_2'):
+    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts', 'seed_posts_2', 'post_referral'):
         if not is_admin(headers):
             return err('forbidden', 403)
         conn = get_db()
