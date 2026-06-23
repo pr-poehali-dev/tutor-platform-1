@@ -20,6 +20,7 @@ const NAV_LINKS = [
 
 // Остальные разделы — в выпадающем меню «Ещё»
 const MORE_LINKS = [
+  { label: "Удалённые профессии", icon: "Briefcase", path: "/remote-professions" },
   { label: "Домашка",      icon: "Camera",   path: "/homework" },
   { label: "Олимпиада",    icon: "Trophy",   path: "/olympiad" },
   { label: "Малыш 1+",     icon: "Baby",     path: "/kids" },
