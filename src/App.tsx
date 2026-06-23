@@ -93,6 +93,7 @@ const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard")
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
 const Psychology = lazy(() => import("./pages/Psychology"));
+const RemoteProfessions = lazy(() => import("./pages/RemoteProfessions"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -126,6 +127,7 @@ const App = () => (
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/remote-professions" element={<RemoteProfessions />} />
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
