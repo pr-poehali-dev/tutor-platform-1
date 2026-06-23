@@ -330,6 +330,40 @@ def handle_promo_stats(qs: dict) -> dict:
         conn.close()
 
 
+def handle_referral_promo_stats() -> dict:
+    """Счётчик акции «Приведи друга»: сколько ЗНАЕК начислено за приглашения
+    и за покупки друзей. Для админ-панели «Маркетинг»."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT "
+                "COALESCE(SUM(amount) FILTER (WHERE reason='referral' "
+                "  AND description='Бонус за приглашённого друга'), 0), "
+                "COUNT(*) FILTER (WHERE reason='referral' "
+                "  AND description='Бонус за приглашённого друга'), "
+                "COALESCE(SUM(amount) FILTER (WHERE reason='referral_purchase'), 0), "
+                "COUNT(*) FILTER (WHERE reason='referral_purchase') "
+                "FROM znaika_transactions WHERE kind='earn'"
+            )
+            r = cur.fetchone()
+            invite_znaika, invite_count, purchase_znaika, purchase_count = (
+                int(r[0]), int(r[1]), int(r[2]), int(r[3]))
+            return ok({
+                'active': promo_active(),
+                'start_date': '2026-06-23',
+                'invite_znaika': invite_znaika,
+                'invite_count': invite_count,
+                'purchase_znaika': purchase_znaika,
+                'purchase_count': purchase_count,
+                'total_znaika': invite_znaika + purchase_znaika,
+                'reward_invite': PROMO_INVITE_ZNAIKA,
+                'reward_purchase': PROMO_PURCHASE_ZNAIKA,
+            })
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Реферальная программа УЧИСЬПРО."""
     method = event.get('httpMethod', 'GET')
@@ -354,5 +388,7 @@ def handler(event: dict, context) -> dict:
         return handle_promo_track(body)
     if action == 'promo_stats':
         return handle_promo_stats(qs)
+    if action == 'referral_promo_stats':
+        return handle_referral_promo_stats()
 
     return err('Неизвестное действие', 404)

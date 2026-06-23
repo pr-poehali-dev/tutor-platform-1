@@ -7,6 +7,7 @@
     {"name": "promo_track share vk", "method": "POST", "path": "/?action=promo_track", "body": {"promo": "dobro", "event": "share", "channel": "vk"}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
     {"name": "promo_track visit", "method": "POST", "path": "/?action=promo_track", "body": {"promo": "dobro", "event": "visit", "channel": "vk"}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
     {"name": "promo_track invalid event", "method": "POST", "path": "/?action=promo_track", "body": {"event": "bad"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
-    {"name": "promo_stats", "method": "GET", "path": "/?action=promo_stats&promo=dobro", "expectedStatus": 200, "expectedBody": {"promo": "string"}, "bodyMatcher": "partial"}
+    {"name": "promo_stats", "method": "GET", "path": "/?action=promo_stats&promo=dobro", "expectedStatus": 200, "expectedBody": {"promo": "string"}, "bodyMatcher": "partial"},
+    {"name": "referral_promo_stats", "method": "GET", "path": "/?action=referral_promo_stats", "expectedStatus": 200, "expectedBody": {"start_date": "string"}, "bodyMatcher": "partial"}
   ]
 }

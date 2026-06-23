@@ -13,6 +13,7 @@ import TasksSection from "./marketing/TasksSection";
 import ChatPanel from "./marketing/ChatPanel";
 import TacticsLibrary from "./marketing/TacticsLibrary";
 import PromoStats from "./marketing/PromoStats";
+import ReferralPromoStats from "./marketing/ReferralPromoStats";
 import ProjectManagerPanel from "./marketing/ProjectManagerPanel";
 import BannersGallery from "./marketing/BannersGallery";
 
@@ -159,6 +160,8 @@ export default function MarketingDashboard() {
         <ChatPanel pin={pin} />
 
         <PromoStats />
+
+        <ReferralPromoStats />
 
         {ai && ai.ai && (
           <AiStrategyCard
