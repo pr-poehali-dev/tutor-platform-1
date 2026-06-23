@@ -63,6 +63,70 @@ def get_schema() -> str:
     return f"{schema}." if schema else ""
 
 
+# Акция «Приведи друга»: пригласившему +1000 ЗНАЕК, когда друг впервые купил курс.
+PROMO_ZNAIKA_START_ISO = '2026-06-23 00:00:00+03'
+PROMO_PURCHASE_ZNAIKA = 1000
+_ZN_LEVELS = [0, 500, 1500, 3500, 7500, 15000, 30000, 60000, 100000]
+
+
+def _zn_level(total_earned: int) -> int:
+    lvl = 1
+    for i, threshold in enumerate(_ZN_LEVELS, start=1):
+        if total_earned >= threshold:
+            lvl = i
+    return lvl
+
+
+def award_referral_purchase_znaika(cur, S: str, buyer_user_id: int) -> None:
+    """Если покупатель был приглашён по реферальному коду в рамках акции
+    (с 23.06.2026) и бонус за покупку ещё не выдан — начислить пригласившему
+    +1000 ЗНАЕК. Срабатывает один раз на приглашённого (по флагу)."""
+    cur.execute(
+        f"SELECT id, inviter_user_id FROM {S}referral_invites "
+        f"WHERE invited_user_id = %s AND znaika_purchase_awarded = FALSE "
+        f"AND created_at >= %s::timestamptz LIMIT 1",
+        (buyer_user_id, PROMO_ZNAIKA_START_ISO)
+    )
+    row = cur.fetchone()
+    if not row:
+        return
+    invite_id, inviter_uid = row
+    # Помечаем сразу (защита от двойного начисления при гонке вебхук/sync)
+    cur.execute(
+        f"UPDATE {S}referral_invites SET znaika_purchase_awarded = TRUE "
+        f"WHERE id = %s AND znaika_purchase_awarded = FALSE",
+        (invite_id,)
+    )
+    if cur.rowcount == 0:
+        return
+    cur.execute(
+        f"INSERT INTO {S}znaika_balances (user_id) VALUES (%s) "
+        f"ON CONFLICT (user_id) DO NOTHING",
+        (inviter_uid,)
+    )
+    cur.execute(
+        f"UPDATE {S}znaika_balances SET balance = balance + %s, "
+        f"total_earned = total_earned + %s, updated_at = now() "
+        f"WHERE user_id = %s RETURNING total_earned",
+        (PROMO_PURCHASE_ZNAIKA, PROMO_PURCHASE_ZNAIKA, inviter_uid)
+    )
+    total_earned = cur.fetchone()[0]
+    cur.execute(f"UPDATE {S}znaika_balances SET level=%s WHERE user_id=%s",
+                (_zn_level(total_earned), inviter_uid))
+    cur.execute(
+        f"INSERT INTO {S}znaika_transactions "
+        f"(user_id, amount, kind, reason, description, meta) "
+        f"VALUES (%s, %s, 'earn', 'referral_purchase', %s, '{{}}'::jsonb)",
+        (inviter_uid, PROMO_PURCHASE_ZNAIKA, 'Друг купил курс по твоему промокоду')
+    )
+    cur.execute(
+        f"INSERT INTO {S}notifications (user_id, kind, title, body, icon, url) "
+        f"VALUES (%s, 'referral', %s, %s, 'Gift', '/referral')",
+        (inviter_uid, 'Друг купил курс!',
+         f'Тебе начислено +{PROMO_PURCHASE_ZNAIKA} ЗНАЕК за то, что друг купил курс по твоему промокоду. Спасибо!')
+    )
+
+
 # =============================================================================
 # HANDLER
 # =============================================================================
@@ -214,7 +278,11 @@ def handler(event, context):
                     UPDATE {S}course_purchases
                     SET status = 'paid', payment_id = %s, purchased_at = NOW(), updated_at = NOW()
                     WHERE id = %s AND status <> 'paid'
+                    RETURNING user_id
                 """, (payment_id, purchase_id))
+                paid_row = cur.fetchone()
+                if paid_row:
+                    award_referral_purchase_znaika(cur, S, paid_row[0])
                 conn.commit()
             elif payment_status == 'canceled':
                 cur.execute(f"""

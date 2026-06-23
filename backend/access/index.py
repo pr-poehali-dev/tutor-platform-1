@@ -52,6 +52,66 @@ def is_promo_active() -> bool:
     return start <= now <= end
 
 
+# Акция «Приведи друга»: пригласившему +1000 ЗНАЕК, когда друг впервые купил курс.
+REFERRAL_PROMO_START_ISO = '2026-06-23 00:00:00+03'
+REFERRAL_PURCHASE_ZNAIKA = 1000
+_ZN_LEVELS = [0, 500, 1500, 3500, 7500, 15000, 30000, 60000, 100000]
+
+
+def _zn_level(total_earned: int) -> int:
+    lvl = 1
+    for i, threshold in enumerate(_ZN_LEVELS, start=1):
+        if total_earned >= threshold:
+            lvl = i
+    return lvl
+
+
+def award_referral_purchase_znaika(cur, buyer_user_id: int) -> None:
+    """Подстраховка для вебхука: если друг (приглашённый в рамках акции с 23.06.2026)
+    впервые купил курс, начисляем пригласившему +1000 ЗНАЕК. Один раз на приглашённого."""
+    cur.execute(
+        "SELECT id, inviter_user_id FROM referral_invites "
+        "WHERE invited_user_id = %s AND znaika_purchase_awarded = FALSE "
+        "AND created_at >= %s::timestamptz LIMIT 1",
+        (buyer_user_id, REFERRAL_PROMO_START_ISO)
+    )
+    row = cur.fetchone()
+    if not row:
+        return
+    invite_id, inviter_uid = row
+    cur.execute(
+        "UPDATE referral_invites SET znaika_purchase_awarded = TRUE "
+        "WHERE id = %s AND znaika_purchase_awarded = FALSE",
+        (invite_id,)
+    )
+    if cur.rowcount == 0:
+        return
+    cur.execute(
+        "INSERT INTO znaika_balances (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+        (inviter_uid,)
+    )
+    cur.execute(
+        "UPDATE znaika_balances SET balance = balance + %s, "
+        "total_earned = total_earned + %s, updated_at = now() "
+        "WHERE user_id = %s RETURNING total_earned",
+        (REFERRAL_PURCHASE_ZNAIKA, REFERRAL_PURCHASE_ZNAIKA, inviter_uid)
+    )
+    total_earned = cur.fetchone()[0]
+    cur.execute("UPDATE znaika_balances SET level=%s WHERE user_id=%s",
+                (_zn_level(total_earned), inviter_uid))
+    cur.execute(
+        "INSERT INTO znaika_transactions (user_id, amount, kind, reason, description, meta) "
+        "VALUES (%s, %s, 'earn', 'referral_purchase', %s, '{}'::jsonb)",
+        (inviter_uid, REFERRAL_PURCHASE_ZNAIKA, 'Друг купил курс по твоему промокоду')
+    )
+    cur.execute(
+        "INSERT INTO notifications (user_id, kind, title, body, icon, url) "
+        "VALUES (%s, 'referral', %s, %s, 'Gift', '/referral')",
+        (inviter_uid, 'Друг купил курс!',
+         f'Тебе начислено +{REFERRAL_PURCHASE_ZNAIKA} ЗНАЕК за то, что друг купил курс по твоему промокоду. Спасибо!')
+    )
+
+
 def resolve_plan(plan_id: str, period: str):
     """Возвращает (base_plan_id, plan_dict) с учётом периода month/year.
     Годовой план: цена = месяц * 12 * (1 - YEAR_DISCOUNT), период 365 дней."""
@@ -291,9 +351,12 @@ def handle_sync_payment(token: str, body: dict) -> dict:
                     cur.execute(
                         "UPDATE course_purchases SET status = 'paid', "
                         "purchased_at = NOW(), updated_at = NOW() "
-                        "WHERE id = %s AND status <> 'paid'",
+                        "WHERE id = %s AND status <> 'paid' RETURNING user_id",
                         (purchase_id,)
                     )
+                    paid_row = cur.fetchone()
+                    if paid_row:
+                        award_referral_purchase_znaika(cur, paid_row[0])
                     conn.commit()
                     activated.append({'kind': 'course', 'id': purchase_id, 'course_id': course_id})
                 elif status == 'canceled':
@@ -696,6 +759,7 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
             row = cur.fetchone()
             if not row:
                 return err('Покупка не найдена', 404)
+            award_referral_purchase_znaika(cur, user_id)
             conn.commit()
             return ok({'success': True, 'course_id': row[0]})
     finally:

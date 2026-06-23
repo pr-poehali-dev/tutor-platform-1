@@ -78,6 +78,32 @@ export default function Referral() {
           <p className="text-white/70 text-base">Друг тоже получит +7 дней бесплатной подписки. Бесконечно — приглашай хоть весь класс.</p>
         </section>
 
+        {/* Акция со знайками */}
+        <div className="bg-gradient-to-br from-purple-500/15 to-amber-500/15 border border-amber-500/30 rounded-3xl p-5 md:p-6 mb-6">
+          <div className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/40 rounded-full px-3 py-1 mb-3">
+            <span className="text-base">🔥</span>
+            <span className="text-[11px] text-amber-200 font-bold uppercase tracking-wider">Акция · с 23 июня</span>
+          </div>
+          <p className="text-white font-bold text-lg mb-3">Дарим ЗНАЙКИ за друзей!</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="bg-black/25 rounded-2xl p-4 flex items-center gap-3">
+              <div className="text-3xl">🎁</div>
+              <div>
+                <p className="font-montserrat font-black text-amber-300 text-xl">+100 ЗНАЕК</p>
+                <p className="text-white/65 text-xs">за каждого друга, который зарегистрируется по промокоду</p>
+              </div>
+            </div>
+            <div className="bg-black/25 rounded-2xl p-4 flex items-center gap-3">
+              <div className="text-3xl">💰</div>
+              <div>
+                <p className="font-montserrat font-black text-emerald-300 text-xl">+1000 ЗНАЕК</p>
+                <p className="text-white/65 text-xs">если друг купит любой курс на платформе</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-white/45 text-[11px] mt-3">ЗНАЙКИ начисляются автоматически. 1 ЗНАЙКА = 1 ₽, ими можно оплатить до 30% стоимости курса.</p>
+        </div>
+
         {/* Как работает */}
         <div className="grid sm:grid-cols-3 gap-3 mb-6">
           {[

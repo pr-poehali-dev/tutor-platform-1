@@ -9,7 +9,7 @@ import json
 import os
 import re
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import psycopg2
 
 
@@ -55,6 +55,53 @@ def resolve_user(cur, token: str):
 
 
 SITE_BASE = 'https://xn--h1agdcde2c.xn--p1ai'
+
+# ---- Акция «Приведи друга» (знайки) ----
+# Действует для приглашений, оформленных с этой даты (МСК).
+PROMO_ZNAIKA_START = datetime(2026, 6, 23, 0, 0, 0, tzinfo=timezone(timedelta(hours=3)))
+PROMO_INVITE_ZNAIKA = 100    # пригласившему — за каждого приведённого друга
+PROMO_PURCHASE_ZNAIKA = 1000  # пригласившему — если друг купил любой курс
+
+LEVEL_THRESHOLDS = [0, 500, 1500, 3500, 7500, 15000, 30000, 60000, 100000]
+
+
+def _calc_level(total_earned: int) -> int:
+    lvl = 1
+    for i, threshold in enumerate(LEVEL_THRESHOLDS, start=1):
+        if total_earned >= threshold:
+            lvl = i
+    return lvl
+
+
+def credit_znaika(cur, user_id: int, amount: int, reason: str, description: str = '') -> None:
+    """Начисляет ЗНАЙКИ пользователю (та же БД, что и znaika).
+    Повторяет логику znaika.credit: баланс + история + уровень."""
+    if amount <= 0:
+        return
+    cur.execute(
+        "INSERT INTO znaika_balances (user_id) VALUES (%s) ON CONFLICT (user_id) DO NOTHING",
+        (user_id,)
+    )
+    cur.execute(
+        "UPDATE znaika_balances SET balance = balance + %s, "
+        "total_earned = total_earned + %s, updated_at = now() "
+        "WHERE user_id = %s RETURNING total_earned",
+        (amount, amount, user_id)
+    )
+    total_earned = cur.fetchone()[0]
+    cur.execute("UPDATE znaika_balances SET level=%s WHERE user_id=%s",
+                (_calc_level(total_earned), user_id))
+    cur.execute(
+        "INSERT INTO znaika_transactions (user_id, amount, kind, reason, description, meta) "
+        "VALUES (%s, %s, 'earn', %s, %s, '{}'::jsonb)",
+        (user_id, amount, reason, description)
+    )
+
+
+def promo_active(now=None) -> bool:
+    """Акция начисления знаек активна с PROMO_ZNAIKA_START."""
+    now = now or datetime.now(timezone.utc)
+    return now >= PROMO_ZNAIKA_START
 
 
 def generate_code(cur) -> str:
@@ -135,18 +182,31 @@ def handle_use_code(token: str, body: dict) -> dict:
             )
             if cur.fetchone():
                 return err('Ты уже использовал промокод раньше', 400)
-            # Записываем
+            # Акция: с 23.06.2026 пригласившему дополнительно +100 ЗНАЕК за друга
+            promo_on = promo_active()
+            invite_znaika = PROMO_INVITE_ZNAIKA if promo_on else 0
+            # Записываем приглашение (с флагом о начислении знаек за приглашение)
             cur.execute(
-                "INSERT INTO referral_invites (inviter_user_id, invited_user_id, code_used) "
-                "VALUES (%s, %s, %s)",
-                (owner_uid, uid, code)
+                "INSERT INTO referral_invites "
+                "(inviter_user_id, invited_user_id, code_used, znaika_invite_awarded) "
+                "VALUES (%s, %s, %s, %s)",
+                (owner_uid, uid, code, promo_on)
             )
             cur.execute(
                 "UPDATE referral_codes SET invited_count = invited_count + 1, "
                 "rewards_earned_days = rewards_earned_days + 7 WHERE user_id=%s",
                 (owner_uid,)
             )
+            if invite_znaika:
+                credit_znaika(cur, owner_uid, invite_znaika, 'referral',
+                              description='Бонус за приглашённого друга')
             # Уведомление обоим
+            inviter_body = (
+                f'Тебе начислено +7 дней подписки и +{invite_znaika} ЗНАЕК. '
+                f'А если друг купит курс — получишь ещё +{PROMO_PURCHASE_ZNAIKA} ЗНАЕК!'
+                if invite_znaika else
+                'Тебе начислено +7 дней подписки. Продолжай приглашать друзей.'
+            )
             cur.execute(
                 "INSERT INTO notifications (user_id, kind, title, body, icon, url) VALUES "
                 "(%s, 'referral', %s, %s, 'Gift', '/referral'), "
@@ -154,14 +214,14 @@ def handle_use_code(token: str, body: dict) -> dict:
                 (
                     owner_uid,
                     'Новый друг по твоему промокоду!',
-                    'Тебе начислено +7 дней подписки. Продолжай приглашать друзей.',
+                    inviter_body,
                     uid,
                     'Промокод применён',
                     'Тебе начислено +7 дней подписки. Приятной учёбы!',
                 )
             )
             conn.commit()
-            return ok({'ok': True, 'bonus_days': 7})
+            return ok({'ok': True, 'bonus_days': 7, 'inviter_znaika': invite_znaika})
     finally:
         conn.close()
 
