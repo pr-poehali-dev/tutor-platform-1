@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { AnalysisData, ANALYSIS_SECTIONS } from "./types";
 import AnalysisHero, { AnalysisSidebar } from "./AnalysisHero";
@@ -57,10 +58,18 @@ export default function AnalysisPage({ data }: { data: AnalysisData }) {
           url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg",
         },
       },
-      image: data.cover,
-      mainEntityOfPage: data.canonical,
+      image: data.cover ? [data.cover] : undefined,
+      url: data.canonical,
+      mainEntityOfPage: { "@type": "WebPage", "@id": data.canonical },
       inLanguage: "ru",
       articleSection: "Разборы произведений",
+      keywords: `${data.title}, ${data.author}, разбор, анализ, краткое содержание, характеристика героев, сочинение`,
+      isAccessibleForFree: true,
+      about: {
+        "@type": "Book",
+        name: data.title,
+        author: { "@type": "Person", name: data.author },
+      },
     },
   ];
 
@@ -83,7 +92,16 @@ export default function AnalysisPage({ data }: { data: AnalysisData }) {
         scrollTo={scrollTo}
       />
 
-      <div className="max-w-6xl mx-auto px-5 md:px-8 py-10 lg:py-14 grid lg:grid-cols-[260px_1fr] gap-10">
+      <div className="max-w-6xl mx-auto px-5 md:px-8 pt-6">
+        <Breadcrumbs items={[
+          { label: "Главная", href: "/" },
+          { label: "Лента", href: "/feed" },
+          { label: "Разборы произведений", href: "/feed" },
+          { label: `«${data.title}»` },
+        ]} />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-5 md:px-8 py-6 lg:py-10 grid lg:grid-cols-[260px_1fr] gap-10">
         <AnalysisSidebar active={active} scrollTo={scrollTo} />
         <AnalysisContent data={data} />
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
@@ -229,7 +230,15 @@ export default function CourseCheckout() {
         jsonLd={courseJsonLd}
       />
       <div className="max-w-2xl mx-auto">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-white/55 hover:text-white text-sm mb-6 transition-colors">
+        <Breadcrumbs
+          className="mb-4"
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Курсы", href: "/courses" },
+            { label: `«${course.title}»` },
+          ]}
+        />
+        <Link to="/courses" className="inline-flex items-center gap-1.5 text-white/55 hover:text-white text-sm mb-6 transition-colors">
           <Icon name="ArrowLeft" size={14} />
           В каталог курсов
         </Link>
