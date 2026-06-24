@@ -120,7 +120,9 @@ export default function FeedArticlePage() {
   }
 
   const meta = CATEGORY_META[article.category];
-  const paragraphs = (article.content || article.summary).split(/\n+/).filter(Boolean);
+  const fullText = article.content || article.summary;
+  const paragraphs = fullText.split(/\n+/).filter(Boolean);
+  const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
 
   const jsonLd = [
     {
@@ -143,10 +145,16 @@ export default function FeedArticlePage() {
           url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg",
         },
       },
-      image: article.cover_url || undefined,
-      mainEntityOfPage: articleUrl(article.slug),
+      image: article.cover_url ? [article.cover_url] : undefined,
+      url: articleUrl(article.slug),
+      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl(article.slug) },
       inLanguage: "ru",
       articleSection: meta.label,
+      keywords: (article.tags || []).join(", ") || undefined,
+      wordCount,
+      timeRequired: `PT${article.reading_time_min || Math.max(1, Math.round(wordCount / 180))}M`,
+      isAccessibleForFree: true,
+      articleBody: fullText,
     },
   ];
 
@@ -175,13 +183,6 @@ export default function FeedArticlePage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 flex items-center justify-center text-lg">📡</div>
             <span className="font-montserrat font-black text-base gradient-text-purple group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
-          <div className="hidden md:block">
-            <Breadcrumbs items={[
-              { label: "Главная", href: "/" },
-              { label: "Лента", href: "/feed" },
-              { label: article.title.slice(0, 60) },
-            ]} />
-          </div>
           <Link
             to="/feed"
             className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
@@ -193,6 +194,16 @@ export default function FeedArticlePage() {
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-16">
+
+        {/* Хлебные крошки (видны всегда + BreadcrumbList JSON-LD) */}
+        <div className="mb-4">
+          <Breadcrumbs items={[
+            { label: "Главная", href: "/" },
+            { label: "Лента", href: "/feed" },
+            { label: meta.label, href: "/feed" },
+            { label: article.title.slice(0, 60) },
+          ]} />
+        </div>
 
         {/* Категория */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -254,7 +265,7 @@ export default function FeedArticlePage() {
         {/* Обложка */}
         {article.cover_url && (
           <div className="aspect-[16/9] rounded-3xl overflow-hidden mb-6 border border-white/10">
-            <img src={article.cover_url} alt="" className="w-full h-full object-cover" />
+            <img src={article.cover_url} alt={article.title} loading="eager" className="w-full h-full object-cover" />
           </div>
         )}
 
@@ -313,6 +324,29 @@ export default function FeedArticlePage() {
               >
                 <Icon name="Rocket" size={18} />
                 Участвовать в олимпиаде
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* CTA курс прораба — для статей с тегом «прораб» */}
+        {article.tags && article.tags.some((t) => t.toLowerCase() === "прораб") && (
+          <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-800/60 to-amber-700/30 p-5 md:p-6 mb-8 text-center">
+            <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <div className="text-4xl mb-2">👷</div>
+              <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+                Освойте профессию прораба
+              </h3>
+              <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
+                10 модулей и 56 уроков: СНиПы, планирование, охрана труда и заработок на ремонте. Бесплатно, с именным сертификатом.
+              </p>
+              <Link
+                to="/course-checkout/72"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-amber-500/20"
+              >
+                <Icon name="HardHat" size={18} />
+                Перейти к курсу
               </Link>
             </div>
           </div>
