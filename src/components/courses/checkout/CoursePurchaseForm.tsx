@@ -1,21 +1,12 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course } from "@/components/courses/coursesData";
-import ZnaikaCheckoutWidget from "@/components/znaika/ZnaikaCheckoutWidget";
-import {
-  SocialProof,
-  DiscountTimer,
-  MoneyBackGuarantee,
-  TrustBadges,
-  SecurePaymentBadge,
-  PaymentSteps,
-} from "@/components/courses/CheckoutBoosters";
+import { SecurePaymentBadge } from "@/components/courses/CheckoutBoosters";
 
 interface CoursePurchaseFormProps {
   course: Course;
   price: number;
   amount: number | null;
-  discountPercent: number;
   isAuthenticated: boolean;
   email: string;
   setEmail: (v: string) => void;
@@ -32,7 +23,6 @@ export default function CoursePurchaseForm({
   course,
   price,
   amount,
-  discountPercent,
   isAuthenticated,
   email,
   setEmail,
@@ -46,36 +36,16 @@ export default function CoursePurchaseForm({
 }: CoursePurchaseFormProps) {
   return (
     <>
-      {/* Социальное доказательство */}
-      <SocialProof courseId={course.id} popularity={course.students} />
-
-      {/* Таймер скидки */}
-      <DiscountTimer percent={discountPercent} />
-
-      {/* Цена со скидкой */}
+      {/* Цена */}
       <div className="bg-white/4 border border-white/10 rounded-2xl p-5 mb-4">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="inline-flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 text-rose-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
-            −{discountPercent}% сегодня
-          </span>
-          <span className="text-white/45 text-xs">экономия {Math.round((amount ?? price) * discountPercent / 100 / (1 - discountPercent / 100)).toLocaleString("ru-RU")} ₽</span>
-        </div>
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <span className="text-white/55 text-sm">К оплате сейчас</span>
-          <div className="flex items-baseline gap-2.5">
-            <span className="text-white/35 text-lg line-through tabular-nums">
-              {Math.round((amount ?? price) / (1 - discountPercent / 100)).toLocaleString("ru-RU")} ₽
-            </span>
-            <span className="font-montserrat font-black text-3xl md:text-4xl gradient-text-purple tabular-nums">
-              {(amount ?? price).toLocaleString("ru-RU")} ₽
-            </span>
-          </div>
+          <span className="text-white/55 text-sm">К оплате</span>
+          <span className="font-montserrat font-black text-3xl md:text-4xl gradient-text-purple tabular-nums">
+            {(amount ?? price).toLocaleString("ru-RU")} ₽
+          </span>
         </div>
         <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
       </div>
-
-      {/* Виджет ЗНАЕК — скидка и кэшбек */}
-      <ZnaikaCheckoutWidget price={amount ?? price} />
 
       {/* Email для чека 54-ФЗ */}
       {isAuthenticated && (
@@ -96,25 +66,6 @@ export default function CoursePurchaseForm({
           <p className="text-white/40 text-[11px] mt-1.5">На него придёт электронный чек после оплаты (закон 54-ФЗ).</p>
         </div>
       )}
-
-      {/* Гарантия возврата */}
-      <MoneyBackGuarantee />
-
-      {/* Подписка-альтернатива */}
-      <div className="bg-purple-500/10 border border-purple-500/25 rounded-2xl p-4 mb-5 flex items-start gap-3">
-        <Icon name="Sparkles" size={16} className="text-purple-300 mt-0.5 flex-shrink-0" />
-        <div className="text-sm">
-          <p className="text-white/85 font-semibold mb-1">Хочешь сразу все курсы?</p>
-          <p className="text-white/55 text-xs leading-relaxed">
-            Подписка от 590 ₽/мес открывает доступ ко всему каталогу и индивидуальному маршруту.{" "}
-            <Link to="/pricing" className="text-purple-300 underline">Посмотреть тарифы →</Link>
-          </p>
-        </div>
-      </div>
-
-      {/* Простые 3 шага + защита платежа ЮKassa */}
-      <PaymentSteps />
-      <SecurePaymentBadge />
 
       {error && (
         <p className="mb-4 text-rose-300 text-sm flex items-center gap-1.5">
@@ -167,7 +118,10 @@ export default function CoursePurchaseForm({
         </button>
       )}
 
-      <TrustBadges />
+      {/* Защита платежа ЮKassa */}
+      <div className="mt-4">
+        <SecurePaymentBadge />
+      </div>
 
       <p className="text-white/35 text-[11px] text-center mt-4 leading-relaxed">
         Оплачивая, ты соглашаешься с{" "}

@@ -15,8 +15,6 @@ import CourseAccessGranted from "@/components/courses/checkout/CourseAccessGrant
 import CoursePaymentReturnNotice from "@/components/courses/checkout/CoursePaymentReturnNotice";
 import CoursePurchaseForm from "@/components/courses/checkout/CoursePurchaseForm";
 
-const DISCOUNT_PERCENT = 15;
-
 export default function CourseCheckout() {
   const { courseId } = useParams();
   const [searchParams] = useSearchParams();
@@ -276,7 +274,6 @@ export default function CourseCheckout() {
                 course={course}
                 price={price}
                 amount={amount}
-                discountPercent={DISCOUNT_PERCENT}
                 isAuthenticated={isAuthenticated}
                 email={email}
                 setEmail={setEmail}

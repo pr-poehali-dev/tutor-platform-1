@@ -1,5 +1,4 @@
 import Icon from "@/components/ui/icon";
-import RenewAccessCard from "@/components/courses/RenewAccessCard";
 
 interface CourseAccessGrantedProps {
   freeForever: boolean;
@@ -40,11 +39,6 @@ export default function CourseAccessGranted({
           Начать обучение
         </button>
       </div>
-
-      {/* Ненавязчивое продление — только если доступ не бессрочный и курс не бесплатный навсегда */}
-      {!hasSubscription && !freeForever && (
-        <RenewAccessCard />
-      )}
     </>
   );
 }
