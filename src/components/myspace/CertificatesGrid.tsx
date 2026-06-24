@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Course } from "@/components/courses/coursesData";
 import { MyCourse } from "@/hooks/useUserData";
+import { isCertificateEligible } from "@/lib/certificateEligibility";
 import CertificateModal from "./CertificateModal";
 
 interface Props {
@@ -12,8 +13,20 @@ interface Props {
 export default function CertificatesGrid({ myCourses, coursesById }: Props) {
   const [selected, setSelected] = useState<MyCourse | null>(null);
 
-  const completed = myCourses.filter((c) => c.status === "completed");
-  const inProgress = myCourses.filter((c) => c.status !== "completed");
+  const allCompleted = myCourses.filter((c) => c.status === "completed");
+  // Сертификат выдаётся только для курсов вне школьной программы.
+  const completed = allCompleted.filter((c) =>
+    isCertificateEligible(coursesById[c.course_id]?.subject ?? c.subject),
+  );
+  // Завершённые школьные курсы — сертификат не предусмотрен (часть ФГОС).
+  const completedSchool = allCompleted.filter(
+    (c) => !isCertificateEligible(coursesById[c.course_id]?.subject ?? c.subject),
+  );
+  const inProgress = myCourses.filter(
+    (c) =>
+      c.status !== "completed" &&
+      isCertificateEligible(coursesById[c.course_id]?.subject ?? c.subject),
+  );
 
   return (
     <div className="space-y-4">
@@ -24,6 +37,7 @@ export default function CertificatesGrid({ myCourses, coursesById }: Props) {
         </div>
         <p className="text-white/50 text-sm">
           Заверши курс полностью — и получишь именной сертификат, который можно скачать и показать.
+          Сертификаты выдаются по курсам дополнительного развития (вне школьной программы).
         </p>
       </div>
 
@@ -95,6 +109,24 @@ export default function CertificatesGrid({ myCourses, coursesById }: Props) {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {completedSchool.length > 0 && (
+        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-400/25 flex items-center justify-center flex-shrink-0">
+            <Icon name="GraduationCap" size={18} className="text-blue-300" />
+          </div>
+          <div>
+            <p className="text-white/80 font-bold text-sm mb-0.5">
+              Завершено школьных курсов: {completedSchool.length}
+            </p>
+            <p className="text-white/45 text-xs leading-relaxed">
+              По курсам школьной программы сертификат не выдаётся — это часть основного
+              образования (ФГОС). Сертификаты предусмотрены только для курсов
+              дополнительного развития.
+            </p>
+          </div>
         </div>
       )}
 
