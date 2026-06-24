@@ -225,11 +225,11 @@ export default function Znaika() {
             Как заработать ЗНАЙКИ
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <EarnRow icon="Calendar" title="Ежедневный вход" reward="+10" hint="каждый день · бонус +50 за 7 дней, +200 за 30" />
-            <EarnRow icon="BookOpen" title="Прохождение урока" reward="+10" hint="до 20 уроков в день" />
-            <EarnRow icon="ShoppingBag" title="Покупка курса" reward="+5%" hint="кэшбек ЗНАЙКАМИ от суммы покупки" />
-            <EarnRow icon="UserPlus" title="Привёл друга" reward="+500 / +1000" hint="за регистрацию и за первую покупку друга" />
-            <EarnRow icon="MessageSquare" title="Отзыв о курсе" reward="+100" hint="развёрнутый отзыв от 100 символов" />
+            <EarnRow icon="Calendar" title="Ежедневный вход" reward="+5" hint="каждый день · бонус +25 за 7 дней, +100 за 30" />
+            <EarnRow icon="BookOpen" title="Прохождение урока" reward="+3" hint="до 10 уроков в день" />
+            <EarnRow icon="ShoppingBag" title="Покупка курса" reward="+2%" hint="кэшбек ЗНАЙКАМИ от суммы покупки" />
+            <EarnRow icon="UserPlus" title="Привёл друга" reward="+500 / +300" hint="за регистрацию и за первую покупку друга" />
+            <EarnRow icon="MessageSquare" title="Отзыв о курсе" reward="+50" hint="развёрнутый отзыв от 100 символов" />
             <EarnRow icon="Trophy" title="Достижения" reward="+50…+5000" hint="за прохождение этапов и марафонов" />
           </div>
         </div>

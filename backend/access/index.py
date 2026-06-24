@@ -41,6 +41,10 @@ ADULT_SUBJECT_PRICE_KOPECKS = {
     "tenders": 699000,
     "ved": 799000,
     "sales": 599000,
+    "chinese": 499000,
+    "korean": 499000,
+    "avangard": 499900,
+    "roomscan": 499000,
 }
 ADULT_DEFAULT_KOPECKS = 399000
 
@@ -56,7 +60,7 @@ def get_course_subject(cur, course_id: int):
 
 # Курсы, бесплатные навсегда — оплата за них не создаётся (доступ открыт всем).
 # Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте.
-FREE_FOREVER_COURSE_IDS = {2, 37, 50, 51, 52, 53, 54, 55, 61, 62, 63, 64}
+FREE_FOREVER_COURSE_IDS = {2, 37, 64}
 
 # Индивидуальная цена за конкретный курс (по id), в копейках. Приоритетнее grade/subject.
 # СИНХРОНИЗИРОВАНО с COURSE_ID_PRICE на фронте (src/components/courses/coursesData.ts).
@@ -64,6 +68,7 @@ COURSE_ID_PRICE_KOPECKS = {
     17: 659900,    # Английский с нуля
     57: 990000,    # Профессия интернет-маркетолог
     65: 1290000,   # Нейросети с нуля
+    72: 499900,    # Производитель работ (прораб)
 }
 
 # Тарифы подписки (server-side, нельзя подделать с клиента).
@@ -102,9 +107,9 @@ def is_promo_active() -> bool:
     return start <= now <= end
 
 
-# Акция «Приведи друга»: пригласившему +1000 ЗНАЕК, когда друг впервые купил курс.
+# Акция «Приведи друга»: пригласившему +300 ЗНАЕК, когда друг впервые купил курс.
 REFERRAL_PROMO_START_ISO = '2026-06-23 00:00:00+03'
-REFERRAL_PURCHASE_ZNAIKA = 1000
+REFERRAL_PURCHASE_ZNAIKA = 300
 _ZN_LEVELS = [0, 500, 1500, 3500, 7500, 15000, 30000, 60000, 100000]
 
 

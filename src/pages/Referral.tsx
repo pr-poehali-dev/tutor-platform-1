@@ -96,7 +96,7 @@ export default function Referral() {
             <div className="bg-black/25 rounded-2xl p-4 flex items-center gap-3">
               <div className="text-3xl">💰</div>
               <div>
-                <p className="font-montserrat font-black text-emerald-300 text-xl">+1000 ЗНАЕК</p>
+                <p className="font-montserrat font-black text-emerald-300 text-xl">+300 ЗНАЕК</p>
                 <p className="text-white/65 text-xs">если друг купит любой курс на платформе</p>
               </div>
             </div>

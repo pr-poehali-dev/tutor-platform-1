@@ -91,10 +91,10 @@ export default function CourseCheckout() {
     const key = `znaika_cashback_course_${course.id}`;
     if (localStorage.getItem(key)) return;
     const price = getCoursePrice(course);
-    const cashback = Math.floor(price * 0.05);
+    const cashback = Math.floor(price * 0.02);
     if (cashback <= 0) return;
     localStorage.setItem(key, "1");
-    earnZnaika("purchase_cashback", cashback, `Кэшбек 5% за курс «${course.title}»`);
+    earnZnaika("purchase_cashback", cashback, `Кэшбек 2% за курс «${course.title}»`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [course?.id, isAuthenticated, canAccessCourse, earnZnaika]);
 

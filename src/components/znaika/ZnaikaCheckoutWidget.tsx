@@ -60,14 +60,14 @@ export default function ZnaikaCheckoutWidget({ price }: Props) {
                 <span className="text-white/40 text-xs line-through">{formatZnaika(price)} ₽</span>
               </div>
               <div className="text-white/45 text-xs mt-1">
-                Скидка применяется автоматически (лимит {limit}% от стоимости). Кэшбек 5% ЗНАЙКАМИ вернётся после покупки.
+                Скидка применяется автоматически (лимит {limit}% от стоимости). Кэшбек 2% ЗНАЙКАМИ вернётся после покупки.
               </div>
             </>
           ) : (
             <div className="text-white/65 text-sm leading-snug">
               У тебя <span className="font-bold text-amber-200">{formatZnaika(balance)}</span> ЗНАЕК.
               Копи через ежедневные входы, уроки и приглашения — и оплачивай до {limit}% курса.
-              После этой покупки получишь <span className="text-amber-200 font-semibold">+{formatZnaika(Math.floor(price * 0.05))} ЗНАЕК</span> кэшбеком.
+              После этой покупки получишь <span className="text-amber-200 font-semibold">+{formatZnaika(Math.floor(price * 0.02))} ЗНАЕК</span> кэшбеком.
             </div>
           )}
         </div>

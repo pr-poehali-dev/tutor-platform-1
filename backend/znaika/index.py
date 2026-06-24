@@ -18,17 +18,18 @@ import psycopg2
 
 
 # ---- Конфигурация экономики ----
+# Раздаём ЗНАЙКИ умеренно: лёгкая валюта обесценивает и скидки, и сам продукт.
 DISCOUNT_PERCENT = 30          # макс. % стоимости курса оплатой ЗНАЙКАМИ
-DAILY_CHECKIN = 10             # за обычный вход
-WEEKLY_BONUS = 50              # бонус на 7-й день стрика
-MONTHLY_BONUS = 200            # бонус на 30-й день стрика
-PURCHASE_CASHBACK_PCT = 5      # 5% кэшбек ЗНАЙКАМИ за покупку курса
+DAILY_CHECKIN = 5              # за обычный вход
+WEEKLY_BONUS = 25              # бонус на 7-й день стрика
+MONTHLY_BONUS = 100            # бонус на 30-й день стрика
+PURCHASE_CASHBACK_PCT = 2      # 2% кэшбек ЗНАЙКАМИ за покупку курса
 
 # Анти-абуз: сколько раз в день можно начислять за reason
 DAILY_LIMITS = {
-    'lesson_completed': (20, 10),  # до 20 раз, по 10 ЗНАЕК
-    'review_posted':    (1, 100),
-    'feed_reaction':    (10, 2),
+    'lesson_completed': (10, 3),   # до 10 раз, по 3 ЗНАЙКИ
+    'review_posted':    (1, 50),
+    'feed_reaction':    (5, 1),
 }
 
 # Уровни (порог total_earned -> level)
