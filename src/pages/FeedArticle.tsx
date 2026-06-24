@@ -352,6 +352,47 @@ export default function FeedArticlePage() {
           </div>
         )}
 
+        {/* CTA три обновлённых курса — для статьи с тегом «обновление» */}
+        {article.tags && article.tags.some((t) => t.toLowerCase() === "обновление") && (
+          <div className="relative overflow-hidden rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-700/30 via-fuchsia-600/20 to-cyan-700/30 p-5 md:p-6 mb-8">
+            <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5 text-center">
+                Открой обновлённый курс
+              </h3>
+              <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5 text-center">
+                Доступ навсегда, чек по 54-ФЗ, оплата защищена через ЮKassa.
+              </p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <Link
+                  to="/course-checkout/17"
+                  className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
+                >
+                  <span className="text-3xl">🌍</span>
+                  <span className="text-white font-bold text-sm leading-tight">Английский с нуля</span>
+                  <span className="gradient-text-purple font-black text-base">6 599 ₽</span>
+                </Link>
+                <Link
+                  to="/course-checkout/57"
+                  className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
+                >
+                  <span className="text-3xl">📣</span>
+                  <span className="text-white font-bold text-sm leading-tight">Интернет-маркетолог</span>
+                  <span className="gradient-text-purple font-black text-base">9 900 ₽</span>
+                </Link>
+                <Link
+                  to="/course-checkout/65"
+                  className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
+                >
+                  <span className="text-3xl">🤖</span>
+                  <span className="text-white font-bold text-sm leading-tight">Нейросети с нуля</span>
+                  <span className="gradient-text-purple font-black text-base">12 900 ₽</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Поделиться */}
         <ShareButtons
           url={articleUrl(article.slug)}
