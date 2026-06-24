@@ -17,6 +17,7 @@ import YandexMetrika from "@/components/analytics/YandexMetrika";
 import VisitTracker from "@/components/analytics/VisitTracker";
 import UtmTracker from "@/components/ads/UtmTracker";
 import DobroTopBar from "@/components/promo/DobroTopBar";
+import KidsPromoTopBar from "@/components/promo/KidsPromoTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InstallBanner from "@/components/pwa/InstallBanner";
 
@@ -115,6 +116,7 @@ const App = () => (
             <VisitTracker />
             <UtmTracker />
             <DobroTopBar />
+            <KidsPromoTopBar />
             <AuthProvider>
               <ZnaikaProvider>
               <AccessProvider>

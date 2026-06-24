@@ -77,8 +77,14 @@ SUBSCRIPTION_PLANS = {
 }
 
 # Акция для абонемента «Малыш»: первые 3 месяца за 1 ₽ (один раз на пользователя).
+# Действует до 01.09.2026 (синхронно с фронтом kidsPromoConfig.ts).
 KIDS_INTRO_KOPECKS = 100      # 1 ₽
 KIDS_INTRO_PERIOD_DAYS = 90   # 3 месяца
+KIDS_PROMO_END_ISO = "2026-09-01T23:59:59+03:00"
+
+
+def is_kids_promo_active() -> bool:
+    return datetime.now(timezone.utc) <= datetime.fromisoformat(KIDS_PROMO_END_ISO)
 
 # Скидка на годовую оплату
 YEAR_DISCOUNT = 0.40
@@ -637,7 +643,7 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
             # Если у пользователя ещё не было kids-подписки (любой статус) — даём интро-цену.
             kids_intro = False
             period_days = plan['period_days']
-            if plan_id == 'kids' and period == 'month':
+            if plan_id == 'kids' and period == 'month' and is_kids_promo_active():
                 cur.execute(
                     "SELECT 1 FROM subscriptions WHERE user_id = %s AND plan_id = 'kids' LIMIT 1",
                     (user_id,)
