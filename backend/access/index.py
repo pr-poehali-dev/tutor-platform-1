@@ -56,7 +56,15 @@ def get_course_subject(cur, course_id: int):
 
 # Курсы, бесплатные навсегда — оплата за них не создаётся (доступ открыт всем).
 # Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте.
-FREE_FOREVER_COURSE_IDS = {2, 17, 37, 50, 51, 52, 53, 54, 55, 57, 61, 62, 63, 64, 65}
+FREE_FOREVER_COURSE_IDS = {2, 37, 50, 51, 52, 53, 54, 55, 61, 62, 63, 64}
+
+# Индивидуальная цена за конкретный курс (по id), в копейках. Приоритетнее grade/subject.
+# СИНХРОНИЗИРОВАНО с COURSE_ID_PRICE на фронте (src/components/courses/coursesData.ts).
+COURSE_ID_PRICE_KOPECKS = {
+    17: 659900,    # Английский с нуля
+    57: 990000,    # Профессия интернет-маркетолог
+    65: 1290000,   # Нейросети с нуля
+}
 
 # Тарифы подписки (server-side, нельзя подделать с клиента).
 # Годовая цена = 12 мес со скидкой 40% (платишь как за ~7 месяцев).
@@ -432,8 +440,10 @@ def handle_buy_course(token: str, body: dict) -> dict:
             if not user_id:
                 return err('Требуется вход', 401)
 
-            # Цена: для adult-курсов — по направлению (subject из БД), иначе — по grade.
-            if grade == 'adult':
+            # Цена: индивидуальная по course_id приоритетнее; затем adult по subject; иначе по grade.
+            if course_id in COURSE_ID_PRICE_KOPECKS:
+                amount_kopecks = COURSE_ID_PRICE_KOPECKS[course_id]
+            elif grade == 'adult':
                 subject = get_course_subject(cur, course_id) or ''
                 amount_kopecks = ADULT_SUBJECT_PRICE_KOPECKS.get(subject, ADULT_DEFAULT_KOPECKS)
             else:
