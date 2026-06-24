@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel } from "@/components/courses/coursesData";
+import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel, isCourseBestseller } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";
 import { getTodayPurchases } from "@/components/courses/CheckoutBoosters";
 import { isPromoActive } from "@/components/promo/dobroConfig";
@@ -18,6 +18,7 @@ export default function CourseCardCompact({ course }: Props) {
   const subjectLabel = SUBJECTS.find((s) => s.id === course.subject)?.label || course.subject;
   const todayCount = getTodayPurchases(course.id, course.students);
   const examLabel = examBadgeLabel(course);
+  const bestseller = isCourseBestseller(course.id);
 
   return (
     <Link
@@ -29,7 +30,11 @@ export default function CourseCardCompact({ course }: Props) {
       <div className="p-5 flex-1 flex flex-col">
         {/* Бейджи */}
         <div className="flex items-center gap-1.5 mb-3 flex-wrap min-h-[22px]">
-          {course.isHit && (
+          {bestseller ? (
+            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm shadow-orange-500/30">
+              <Icon name="Flame" size={10} /> Хит продаж
+            </span>
+          ) : course.isHit && (
             <span className="inline-flex items-center gap-1 bg-orange-500/15 border border-orange-500/30 text-orange-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
               <Icon name="Flame" size={10} /> Хит
             </span>

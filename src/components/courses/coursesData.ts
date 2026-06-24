@@ -94,6 +94,13 @@ export interface Course {
 /** Список курсов, бесплатных навсегда (доступ без оплаты и без подписки). */
 export const FREE_FOREVER_COURSE_IDS = [2, 37, 50, 51, 52, 53, 54, 55, 61, 62, 63, 64];
 
+/** Хиты продаж — самые модные курсы для витрины каталога (на видном месте). */
+export const BESTSELLER_COURSE_IDS = [17, 57, 65];
+
+export function isCourseBestseller(courseId: number): boolean {
+  return BESTSELLER_COURSE_IDS.includes(courseId);
+}
+
 export function isCourseFreeForever(courseId: number): boolean {
   return FREE_FOREVER_COURSE_IDS.includes(courseId);
 }

@@ -10,6 +10,7 @@ import ScreenTimeBlocker from "@/components/kids/ScreenTimeBlocker";
 import { useScreenTime } from "@/components/kids/useScreenTime";
 import KidsTopBar from "@/components/kids/landing/KidsTopBar";
 import KidsHero from "@/components/kids/landing/KidsHero";
+import KidsSubscription from "@/components/kids/landing/KidsSubscription";
 import KidsContent from "@/components/kids/landing/KidsContent";
 import { KIDS_JSON_LD, SITE_URL } from "@/components/kids/landing/kidsLandingData";
 
@@ -38,6 +39,8 @@ export default function KidsLanding() {
       <KidsTopBar screenTime={screenTime} onOpenSettings={() => setGateOpen(true)} />
 
       <KidsHero totalActivities={totalActivities} progress={progress} />
+
+      <KidsSubscription />
 
       <KidsContent />
 

@@ -8,7 +8,7 @@ import { isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import { PaymentSteps } from "@/components/courses/CheckoutBoosters";
 
-type PlanId = "trial" | "base" | "pro" | "family";
+type PlanId = "trial" | "base" | "pro" | "family" | "kids";
 
 interface PlanDef {
   id: PlanId;
@@ -57,7 +57,19 @@ const PLANS: Record<PlanId, PlanDef> = {
     features: ["Всё из «Профи»", "До 3 учеников", "Отдельный прогресс", "Родительский кабинет"],
     gradient: "from-emerald-500/20 to-green-500/10",
   },
+  kids: {
+    id: "kids",
+    name: "Малыш",
+    price: 399,
+    period: "месяц",
+    description: "Полный доступ к развивающим занятиям для детей 1–6 лет",
+    features: ["Все занятия и сказки", "Игры, песни и обучение чтению", "Контроль экранного времени", "Советы родителям"],
+    gradient: "from-pink-500/25 to-amber-500/15",
+  },
 };
+
+// Акция «Малыш»: первые 3 месяца за 1 ₽.
+const KIDS_INTRO_PRICE = 1;
 
 const YEAR_DISCOUNT = 0.4;
 function yearPrice(monthly: number): number {
@@ -71,10 +83,16 @@ export default function Checkout() {
   const { user, isAuthenticated, loading, openLogin } = useAuth();
   const navigate = useNavigate();
   const plan = useMemo<PlanDef | null>(() => (planId && (planId in PLANS) ? PLANS[planId as PlanId] : null), [planId]);
-  // Год доступен только для платных тарифов
-  const isYear = period === "year" && !!plan && plan.price > 0;
-  const displayPrice = isYear && plan ? yearPrice(plan.price) : plan?.price ?? 0;
-  const displayPeriod = isYear ? "год" : plan?.period ?? "";
+  // Абонемент «Малыш» с акцией: первые 3 месяца за 1 ₽ (без годовой опции).
+  const isKids = plan?.id === "kids";
+  // Год доступен только для платных тарифов (кроме «Малыша»)
+  const isYear = period === "year" && !!plan && plan.price > 0 && !isKids;
+  const displayPrice = isKids
+    ? KIDS_INTRO_PRICE
+    : isYear && plan
+    ? yearPrice(plan.price)
+    : plan?.price ?? 0;
+  const displayPeriod = isKids ? "3 месяца" : isYear ? "год" : plan?.period ?? "";
 
   const { buySubscription, validateCoupon } = useAccess();
   const [email, setEmail] = useState<string>(user?.email ?? "");
@@ -228,6 +246,11 @@ export default function Checkout() {
             <p className="text-emerald-300 text-sm font-bold mb-3">
               ≈ {Math.round(displayPrice / 12).toLocaleString("ru-RU")} ₽/мес · экономия{" "}
               {(plan.price * 12 - displayPrice).toLocaleString("ru-RU")} ₽ против помесячной оплаты
+            </p>
+          )}
+          {isKids && (
+            <p className="text-pink-300 text-sm font-bold mb-3">
+              Акция: первые 3 месяца за 1 ₽, далее {plan.price} ₽/мес. Отменить можно в любой момент.
             </p>
           )}
           <p className="text-white/70 text-sm md:text-base mb-4 mt-2">{plan.description}</p>

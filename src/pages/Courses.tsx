@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";
-import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
+import BestsellersBlock from "@/components/courses/BestsellersBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   COURSES,
@@ -240,9 +240,9 @@ export default function CoursesPage() {
         </p>
       </section>
 
-      {/* Бесплатные курсы — показываем, пока пользователь не начал искать/фильтровать */}
+      {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
       {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
-        <FreeCoursesBlock compact />
+        <BestsellersBlock />
       )}
 
       {/* Search + Filters */}

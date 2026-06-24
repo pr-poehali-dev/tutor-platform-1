@@ -72,7 +72,13 @@ SUBSCRIPTION_PLANS = {
     "base":   {"name": "Базовый",  "price_kopecks":  59000, "period_days": 30},
     "pro":    {"name": "Профи",    "price_kopecks": 129000, "period_days": 30},
     "family": {"name": "Семейный", "price_kopecks": 199000, "period_days": 30},
+    # Абонемент «Малыш»: 399 ₽/мес. Первый платёж по акции — 1 ₽ за 3 месяца.
+    "kids":   {"name": "Малыш",    "price_kopecks":  39900, "period_days": 30},
 }
+
+# Акция для абонемента «Малыш»: первые 3 месяца за 1 ₽ (один раз на пользователя).
+KIDS_INTRO_KOPECKS = 100      # 1 ₽
+KIDS_INTRO_PERIOD_DAYS = 90   # 3 месяца
 
 # Скидка на годовую оплату
 YEAR_DISCOUNT = 0.40
@@ -627,8 +633,23 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
             if not user_id:
                 return err('Требуется вход', 401)
 
-            # Применяем промокод-скидку из магазина ЗНАЕК (если есть и валиден)
-            coupon_rid, coupon_percent = lookup_coupon(cur, user_id, coupon_code)
+            # Акция «Малыш»: первые 3 месяца за 1 ₽ — один раз на пользователя.
+            # Если у пользователя ещё не было kids-подписки (любой статус) — даём интро-цену.
+            kids_intro = False
+            period_days = plan['period_days']
+            if plan_id == 'kids' and period == 'month':
+                cur.execute(
+                    "SELECT 1 FROM subscriptions WHERE user_id = %s AND plan_id = 'kids' LIMIT 1",
+                    (user_id,)
+                )
+                if not cur.fetchone():
+                    kids_intro = True
+                    base_kopecks = KIDS_INTRO_KOPECKS
+                    period_days = KIDS_INTRO_PERIOD_DAYS
+
+            # Применяем промокод-скидку из магазина ЗНАЕК (если есть и валиден).
+            # На интро-акцию «Малыш» купоны не распространяются (цена уже 1 ₽).
+            coupon_rid, coupon_percent = (None, 0) if kids_intro else lookup_coupon(cur, user_id, coupon_code)
             amount_kopecks = base_kopecks
             if coupon_rid:
                 amount_kopecks = base_kopecks - (base_kopecks * coupon_percent // 100)
@@ -665,7 +686,7 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
             cur.execute(
                 "INSERT INTO subscriptions (user_id, plan_id, status, amount_kopecks, payment_provider, period_days) "
                 "VALUES (%s, %s, 'pending', %s, 'yookassa', %s) RETURNING id",
-                (user_id, plan_id, amount_kopecks, plan['period_days'])
+                (user_id, plan_id, amount_kopecks, period_days)
             )
             subscription_id = cur.fetchone()[0]
 
@@ -695,7 +716,7 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     'user_id': str(user_id),
                     'plan_id': plan_id,
                     'period': period,
-                    'period_days': str(plan['period_days']),
+                    'period_days': str(period_days),
                 }
                 if coupon_rid:
                     metadata['coupon_redemption_id'] = str(coupon_rid)
@@ -703,7 +724,7 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     shop_id=shop_id,
                     secret_key=secret_key,
                     amount_rub=amount_rub,
-                    description=f"Подписка «{plan['name']}» на {plan['period_days']} дн.",
+                    description=f"Подписка «{plan['name']}» на {period_days} дн.",
                     return_url=return_url,
                     customer_email=email,
                     metadata=metadata,
