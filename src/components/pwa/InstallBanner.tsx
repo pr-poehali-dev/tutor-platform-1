@@ -4,15 +4,19 @@ import Icon from "@/components/ui/icon";
 import useInstallPrompt from "@/hooks/useInstallPrompt";
 
 const DISMISS_KEY = "uchispro_install_dismissed_v1";
+const COOKIE_KEY = "cookie-consent-v1";
 const APP_ICON = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/565c75c2-6b6a-4efd-99f6-86ab094c6cb4.jpg";
 
 /** Ненавязчивый баннер «Установить приложение» внизу экрана.
  *  Показывается, если установка доступна, приложение не установлено и
- *  пользователь не закрывал баннер. Не мешает на странице /app. */
+ *  пользователь не закрывал баннер. Не мешает на странице /app.
+ *  Постепенность: не показываем, пока пользователь не определился с cookie —
+ *  чтобы внизу экрана не висели два баннера одновременно. */
 export default function InstallBanner() {
   const { canInstall, isInstalled, promptInstall } = useInstallPrompt();
   const location = useLocation();
   const [dismissed, setDismissed] = useState(true);
+  const [cookieResolved, setCookieResolved] = useState(false);
 
   useEffect(() => {
     try {
@@ -20,6 +24,17 @@ export default function InstallBanner() {
     } catch {
       setDismissed(false);
     }
+    // Ждём решения по cookie-баннеру. Пока он висит — install не показываем.
+    const check = () => {
+      try {
+        setCookieResolved(!!localStorage.getItem(COOKIE_KEY));
+      } catch {
+        setCookieResolved(true);
+      }
+    };
+    check();
+    const interval = setInterval(check, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const close = () => {
@@ -31,7 +46,7 @@ export default function InstallBanner() {
     }
   };
 
-  if (isInstalled || !canInstall || dismissed || location.pathname === "/app") {
+  if (isInstalled || !canInstall || dismissed || !cookieResolved || location.pathname === "/app") {
     return null;
   }
 
