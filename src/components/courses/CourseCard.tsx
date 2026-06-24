@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating } from "./coursesData";
 import { getCourseReview } from "./courseReview";
+import { isCertificateEligible } from "@/lib/certificateEligibility";
 import CourseVoiceDialog from "./CourseVoiceDialog";
 import { useUser } from "@/context/UserDataContext";
 
@@ -118,6 +119,14 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           )}
           {course.isSale && (
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20">−{course.salePercent}%</span>
+          )}
+          {isCertificateEligible(course.subject) && (
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/25 flex items-center gap-1"
+              title="После прохождения курса на 100% выдаётся именной сертификат"
+            >
+              <Icon name="Award" size={11} /> Сертификат
+            </span>
           )}
           {/* Возрастная маркировка по 436-ФЗ */}
           <span
