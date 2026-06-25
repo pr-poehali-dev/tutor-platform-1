@@ -55,6 +55,19 @@ export async function fetchTrendsDashboard(): Promise<TrendsDashboard | null> {
   }
 }
 
+/**
+ * Ленивый дневной запуск конвейера (резерв, если внешний cron не сработал).
+ * Бэкенд сам ограничивает выполнение до 1 раза в сутки — лишних запусков не будет.
+ */
+export async function tickTrends(): Promise<void> {
+  if (!TRENDS_URL) return;
+  try {
+    await fetch(`${TRENDS_URL}?action=tick`);
+  } catch {
+    /* тихо игнорируем — фоновая задача */
+  }
+}
+
 /** Авто-посев при первом заходе: бэкенд соберёт данные, если их ещё нет (rate-limit 30 мин). */
 export async function seedTrendsIfEmpty(): Promise<{ ok: boolean; auto_seeded?: boolean; signals_collected?: number }> {
   if (!TRENDS_URL) return { ok: false };

@@ -14,6 +14,7 @@ GET  /?action=ping         — health-check
 import json
 import os
 import re
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -152,8 +153,16 @@ def classify_direction(text: str):
     return best if best_hits > 0 else None
 
 
-def call_polza(prompt: str, system: str, max_tokens: int = 1100, temperature: float = 0.6):
+LAST_POLZA_ERROR = ''
+
+
+def call_polza(prompt: str, system: str, max_tokens: int = 1100,
+               temperature: float = 0.6, retries: int = 2):
+    """Вызов polza.ai с ретраями на временные сбои (503/таймаут).
+    Между попытками короткая пауза — провайдер часто оживает за 1-2 секунды."""
+    global LAST_POLZA_ERROR
     if not POLZA_API_KEY:
+        LAST_POLZA_ERROR = 'нет POLZA_API_KEY'
         return None
     payload = {
         'model': POLZA_MODEL,
@@ -164,18 +173,39 @@ def call_polza(prompt: str, system: str, max_tokens: int = 1100, temperature: fl
         'temperature': temperature,
         'max_tokens': max_tokens,
     }
-    req = urllib.request.Request(
-        POLZA_URL, data=json.dumps(payload).encode('utf-8'),
-        headers={'Authorization': f'Bearer {POLZA_API_KEY}', 'Content-Type': 'application/json'},
-        method='POST')
-    try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            choices = data.get('choices') or []
-            if choices:
-                return (choices[0].get('message') or {}).get('content', '').strip()
-    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError, OSError):
-        return None
+    body_bytes = json.dumps(payload).encode('utf-8')
+    for attempt in range(retries + 1):
+        req = urllib.request.Request(
+            POLZA_URL, data=body_bytes,
+            headers={'Authorization': f'Bearer {POLZA_API_KEY}', 'Content-Type': 'application/json'},
+            method='POST')
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                choices = data.get('choices') or []
+                if choices:
+                    content = (choices[0].get('message') or {}).get('content', '').strip()
+                    if content:
+                        return content
+                    LAST_POLZA_ERROR = 'пустой content в ответе'
+                else:
+                    LAST_POLZA_ERROR = f'нет choices: {str(data)[:150]}'
+        except urllib.error.HTTPError as e:
+            body = ''
+            try:
+                body = e.read().decode('utf-8')[:150]
+            except Exception:
+                pass
+            LAST_POLZA_ERROR = f'HTTP {e.code}: {body}'
+            # 5xx — временный сбой, имеет смысл повторить; 4xx — нет
+            if e.code < 500:
+                return None
+        except urllib.error.URLError as e:
+            LAST_POLZA_ERROR = f'URLError: {str(e.reason)[:120]}'
+        except (json.JSONDecodeError, OSError) as e:
+            LAST_POLZA_ERROR = f'{type(e).__name__}: {str(e)[:120]}'
+        if attempt < retries:
+            time.sleep(1.5)
     return None
 
 
@@ -300,55 +330,98 @@ def build_insight(r: dict):
                       max_tokens=200, temperature=0.5)
 
 
+# Эталонный системный промпт: задаёт «личность» аналитика и стандарт качества.
+ANALYST_SYSTEM = (
+    "Ты — главный IT-аналитик образовательной платформы УЧИСЬПРО. "
+    "Твой стиль: умный, честный, с собственной аргументированной позицией. "
+    "Ты не пересказываешь новости — ты ОСМЫСЛЯЕШЬ их и формируешь личное экспертное мнение. "
+    "Пишешь живым русским языком для умного школьника и студента: без воды, штампов и канцелярита. "
+    "Главное правило: никогда не выдумывай конкретные цифры и факты, которых нет в данных. "
+    "Если данных мало — честно скажи об этом и рассуждай аккуратно."
+)
+
+
 def generate_trend_article(cur) -> dict:
-    """Генерирует аналитическую статью по топ-направлению недели. Пишет в feed_articles."""
+    """Эталонный конвейер: Сбор фактуры → Анализ контекста → Своё мнение → Статья.
+    Пишет авторский аналитический материал по топ-направлению в feed_articles."""
+    # ── Шаг 1. Сбор: топ-направление + полный рейтинг как контекст ──
     cur.execute(
-        "SELECT direction_key, name, emoji, description, signals_7d, signals_30d, score, momentum "
+        "SELECT direction_key, name, emoji, description, signals_7d, signals_30d, score, momentum, rank "
         "FROM it_trend_directions WHERE signals_30d > 0 ORDER BY score DESC LIMIT 1")
     row = cur.fetchone()
     if not row:
         return {'created': False, 'reason': 'нет данных для статьи'}
-    key, name, emoji, desc, s7, s30, score, momentum = row
+    key, name, emoji, desc, s7, s30, score, momentum, rank = row
 
-    # последние сигналы как фактура
+    # Фактура: свежие публикации по теме
     cur.execute(
-        "SELECT title, summary FROM it_trend_signals WHERE direction_key = %s "
-        "ORDER BY created_at DESC LIMIT 6", (key,))
-    facts = cur.fetchall()
-    facts_text = '\n'.join(f"- {t}" for t, _ in facts) or '- (свежих публикаций мало)'
+        "SELECT title FROM it_trend_signals WHERE direction_key = %s "
+        "ORDER BY created_at DESC LIMIT 8", (key,))
+    facts = [r[0] for r in cur.fetchall()]
+    facts_text = '\n'.join(f"- {t}" for t in facts) or '- (свежих публикаций мало)'
 
-    trend = 'растёт' if momentum > 5 else ('держится стабильно' if momentum >= -5 else 'снижается')
+    # ── Шаг 2. Анализ контекста: как направление выглядит на фоне других ──
+    cur.execute(
+        "SELECT name, signals_7d, momentum FROM it_trend_directions "
+        "WHERE signals_30d > 0 AND direction_key != %s ORDER BY score DESC LIMIT 4", (key,))
+    rivals = cur.fetchall()
+    rivals_text = '\n'.join(
+        f"- {rn}: {r7} сигналов/нед, динамика {rm}%" for rn, r7, rm in rivals
+    ) or '- (других активных направлений пока нет)'
+
+    trend = 'уверенно растёт' if momentum > 5 else ('держится стабильно' if momentum >= -5 else 'теряет обороты')
+
+    # ── Шаг 3+4. Своё мнение → Статья. Промпт требует авторской позиции и прогноза. ──
     prompt = (
-        f"Тема: перспективы направления «{name}» в программировании.\n"
-        f"Описание: {desc}\n"
-        f"Данные аналитики: сигналов за неделю {s7}, за месяц {s30}, динамика {momentum}% ({trend}).\n"
-        f"Свежие публикации по теме:\n{facts_text}\n\n"
-        f"Напиши аналитическую статью для образовательной платформы. Структура:\n"
-        f"1) Что происходит с направлением сейчас.\n"
-        f"2) Где это применяется в реальном бизнесе, промышленности, экономике.\n"
-        f"3) Стоит ли школьнику/студенту изучать это и с чего начать.\n"
-        f"Верни строго JSON без markdown:\n"
-        f'{{"title":"заголовок до 90 символов","summary":"лид до 220 символов",'
-        f'"content":"3-5 абзацев простым языком, без выдуманных цифр",'
-        f'"tags":["3-5 тегов одним словом"]}}'
+        f"НАПРАВЛЕНИЕ ДЛЯ РАЗБОРА: «{name}» (место в рейтинге трендов: #{rank}).\n"
+        f"Суть направления: {desc}\n\n"
+        f"ДАННЫЕ НАШЕЙ АНАЛИТИКИ:\n"
+        f"- сигналов за неделю: {s7}, за месяц: {s30}\n"
+        f"- динамика интереса: {momentum}% ({trend})\n\n"
+        f"СВЕЖАЯ ФАКТУРА (реальные публикации из IT-источников):\n{facts_text}\n\n"
+        f"КОНТЕКСТ — конкурирующие направления в рейтинге:\n{rivals_text}\n\n"
+        f"ЗАДАЧА. Напиши ОРИГИНАЛЬНУЮ авторскую аналитическую статью. Не пересказ новостей, "
+        f"а осмысление. Обязательная структура внутри content (раздели абзацами):\n"
+        f"1) «Что происходит» — суть момента простыми словами, опираясь на фактуру.\n"
+        f"2) «Почему это важно» — связь с реальным бизнесом, промышленностью, экономикой РФ.\n"
+        f"3) «Мнение редакции УЧИСЬПРО» — ТВОЯ личная аргументированная позиция: перегрет тренд "
+        f"или недооценён, чего ждать дальше (прогноз), на фоне конкурентов из контекста.\n"
+        f"4) «Что делать школьнику/студенту» — конкретный честный совет: стоит ли вкладываться и с чего начать.\n\n"
+        f"Верни СТРОГО JSON без markdown:\n"
+        f'{{"title":"цепляющий заголовок до 90 символов, без кликбейта",'
+        f'"summary":"лид-абзац до 220 символов, который интригует",'
+        f'"content":"4-6 содержательных абзацев живым языком, с явной авторской позицией и прогнозом",'
+        f'"verdict":"одно предложение — главный вывод-мнение редакции",'
+        f'"tags":["4-6 тегов одним словом"]}}'
     )
-    raw = call_polza(prompt, "Ты — IT-аналитик и редактор образовательного журнала. Пишешь живо, честно, без воды.",
-                     max_tokens=1400, temperature=0.6)
+    raw = call_polza(prompt, ANALYST_SYSTEM, max_tokens=1200, temperature=0.72)
     if not raw:
-        return {'created': False, 'reason': 'ИИ недоступен'}
+        return {'created': False, 'reason': f'ИИ недоступен ({LAST_POLZA_ERROR})'}
     raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
     raw = re.sub(r'\s*```$', '', raw)
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
-        return {'created': False, 'reason': 'ИИ вернул некорректный JSON'}
+        # Резерв: вытаскиваем JSON-объект из текста, если ИИ добавил пояснения вокруг
+        m = re.search(r'\{.*\}', raw, flags=re.DOTALL)
+        if not m:
+            return {'created': False, 'reason': f'ИИ вернул не-JSON: {raw[:120]}'}
+        try:
+            parsed = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return {'created': False, 'reason': f'JSON не распарсился: {raw[:120]}'}
 
     title = str(parsed.get('title') or f'Тренд: {name}')[:380]
     summary = str(parsed.get('summary') or '')[:900]
     content = str(parsed.get('content') or '')[:25000]
+    verdict = str(parsed.get('verdict') or '').strip()
     tags = [str(t)[:30] for t in (parsed.get('tags') or [])][:8]
     if not content:
         return {'created': False, 'reason': 'пустой контент'}
+
+    # Вердикт-мнение выносим в начало статьи как акцент авторской позиции.
+    if verdict:
+        content = f"💡 Мнение редакции: {verdict}\n\n{content}"
 
     words = len(content.split())
     reading_time = max(2, min(20, round(words / 200)))
@@ -393,26 +466,60 @@ def list_max_channels(cur) -> list:
 
 
 def handle_cron(cur) -> dict:
+    """Эталонный конвейер. Порядок фаз оптимизирован под таймаут функции:
+    сначала статья (приоритет, пока есть свежие данные с прошлого прогона),
+    затем сбор и быстрая агрегация без тяжёлых ИИ-инсайтов."""
     cur.execute("INSERT INTO it_trend_runs (kind, status) VALUES ('cron','running') RETURNING id")
     run_id = cur.fetchone()[0]
-    collected = collect_signals(cur)
-    aggregate_directions(cur, with_ai=True)
-    # Статью в Ленту делаем не чаще раза в 2 дня
+
+    # ── Фаза 1. Статья в Ленту (приоритет) — не чаще раза в 2 дня ──
+    article_created = 0
+    article_info = None
+    skip_reason = None
     cur.execute(
         "SELECT 1 FROM feed_articles WHERE category='tech' AND source_kind='agent' "
         "AND published_at >= NOW() - INTERVAL '2 days' LIMIT 1")
-    article_created = 0
-    article_info = None
-    if not cur.fetchone():
+    need_article = cur.fetchone() is None
+
+    if need_article:
+        # Статья требует всего времени функции под ответ ИИ — сбор пропускаем,
+        # данные актуальны с прошлого прогона. Сбор пройдёт на следующем тике.
         res = generate_trend_article(cur)
         if res.get('created'):
             article_created = 1
             article_info = res
+        else:
+            skip_reason = res.get('reason')
+        collected = 0
+    else:
+        skip_reason = 'свежая статья уже есть (лимит 2 дня)'
+        # ── Фаза 2. Сбор сигналов + быстрая агрегация ──
+        collected = collect_signals(cur)
+        aggregate_directions(cur, with_ai=False)
+
     cur.execute(
         "UPDATE it_trend_runs SET status='ok', signals_collected=%s, articles_created=%s, "
-        "finished_at=NOW() WHERE id=%s", (collected, article_created, run_id))
+        "error_message=%s, finished_at=NOW() WHERE id=%s",
+        (collected, article_created, (skip_reason or '')[:500], run_id))
     return {'ok': True, 'signals_collected': collected, 'articles_created': article_created,
-            'article': article_info}
+            'article': article_info, 'skip_reason': skip_reason}
+
+
+def handle_tick(cur) -> dict:
+    """Ленивый дневной автозапуск без внешнего планировщика.
+    Полный цикл выполняется НЕ ЧАЩЕ одного раза в сутки (по дате МСК).
+    Атомарно «занимаем» сегодняшний день — защита от гонки при заходе нескольких юзеров."""
+    from datetime import timedelta
+    now_msk = datetime.now(timezone.utc) + timedelta(hours=3)
+    today_msk = now_msk.date()
+    cur.execute(
+        "UPDATE it_trend_cron SET last_tick_date=%s, last_tick_at=NOW() "
+        "WHERE id=1 AND (last_tick_date IS NULL OR last_tick_date < %s)",
+        (today_msk, today_msk))
+    claimed = cur.rowcount > 0
+    if not claimed:
+        return {'ok': True, 'skipped_already_ran_today': True, 'date': str(today_msk)}
+    return handle_cron(cur)
 
 
 def handle_seed_if_empty(cur) -> dict:
@@ -489,6 +596,11 @@ def handler(event: dict, context) -> dict:
 
         if action == 'seed_if_empty':
             res = handle_seed_if_empty(cur)
+            conn.commit()
+            return ok(res)
+
+        if action == 'tick':
+            res = handle_tick(cur)
             conn.commit()
             return ok(res)
 

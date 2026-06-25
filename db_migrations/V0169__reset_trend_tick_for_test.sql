@@ -1,0 +1,1 @@
+UPDATE it_trend_cron SET last_tick_date = NULL WHERE id = 1;

@@ -6,7 +6,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import DirectionCard from "@/components/techtrends/DirectionCard";
 import MaxChannelsBlock from "@/components/techtrends/MaxChannelsBlock";
-import { fetchTrendsDashboard, seedTrendsIfEmpty, TrendsDashboard } from "@/components/techtrends/api";
+import { fetchTrendsDashboard, seedTrendsIfEmpty, tickTrends, TrendsDashboard } from "@/components/techtrends/api";
 
 const CATEGORY_LABELS: Record<string, string> = {
   lang: "Языки",
@@ -23,6 +23,11 @@ export default function TechTrends() {
   const [data, setData] = useState<TrendsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+
+  // Ленивый дневной запуск конвейера (резерв к внешнему cron, бэкенд сам лимитирует раз в сутки)
+  useEffect(() => {
+    tickTrends();
+  }, []);
 
   useEffect(() => {
     (async () => {
