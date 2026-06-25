@@ -383,6 +383,15 @@ def list_directions(cur) -> list:
     return out
 
 
+def list_max_channels(cur) -> list:
+    """Каталог IT-каналов MAX с привязкой к направлениям."""
+    cur.execute(
+        "SELECT handle, name, max_url, direction_key, topic, emoji "
+        "FROM it_max_channels WHERE enabled = TRUE ORDER BY sort_order, id")
+    return [{'handle': r[0], 'name': r[1], 'max_url': r[2], 'direction': r[3],
+             'topic': r[4], 'emoji': r[5]} for r in cur.fetchall()]
+
+
 def handle_cron(cur) -> dict:
     cur.execute("INSERT INTO it_trend_runs (kind, status) VALUES ('cron','running') RETURNING id")
     run_id = cur.fetchone()[0]
@@ -451,8 +460,14 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return ok({'directions': data, 'count': len(data)})
 
+        if action == 'channels':
+            data = list_max_channels(cur)
+            conn.commit()
+            return ok({'channels': data, 'count': len(data)})
+
         if action == 'dashboard':
             dirs = list_directions(cur)
+            channels = list_max_channels(cur)
             cur.execute("SELECT COUNT(*), COALESCE(MAX(created_at), NOW()) FROM it_trend_signals")
             total_signals, last_signal = cur.fetchone()
             cur.execute(
@@ -467,7 +482,8 @@ def handler(event: dict, context) -> dict:
             last_run = ({'kind': lr[0], 'status': lr[1], 'signals': lr[2],
                          'articles': lr[3], 'at': lr[4]} if lr else None)
             conn.commit()
-            return ok({'directions': dirs, 'total_signals': total_signals,
+            return ok({'directions': dirs, 'channels': channels,
+                       'total_signals': total_signals,
                        'last_signal_at': last_signal, 'recent_signals': recent,
                        'last_run': last_run})
 

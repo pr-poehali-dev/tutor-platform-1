@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import DirectionCard from "@/components/techtrends/DirectionCard";
+import MaxChannelsBlock from "@/components/techtrends/MaxChannelsBlock";
 import { fetchTrendsDashboard, seedTrendsIfEmpty, TrendsDashboard } from "@/components/techtrends/api";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -159,6 +160,9 @@ export default function TechTrends() {
                 <DirectionCard key={dir.key} dir={dir} index={i} />
               ))}
             </div>
+
+            {/* IT-каналы в MAX */}
+            <MaxChannelsBlock channels={data.channels || []} />
 
             {/* CTA к Ленте */}
             <div className="rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 to-cyan-500/5 p-6 md:p-8 text-center">

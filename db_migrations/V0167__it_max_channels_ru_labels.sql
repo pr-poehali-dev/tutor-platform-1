@@ -1,0 +1,17 @@
+UPDATE it_max_channels SET name='Нейросети', topic='ИИ и нейросети', emoji='🧠' WHERE handle='neirosety';
+UPDATE it_max_channels SET name='NSIS CyberSec', topic='Кибербезопасность', emoji='🔒' WHERE handle='nsis_cybersec';
+UPDATE it_max_channels SET name='Backend IT', topic='Бэкенд-разработка', emoji='⚙️' WHERE handle='backend_it';
+UPDATE it_max_channels SET name='Python Test', topic='Python и собеседования', emoji='🐍' WHERE handle='pythontest_it';
+UPDATE it_max_channels SET name='D Code', topic='Программирование и код', emoji='💻' WHERE handle='d_code';
+UPDATE it_max_channels SET name='Developer Shelf', topic='Разработка и инструменты', emoji='🛠️' WHERE handle='developer_shelf';
+UPDATE it_max_channels SET name='Архиватор IT', topic='IT-новости и подборки', emoji='🗂️' WHERE handle='archivator_it';
+UPDATE it_max_channels SET name='AliExpress PRG', topic='Программирование', emoji='📦' WHERE handle='aliexpress_prg';
+UPDATE it_max_channels SET name='iPhones.ru', topic='Apple и гаджеты', emoji='📱' WHERE handle='iphonesru';
+UPDATE it_max_channels SET name='iGuides', topic='Технологии и гаджеты', emoji='📲' WHERE handle='iguides';
+UPDATE it_max_channels SET name='Rozetked', topic='Технологии и гаджеты', emoji='🔌' WHERE handle='rozetked';
+UPDATE it_max_channels SET name='Wylsacom Red', topic='Техно-новости', emoji='🎬' WHERE handle='wylsacomred';
+UPDATE it_trend_sources SET name='iPhones.ru' WHERE code='iphonesru';
+UPDATE it_trend_sources SET name='iGuides' WHERE code='iguides';
+UPDATE it_trend_sources SET name='Rozetked' WHERE code='rozetked';
+UPDATE it_trend_sources SET name='Хакер (Xakep)' WHERE code='xakep';
+UPDATE it_trend_sources SET name='Hi-News' WHERE code='hinews';

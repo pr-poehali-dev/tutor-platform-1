@@ -26,8 +26,18 @@ export interface RecentSignal {
   at: string;
 }
 
+export interface MaxChannel {
+  handle: string;
+  name: string;
+  max_url: string;
+  direction: string;
+  topic: string;
+  emoji: string;
+}
+
 export interface TrendsDashboard {
   directions: TrendDirection[];
+  channels: MaxChannel[];
   total_signals: number;
   last_signal_at: string | null;
   recent_signals: RecentSignal[];
