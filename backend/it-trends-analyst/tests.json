@@ -1,0 +1,48 @@
+{
+  "tests": [
+    {
+      "name": "Ping health-check",
+      "method": "GET",
+      "path": "/?action=ping",
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true, "service": "it-trends-analyst"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Public directions list",
+      "method": "GET",
+      "path": "/?action=directions",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Dashboard data",
+      "method": "GET",
+      "path": "/?action=dashboard",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Cron requires auth",
+      "method": "GET",
+      "path": "/?action=cron",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Collect requires admin",
+      "method": "POST",
+      "path": "/?action=collect",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Unknown action 404",
+      "method": "GET",
+      "path": "/?action=nonsense",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

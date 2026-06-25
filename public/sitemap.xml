@@ -412,4 +412,7 @@
   <!-- ЗНАЙКИ — игровая валюта и бонусная программа -->
   <url><loc>https://учисьпро.рф/znaika</loc><lastmod>2026-06-25</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 
+  <!-- Тренды программирования — ИИ-аналитика IT-направлений -->
+  <url><loc>https://учисьпро.рф/tech-trends</loc><lastmod>2026-06-25</lastmod><changefreq>daily</changefreq><priority>0.92</priority></url>
+
 </urlset>
