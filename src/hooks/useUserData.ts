@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getUserUid, USER_DATA_URL } from "@/lib/userUid";
+import { safeFetch } from "@/lib/safeFetch";
 
 export interface UserStats {
   total_xp: number;
@@ -50,12 +51,13 @@ const emptyCache: Cache = {
 
 async function call(action: string, payload: Record<string, unknown> = {}) {
   const uid = getUserUid();
-  const res = await fetch(USER_DATA_URL, {
+  const res = await safeFetch<Record<string, unknown>>(USER_DATA_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, user_uid: uid, ...payload }),
   });
-  return res.json();
+  // Возвращаем пустой объект при сбое/таймауте — вызывающий код устойчив к этому.
+  return res.data || {};
 }
 
 export default function useUserData() {

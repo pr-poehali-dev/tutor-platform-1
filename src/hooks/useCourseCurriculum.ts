@@ -97,11 +97,23 @@ export default function useCourseCurriculum(courseInfo: CourseInfo, autoGenerate
       if (generate) {
         payload.course_info = courseInfo;
       }
-      const res = await fetch(`${COURSE_BUILDER_URL}?action=get`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      // Генерация программы курса может быть долгой — увеличенный таймаут 60 сек.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60000);
+      let res: Response;
+      try {
+        res = await fetch(`${COURSE_BUILDER_URL}?action=get`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = await res.json();
       if (data.error) {
         setState((s) => ({ ...s, loading: false, generating: false, error: data.error }));

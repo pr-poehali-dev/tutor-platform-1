@@ -138,17 +138,23 @@ export function useYookassa(options: UseYookassaOptions): UseYookassaReturn {
         setPaymentUrl(data.payment_url);
         setOrderNumber(data.order_number);
 
-        // Save pending order to localStorage
+        // Save pending order to localStorage.
+        // Оборачиваем в try/catch: запись не должна ронять успешный платёж
+        // (например, в приватном режиме Safari localStorage бросает исключение).
         if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "yookassa_pending_order",
-            JSON.stringify({
-              order_number: data.order_number,
-              order_id: data.order_id,
-              payment_id: data.payment_id,
-              created_at: new Date().toISOString(),
-            })
-          );
+          try {
+            localStorage.setItem(
+              "yookassa_pending_order",
+              JSON.stringify({
+                order_number: data.order_number,
+                order_id: data.order_id,
+                payment_id: data.payment_id,
+                created_at: new Date().toISOString(),
+              })
+            );
+          } catch {
+            /* storage недоступен — не критично для оплаты */
+          }
         }
 
         onSuccess?.(data);

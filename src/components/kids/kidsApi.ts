@@ -1,22 +1,31 @@
 import { getUserUid } from "@/lib/userUid";
+import func2url from "../../../backend/func2url.json";
 
-const KIDS_URL = "https://functions.poehali.dev/ea709a00-437f-4596-a5ed-4c35ca44439a";
+const KIDS_URL = (func2url as Record<string, string>).kids;
 
 async function call<T>(action: string, body?: Record<string, unknown>, method: "GET" | "POST" = "POST"): Promise<T> {
   const uid = getUserUid();
-  const res = await fetch(`${KIDS_URL}?action=${action}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Uid": uid,
-    },
-    body: method === "POST" ? JSON.stringify(body || {}) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`kids ${action}: ${res.status} ${text.slice(0, 100)}`);
+  // Таймаут, чтобы запрос не зависал вечно при плохой сети.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(`${KIDS_URL}?action=${action}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Uid": uid,
+      },
+      body: method === "POST" ? JSON.stringify(body || {}) : undefined,
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`kids ${action}: ${res.status} ${text.slice(0, 100)}`);
+    }
+    return res.json() as Promise<T>;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json() as Promise<T>;
 }
 
 // ─── Прогресс ───

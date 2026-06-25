@@ -1,3 +1,5 @@
+import func2url from "../../backend/func2url.json";
+
 const KEY = "user_uid";
 
 /**
@@ -17,4 +19,4 @@ export function getUserUid(): string {
   }
 }
 
-export const USER_DATA_URL = "https://functions.poehali.dev/fdcd883a-900e-4cff-b647-569675544e74";
+export const USER_DATA_URL = (func2url as Record<string, string>)["user-data"];

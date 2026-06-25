@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import func2url from "../../../backend/func2url.json";
 
-const ANALYTICS_URL = "https://functions.poehali.dev/01d958c7-7953-4b8d-8f34-f7a0962bdb76";
+const ANALYTICS_URL = (func2url as Record<string, string>).analytics;
 const VISITOR_KEY = "up_visitor_id";
 
 function getVisitorId(): { id: string; isNew: boolean } {
