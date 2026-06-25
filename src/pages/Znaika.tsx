@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import Seo from "@/components/seo/Seo";
 import Icon from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,9 +83,12 @@ export default function Znaika() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Helmet>
-          <title>ЗНАЙКИ · УЧИСЬПРО</title>
-        </Helmet>
+        <Seo
+          title="ЗНАЙКИ — игровая валюта и бонусы УЧИСЬПРО"
+          description="ЗНАЙКИ — внутренняя валюта УЧИСЬПРО. Учись, заходи каждый день, приглашай друзей и копи ЗНАЙКИ: 1 ЗНАЙКА = 1 ₽ скидки при оплате курса (до 30% стоимости)."
+          canonical="https://учисьпро.рф/znaika"
+          keywords="знайки, бонусы учисьпро, кэшбек за обучение, скидка на курсы, реферальная программа, геймификация обучения"
+        />
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center mx-auto mb-6">
             <Icon name="Coins" size={40} className="text-amber-300" />
@@ -106,9 +109,12 @@ export default function Znaika() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Helmet>
-        <title>Мои ЗНАЙКИ · УЧИСЬПРО</title>
-      </Helmet>
+      <Seo
+        title="Мои ЗНАЙКИ — баланс и достижения"
+        description="Личный баланс ЗНАЕК, уровень, серия дней и достижения в УЧИСЬПРО."
+        canonical="https://учисьпро.рф/znaika"
+        noindex
+      />
 
       {flash && (
         <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl border backdrop-blur-xl shadow-2xl animate-fade-in ${

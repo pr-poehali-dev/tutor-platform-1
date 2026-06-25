@@ -398,4 +398,18 @@
     </image:image>
   </url>
 
+  <!-- Премиум-разборы произведений школьной программы (ЕГЭ/ОГЭ) -->
+  <url><loc>https://учисьпро.рф/feed/razbor-revizor-gogol</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://учисьпро.рф/feed/razbor-evgeniy-onegin-pushkin</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://учисьпро.рф/feed/razbor-geroy-nashego-vremeni-lermontov</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://учисьпро.рф/feed/razbor-mertvye-dushi-gogol</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://учисьпро.рф/feed/razbor-prestuplenie-i-nakazanie-dostoevskiy</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+  <url><loc>https://учисьпро.рф/feed/razbor-voyna-i-mir-tolstoy</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
+
+  <!-- Профориентация: удалённые профессии -->
+  <url><loc>https://учисьпро.рф/remote-professions</loc><lastmod>2026-06-25</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+
+  <!-- ЗНАЙКИ — игровая валюта и бонусная программа -->
+  <url><loc>https://учисьпро.рф/znaika</loc><lastmod>2026-06-25</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+
 </urlset>
