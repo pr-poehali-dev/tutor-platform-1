@@ -5,6 +5,7 @@ import { CourseDetail } from "@/components/courses/courseDetailsData";
 import { RealCurriculum } from "@/hooks/useCourseCurriculum";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import { isPromoActive } from "@/components/promo/dobroConfig";
 
 interface Props {
   course: Course;
@@ -67,6 +68,46 @@ export default function CourseDetailProgram({
       <p className="text-white/50 text-xs mb-4">
         Программа делится на {detail.modules.length} {detail.modules.length === 1 ? "модуль" : "модуля"}. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
       </p>
+
+      {/* Плашка подписки: показываем, когда у пользователя нет доступа к курсу.
+          Первый урок бесплатный, остальные открываются по подписке.
+          Во время акции «ДОБРО» всё бесплатно — плашку не показываем. */}
+      {!canAccessCourse(course.id) && !course.freeForever && !isPromoActive() && (
+        <div className="mb-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/15 via-fuchsia-500/10 to-cyan-500/15 p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/25 border border-purple-400/30 flex items-center justify-center flex-shrink-0">
+              <Icon name="Sparkles" size={18} className="text-purple-200" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-montserrat font-black text-white text-sm md:text-base">
+                Открой все уроки по подписке
+              </p>
+              <p className="text-white/60 text-xs mt-0.5 leading-relaxed">
+                Первый урок — бесплатно. Подписка открывает все уроки этого курса,
+                остальные 36+ курсов и индивидуальный маршрут.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                try {
+                  sessionStorage.setItem("pending_checkout_plan", "pro");
+                  sessionStorage.setItem("pending_checkout_period", "month");
+                  sessionStorage.setItem("pending_checkout_from", window.location.pathname);
+                } catch { /* ignore */ }
+                openLogin();
+                return;
+              }
+              navigate(`/checkout/pro?from=${encodeURIComponent(window.location.pathname)}`);
+            }}
+            className="mt-3 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity glow-purple"
+          >
+            <Icon name="Unlock" size={16} />
+            Открыть все уроки по подписке
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         {detail.modules.map(m => {
           const isExpanded = expandedModule === m.id;
