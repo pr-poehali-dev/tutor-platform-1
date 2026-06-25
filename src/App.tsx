@@ -105,6 +105,7 @@ const PageSkeleton = () => (
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -213,6 +214,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;

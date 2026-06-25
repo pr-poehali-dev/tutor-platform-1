@@ -46,10 +46,16 @@ export default function FeedArticlePage() {
       }
       const item = data.item;
       setArticle(item);
-      // Подгружаем 3 связанных по той же категории
-      fetchFeed(item.category, 1).then((res) => {
-        setRelated(res.items.filter((a) => a.id !== item.id).slice(0, 3));
-      });
+      // Подгружаем 3 связанных по той же категории (сбой не критичен).
+      fetchFeed(item.category, 1)
+        .then((res) => {
+          setRelated((res.items || []).filter((a) => a.id !== item.id).slice(0, 3));
+        })
+        .catch(() => { /* связанные статьи необязательны */ });
+      setLoading(false);
+    }).catch(() => {
+      // Сбой загрузки статьи не должен оставлять вечный спиннер.
+      setNotFound(true);
       setLoading(false);
     });
   }, [slug]);

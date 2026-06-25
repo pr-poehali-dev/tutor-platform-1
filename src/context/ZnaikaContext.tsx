@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import func2url from "../../backend/func2url.json";
 import { useAuth } from "@/context/AuthContext";
+import { safeStorage } from "@/lib/safeStorage";
 
 const ZNAIKA_URL = (func2url as Record<string, string>).znaika;
 
@@ -114,11 +115,12 @@ export function ZnaikaProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated || !token) return;
     const KEY = "znaika_last_auto_checkin";
     const today = new Date().toISOString().slice(0, 10);
-    if (localStorage.getItem(KEY) === today) return;
+    if (safeStorage.get(KEY) === today) return;
     fetch(`${ZNAIKA_URL}?action=checkin`, { method: "POST", headers: authHeaders(), body: "{}" })
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        localStorage.setItem(KEY, today);
+        if (!data) return;
+        safeStorage.set(KEY, today);
         if (data?.state) setState(data.state);
       })
       .catch(() => {});

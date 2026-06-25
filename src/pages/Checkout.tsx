@@ -201,7 +201,7 @@ export default function Checkout() {
       navigate(`/checkout/success?plan=${plan.id}`);
       return;
     }
-    if (res.paymentUrl) {
+    if (res.paymentUrl && /^https:\/\//.test(res.paymentUrl)) {
       window.location.href = res.paymentUrl;
       return;
     }

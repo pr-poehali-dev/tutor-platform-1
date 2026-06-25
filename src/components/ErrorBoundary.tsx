@@ -27,8 +27,30 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    // Частая причина «белого экрана» — устаревший lazy-чанк после нового деплоя.
+    // В этом случае один раз молча перезагружаем страницу, чтобы подтянуть свежую версию.
+    const msg = `${error?.name || ""} ${error?.message || ""}`;
+    const isChunkError =
+      /ChunkLoadError|Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(
+        msg
+      );
+    if (isChunkError && typeof window !== "undefined") {
+      const KEY = "uchispro_chunk_reload_at";
+      try {
+        const last = Number(sessionStorage.getItem(KEY) || "0");
+        // Защита от цикла перезагрузок: не чаще раза в 10 секунд.
+        if (Date.now() - last > 10000) {
+          sessionStorage.setItem(KEY, String(Date.now()));
+          window.location.reload();
+          return;
+        }
+      } catch {
+        /* noop */
+      }
+    }
+
     // Логируем в консоль (в проде это попадёт в Sentry/аналитику при наличии)
-     
+
     console.error("[ErrorBoundary] Caught error:", error, info);
     this.props.onError?.(error, info);
   }

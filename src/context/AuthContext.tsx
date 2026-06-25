@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import func2url from "../../backend/func2url.json";
+import { safeFetch } from "@/lib/safeFetch";
 
 const AUTH_URL = (func2url as Record<string, string>).auth;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -70,26 +71,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    try {
-      const res = await fetch(`${AUTH_URL}?action=me`, {
-        method: "GET",
-        headers: { "X-Auth-Token": currentToken },
-      });
-      if (!res.ok) {
-        saveToken(null);
-        setToken(null);
-        setUser(null);
-        setSubscription(null);
-      } else {
-        const data = await res.json();
-        setUser(data.user ?? null);
-        setSubscription(data.subscription ?? null);
-      }
-    } catch {
-      // оставляем токен — может быть временный сетевой сбой
-    } finally {
-      setLoading(false);
+    const res = await safeFetch<{ user?: AuthUser; subscription?: AuthSubscription }>(
+      `${AUTH_URL}?action=me`,
+      { method: "GET", headers: { "X-Auth-Token": currentToken } }
+    );
+    // Токен чистим только если сервер явно отверг его (401/403),
+    // а не при сетевом сбое/таймауте (status 0) — иначе разлогинит при морганиях сети.
+    if (res.status === 401 || res.status === 403) {
+      saveToken(null);
+      setToken(null);
+      setUser(null);
+      setSubscription(null);
+    } else if (res.ok && res.data) {
+      setUser(res.data.user ?? null);
+      setSubscription(res.data.subscription ?? null);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {

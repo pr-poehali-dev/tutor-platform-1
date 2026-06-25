@@ -149,15 +149,18 @@ export default function CourseCheckout() {
     setPurchaseId(res.purchaseId ?? null);
     setAmount(res.amount ?? price);
 
-    // Реальная оплата: редиректим на ЮKassa
-    if (res.paymentUrl) {
+    // Реальная оплата: редиректим на ЮKassa (только по валидному https-адресу)
+    if (res.paymentUrl && /^https:\/\//.test(res.paymentUrl)) {
       window.location.href = res.paymentUrl;
       return;
     }
     // Демо-режим: ЮKassa не настроена — показываем кнопку активации
     if (res.demoMode) {
       setDemoMode(true);
+      return;
     }
+    // Ни ссылки оплаты, ни демо — не оставляем пользователя в подвешенном состоянии
+    setError("Не удалось перейти к оплате. Попробуй ещё раз через минуту.");
   };
 
   const handleDemoConfirm = async () => {

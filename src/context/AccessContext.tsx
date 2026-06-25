@@ -3,6 +3,7 @@ import func2url from "../../backend/func2url.json";
 import { useAuth } from "@/context/AuthContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import { isCourseFreeForever } from "@/components/courses/coursesData";
+import { safeFetch } from "@/lib/safeFetch";
 
 const ACCESS_URL = (func2url as Record<string, string>).access;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -61,21 +62,18 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    try {
-      const res = await fetch(`${ACCESS_URL}?action=check`, {
-        method: "GET",
-        headers: { "X-Auth-Token": authToken },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHasSubscription(!!data.has_subscription);
-        setPurchasedCourseIds(Array.isArray(data.purchased_course_ids) ? data.purchased_course_ids : []);
-      }
-    } catch {
-      // soft-fail: считаем что доступа нет
-    } finally {
-      setLoading(false);
+    const res = await safeFetch<{ has_subscription?: boolean; purchased_course_ids?: number[] }>(
+      `${ACCESS_URL}?action=check`,
+      { method: "GET", headers: { "X-Auth-Token": authToken } }
+    );
+    if (res.ok && res.data) {
+      setHasSubscription(!!res.data.has_subscription);
+      setPurchasedCourseIds(
+        Array.isArray(res.data.purchased_course_ids) ? res.data.purchased_course_ids : []
+      );
     }
+    // При сбое/таймауте мягко считаем, что доступа нет — без падения и без зависания.
+    setLoading(false);
   }, [token]);
 
   useEffect(() => {

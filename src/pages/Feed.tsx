@@ -28,59 +28,80 @@ export default function Feed() {
   }, []);
 
   useEffect(() => {
+    // Защита от гонки запросов: если категория сменилась, пока грузился старый
+    // ответ — игнорируем его, чтобы лента не перезаписалась чужим контентом.
+    let cancelled = false;
+
     setPage(1);
     setLoading(true);
-    fetchFeed(category, 1).then(async (res) => {
-      setItems(res.items);
-      setCounts(res.category_counts);
-      setTotal(res.total);
-      setHasMore(res.has_more);
-      setLoading(false);
 
-      // Авто-наполнение: если лента полностью пуста — экстренный посев.
-      const noContent = (res.items?.length || 0) === 0 && (res.total || 0) === 0;
-      if (noContent && category === "all") {
-        const seed = await seedIfEmpty();
-        if (seed.auto_seeded) {
-          setTimeout(async () => {
-            const r2 = await fetchFeed(category, 1);
-            setItems(r2.items);
-            setCounts(r2.category_counts);
-            setTotal(r2.total);
-            setHasMore(r2.has_more);
-          }, 8000);
-        }
-        return;
-      }
+    (async () => {
+      try {
+        const res = await fetchFeed(category, 1);
+        if (cancelled) return;
+        setItems(res.items || []);
+        setCounts(res.category_counts);
+        setTotal(res.total);
+        setHasMore(res.has_more);
 
-      // Иначе — фоновое обновление: дёргаем keep_alive (rate-limited 25 мин).
-      // Если за последние 25 минут уже был прогон — бэк пропустит,
-      // иначе добавит свежие статьи. Через 6 сек перезагружаем список.
-      // Старые статьи НЕ удаляются.
-      if (category === "all") {
-        keepAlive().then((ka) => {
-          if (ka.ok && !ka.skipped && (ka.topup_created || 0) > 0) {
+        // Авто-наполнение: если лента полностью пуста — экстренный посев.
+        const noContent = (res.items?.length || 0) === 0 && (res.total || 0) === 0;
+        if (noContent && category === "all") {
+          const seed = await seedIfEmpty();
+          if (!cancelled && seed.auto_seeded) {
             setTimeout(async () => {
               const r2 = await fetchFeed(category, 1);
-              setItems(r2.items);
+              if (cancelled) return;
+              setItems(r2.items || []);
               setCounts(r2.category_counts);
               setTotal(r2.total);
               setHasMore(r2.has_more);
-            }, 6000);
+            }, 8000);
           }
-        });
+          return;
+        }
+
+        // Иначе — фоновое обновление: дёргаем keep_alive (rate-limited 25 мин).
+        // Старые статьи НЕ удаляются.
+        if (category === "all") {
+          keepAlive().then((ka) => {
+            if (!cancelled && ka.ok && !ka.skipped && (ka.topup_created || 0) > 0) {
+              setTimeout(async () => {
+                const r2 = await fetchFeed(category, 1);
+                if (cancelled) return;
+                setItems(r2.items || []);
+                setCounts(r2.category_counts);
+                setTotal(r2.total);
+                setHasMore(r2.has_more);
+              }, 6000);
+            }
+          });
+        }
+      } catch {
+        // Сбой сети не должен оставлять ленту в вечной загрузке.
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [category]);
 
   const loadMore = async () => {
     setLoadingMore(true);
-    const next = page + 1;
-    const res = await fetchFeed(category, next);
-    setItems((prev) => [...prev, ...res.items]);
-    setPage(next);
-    setHasMore(res.has_more);
-    setLoadingMore(false);
+    try {
+      const next = page + 1;
+      const res = await fetchFeed(category, next);
+      setItems((prev) => [...prev, ...(res.items || [])]);
+      setPage(next);
+      setHasMore(res.has_more);
+    } catch {
+      // Сбой подгрузки не ломает уже показанную ленту.
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const featured = items[0];
