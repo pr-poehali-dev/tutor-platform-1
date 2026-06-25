@@ -411,7 +411,7 @@ export default function LearningJourney() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  onClick={() => navigate("/pricing")}
+                  onClick={() => navigate(`/pricing?from=${encodeURIComponent(window.location.pathname)}`)}
                   className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-7 py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
                 >
                   <Icon name="Sparkles" size={16} />

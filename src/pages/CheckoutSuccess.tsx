@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
@@ -7,14 +7,20 @@ import { useAccess } from "@/context/AccessContext";
 
 export default function CheckoutSuccess() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const planParam = params.get("plan") || "";
   const demoSubId = params.get("demo");
+  // Куда вернуть пользователя после оплаты (страница курса, с которой он ушёл).
+  // Принимаем только относительный внутренний путь — защита от чужих редиректов.
+  const rawFrom = params.get("from") || "";
+  const fromPath = /^\/[^/]/.test(rawFrom) ? rawFrom : "";
   const { refresh } = useAuth();
   const { hasSubscription, confirmDemoPurchase, syncPayment } = useAccess();
   const [status, setStatus] = useState<"checking" | "active" | "pending">("checking");
   const [demoActivating, setDemoActivating] = useState(false);
 
-  // Поллинг доступа после возврата с ЮKassa (webhook может задержаться)
+  // Поллинг доступа после возврата с ЮKassa (webhook может задержаться).
+  // Ждём до 60 секунд — банк/ЮKassa иногда подтверждают платёж не сразу.
   useEffect(() => {
     refresh();
     let cancelled = false;
@@ -28,11 +34,11 @@ export default function CheckoutSuccess() {
         setStatus("active");
         return;
       }
-      if (attempt >= 6) {
+      if (attempt >= 20) {
         setStatus("pending");
         return;
       }
-      setTimeout(tick, 2000);
+      setTimeout(tick, 3000);
     };
     tick();
     return () => { cancelled = true; };
@@ -42,6 +48,14 @@ export default function CheckoutSuccess() {
   useEffect(() => {
     if (hasSubscription) setStatus("active");
   }, [hasSubscription]);
+
+  // Подписка активна и есть курс, с которого пришли — мягко возвращаем туда.
+  useEffect(() => {
+    if (status === "active" && fromPath) {
+      const t = setTimeout(() => navigate(fromPath), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [status, fromPath, navigate]);
 
   const handleDemoActivate = async () => {
     if (!demoSubId) return;
@@ -66,7 +80,17 @@ export default function CheckoutSuccess() {
             </h1>
             <p className="text-white/70 text-base md:text-lg mb-6 leading-relaxed">
               Все курсы и индивидуальная программа открыты. Чек об оплате отправили на твой email.
+              {fromPath && " Сейчас вернём тебя к курсу…"}
             </p>
+            {fromPath && (
+              <button
+                onClick={() => navigate(fromPath)}
+                className="mb-6 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-emerald-500/30 transition-all"
+              >
+                <Icon name="ArrowRight" size={16} />
+                Вернуться к курсу
+              </button>
+            )}
           </>
         ) : status === "checking" ? (
           <>
@@ -77,7 +101,7 @@ export default function CheckoutSuccess() {
               Проверяем оплату...
             </h1>
             <p className="text-white/70 text-base md:text-lg mb-6 leading-relaxed">
-              Получаем подтверждение от ЮKassa. Это занимает до 10 секунд.
+              Получаем подтверждение от ЮKassa. Обычно это занимает несколько секунд, иногда до минуты.
             </p>
           </>
         ) : (

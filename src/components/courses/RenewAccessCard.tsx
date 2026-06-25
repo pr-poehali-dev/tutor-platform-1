@@ -26,6 +26,8 @@ const OPTIONS: PeriodOption[] = [
 
 export default function RenewAccessCard() {
   const navigate = useNavigate();
+  // Чтобы после оплаты вернуть пользователя на эту же страницу курса.
+  const fromQuery = `&from=${encodeURIComponent(window.location.pathname)}`;
 
   return (
     <div className="bg-white/4 border border-white/10 rounded-2xl p-5 mb-5">
@@ -41,7 +43,7 @@ export default function RenewAccessCard() {
         {OPTIONS.map((o) => (
           <button
             key={o.id}
-            onClick={() => navigate(`/checkout/pro${o.id === "year" ? "?period=year" : ""}`)}
+            onClick={() => navigate(`/checkout/pro?${o.id === "year" ? "period=year" : "p=1"}${fromQuery}`)}
             className="group relative text-left rounded-xl border border-white/12 bg-white/[0.03] hover:border-purple-500/50 hover:bg-purple-500/[0.06] transition-all p-3.5"
           >
             {o.note && (

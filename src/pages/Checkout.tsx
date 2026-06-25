@@ -80,6 +80,11 @@ export default function Checkout() {
   const { planId } = useParams<{ planId: string }>();
   const [searchParams] = useSearchParams();
   const period: "month" | "year" = searchParams.get("period") === "year" ? "year" : "month";
+  // Откуда пользователь пришёл оформлять подписку (например, страница курса).
+  // Принимаем только относительный внутренний путь — для безопасности.
+  const rawFrom = searchParams.get("from") || "";
+  const fromPath = /^\/[^/]/.test(rawFrom) ? rawFrom : "";
+  const fromQuery = fromPath ? `&from=${encodeURIComponent(fromPath)}` : "";
   const { user, isAuthenticated, loading, openLogin } = useAuth();
   const navigate = useNavigate();
   const plan = useMemo<PlanDef | null>(() => (planId && (planId in PLANS) ? PLANS[planId as PlanId] : null), [planId]);
@@ -188,7 +193,7 @@ export default function Checkout() {
       return;
     }
 
-    const returnUrl = `${window.location.origin}/checkout/success?plan=${plan.id}`;
+    const returnUrl = `${window.location.origin}/checkout/success?plan=${plan.id}${fromQuery}`;
     setIsLoading(true);
     const res = await buySubscription(plan.id, returnUrl, email, isYear ? "year" : "month", couponApplied?.code);
     setIsLoading(false);
@@ -198,7 +203,7 @@ export default function Checkout() {
       return;
     }
     if (res.alreadySubscribed) {
-      navigate(`/checkout/success?plan=${plan.id}`);
+      navigate(`/checkout/success?plan=${plan.id}${fromQuery}`);
       return;
     }
     if (res.paymentUrl && /^https:\/\//.test(res.paymentUrl)) {
@@ -207,7 +212,7 @@ export default function Checkout() {
     }
     if (res.demoMode) {
       // ЮKassa не настроена — отправляем на success, там есть демо-активация
-      navigate(`/checkout/success?plan=${plan.id}&demo=${res.subscriptionId}`);
+      navigate(`/checkout/success?plan=${plan.id}&demo=${res.subscriptionId}${fromQuery}`);
       return;
     }
     setLocalError("Не удалось перейти к оплате. Попробуй ещё раз через минуту.");

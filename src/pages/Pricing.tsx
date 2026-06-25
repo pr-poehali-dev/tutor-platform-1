@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
@@ -142,12 +142,21 @@ const PRICING_JSON_LD = [
 export default function Pricing() {
   const { isAuthenticated, openLogin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [period, setPeriod] = useState<"month" | "year">("year");
 
   const promoOn = isPromoActive();
 
-  const checkoutPath = (planId: string) =>
-    `/checkout/${planId}${period === "year" ? "?period=year" : ""}`;
+  // Откуда пришёл пользователь (например, со страницы курса) — чтобы вернуть после оплаты.
+  const rawFrom = searchParams.get("from") || "";
+  const fromPath = /^\/[^/]/.test(rawFrom) ? rawFrom : "";
+
+  const checkoutPath = (planId: string) => {
+    const parts: string[] = [];
+    if (period === "year") parts.push("period=year");
+    if (fromPath) parts.push(`from=${encodeURIComponent(fromPath)}`);
+    return `/checkout/${planId}${parts.length ? `?${parts.join("&")}` : ""}`;
+  };
 
   const handlePlanClick = (planId: string) => {
     // Во время акции «ДОБРО» все оплаты заблокированы — перенаправляем на курсы
@@ -159,6 +168,8 @@ export default function Pricing() {
       try {
         sessionStorage.setItem("pending_checkout_plan", planId);
         sessionStorage.setItem("pending_checkout_period", period);
+        if (fromPath) sessionStorage.setItem("pending_checkout_from", fromPath);
+        else sessionStorage.removeItem("pending_checkout_from");
       } catch {
         // ignore
       }

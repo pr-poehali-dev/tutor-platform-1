@@ -71,8 +71,8 @@ export default function CourseCheckout() {
         setCheckingReturn(false);
         return;
       }
-      if (attempt < 5) {
-        setTimeout(() => tryRefresh(attempt + 1), 2000);
+      if (attempt < 20) {
+        setTimeout(() => tryRefresh(attempt + 1), 3000);
       } else {
         setCheckingReturn(false);
       }
