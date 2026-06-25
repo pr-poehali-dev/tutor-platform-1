@@ -14,6 +14,7 @@ import {
 import { MY_RUSSIA_QUIZ } from "@/components/kids/myRussiaQuizData";
 import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
 import type { AgeRange } from "@/components/kids/libraryData";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -48,6 +49,7 @@ export default function MyRussia() {
   ];
 
   return (
+    <KidsGuard activityId="my-russia">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Моя Россия — фольклор, сказки, песни и история для детей | УЧИСЬПРО Малыш"
@@ -266,5 +268,6 @@ export default function MyRussia() {
       <SiteFooter />
       <NannyFox />
     </div>
+    </KidsGuard>
   );
 }

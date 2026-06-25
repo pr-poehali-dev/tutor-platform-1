@@ -12,6 +12,7 @@ import { SITE_URL } from "@/components/kids/landing/kidsLandingData";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 import { KIDS_GAMES } from "@/components/kids/games/gamesData";
 import KidsHeroCover from "@/components/kids/KidsHeroCover";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const CANONICAL = `${SITE_URL}/kids/games`;
 
@@ -58,6 +59,7 @@ export default function KidsGames() {
   const showBlocker = screenTime.blocked && !overrideActive;
 
   return (
+    <KidsGuard activityId="games">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Игротека с Ксюшей — бесплатные онлайн-игры для детей | УЧИСЬПРО Малыш"
@@ -155,5 +157,6 @@ export default function KidsGames() {
 
       {settingsOpen && <ParentSettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
+    </KidsGuard>
   );
 }

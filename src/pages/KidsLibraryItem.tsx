@@ -7,6 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import TalePlayer from "@/components/kids/TalePlayer";
 import TalePlayerBoundary from "@/components/kids/TalePlayerBoundary";
 import { getLibraryItem, LIBRARY } from "@/components/kids/libraryData";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -60,6 +61,7 @@ export default function KidsLibraryItem() {
   ];
 
   return (
+    <KidsGuard activityId="library">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title={`${item.title} — ${item.author}, слушать с озвучкой`}
@@ -139,5 +141,6 @@ export default function KidsLibraryItem() {
 
       <SiteFooter />
     </div>
+    </KidsGuard>
   );
 }

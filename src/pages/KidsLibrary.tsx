@@ -14,6 +14,7 @@ import {
 } from "@/components/kids/libraryData";
 import NannyFox from "@/components/kids/NannyFox";
 import KidsHeroCover from "@/components/kids/KidsHeroCover";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -46,6 +47,7 @@ export default function KidsLibrary() {
   ];
 
   return (
+    <KidsGuard activityId="library">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Библиотека сказок и стихов для детей — слушать онлайн, УЧИСЬПРО Малыш"
@@ -262,5 +264,6 @@ export default function KidsLibrary() {
       <SiteFooter />
       <NannyFox />
     </div>
+    </KidsGuard>
   );
 }

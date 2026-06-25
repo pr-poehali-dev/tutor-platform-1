@@ -73,7 +73,7 @@ export default function KidsContent() {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <span className="inline-block text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
-                Игра · Новинка
+                Игра · По подписке «Малыш»
               </span>
               <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
                 Познавашка с Ксюшей
@@ -103,7 +103,7 @@ export default function KidsContent() {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <span className="inline-block text-cyan-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
-                Игротека · Новинка
+                Игротека · По подписке «Малыш»
               </span>
               <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
                 Игротека с Ксюшей
@@ -157,7 +157,7 @@ export default function KidsContent() {
             </div>
             <div className="flex-1 text-center sm:text-left">
               <span className="inline-block text-rose-200 text-[11px] font-bold uppercase tracking-wider mb-1.5">
-                Народная культура · Новинка
+                Народная культура · По подписке «Малыш»
               </span>
               <h2 className="font-montserrat font-black text-white text-2xl md:text-3xl mb-2">
                 Моя Россия

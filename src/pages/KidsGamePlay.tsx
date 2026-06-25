@@ -14,6 +14,7 @@ import { getGameBySlug, KIDS_GAMES } from "@/components/kids/games/gamesData";
 import GamePlay from "@/components/kids/games/GamePlay";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { useAuth } from "@/context/AuthContext";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 export default function KidsGamePlay() {
   const { slug = "" } = useParams();
@@ -97,6 +98,7 @@ export default function KidsGamePlay() {
   const others = KIDS_GAMES.filter((g) => g.slug !== game.slug).slice(0, 6);
 
   return (
+    <KidsGuard activityId="games">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title={game.seoTitle}
@@ -182,5 +184,6 @@ export default function KidsGamePlay() {
 
       {settingsOpen && <ParentSettingsModal onClose={() => setSettingsOpen(false)} />}
     </div>
+    </KidsGuard>
   );
 }

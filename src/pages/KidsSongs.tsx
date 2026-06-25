@@ -17,6 +17,7 @@ import {
 import SongPlayer from "@/components/kids/SongPlayer";
 import NannyFox from "@/components/kids/NannyFox";
 import KidsHeroCover from "@/components/kids/KidsHeroCover";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -50,6 +51,7 @@ export default function KidsSongs() {
   ];
 
   return (
+    <KidsGuard activityId="songs">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Учим песни и стихи — детские песенки, потешки, колыбельные | УЧИСЬПРО Малыш"
@@ -266,5 +268,6 @@ export default function KidsSongs() {
 
       {activeSong && <SongPlayer song={activeSong} onClose={() => setActiveSong(null)} />}
     </div>
+    </KidsGuard>
   );
 }

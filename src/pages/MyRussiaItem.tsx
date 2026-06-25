@@ -8,6 +8,7 @@ import TalePlayer from "@/components/kids/TalePlayer";
 import TalePlayerBoundary from "@/components/kids/TalePlayerBoundary";
 import type { LibraryItem } from "@/components/kids/libraryData";
 import { getRussiaItem, MY_RUSSIA, RussiaItem } from "@/components/kids/myRussiaData";
+import KidsGuard from "@/components/kids/KidsGuard";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -70,6 +71,7 @@ export default function MyRussiaItem() {
   ];
 
   return (
+    <KidsGuard activityId="my-russia">
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title={`${item.title} — слушать с озвучкой | Моя Россия, УЧИСЬПРО Малыш`}
@@ -149,5 +151,6 @@ export default function MyRussiaItem() {
 
       <SiteFooter />
     </div>
+    </KidsGuard>
   );
 }
