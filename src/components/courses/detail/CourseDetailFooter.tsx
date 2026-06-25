@@ -65,10 +65,31 @@ export default function CourseDetailFooter({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onStartWithAI(course)}
-            className="hidden md:flex items-center gap-2 bg-white/8 border border-white/15 text-white text-sm font-medium px-4 py-3 rounded-2xl hover:bg-white/12 transition-colors"
+            className="hidden lg:flex items-center gap-2 bg-white/8 border border-white/15 text-white text-sm font-medium px-4 py-3 rounded-2xl hover:bg-white/12 transition-colors"
           >
             <Icon name="Gift" size={14} />
             Пробный урок
+          </button>
+          {/* Подписка на всё — альтернатива покупке одного курса.
+              После оплаты возвращаем пользователя на эту же страницу. */}
+          <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                try {
+                  sessionStorage.setItem("pending_checkout_plan", "pro");
+                  sessionStorage.setItem("pending_checkout_period", "month");
+                  sessionStorage.setItem("pending_checkout_from", window.location.pathname);
+                } catch { /* ignore */ }
+                openLogin();
+                return;
+              }
+              navigate(`/checkout/pro?from=${encodeURIComponent(window.location.pathname)}`);
+            }}
+            className="flex items-center gap-2 bg-white/8 border border-purple-400/40 text-white text-sm font-bold px-4 md:px-5 py-3 md:py-3.5 rounded-2xl hover:bg-purple-500/15 transition-colors"
+          >
+            <Icon name="Sparkles" size={16} className="text-purple-300" />
+            <span className="hidden sm:inline">Подписка на всё</span>
+            <span className="sm:hidden">Подписка</span>
           </button>
           <button
             onClick={() => {
@@ -78,7 +99,7 @@ export default function CourseDetailFooter({
               }
               navigate(`/course-checkout/${course.id}`);
             }}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-4 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
           >
             <Icon name="CreditCard" size={16} />
             <span className="hidden sm:inline">Купить курс</span>
