@@ -6,75 +6,16 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { isPromoActive } from "@/components/promo/dobroConfig";
-import { PaymentSteps } from "@/components/courses/CheckoutBoosters";
-
-type PlanId = "trial" | "base" | "pro" | "family" | "kids";
-
-interface PlanDef {
-  id: PlanId;
-  name: string;
-  price: number;
-  period: string;
-  description: string;
-  features: string[];
-  gradient: string;
-}
-
-const PLANS: Record<PlanId, PlanDef> = {
-  trial: {
-    id: "trial",
-    name: "Пробный",
-    price: 0,
-    period: "7 дней",
-    description: "Знакомство с платформой без оплаты",
-    features: ["3 курса на выбор", "20 сообщений ИИ в день", "Базовая аналитика"],
-    gradient: "from-white/12 to-white/5",
-  },
-  base: {
-    id: "base",
-    name: "Базовый",
-    price: 590,
-    period: "месяц",
-    description: "Все курсы + ИИ-методист",
-    features: ["Все 36+ курсов", "200 сообщений ИИ в день", "Голосовые ответы", "Полная аналитика"],
-    gradient: "from-cyan-500/20 to-blue-500/10",
-  },
-  pro: {
-    id: "pro",
-    name: "Профи",
-    price: 1290,
-    period: "месяц",
-    description: "Полная подготовка к ЕГЭ и ОГЭ",
-    features: ["Всё из «Базового»", "Безлимитные сообщения ИИ", "Подготовка к ЕГЭ/ОГЭ", "Разбор сочинений", "Пробные экзамены"],
-    gradient: "from-purple-500/25 to-pink-500/15",
-  },
-  family: {
-    id: "family",
-    name: "Семейный",
-    price: 1990,
-    period: "месяц",
-    description: "До 3 учеников на одной подписке",
-    features: ["Всё из «Профи»", "До 3 учеников", "Отдельный прогресс", "Родительский кабинет"],
-    gradient: "from-emerald-500/20 to-green-500/10",
-  },
-  kids: {
-    id: "kids",
-    name: "Малыш",
-    price: 399,
-    period: "месяц",
-    description: "Полный доступ к развивающим занятиям для детей 1–6 лет",
-    features: ["Все занятия и сказки", "Игры, песни и обучение чтению", "Контроль экранного времени", "Советы родителям"],
-    gradient: "from-pink-500/25 to-amber-500/15",
-  },
-};
-
-// Акция «Малыш»: первые 3 месяца за 1 ₽.
-const KIDS_INTRO_PRICE = 1;
-
-const YEAR_DISCOUNT = 0.4;
-function yearPrice(monthly: number): number {
-  return Math.round(monthly * 12 * (1 - YEAR_DISCOUNT));
-}
+import {
+  PlanDef,
+  PlanId,
+  PLANS,
+  KIDS_INTRO_PRICE,
+  yearPrice,
+} from "@/components/checkout/checkoutPlans";
+import CheckoutPlanCard from "@/components/checkout/CheckoutPlanCard";
+import CheckoutCouponForm from "@/components/checkout/CheckoutCouponForm";
+import CheckoutContactForm from "@/components/checkout/CheckoutContactForm";
 
 export default function Checkout() {
   const { planId } = useParams<{ planId: string }>();
@@ -240,260 +181,46 @@ export default function Checkout() {
           Тариф «{plan.name}»
         </h1>
 
-        <div className={`rounded-3xl border border-white/12 bg-gradient-to-br ${plan.gradient} p-6 md:p-7 mb-6`}>
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="font-montserrat font-black text-4xl md:text-5xl text-white">
-              {displayPrice === 0 ? "0" : displayPrice.toLocaleString("ru-RU")}
-            </span>
-            <span className="text-white/65 text-base">₽ / {displayPeriod}</span>
-          </div>
-          {isYear && plan && (
-            <p className="text-emerald-300 text-sm font-bold mb-3">
-              ≈ {Math.round(displayPrice / 12).toLocaleString("ru-RU")} ₽/мес · экономия{" "}
-              {(plan.price * 12 - displayPrice).toLocaleString("ru-RU")} ₽ против помесячной оплаты
-            </p>
-          )}
-          {isKids && (
-            <p className="text-pink-300 text-sm font-bold mb-3">
-              Акция: первые 3 месяца за 1 ₽, далее {plan.price} ₽/мес. Отменить можно в любой момент.
-            </p>
-          )}
-          <p className="text-white/70 text-sm md:text-base mb-4 mt-2">{plan.description}</p>
-          <ul className="space-y-2">
-            {plan.features.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-white/85">
-                <Icon name="Check" size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
-                {f}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Блок доверия — гарантия возврата + безопасность */}
-        {!isFree && (
-          <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-green-500/5 p-5 md:p-6 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                <Icon name="ShieldCheck" size={24} className="text-emerald-400" />
-              </div>
-              <div>
-                <h3 className="font-montserrat font-black text-white text-base md:text-lg mb-1">
-                  Гарантия возврата 7 дней
-                </h3>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  Если платформа не подойдёт — вернём деньги в течение 7 дней без вопросов
-                  (ст. 32 ЗоЗПП). Отмена подписки в любой момент из личного кабинета.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/10">
-              {[
-                { icon: "Lock", text: "Оплата через ЮKassa" },
-                { icon: "FileCheck", text: "Чек по 54-ФЗ" },
-                { icon: "MapPin", text: "Серверы в РФ" },
-              ].map((b) => (
-                <div key={b.text} className="flex flex-col items-center text-center gap-1.5">
-                  <Icon name={b.icon} size={16} className="text-emerald-300" />
-                  <span className="text-white/60 text-[11px] leading-tight">{b.text}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-center gap-1.5 flex-wrap mt-4 pt-4 border-t border-white/10">
-              <span className="text-white/40 text-[11px] mr-1">Принимаем:</span>
-              {["Мир", "Visa", "Mastercard", "СБП"].map((m) => (
-                <span
-                  key={m}
-                  className="bg-white/8 border border-white/12 rounded-lg px-2.5 py-1 text-white/75 text-[11px] font-semibold"
-                >
-                  {m}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+        <CheckoutPlanCard
+          plan={plan}
+          displayPrice={displayPrice}
+          displayPeriod={displayPeriod}
+          isYear={isYear}
+          isKids={isKids}
+          isFree={isFree}
+        />
 
         {/* Промокод из магазина ЗНАЕК */}
         {!isFree && (
-          <div className="rounded-3xl border border-white/12 bg-white/[0.04] p-6 md:p-7 mb-6">
-            <h2 className="font-montserrat font-black text-lg text-white mb-1 flex items-center gap-2">
-              <Icon name="Ticket" size={18} className="text-amber-300" />
-              Промокод
-            </h2>
-            <p className="text-white/50 text-xs mb-4">
-              Есть купон из магазина ЗНАЕК? Введи код — скидка применится автоматически.
-            </p>
-
-            {couponApplied ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon name="CheckCircle2" size={16} className="text-emerald-400 flex-shrink-0" />
-                  <span className="font-mono font-bold text-white text-sm tracking-wider truncate">
-                    {couponApplied.code}
-                  </span>
-                  <span className="text-emerald-300 text-xs font-bold whitespace-nowrap">
-                    −{couponApplied.percent}%
-                  </span>
-                </div>
-                <button
-                  onClick={removeCoupon}
-                  className="text-white/50 hover:text-white text-xs font-medium flex items-center gap-1 flex-shrink-0"
-                >
-                  <Icon name="X" size={13} />
-                  Убрать
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  value={coupon}
-                  onChange={(e) => { setCoupon(e.target.value); setCouponError(null); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
-                  placeholder="ZN-XXXX-XXXX"
-                  className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white font-mono tracking-wider placeholder:text-white/25 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:border-amber-400/60 focus:bg-white/8 transition-colors uppercase"
-                />
-                <button
-                  onClick={handleApplyCoupon}
-                  disabled={couponChecking || !coupon.trim()}
-                  className={`px-5 rounded-xl font-bold text-sm transition-all flex-shrink-0 ${
-                    couponChecking || !coupon.trim()
-                      ? "bg-white/8 text-white/40"
-                      : "bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 hover:opacity-90"
-                  }`}
-                >
-                  {couponChecking ? <Icon name="Loader2" size={16} className="animate-spin" /> : "Применить"}
-                </button>
-              </div>
-            )}
-
-            {couponError && (
-              <p className="text-rose-300 text-xs mt-2 flex items-center gap-1.5">
-                <Icon name="AlertCircle" size={12} />
-                {couponError}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="rounded-3xl border border-white/12 bg-white/[0.04] p-6 md:p-7 mb-6">
-          <h2 className="font-montserrat font-black text-lg text-white mb-4">Контактные данные</h2>
-
-          <label className="block mb-4">
-            <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">Имя</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Как тебя зовут"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1.5 block">
-              Email <span className="text-rose-300">*</span>
-            </span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@mail.ru"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-white/30 focus:outline-none focus:border-purple-500/60 focus:bg-white/8 transition-colors"
-              required
-            />
-            <span className="text-white/45 text-xs mt-1.5 block">Сюда пришлём чек об оплате</span>
-          </label>
-
-          {user?.phone && (
-            <div className="mt-4 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/75">
-              <Icon name="Phone" size={12} className="inline mr-1.5 text-purple-300" />
-              Номер: <span className="text-white font-medium">{user.phone}</span>
-            </div>
-          )}
-        </div>
-
-        <label className="flex items-start gap-3 mb-6 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={agree}
-            onChange={(e) => setAgree(e.target.checked)}
-            className="mt-0.5 w-4 h-4 accent-purple-500"
+          <CheckoutCouponForm
+            coupon={coupon}
+            setCoupon={setCoupon}
+            couponApplied={couponApplied}
+            couponChecking={couponChecking}
+            couponError={couponError}
+            setCouponError={setCouponError}
+            handleApplyCoupon={handleApplyCoupon}
+            removeCoupon={removeCoupon}
           />
-          <span className="text-white/65 text-xs leading-relaxed">
-            Согласен с{" "}
-            <Link to="/legal/offer" className="text-purple-300 hover:text-purple-200 underline">
-              офертой
-            </Link>
-            ,{" "}
-            <Link to="/legal/terms" className="text-purple-300 hover:text-purple-200 underline">
-              условиями использования
-            </Link>{" "}
-            и{" "}
-            <Link to="/legal/privacy" className="text-purple-300 hover:text-purple-200 underline">
-              политикой обработки персональных данных
-            </Link>
-            . Подтверждаю, что мне больше 14 лет или согласие даёт законный представитель.
-          </span>
-        </label>
-
-        {!isFree && <PaymentSteps />}
-
-        {displayError && (
-          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-rose-200 text-sm flex items-start gap-2">
-            <Icon name="AlertCircle" size={14} className="mt-0.5 flex-shrink-0" />
-            <span>{displayError}</span>
-          </div>
         )}
 
-        {isFree ? (
-          <button
-            onClick={() => navigate("/cabinet")}
-            className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold text-base hover:scale-[1.01] shadow-lg shadow-purple-500/30 transition-all"
-          >
-            <Icon name="Rocket" size={16} />
-            Активировать пробный период
-          </button>
-        ) : (
-          <button
-            onClick={handlePay}
-            disabled={isLoading}
-            className={`w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-bold text-base transition-all ${
-              isLoading
-                ? "bg-white/10 text-white/40 cursor-wait"
-                : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white hover:scale-[1.01] shadow-lg shadow-purple-500/30"
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <Icon name="Loader2" size={16} className="animate-spin" />
-                Готовим оплату...
-              </>
-            ) : (
-              <>
-                <Icon name="CreditCard" size={16} />
-                Оплатить {finalPrice.toLocaleString("ru-RU")} ₽
-                {couponApplied && (
-                  <span className="text-white/60 text-sm line-through font-normal ml-1">
-                    {displayPrice.toLocaleString("ru-RU")} ₽
-                  </span>
-                )}
-              </>
-            )}
-          </button>
-        )}
-
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-white/45">
-          <span className="inline-flex items-center gap-1.5">
-            <Icon name="ShieldCheck" size={12} className="text-emerald-400" />
-            Платёж через ЮKassa
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Icon name="CreditCard" size={12} className="text-purple-300" />
-            Visa, Mastercard, МИР, СБП
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Icon name="RotateCcw" size={12} className="text-cyan-300" />
-            Возврат по 7-дневному правилу
-          </span>
-        </div>
+        <CheckoutContactForm
+          name={name}
+          setName={setName}
+          email={email}
+          setEmail={setEmail}
+          agree={agree}
+          setAgree={setAgree}
+          userPhone={user?.phone}
+          isFree={isFree}
+          displayError={displayError}
+          isLoading={isLoading}
+          finalPrice={finalPrice}
+          displayPrice={displayPrice}
+          couponApplied={couponApplied}
+          onActivateFree={() => navigate("/cabinet")}
+          handlePay={handlePay}
+        />
       </div>
     </div>
   );
