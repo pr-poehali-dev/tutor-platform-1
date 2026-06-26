@@ -72,6 +72,41 @@ export async function checkHomework(
   }
 }
 
+export interface AuditResult {
+  sources: string[];
+  leaks: string[];
+  connection: string;
+  lead_fields: string[];
+  email: { subject: string; body: string };
+}
+
+export async function runAudit(
+  description: string,
+): Promise<{ ok: boolean; result?: AuditResult; error?: string }> {
+  if (!INTENSIVE_URL) return { ok: false, error: "Сервис недоступен" };
+  try {
+    const res = await fetch(`${INTENSIVE_URL}?action=audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, error: data.error || "Аудит недоступен" };
+    return {
+      ok: true,
+      result: {
+        sources: data.sources || [],
+        leaks: data.leaks || [],
+        connection: data.connection || "",
+        lead_fields: data.lead_fields || [],
+        email: data.email || { subject: "", body: "" },
+      },
+    };
+  } catch {
+    return { ok: false, error: "Ошибка соединения" };
+  }
+}
+
 /** Стабильный id сессии в localStorage — чтобы прогресс привязывался к пользователю. */
 export function getSessionId(): string {
   const KEY = "intensive_session_id";

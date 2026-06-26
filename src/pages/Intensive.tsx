@@ -6,7 +6,8 @@ import SiteFooter from "@/components/SiteFooter";
 import LeadForm from "@/components/intensive/LeadForm";
 import TrainerChat from "@/components/intensive/TrainerChat";
 import HomeworkBox from "@/components/intensive/HomeworkBox";
-import { INTENSIVE_META, LESSONS, PROJECT } from "@/components/intensive/data";
+import AuditBox from "@/components/intensive/AuditBox";
+import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT } from "@/components/intensive/data";
 
 export default function Intensive() {
   const [activeLesson, setActiveLesson] = useState(0);
@@ -19,16 +20,16 @@ export default function Intensive() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Seo
-        title="Интенсив «AI-ассистент и контент-менеджер» — профессия с нейросетями за 4 недели"
-        description="Практический интенсив: освой профессию AI-ассистента и контент-менеджера. Снятие брифа, промпты для нейросетей, вычитка текстов. ИИ-тренажёр, проверка ДЗ куратором, портфолио и сертификат об участии."
+        title="Интенсив «Твой первый автопилот» — автоматизация бизнеса за 7 дней без программирования"
+        description="Практический интенсив по автоматизации микробизнеса: 3 готовые связки (заявка → CRM → задача, авто-напоминания, аналитика) за 7 дней. ИИ-аудит бизнеса, тренажёр, разбор куратором, Паспорт автоматизации. Без программирования."
         canonical="https://учисьпро.рф/intensive"
-        keywords="AI-ассистент обучение, контент-менеджер курс, профессия с нейросетями, промпт-инжиниринг, интенсив контент-менеджер, работа с ИИ, новая профессия 2026"
+        keywords="автоматизация бизнеса, автоматизация микробизнеса, CRM для малого бизнеса, amoCRM Битрикс24 настройка, автоматизация без программирования, интенсив автоматизация, воронка продаж"
       />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <Breadcrumbs
           className="mb-5"
-          items={[{ label: "Главная", href: "/" }, { label: "Интенсив AI-ассистент" }]}
+          items={[{ label: "Главная", href: "/" }, { label: "Интенсив по автоматизации" }]}
         />
 
         {/* HERO */}
@@ -39,12 +40,13 @@ export default function Intensive() {
               {INTENSIVE_META.subtitle}
             </span>
           </div>
-          <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-4 leading-tight">
+          <h1 className="font-montserrat font-black text-3xl md:text-5xl text-white mb-3 leading-tight">
             {INTENSIVE_META.title}
           </h1>
-          <p className="text-white/70 text-lg md:text-xl max-w-2xl mb-6">{INTENSIVE_META.promise}</p>
+          <p className="text-white/80 text-lg md:text-xl max-w-2xl mb-4">{INTENSIVE_META.promise}</p>
+          <p className="text-white/55 text-sm md:text-base max-w-2xl mb-6">{INTENSIVE_META.offer}</p>
 
-          <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mb-8">
+          <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mb-6">
             {INTENSIVE_META.result.map((r) => (
               <div key={r} className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3">
                 <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
@@ -55,13 +57,51 @@ export default function Intensive() {
             ))}
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 mb-8">
+            <span className="text-white/40 text-xs">Работаем в:</span>
+            {INTENSIVE_META.tools.map((t) => (
+              <span key={t} className="text-xs px-3 py-1 rounded-lg bg-white/5 text-white/70 border border-white/10">
+                {t}
+              </span>
+            ))}
+          </div>
+
           <button
             onClick={scrollToForm}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-7 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform glow-purple"
           >
             <Icon name="Rocket" size={18} />
-            Записаться на интенсив
+            Записаться · осталось {INTENSIVE_META.seats} мест
           </button>
+        </section>
+
+        {/* ИИ-АУДИТ — мгновенная польза */}
+        <section className="mb-14">
+          <AuditBox />
+        </section>
+
+        {/* 7-ДНЕВНАЯ ПРОГРАММА */}
+        <section className="mb-14">
+          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
+            Путь за 7 дней: от хаоса к автопилоту
+          </h2>
+          <p className="text-white/60 mb-6 max-w-2xl">
+            Линейная программа без перегруза. Каждый день — конкретный результат, который можно показать.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {PROGRAM.map((p) => (
+              <div key={p.day} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/25 to-pink-500/15 flex items-center justify-center">
+                    <Icon name={p.icon} size={16} className="text-purple-300" />
+                  </div>
+                  <span className="text-white/40 text-xs font-bold">День {p.day}</span>
+                </div>
+                <h3 className="font-montserrat font-bold text-white text-sm mb-0.5">{p.title}</h3>
+                <p className="text-white/50 text-xs">{p.sub}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* ФОРМАТ */}
@@ -75,11 +115,11 @@ export default function Intensive() {
           <div className="grid md:grid-cols-3 gap-4">
             {[
               { icon: "BookOpen", t: "Короткая теория", d: "5-8 минут только сути, без воды" },
-              { icon: "FileText", t: "Готовый шаблон", d: "Чек-лист, который применяешь сразу" },
-              { icon: "Bot", t: "ИИ-тренажёр", d: "Отрабатываешь навык на ИИ-клиенте" },
+              { icon: "FileText", t: "Готовые шаблоны", d: "Связки из реальных проектов" },
+              { icon: "Bot", t: "ИИ-тренажёр", d: "Защищаешь решение перед ИИ-клиентом" },
               { icon: "PenLine", t: "Проверка ДЗ", d: "ИИ-куратор оценивает по критериям" },
-              { icon: "Briefcase", t: "Мини-проект", d: "Результат — твоё портфолио" },
-              { icon: "Award", t: "Сертификат", d: "Об участии + разбор твоего кейса" },
+              { icon: "Briefcase", t: "Разбор проекта", d: "Адаптация связок под твой бизнес" },
+              { icon: "Award", t: "Паспорт автоматизации", d: "Артефакт результата + план на 30 дней" },
             ].map((c) => (
               <div key={c.t} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 flex items-center justify-center mb-3">
@@ -99,13 +139,13 @@ export default function Intensive() {
             <span className="text-cyan-300 text-xs font-bold uppercase tracking-wide">Демо-доступ бесплатно</span>
           </div>
           <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
-            Попробуй первый модуль прямо сейчас
+            Попробуй уроки интенсива прямо сейчас
           </h2>
           <p className="text-white/60 mb-6 max-w-2xl">
-            Это реальный формат интенсива. Пройди урок, отработай навык на ИИ-клиенте и сдай ДЗ — ИИ-куратор оценит.
+            Это реальный формат. Изучи день, защити решение перед ИИ-клиентом и сдай ДЗ — ИИ-куратор оценит.
           </p>
 
-          {/* Табы уроков */}
+          {/* Табы дней */}
           <div className="flex flex-wrap gap-2 mb-6">
             {LESSONS.map((l, i) => (
               <button
@@ -117,7 +157,7 @@ export default function Intensive() {
                     : "bg-white/5 text-white/60 border border-white/10 hover:text-white"
                 }`}
               >
-                Урок {l.num}
+                День {l.num}
               </button>
             ))}
           </div>

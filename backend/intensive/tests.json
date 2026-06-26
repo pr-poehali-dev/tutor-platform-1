@@ -39,7 +39,7 @@
       "name": "Trainer requires message",
       "method": "POST",
       "path": "/?action=trainer",
-      "body": {"session_id": "t1", "scenario_key": "brief"},
+      "body": {"session_id": "t1", "scenario_key": "leaks"},
       "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
@@ -48,7 +48,16 @@
       "name": "Homework requires submission",
       "method": "POST",
       "path": "/?action=check_homework",
-      "body": {"session_id": "t1", "lesson_key": "lesson1", "submission": "x"},
+      "body": {"session_id": "t1", "lesson_key": "day1", "submission": "x"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Audit requires description",
+      "method": "POST",
+      "path": "/?action=audit",
+      "body": {"description": "x"},
       "expectedStatus": 400,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
