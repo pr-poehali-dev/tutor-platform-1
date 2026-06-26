@@ -1,0 +1,73 @@
+{
+  "tests": [
+    {
+      "name": "Ping health-check",
+      "method": "GET",
+      "path": "/?action=ping",
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true, "service": "intensive"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Lead requires name",
+      "method": "POST",
+      "path": "/?action=lead",
+      "body": {"contact": "test@mail.ru"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Lead requires contact",
+      "method": "POST",
+      "path": "/?action=lead",
+      "body": {"name": "Иван"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Lead success",
+      "method": "POST",
+      "path": "/?action=lead",
+      "body": {"name": "Тест Заявка", "contact": "test@example.com", "comment": "автотест", "source": "test"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Trainer requires message",
+      "method": "POST",
+      "path": "/?action=trainer",
+      "body": {"session_id": "t1", "scenario_key": "brief"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Homework requires submission",
+      "method": "POST",
+      "path": "/?action=check_homework",
+      "body": {"session_id": "t1", "lesson_key": "lesson1", "submission": "x"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Leads requires admin",
+      "method": "GET",
+      "path": "/?action=leads",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Unknown action 404",
+      "method": "GET",
+      "path": "/?action=nonsense",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -415,4 +415,7 @@
   <!-- Тренды программирования — ИИ-аналитика IT-направлений -->
   <url><loc>https://учисьпро.рф/tech-trends</loc><lastmod>2026-06-25</lastmod><changefreq>daily</changefreq><priority>0.92</priority></url>
 
+  <!-- Интенсив «AI-ассистент и контент-менеджер» -->
+  <url><loc>https://учисьпро.рф/intensive</loc><lastmod>2026-06-26</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+
 </urlset>
