@@ -53,7 +53,7 @@ export default function HomeworkBox({ lessonKey, task, placeholder }: Props) {
         className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl disabled:opacity-50 hover:scale-[1.02] transition-transform"
       >
         {loading ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Sparkles" size={16} />}
-        {loading ? "Куратор проверяет..." : "Проверить у ИИ-куратора"}
+        {loading ? "Наставник проверяет..." : "Проверить у ИИ-наставника"}
       </button>
 
       {error && <div className="mt-3 text-rose-300 text-xs">{error}</div>}
@@ -61,7 +61,7 @@ export default function HomeworkBox({ lessonKey, task, placeholder }: Props) {
       {result && (
         <div className="mt-4 rounded-xl bg-cyan-500/[0.07] border border-cyan-500/20 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-cyan-300 text-xs font-bold uppercase tracking-wide">Оценка куратора</span>
+            <span className="text-cyan-300 text-xs font-bold uppercase tracking-wide">Оценка наставника</span>
             {result.score !== null && (
               <span className={`font-montserrat font-black text-2xl ${scoreColor(result.score)}`}>
                 {result.score}<span className="text-sm text-white/40">/100</span>

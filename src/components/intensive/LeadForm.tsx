@@ -47,9 +47,9 @@ export default function LeadForm({ source = "landing" }: Props) {
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
-      <h3 className="font-montserrat font-black text-xl text-white mb-1">Записаться на интенсив</h3>
+      <h3 className="font-montserrat font-black text-xl text-white mb-1">Остались вопросы?</h3>
       <p className="text-white/55 text-sm mb-5">
-        Осталось мест: {INTENSIVE_META.seats}. Свяжемся с тобой в течение дня.
+        Оставь контакт — расскажем подробнее об интенсиве и поможем со стартом. Ответим в течение дня.
       </p>
 
       <div className="space-y-3">

@@ -8,7 +8,8 @@ import TrainerChat from "@/components/intensive/TrainerChat";
 import HomeworkBox from "@/components/intensive/HomeworkBox";
 import AuditBox from "@/components/intensive/AuditBox";
 import CasesBlock from "@/components/intensive/CasesBlock";
-import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT } from "@/components/intensive/data";
+import PricingBlock from "@/components/intensive/PricingBlock";
+import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT, PRICING } from "@/components/intensive/data";
 
 export default function Intensive() {
   const [activeLesson, setActiveLesson] = useState(0);
@@ -18,11 +19,15 @@ export default function Intensive() {
     document.getElementById("lead-form")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const scrollToPricing = () => {
+    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Seo
         title="Интенсив «Твой первый автопилот» — автоматизация бизнеса за 7 дней без программирования"
-        description="Практический интенсив по автоматизации микробизнеса: 3 готовые связки (заявка → CRM → задача, авто-напоминания, аналитика) за 7 дней. ИИ-аудит бизнеса, тренажёр, разбор куратором, Паспорт автоматизации. Без программирования."
+        description="Практический интенсив по автоматизации микробизнеса с ИИ-наставником 24/7: 3 готовые связки (заявка → CRM → задача, авто-напоминания, аналитика) за 7 дней. ИИ-аудит бизнеса, тренажёр, проверка ДЗ, Паспорт автоматизации. Без программирования, в своём темпе."
         canonical="https://учисьпро.рф/intensive"
         keywords="автоматизация бизнеса, автоматизация микробизнеса, CRM для малого бизнеса, amoCRM Битрикс24 настройка, автоматизация без программирования, интенсив автоматизация, воронка продаж"
       />
@@ -67,13 +72,18 @@ export default function Intensive() {
             ))}
           </div>
 
-          <button
-            onClick={scrollToForm}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-7 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform glow-purple"
-          >
-            <Icon name="Rocket" size={18} />
-            Записаться · осталось {INTENSIVE_META.seats} мест
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={scrollToPricing}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-7 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform glow-purple"
+            >
+              <Icon name="Rocket" size={18} />
+              Начать за {PRICING.price.toLocaleString("ru-RU")} ₽
+            </button>
+            <span className="text-white/40 text-sm line-through">
+              {PRICING.oldPrice.toLocaleString("ru-RU")} ₽
+            </span>
+          </div>
         </section>
 
         {/* ИИ-АУДИТ — мгновенная польза */}
@@ -108,18 +118,18 @@ export default function Intensive() {
         {/* ФОРМАТ */}
         <section className="mb-14">
           <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
-            Формат, который нельзя скопировать одним промптом
+            ИИ-наставник, который всегда на связи
           </h2>
           <p className="text-white/60 mb-6 max-w-2xl">
-            Ценность — в системе: теория, готовые шаблоны и живая обратная связь от ИИ и куратора.
+            Ценность — в системе: теория, готовые шаблоны и мгновенная обратная связь от ИИ в любое время суток.
           </p>
           <div className="grid md:grid-cols-3 gap-4">
             {[
               { icon: "BookOpen", t: "Короткая теория", d: "5-8 минут только сути, без воды" },
               { icon: "FileText", t: "Готовые шаблоны", d: "Связки из реальных проектов" },
               { icon: "Bot", t: "ИИ-тренажёр", d: "Защищаешь решение перед ИИ-клиентом" },
-              { icon: "PenLine", t: "Проверка ДЗ", d: "ИИ-куратор оценивает по критериям" },
-              { icon: "Briefcase", t: "Разбор проекта", d: "Адаптация связок под твой бизнес" },
+              { icon: "CheckCheck", t: "Проверка ДЗ", d: "ИИ-наставник оценивает по критериям" },
+              { icon: "Sparkles", t: "Поддержка 24/7", d: "Вопрос — ответ в любое время суток" },
               { icon: "Award", t: "Паспорт автоматизации", d: "Артефакт результата + план на 30 дней" },
             ].map((c) => (
               <div key={c.t} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -224,8 +234,13 @@ export default function Intensive() {
               <h2 className="font-montserrat font-black text-xl md:text-2xl text-white">{PROJECT.title}</h2>
             </div>
             <p className="text-white/70 text-sm md:text-base mb-5 max-w-2xl">{PROJECT.description}</p>
-            <HomeworkBox lessonKey={PROJECT.key} task="Сдай свой мини-проект на проверку ИИ-куратору." placeholder={PROJECT.placeholder} />
+            <HomeworkBox lessonKey={PROJECT.key} task="Сдай свой мини-проект на проверку ИИ-наставнику." placeholder={PROJECT.placeholder} />
           </div>
+        </section>
+
+        {/* ЦЕНА И ОПЛАТА */}
+        <section id="pricing" className="mb-14">
+          <PricingBlock />
         </section>
 
         {/* ФОРМА ЗАЯВКИ */}
