@@ -7,6 +7,7 @@ import LeadForm from "@/components/intensive/LeadForm";
 import TrainerChat from "@/components/intensive/TrainerChat";
 import HomeworkBox from "@/components/intensive/HomeworkBox";
 import AuditBox from "@/components/intensive/AuditBox";
+import CasesBlock from "@/components/intensive/CasesBlock";
 import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT } from "@/components/intensive/data";
 
 export default function Intensive() {
@@ -130,6 +131,11 @@ export default function Intensive() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* КЕЙСЫ */}
+        <section className="mb-14">
+          <CasesBlock />
         </section>
 
         {/* МОДУЛЬ — попробовать бесплатно */}
