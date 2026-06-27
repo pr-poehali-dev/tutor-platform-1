@@ -12,6 +12,13 @@
       "path": "/",
       "body": {"teacher_id": "alex", "message": "", "history": []},
       "expectedStatus": 400
+    },
+    {
+      "name": "Mentor empty message returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"teacher_id": "mentor", "message": "", "history": []},
+      "expectedStatus": 400
     }
   ]
 }

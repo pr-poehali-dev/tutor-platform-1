@@ -9,6 +9,7 @@ const AITeacher = lazy(() => import("@/components/AITeacher"));
 const PremiumTracks = lazy(() => import("@/components/PremiumTracks"));
 const LeaderboardSection = lazy(() => import("@/components/LeaderboardSection"));
 const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
+const MentorCompanion = lazy(() => import("@/components/mentor/MentorCompanion"));
 
 export default function HomeSections() {
   const { isAuthenticated } = useAuth();
@@ -18,6 +19,11 @@ export default function HomeSections() {
     return (
       <main id="main-content">
         <HeroSection />
+        <section className="max-w-6xl mx-auto px-4 py-6">
+          <Suspense fallback={<SectionSkeleton />}>
+            <MentorCompanion />
+          </Suspense>
+        </section>
         <Suspense fallback={<SectionSkeleton />}>
           <MySpaceSection />
         </Suspense>
@@ -48,6 +54,13 @@ export default function HomeSections() {
       <Suspense fallback={<SectionSkeleton />}>
         <AITeacher />
       </Suspense>
+
+      {/* 3.5. ИИ-наставник-мотиватор */}
+      <section className="max-w-6xl mx-auto px-4 py-6">
+        <Suspense fallback={<SectionSkeleton />}>
+          <MentorCompanion />
+        </Suspense>
+      </section>
 
       {/* 4. Премиум-направления */}
       <Suspense fallback={<SectionSkeleton />}>
