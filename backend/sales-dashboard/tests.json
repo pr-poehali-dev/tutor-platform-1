@@ -7,7 +7,7 @@
       "expectedStatus": 200
     },
     {
-      "name": "Без PIN — 403",
+      "name": "Overview без PIN — 403",
       "method": "GET",
       "path": "/?action=overview",
       "expectedStatus": 403,
@@ -15,38 +15,32 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Неверный PIN — 403",
+      "name": "Overview неверный PIN — 403",
       "method": "GET",
       "path": "/?action=overview",
-      "headers": {"X-Admin-Pin": "wrong"},
+      "headers": {"X-Admin-Pin": "wrong-pin-xyz"},
       "expectedStatus": 403
     },
     {
-      "name": "Overview с правильным PIN",
+      "name": "Funnel неверный PIN — 403",
       "method": "GET",
-      "path": "/?action=overview&days=30",
-      "headers": {"X-Admin-Pin": "7777"},
-      "expectedStatus": 200,
-      "expectedBody": {"period_days": 30},
-      "bodyMatcher": "partial"
+      "path": "/?action=funnel",
+      "headers": {"X-Admin-Pin": "wrong-pin-xyz"},
+      "expectedStatus": 403
     },
     {
-      "name": "Funnel с правильным PIN",
+      "name": "Customers неверный PIN — 403",
       "method": "GET",
-      "path": "/?action=funnel&days=30",
-      "headers": {"X-Admin-Pin": "7777"},
-      "expectedStatus": 200,
-      "expectedBody": {"period_days": 30},
-      "bodyMatcher": "partial"
+      "path": "/?action=customers",
+      "headers": {"X-Admin-Pin": "wrong-pin-xyz"},
+      "expectedStatus": 403
     },
     {
-      "name": "Customers с правильным PIN",
+      "name": "Customer неверный PIN — 403",
       "method": "GET",
-      "path": "/?action=customers&limit=10",
-      "headers": {"X-Admin-Pin": "7777"},
-      "expectedStatus": 200,
-      "expectedBody": {"limit": 10},
-      "bodyMatcher": "partial"
+      "path": "/?action=customer&id=1",
+      "headers": {"X-Admin-Pin": "wrong-pin-xyz"},
+      "expectedStatus": 403
     }
   ]
 }

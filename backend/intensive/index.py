@@ -129,6 +129,41 @@ def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
 
+def rate_limited(bucket: str, limit: int, window_sec: int) -> bool:
+    """Простой rate-limit на таблице rate_limit_counter.
+    Возвращает True, если лимит превышен (запрос нужно отклонить).
+    Не валит основную логику при ошибке БД (fail-open для доступности)."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO rate_limit_counter (bucket_key, hits, window_start) "
+                "VALUES (%s, 1, now()) "
+                "ON CONFLICT (bucket_key) DO UPDATE SET "
+                "hits = CASE WHEN rate_limit_counter.window_start < now() - (%s || ' seconds')::interval "
+                "THEN 1 ELSE rate_limit_counter.hits + 1 END, "
+                "window_start = CASE WHEN rate_limit_counter.window_start < now() - (%s || ' seconds')::interval "
+                "THEN now() ELSE rate_limit_counter.window_start END "
+                "RETURNING hits",
+                (bucket, str(window_sec), str(window_sec)))
+            hits = cur.fetchone()[0]
+            conn.commit()
+            return hits > limit
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def client_ip(event: dict) -> str:
+    rc = event.get('requestContext') or {}
+    ip = ((rc.get('identity') or {}).get('sourceIp')) or ''
+    if not ip:
+        h = event.get('headers') or {}
+        ip = (h.get('X-Forwarded-For') or h.get('x-forwarded-for') or '').split(',')[0].strip()
+    return ip or 'unknown'
+
+
 def detect_contact_kind(contact: str) -> str:
     c = contact.strip()
     if EMAIL_RE.match(c):
@@ -388,11 +423,15 @@ def handle_audit(body: dict) -> dict:
     })
 
 
-def handle_check_access(body: dict) -> dict:
+def handle_check_access(body: dict, ip: str = 'unknown') -> dict:
     """Проверка оплаченного доступа по email (после оплаты).
     Возвращает {access: True, token} если есть оплаченная запись.
     Если передан track — проверяем доступ именно к этому продукту
-    (чтобы оплата одного курса не открывала другой)."""
+    (чтобы оплата одного курса не открывала другой).
+    Rate-limit по IP защищает от перебора email."""
+    # Не более 30 проверок за 10 минут с одного IP (защита от перебора чужих email).
+    if rate_limited(f"chk_access:{ip}", 30, 600):
+        return err('Слишком много запросов. Попробуй через несколько минут.', 429)
     email = (body.get('email') or '').strip().lower()[:200]
     track = (body.get('track') or '').strip()[:60]
     if not email or not EMAIL_RE.match(email):
@@ -466,7 +505,7 @@ def handler(event: dict, context) -> dict:
     if action == 'audit' and method == 'POST':
         return handle_audit(body)
     if action == 'check_access' and method == 'POST':
-        return handle_check_access(body)
+        return handle_check_access(body, client_ip(event))
     if action == 'leads' and method == 'GET':
         return handle_leads(headers)
 

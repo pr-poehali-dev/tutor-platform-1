@@ -15,7 +15,9 @@ from typing import Optional
 import psycopg2
 
 
-ADMIN_PIN = os.environ.get('ADMIN_PIN', '7777')
+# PIN берётся ТОЛЬКО из окружения. Если не задан — доступ к дашборду закрыт
+# (никаких небезопасных значений по умолчанию).
+ADMIN_PIN = os.environ.get('ADMIN_PIN', '')
 
 
 def cors() -> dict:
@@ -42,6 +44,9 @@ def get_db():
 
 
 def check_admin(headers: dict) -> bool:
+    # Без заданного в окружении PIN доступ невозможен.
+    if not ADMIN_PIN:
+        return False
     pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
     return pin == ADMIN_PIN
 

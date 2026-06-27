@@ -14,6 +14,8 @@ import CourseNotReadyNotice from "@/components/courses/checkout/CourseNotReadyNo
 import CourseAccessGranted from "@/components/courses/checkout/CourseAccessGranted";
 import CoursePaymentReturnNotice from "@/components/courses/checkout/CoursePaymentReturnNotice";
 import CoursePurchaseForm from "@/components/courses/checkout/CoursePurchaseForm";
+import CourseEmailPay from "@/components/courses/checkout/CourseEmailPay";
+import AccessBanner from "@/components/intensive/AccessBanner";
 
 export default function CourseCheckout() {
   const { courseId } = useParams();
@@ -49,11 +51,18 @@ export default function CourseCheckout() {
 
   const returnedFromPayment = searchParams.get("paid") === "1";
 
+  // Платный курс можно купить по email без логина (переиспользуем механизм интенсива).
+  // Для таких курсов НЕ открываем принудительно окно логина.
+  const promoActiveNow = isPromoActive();
+  const coursePrice = course ? getCoursePrice(course) : 0;
+  const courseEmailEligible =
+    !!course && coursePrice > 0 && !course.freeForever && !promoActiveNow;
+
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated && !courseEmailEligible) {
       openLogin();
     }
-  }, [authLoading, isAuthenticated, openLogin]);
+  }, [authLoading, isAuthenticated, openLogin, courseEmailEligible]);
 
 
 
@@ -121,6 +130,9 @@ export default function CourseCheckout() {
   const alreadyHasAccess = canAccessCourse(course.id);
   const promoOn = isPromoActive();
   const freeForever = !!course.freeForever;
+
+  // Email-flow: платный курс, без логина, без бесплатных/промо-веток и без уже выданного доступа.
+  const useEmailFlow = !isAuthenticated && price > 0 && !freeForever && !promoOn && !alreadyHasAccess;
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
@@ -266,6 +278,24 @@ export default function CourseCheckout() {
                 hasSubscription={hasSubscription}
                 onStart={() => setShowCourse(true)}
               />
+            ) : useEmailFlow ? (
+              returnedFromPayment ? (
+                <AccessBanner
+                  track={`course-${course.id}`}
+                  productName="курс"
+                  grantedText="Оплата прошла — курс твой навсегда. Доступ открыт ниже."
+                />
+              ) : (
+                <>
+                  <CourseEmailPay course={course} price={price} />
+                  <button
+                    onClick={openLogin}
+                    className="mt-4 w-full text-center text-white/45 hover:text-white/70 text-xs transition-colors"
+                  >
+                    Уже покупал? Войти в аккаунт
+                  </button>
+                </>
+              )
             ) : returnedFromPayment ? (
               <CoursePaymentReturnNotice
                 checkingReturn={checkingReturn}

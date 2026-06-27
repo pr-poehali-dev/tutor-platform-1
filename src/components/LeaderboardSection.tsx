@@ -111,19 +111,15 @@ export default function LeaderboardSection() {
               <div className="text-5xl mb-4">🚀</div>
               <h2 className="font-montserrat font-black text-3xl md:text-4xl text-white mb-4">Готов взлететь?</h2>
               <p className="text-white/60 text-lg mb-8 max-w-xl mx-auto">
-                Подбери персональный маршрут или выбери тариф и начни обучение
+Открой курсы или выбери тариф — и начни обучение уже сегодня
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById("journey");
-                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
+                <a
+                  href="/courses"
                   className="bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-10 py-4 rounded-2xl text-base hover:opacity-90 transition-all glow-purple"
                 >
-                  Подобрать маршрут 🎯
-                </button>
+                  Начать учиться 🚀
+                </a>
                 <a
                   href="/pricing"
                   className="border border-white/20 text-white/70 hover:text-white hover:border-white/40 font-medium px-8 py-4 rounded-2xl transition-all"

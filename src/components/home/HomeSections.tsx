@@ -1,13 +1,12 @@
 import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
-import SocialProofStrip from "@/components/SocialProofStrip";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
-import PremiumTracks from "@/components/PremiumTracks";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
 
 const AITeacher = lazy(() => import("@/components/AITeacher"));
+const PremiumTracks = lazy(() => import("@/components/PremiumTracks"));
 const LeaderboardSection = lazy(() => import("@/components/LeaderboardSection"));
 const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
 
@@ -22,11 +21,12 @@ export default function HomeSections() {
         <Suspense fallback={<SectionSkeleton />}>
           <MySpaceSection />
         </Suspense>
-        <SocialProofStrip />
         <Suspense fallback={<SectionSkeleton />}>
           <AITeacher />
         </Suspense>
-        <PremiumTracks />
+        <Suspense fallback={<SectionSkeleton />}>
+          <PremiumTracks />
+        </Suspense>
         <QuickTools />
         <Suspense fallback={<SectionSkeleton />}>
           <LeaderboardSection />
@@ -41,24 +41,23 @@ export default function HomeSections() {
       {/* 1. Первое впечатление + главный CTA */}
       <HeroSection />
 
-      {/* 2. Доверие — цифры и результаты (тонкая лента) */}
-      <SocialProofStrip />
-
-      {/* 3. Точка входа — бесплатные курсы */}
+      {/* 2. Точка входа — бесплатные курсы */}
       <FreeCoursesBlock />
 
-      {/* 4. Главный продукт — демо ИИ-учителя */}
+      {/* 3. Главный продукт — демо ИИ-учителя */}
       <Suspense fallback={<SectionSkeleton />}>
         <AITeacher />
       </Suspense>
 
-      {/* 5. Премиум-направления */}
-      <PremiumTracks />
+      {/* 4. Премиум-направления */}
+      <Suspense fallback={<SectionSkeleton />}>
+        <PremiumTracks />
+      </Suspense>
 
-      {/* 6. Полезные инструменты — без регистрации */}
+      {/* 5. Полезные инструменты — без регистрации */}
       <QuickTools />
 
-      {/* 7. Рейтинг — социальное доказательство + финальный CTA */}
+      {/* 6. Рейтинг — социальное доказательство + финальный CTA */}
       <Suspense fallback={<SectionSkeleton />}>
         <LeaderboardSection />
       </Suspense>
