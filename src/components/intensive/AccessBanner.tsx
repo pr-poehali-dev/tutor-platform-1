@@ -4,41 +4,50 @@ import { checkAccess, getPaidEmail, getSavedAccess, saveAccess, setPaidEmail } f
 
 type State = "idle" | "checking" | "granted" | "pending";
 
+interface Props {
+  /** Идентификатор продукта. Если не задан — поведение как раньше (интенсив). */
+  track?: string;
+  /** Название продукта для текстов («интенсив», «курс»). */
+  productName?: string;
+  /** Текст под заголовком «Доступ открыт». */
+  grantedText?: string;
+}
+
 /**
- * Баннер доступа к интенсиву.
+ * Баннер доступа к платному продукту (интенсив/курс).
  * - После оплаты (?paid=1) опрашивает бэкенд, пока вебхук не активирует доступ.
  * - Если доступ уже сохранён локально — показывает «Доступ открыт».
  * - Иначе позволяет проверить доступ по email (для тех, кто оплатил с другого устройства).
  */
-export default function AccessBanner() {
+export default function AccessBanner({ track, productName = "интенсив", grantedText }: Props) {
   const justPaid = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("paid") === "1";
   const [state, setState] = useState<State>("idle");
-  const [email, setEmail] = useState(getPaidEmail() || "");
+  const [email, setEmail] = useState(getPaidEmail(track) || "");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   // Если доступ уже есть в localStorage — сразу показываем
   useEffect(() => {
-    const saved = getSavedAccess();
+    const saved = getSavedAccess(track);
     if (saved) {
       setState("granted");
       setName("");
     }
-  }, []);
+  }, [track]);
 
   // После оплаты — поллинг доступа (вебхук может прийти с задержкой)
   useEffect(() => {
     if (!justPaid || state === "granted") return;
-    const paidEmail = getPaidEmail();
+    const paidEmail = getPaidEmail(track);
     if (!paidEmail) return;
     let cancelled = false;
     setState("checking");
     const poll = async () => {
-      const res = await checkAccess(paidEmail);
+      const res = await checkAccess(paidEmail, track);
       if (cancelled) return;
       if (res.access) {
-        saveAccess(paidEmail, res.token);
+        saveAccess(paidEmail, res.token, track);
         setName(res.name || "");
         setState("granted");
       } else if (attempt < 6) {
@@ -53,7 +62,7 @@ export default function AccessBanner() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [justPaid, attempt]);
+  }, [justPaid, attempt, track]);
 
   const manualCheck = async () => {
     setError(null);
@@ -62,11 +71,11 @@ export default function AccessBanner() {
       setError("Введи email, на который оформлял оплату");
       return;
     }
-    setPaidEmail(e);
+    setPaidEmail(e, track);
     setState("checking");
-    const res = await checkAccess(e);
+    const res = await checkAccess(e, track);
     if (res.access) {
-      saveAccess(e, res.token);
+      saveAccess(e, res.token, track);
       setName(res.name || "");
       setState("granted");
     } else {
@@ -74,6 +83,8 @@ export default function AccessBanner() {
       setError(res.message || res.error || "Оплата по этому email не найдена");
     }
   };
+
+  const defaultGranted = `Оплата прошла — ${productName} полностью твой. Проходи в своём темпе, ИИ-наставник на связи 24/7.`;
 
   if (state === "granted") {
     return (
@@ -85,10 +96,7 @@ export default function AccessBanner() {
           <h3 className="font-montserrat font-black text-xl text-white mb-1">
             Доступ открыт{name ? `, ${name}` : ""}!
           </h3>
-          <p className="text-white/70 text-sm">
-            Оплата прошла — интенсив полностью твой. Проходи дни в своём темпе, ИИ-наставник на связи 24/7.
-            Начни с аудита и первой связки ниже.
-          </p>
+          <p className="text-white/70 text-sm">{grantedText || defaultGranted}</p>
         </div>
       </div>
     );
@@ -124,7 +132,7 @@ export default function AccessBanner() {
         <h3 className="font-montserrat font-bold text-white text-base">Уже оплатил? Открой доступ</h3>
       </div>
       <p className="text-white/55 text-sm mb-4">
-        Введи email, на который оформлял оплату — и интенсив откроется на этом устройстве.
+        Введи email, на который оформлял оплату — и {productName} откроется на этом устройстве.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input

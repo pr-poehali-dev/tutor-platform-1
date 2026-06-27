@@ -109,13 +109,14 @@ export async function runAudit(
 
 export async function checkAccess(
   email: string,
+  track?: string,
 ): Promise<{ access: boolean; token?: string; name?: string; message?: string; error?: string }> {
   if (!INTENSIVE_URL) return { access: false, error: "Сервис недоступен" };
   try {
     const res = await fetch(`${INTENSIVE_URL}?action=check_access`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify(track ? { email, track } : { email }),
     });
     const data = await res.json();
     if (!res.ok) return { access: false, error: data.error || "Ошибка" };
@@ -125,19 +126,40 @@ export async function checkAccess(
   }
 }
 
-const ACCESS_KEY = "intensive_access";
+/** Ключ доступа в localStorage — разный для каждого продукта (track). */
+function accessKey(track?: string): string {
+  return track ? `intensive_access_${track}` : "intensive_access";
+}
 
-export function saveAccess(email: string, token?: string): void {
+export function saveAccess(email: string, token?: string, track?: string): void {
   try {
-    localStorage.setItem(ACCESS_KEY, JSON.stringify({ email, token: token || "", at: Date.now() }));
+    localStorage.setItem(
+      accessKey(track),
+      JSON.stringify({ email, token: token || "", at: Date.now() }),
+    );
   } catch {
     /* storage недоступен */
   }
 }
 
-export function getSavedAccess(): { email: string; token: string } | null {
+export function getSavedAccess(track?: string): { email: string; token: string } | null {
   try {
-    const raw = localStorage.getItem(ACCESS_KEY);
+    const raw = localStorage.getItem(accessKey(track));
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p && p.email) return { email: p.email, token: p.token || "" };
+    }
+  } catch {
+    /* ignore */
+  }
+  return getSavedAccessLegacy(track);
+}
+
+function getSavedAccessLegacy(track?: string): { email: string; token: string } | null {
+  // Старый общий ключ — для обратной совместимости (только если track не задан)
+  if (track) return null;
+  try {
+    const raw = localStorage.getItem("intensive_access");
     if (!raw) return null;
     const p = JSON.parse(raw);
     if (p && p.email) return { email: p.email, token: p.token || "" };
@@ -147,18 +169,22 @@ export function getSavedAccess(): { email: string; token: string } | null {
   return null;
 }
 
+function paidEmailKey(track?: string): string {
+  return track ? `intensive_paid_email_${track}` : "intensive_paid_email";
+}
+
 /** Email, на который оформляли оплату (для повторной проверки доступа). */
-export function getPaidEmail(): string | null {
+export function getPaidEmail(track?: string): string | null {
   try {
-    return localStorage.getItem("intensive_paid_email");
+    return localStorage.getItem(paidEmailKey(track)) || (track ? null : null);
   } catch {
     return null;
   }
 }
 
-export function setPaidEmail(email: string): void {
+export function setPaidEmail(email: string, track?: string): void {
   try {
-    localStorage.setItem("intensive_paid_email", email);
+    localStorage.setItem(paidEmailKey(track), email);
   } catch {
     /* ignore */
   }

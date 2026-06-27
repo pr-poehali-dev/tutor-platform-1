@@ -131,7 +131,11 @@ export default function Intensive() {
 
         {/* ДОСТУП ПОСЛЕ ОПЛАТЫ */}
         <section className="mb-14">
-          <AccessBanner />
+          <AccessBanner
+            track={INTENSIVE_META.track}
+            productName="интенсив"
+            grantedText="Оплата прошла — интенсив полностью твой. Проходи дни в своём темпе, ИИ-наставник на связи 24/7. Начни с аудита и первой связки ниже."
+          />
         </section>
 
         {/* ИИ-АУДИТ — мгновенная польза */}

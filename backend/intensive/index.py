@@ -389,19 +389,29 @@ def handle_audit(body: dict) -> dict:
 
 
 def handle_check_access(body: dict) -> dict:
-    """Проверка оплаченного доступа к интенсиву по email (после оплаты).
-    Возвращает {access: True, token} если есть запись со статусом 'paid'."""
+    """Проверка оплаченного доступа по email (после оплаты).
+    Возвращает {access: True, token} если есть оплаченная запись.
+    Если передан track — проверяем доступ именно к этому продукту
+    (чтобы оплата одного курса не открывала другой)."""
     email = (body.get('email') or '').strip().lower()[:200]
+    track = (body.get('track') or '').strip()[:60]
     if not email or not EMAIL_RE.match(email):
         return err('Укажи email, на который оформлял оплату', 400)
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                "SELECT access_token, name, activated_at FROM intensive_access "
-                "WHERE lower(email) = %s AND status = 'paid' "
-                "ORDER BY activated_at DESC NULLS LAST LIMIT 1",
-                (email,))
+            if track:
+                cur.execute(
+                    "SELECT access_token, name, activated_at FROM intensive_access "
+                    "WHERE lower(email) = %s AND status = 'paid' AND track = %s "
+                    "ORDER BY activated_at DESC NULLS LAST LIMIT 1",
+                    (email, track))
+            else:
+                cur.execute(
+                    "SELECT access_token, name, activated_at FROM intensive_access "
+                    "WHERE lower(email) = %s AND status = 'paid' "
+                    "ORDER BY activated_at DESC NULLS LAST LIMIT 1",
+                    (email,))
             r = cur.fetchone()
             if not r:
                 return ok({'access': False,

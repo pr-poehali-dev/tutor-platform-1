@@ -1,8 +1,8 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useYookassa, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
-import { PRICING, INTENSIVE_META } from "./data";
-import { setPaidEmail } from "./api";
+import { PRICING, COURSE_META } from "./data";
+import { setPaidEmail } from "@/components/intensive/api";
 import func2url from "../../../backend/func2url.json";
 
 const YOOKASSA_URL = (func2url as Record<string, string>)["yookassa-yookassa"];
@@ -26,22 +26,22 @@ export default function PricingBlock() {
       return;
     }
     const cleanEmail = email.trim().toLowerCase();
-    setPaidEmail(cleanEmail, INTENSIVE_META.track);
-    const returnUrl = `${window.location.origin}/intensive?paid=1`;
+    setPaidEmail(cleanEmail, COURSE_META.track);
+    const returnUrl = `${window.location.origin}/ai-assistant?paid=1`;
     const res = await createPayment({
       amount: PRICING.price,
       userEmail: cleanEmail,
       userName: name.trim(),
-      description: `Интенсив «${INTENSIVE_META.title}» — доступ с ИИ-наставником`,
+      description: `Курс «${COURSE_META.title}» — доступ с ИИ-наставником`,
       returnUrl,
       cartItems: [
-        { id: "intensive-automation", name: PRICING.title, price: PRICING.price, quantity: 1 },
+        { id: "course-ai-assistant", name: PRICING.title, price: PRICING.price, quantity: 1 },
       ],
       metadata: {
         kind: "intensive",
         email: cleanEmail,
         name: name.trim(),
-        track: INTENSIVE_META.track,
+        track: COURSE_META.track,
       },
     });
     if (res?.payment_url && /^https:\/\//.test(res.payment_url)) {
@@ -52,13 +52,13 @@ export default function PricingBlock() {
   const displayError = localError || (error ? error.message : null);
 
   return (
-    <div className="rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-500/10 to-pink-500/5 p-6 md:p-8">
+    <div className="rounded-3xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 p-6 md:p-8">
       <div className="grid md:grid-cols-2 gap-8">
         {/* Что входит */}
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 mb-3">
-            <Icon name="Bot" size={14} className="text-purple-300" />
-            <span className="text-purple-300 text-xs font-bold uppercase tracking-wide">Наставник — ИИ, доступ 24/7</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 mb-3">
+            <Icon name="Bot" size={14} className="text-cyan-300" />
+            <span className="text-cyan-300 text-xs font-bold uppercase tracking-wide">Наставник — ИИ, доступ 24/7</span>
           </div>
           <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-1">{PRICING.title}</h2>
           <p className="text-white/50 text-sm mb-5">{PRICING.note}</p>
@@ -67,7 +67,7 @@ export default function PricingBlock() {
             {PRICING.includes.map((it) => (
               <li key={it.text} className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <Icon name={it.icon} size={16} className="text-purple-300" />
+                  <Icon name={it.icon} size={16} className="text-cyan-300" />
                 </div>
                 <span className="text-white/80 text-sm pt-1">{it.text}</span>
               </li>
@@ -94,14 +94,14 @@ export default function PricingBlock() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Имя"
-              className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
+              className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/40"
             />
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="Email для чека и доступа"
-              className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
+              className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/40"
             />
           </div>
 
@@ -110,7 +110,7 @@ export default function PricingBlock() {
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 accent-purple-500"
+              className="mt-0.5 accent-cyan-500"
             />
             <span className="text-white/45 text-xs">
               Согласен с условиями оферты и обработкой персональных данных
@@ -122,7 +122,7 @@ export default function PricingBlock() {
           <button
             onClick={handlePay}
             disabled={isLoading}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3.5 rounded-xl disabled:opacity-60 hover:scale-[1.01] transition-transform"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold py-3.5 rounded-xl disabled:opacity-60 hover:scale-[1.01] transition-transform"
           >
             {isLoading ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="CreditCard" size={18} />}
             {isLoading ? "Переходим к оплате..." : "Оплатить и начать"}
