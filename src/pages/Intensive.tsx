@@ -10,7 +10,10 @@ import AuditBox from "@/components/intensive/AuditBox";
 import CasesBlock from "@/components/intensive/CasesBlock";
 import PricingBlock from "@/components/intensive/PricingBlock";
 import AccessBanner from "@/components/intensive/AccessBanner";
-import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT, PRICING } from "@/components/intensive/data";
+import ConnectionCalculator from "@/components/intensive/ConnectionCalculator";
+import FaqBlock from "@/components/intensive/FaqBlock";
+import Reveal from "@/components/intensive/Reveal";
+import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT, PRICING, FAQ } from "@/components/intensive/data";
 
 export default function Intensive() {
   const [activeLesson, setActiveLesson] = useState(0);
@@ -24,13 +27,45 @@ export default function Intensive() {
     document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const scrollToCalc = () => {
+    document.getElementById("calculator")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: `Интенсив «${INTENSIVE_META.title}»`,
+      description:
+        "Практический интенсив по автоматизации микробизнеса с ИИ-наставником 24/7: 3 готовые связки за 7 дней без программирования.",
+      brand: { "@type": "Brand", name: "УЧИСЬПРО" },
+      offers: {
+        "@type": "Offer",
+        price: PRICING.price,
+        priceCurrency: "RUB",
+        availability: "https://schema.org/InStock",
+        url: "https://учисьпро.рф/intensive",
+      },
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Seo
         title="Интенсив «Твой первый автопилот» — автоматизация бизнеса за 7 дней без программирования"
         description="Практический интенсив по автоматизации микробизнеса с ИИ-наставником 24/7: 3 готовые связки (заявка → CRM → задача, авто-напоминания, аналитика) за 7 дней. ИИ-аудит бизнеса, тренажёр, проверка ДЗ, Паспорт автоматизации. Без программирования, в своём темпе."
         canonical="https://учисьпро.рф/intensive"
-        keywords="автоматизация бизнеса, автоматизация микробизнеса, CRM для малого бизнеса, amoCRM Битрикс24 настройка, автоматизация без программирования, интенсив автоматизация, воронка продаж"
+        keywords="автоматизация бизнеса, автоматизация микробизнеса, CRM для малого бизнеса без программирования, связка CRM Tilda, автоматизация для ИП, amoCRM Битрикс24 настройка, интенсив автоматизация, воронка продаж"
+        jsonLd={jsonLd}
       />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">
@@ -84,6 +119,13 @@ export default function Intensive() {
             <span className="text-white/40 text-sm line-through">
               {PRICING.oldPrice.toLocaleString("ru-RU")} ₽
             </span>
+            <button
+              onClick={scrollToCalc}
+              className="inline-flex items-center gap-2 text-white/80 hover:text-white font-semibold px-5 py-3.5 rounded-2xl border border-white/15 hover:border-white/30 transition-colors"
+            >
+              <Icon name="Calculator" size={18} />
+              Подобрать связки бесплатно
+            </button>
           </div>
         </section>
 
@@ -95,6 +137,13 @@ export default function Intensive() {
         {/* ИИ-АУДИТ — мгновенная польза */}
         <section className="mb-14">
           <AuditBox />
+        </section>
+
+        {/* КАЛЬКУЛЯТОР СВЯЗОК — интерактив, конкурентное преимущество */}
+        <section id="calculator" className="mb-14">
+          <Reveal>
+            <ConnectionCalculator onStart={scrollToPricing} />
+          </Reveal>
         </section>
 
         {/* 7-ДНЕВНАЯ ПРОГРАММА */}
@@ -151,7 +200,9 @@ export default function Intensive() {
 
         {/* КЕЙСЫ */}
         <section className="mb-14">
-          <CasesBlock />
+          <Reveal>
+            <CasesBlock />
+          </Reveal>
         </section>
 
         {/* МОДУЛЬ — попробовать бесплатно */}
@@ -247,6 +298,13 @@ export default function Intensive() {
         {/* ЦЕНА И ОПЛАТА */}
         <section id="pricing" className="mb-14">
           <PricingBlock />
+        </section>
+
+        {/* FAQ */}
+        <section className="mb-14">
+          <Reveal>
+            <FaqBlock />
+          </Reveal>
         </section>
 
         {/* ФОРМА ЗАЯВКИ */}

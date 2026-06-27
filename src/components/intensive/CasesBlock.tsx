@@ -29,24 +29,27 @@ export default function CasesBlock() {
               <h3 className="font-montserrat font-bold text-white text-sm leading-tight">{c.client}</h3>
             </div>
 
-            <div className="space-y-3 flex-1">
-              <div>
-                <div className="text-rose-300/80 text-[11px] font-bold uppercase tracking-wide mb-1">Было</div>
-                <p className="text-white/70 text-sm">{c.task}</p>
+            <p className="text-white/55 text-sm mb-3">{c.task}</p>
+            <p className="text-white/70 text-sm mb-4">
+              <span className="text-purple-300 font-semibold">Решение: </span>{c.solution}
+            </p>
+
+            {/* До / После */}
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4 mt-auto">
+              <div className="rounded-xl bg-rose-500/[0.08] border border-rose-500/20 p-3">
+                <div className="text-rose-300/80 text-[10px] font-bold uppercase tracking-wide mb-1">Было</div>
+                <p className="text-white/75 text-xs leading-snug">{c.before}</p>
               </div>
-              <div>
-                <div className="text-purple-300/80 text-[11px] font-bold uppercase tracking-wide mb-1">Решение</div>
-                <p className="text-white/70 text-sm">{c.solution}</p>
-              </div>
-              <div>
-                <div className="text-emerald-300/80 text-[11px] font-bold uppercase tracking-wide mb-1">Стало</div>
-                <p className="text-white/80 text-sm">{c.result}</p>
+              <Icon name="ArrowRight" size={16} className="text-white/30" />
+              <div className="rounded-xl bg-emerald-500/[0.08] border border-emerald-500/25 p-3">
+                <div className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-wide mb-1">Стало</div>
+                <p className="text-white/85 text-xs leading-snug">{c.after}</p>
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2">
-              <Icon name="TrendingUp" size={15} className="text-emerald-300" />
-              <span className="text-emerald-200 text-sm font-semibold">{c.metric}</span>
+            <div className="pt-3 border-t border-white/10 flex items-center gap-2">
+              <Icon name="TrendingUp" size={16} className="text-emerald-300" />
+              <span className="text-emerald-200 text-base font-black">{c.metric}</span>
             </div>
           </div>
         ))}
