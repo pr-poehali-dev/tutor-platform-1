@@ -194,6 +194,11 @@ def handler(event, context):
     return_url = data.get('return_url', '').strip()
     description = data.get('description', 'Оплата заказа')
     cart_items = data.get('cart_items', [])
+    # Дополнительные метаданные платежа (например, kind='intensive' для выдачи доступа).
+    # Принимаем только словарь со строковыми значениями, ключи — безопасные.
+    extra_metadata = data.get('metadata', {})
+    if not isinstance(extra_metadata, dict):
+        extra_metadata = {}
 
     if amount < MIN_AMOUNT or amount > MAX_AMOUNT:
         return {
@@ -276,6 +281,13 @@ def handler(event, context):
             "order_id": str(order_id),
             "order_number": order_number
         }
+        # Мёржим безопасные пользовательские метаданные (kind, email и т.п.).
+        # YooKassa допускает строковые значения; приводим к строке и ограничиваем длину.
+        for k, v in extra_metadata.items():
+            key = str(k)[:32]
+            if key in ('order_id', 'order_number'):
+                continue
+            metadata[key] = str(v)[:512]
 
         payment_response = create_yookassa_payment(
             shop_id=shop_id,

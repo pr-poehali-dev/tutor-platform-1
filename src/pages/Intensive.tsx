@@ -9,6 +9,7 @@ import HomeworkBox from "@/components/intensive/HomeworkBox";
 import AuditBox from "@/components/intensive/AuditBox";
 import CasesBlock from "@/components/intensive/CasesBlock";
 import PricingBlock from "@/components/intensive/PricingBlock";
+import AccessBanner from "@/components/intensive/AccessBanner";
 import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT, PRICING } from "@/components/intensive/data";
 
 export default function Intensive() {
@@ -84,6 +85,11 @@ export default function Intensive() {
               {PRICING.oldPrice.toLocaleString("ru-RU")} ₽
             </span>
           </div>
+        </section>
+
+        {/* ДОСТУП ПОСЛЕ ОПЛАТЫ */}
+        <section className="mb-14">
+          <AccessBanner />
         </section>
 
         {/* ИИ-АУДИТ — мгновенная польза */}

@@ -24,6 +24,8 @@ export interface PaymentPayload {
   description?: string;
   returnUrl: string;
   cartItems?: CartItem[];
+  /** Доп. метаданные платежа (например, kind для выдачи доступа к продукту). */
+  metadata?: Record<string, string>;
 }
 
 export interface PaymentResponse {
@@ -113,7 +115,7 @@ export function useYookassa(options: UseYookassaOptions): UseYookassaReturn {
 
       try {
         // Convert camelCase to snake_case for API
-        const body = {
+        const body: Record<string, unknown> = {
           amount: payload.amount,
           user_email: payload.userEmail,
           user_name: payload.userName || "",
@@ -122,6 +124,9 @@ export function useYookassa(options: UseYookassaOptions): UseYookassaReturn {
           return_url: payload.returnUrl,
           cart_items: payload.cartItems || [],
         };
+        if (payload.metadata) {
+          body.metadata = payload.metadata;
+        }
 
         const response = await fetch(apiUrl, {
           method: "POST",

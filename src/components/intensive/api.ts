@@ -107,6 +107,63 @@ export async function runAudit(
   }
 }
 
+export async function checkAccess(
+  email: string,
+): Promise<{ access: boolean; token?: string; name?: string; message?: string; error?: string }> {
+  if (!INTENSIVE_URL) return { access: false, error: "Сервис недоступен" };
+  try {
+    const res = await fetch(`${INTENSIVE_URL}?action=check_access`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { access: false, error: data.error || "Ошибка" };
+    return { access: !!data.access, token: data.token, name: data.name, message: data.message };
+  } catch {
+    return { access: false, error: "Ошибка соединения" };
+  }
+}
+
+const ACCESS_KEY = "intensive_access";
+
+export function saveAccess(email: string, token?: string): void {
+  try {
+    localStorage.setItem(ACCESS_KEY, JSON.stringify({ email, token: token || "", at: Date.now() }));
+  } catch {
+    /* storage недоступен */
+  }
+}
+
+export function getSavedAccess(): { email: string; token: string } | null {
+  try {
+    const raw = localStorage.getItem(ACCESS_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (p && p.email) return { email: p.email, token: p.token || "" };
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Email, на который оформляли оплату (для повторной проверки доступа). */
+export function getPaidEmail(): string | null {
+  try {
+    return localStorage.getItem("intensive_paid_email");
+  } catch {
+    return null;
+  }
+}
+
+export function setPaidEmail(email: string): void {
+  try {
+    localStorage.setItem("intensive_paid_email", email);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Стабильный id сессии в localStorage — чтобы прогресс привязывался к пользователю. */
 export function getSessionId(): string {
   const KEY = "intensive_session_id";

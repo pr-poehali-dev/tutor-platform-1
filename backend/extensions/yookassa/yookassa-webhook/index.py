@@ -2,11 +2,35 @@
 import json
 import os
 import base64
+import secrets
 from datetime import datetime
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 import psycopg2
+
+
+def notify_max_intensive(name: str, email: str, amount: float) -> None:
+    """Уведомление в MAX-канал об оплате доступа к интенсиву. Не критично для платежа."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    chat_id = os.environ.get('MAX_CHANNEL_ID', '')
+    if not token or not chat_id:
+        return
+    text = (f"💰 Оплата интенсива «Твой первый автопилот»!\n\n"
+            f"Имя: {name or '—'}\n"
+            f"Email: {email}\n"
+            f"Сумма: {amount:.0f} ₽\n"
+            f"#оплата #интенсив")
+    try:
+        req = Request(
+            f"https://botapi.max.ru/messages?access_token={token}&chat_id={chat_id}",
+            data=json.dumps({'text': text}).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        urlopen(req, timeout=10)
+    except Exception:
+        pass
 
 # =============================================================================
 # CONSTANTS
@@ -296,6 +320,58 @@ def handler(event, context):
                 'statusCode': 200,
                 'headers': HEADERS,
                 'body': json.dumps({'status': 'ok', 'kind': 'course_purchase'})
+            }
+
+        # ── Branch I: доступ к интенсиву (intensive_access) ──
+        if metadata.get('kind') == 'intensive':
+            order_number = metadata.get('order_number') or ''
+            buyer_email = (metadata.get('email') or '').strip().lower()
+            buyer_name = metadata.get('name') or ''
+            track = metadata.get('track') or 'automation'
+            try:
+                amount_val = float(verified_payment.get('amount', {}).get('value', 0) or 0)
+            except (TypeError, ValueError):
+                amount_val = 0.0
+
+            if payment_status == 'succeeded':
+                # Идемпотентно: ищем доступ по payment_id, иначе создаём/активируем.
+                cur.execute(
+                    f"SELECT id, access_token, status FROM {S}intensive_access "
+                    f"WHERE payment_id = %s LIMIT 1",
+                    (payment_id,)
+                )
+                existing = cur.fetchone()
+                if existing is None:
+                    token = secrets.token_urlsafe(24)
+                    cur.execute(
+                        f"INSERT INTO {S}intensive_access "
+                        f"(email, name, track, access_token, order_number, payment_id, "
+                        f"amount, status, activated_at) "
+                        f"VALUES (%s,%s,%s,%s,%s,%s,%s,'paid',NOW())",
+                        (buyer_email, buyer_name, track, token, order_number,
+                         payment_id, amount_val)
+                    )
+                    conn.commit()
+                    notify_max_intensive(buyer_name, buyer_email, amount_val)
+                elif existing[2] != 'paid':
+                    cur.execute(
+                        f"UPDATE {S}intensive_access SET status='paid', activated_at=NOW() "
+                        f"WHERE id=%s",
+                        (existing[0],)
+                    )
+                    conn.commit()
+            elif payment_status == 'canceled':
+                cur.execute(
+                    f"UPDATE {S}intensive_access SET status='canceled' "
+                    f"WHERE payment_id=%s AND status='pending'",
+                    (payment_id,)
+                )
+                conn.commit()
+
+            return {
+                'statusCode': 200,
+                'headers': HEADERS,
+                'body': json.dumps({'status': 'ok', 'kind': 'intensive'})
             }
 
         # ── Branch B: обычный заказ из orders (магазин) ──

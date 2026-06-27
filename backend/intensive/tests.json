@@ -63,6 +63,24 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "Check access requires email",
+      "method": "POST",
+      "path": "/?action=check_access",
+      "body": {"email": "bad"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Check access unknown email no access",
+      "method": "POST",
+      "path": "/?action=check_access",
+      "body": {"email": "noone-test@example.com"},
+      "expectedStatus": 200,
+      "expectedBody": {"access": false},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "Leads requires admin",
       "method": "GET",
       "path": "/?action=leads",

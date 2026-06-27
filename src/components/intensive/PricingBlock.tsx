@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useYookassa, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { PRICING, INTENSIVE_META } from "./data";
+import { setPaidEmail } from "./api";
 import func2url from "../../../backend/func2url.json";
 
 const YOOKASSA_URL = (func2url as Record<string, string>)["yookassa-yookassa"];
@@ -24,16 +25,24 @@ export default function PricingBlock() {
       setLocalError("Подтверди согласие с условиями");
       return;
     }
+    const cleanEmail = email.trim().toLowerCase();
+    setPaidEmail(cleanEmail);
     const returnUrl = `${window.location.origin}/intensive?paid=1`;
     const res = await createPayment({
       amount: PRICING.price,
-      userEmail: email,
+      userEmail: cleanEmail,
       userName: name.trim(),
       description: `Интенсив «${INTENSIVE_META.title}» — доступ с ИИ-наставником`,
       returnUrl,
       cartItems: [
         { id: "intensive-automation", name: PRICING.title, price: PRICING.price, quantity: 1 },
       ],
+      metadata: {
+        kind: "intensive",
+        email: cleanEmail,
+        name: name.trim(),
+        track: INTENSIVE_META.track,
+      },
     });
     if (res?.payment_url && /^https:\/\//.test(res.payment_url)) {
       window.location.href = res.payment_url;
