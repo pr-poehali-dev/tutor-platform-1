@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { SUPER_COURSES, SuperCourse, CourseLesson } from "./superCourses";
+import DiagnosticModal from "./DiagnosticModal";
 
 interface Props {
   startLesson: (course: SuperCourse, lesson: CourseLesson) => void;
@@ -8,6 +9,7 @@ interface Props {
 
 export default function SuperCoursePicker({ startLesson }: Props) {
   const [activeCourse, setActiveCourse] = useState<string>(SUPER_COURSES[0].id);
+  const [diagOpen, setDiagOpen] = useState(false);
   const course = SUPER_COURSES.find(c => c.id === activeCourse) || SUPER_COURSES[0];
 
   const totalLessons = course.modules.reduce((n, m) => n + m.lessons.length, 0);
@@ -33,7 +35,7 @@ export default function SuperCoursePicker({ startLesson }: Props) {
           return (
             <button
               key={c.id}
-              onClick={() => setActiveCourse(c.id)}
+              onClick={() => { setActiveCourse(c.id); setDiagOpen(false); }}
               className="flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all font-bold text-sm"
               style={{
                 background: active ? `${c.accent}22` : "rgba(255,255,255,0.04)",
@@ -69,6 +71,25 @@ export default function SuperCoursePicker({ startLesson }: Props) {
           </div>
         </div>
 
+        {/* Diagnostic banner */}
+        <button
+          onClick={() => setDiagOpen(true)}
+          className="w-full mb-6 flex items-center gap-4 text-left px-5 py-4 rounded-2xl border transition-all hover:scale-[1.01]"
+          style={{ background: `${course.accent}14`, borderColor: `${course.accent}40` }}
+        >
+          <span
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: `${course.accent}25` }}
+          >
+            <Icon name="ClipboardCheck" size={22} style={{ color: course.accent }} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">Не знаешь, с чего начать? Пройди диагностику</p>
+            <p className="text-white/50 text-xs">5 коротких вопросов — наставник определит уровень и подберёт раздел</p>
+          </div>
+          <Icon name="ArrowRight" size={18} className="text-white/40 flex-shrink-0" />
+        </button>
+
         <div className="grid md:grid-cols-2 gap-5">
           {course.modules.map(mod => (
             <div key={mod.id} className="bg-card/50 border border-white/8 rounded-2xl p-4">
@@ -101,6 +122,17 @@ export default function SuperCoursePicker({ startLesson }: Props) {
           ))}
         </div>
       </div>
+
+      {diagOpen && (
+        <DiagnosticModal
+          course={course}
+          onClose={() => setDiagOpen(false)}
+          startLesson={(c, l) => {
+            setDiagOpen(false);
+            startLesson(c, l);
+          }}
+        />
+      )}
     </div>
   );
 }
