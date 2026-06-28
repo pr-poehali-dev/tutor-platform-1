@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import AvatarDisplay from "./AvatarDisplay";
 import MicPermissionHelp from "./MicPermissionHelp";
 import { Teacher, LessonMessage, Emotion } from "./teachersData";
+import type { AccessibilitySettings } from "./useAccessibility";
 
 interface LessonRoomProps {
   selectedTeacher: Teacher;
@@ -25,6 +26,10 @@ interface LessonRoomProps {
   startRecording: () => void;
   stopRecording: () => void;
   cancelRecording: () => void;
+  a11y: AccessibilitySettings;
+  updateA11y: (patch: Partial<AccessibilitySettings>) => void;
+  repeatVoice: (text: string) => void;
+  lessonTitle?: string;
 }
 
 export default function LessonRoom({
@@ -48,9 +53,14 @@ export default function LessonRoom({
   startRecording,
   stopRecording,
   cancelRecording,
+  a11y,
+  updateA11y,
+  repeatVoice,
+  lessonTitle,
 }: LessonRoomProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const isMicError = !!voiceError && /микрофон|microphone|доступ|denied|permission/i.test(voiceError);
+  const msgTextSize = a11y.bigText ? "text-lg" : "text-sm";
 
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
@@ -98,6 +108,77 @@ export default function LessonRoom({
           Голос: {voiceEnabled ? "включён" : "выключен"}
         </button>
 
+        {/* Accessibility panel — для малышей и пожилых */}
+        <div className="bg-card/60 border border-white/8 rounded-2xl p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-wider">
+            <Icon name="Accessibility" size={14} />
+            Удобство
+          </div>
+
+          {/* Auto-speak */}
+          <button
+            onClick={() => updateA11y({ autoSpeak: !a11y.autoSpeak })}
+            className="flex items-center justify-between gap-2 text-sm text-white/70 hover:text-white transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Icon name="Mic2" size={15} />
+              Озвучивать сразу
+            </span>
+            <span
+              className="w-10 h-5 rounded-full relative transition-colors flex-shrink-0"
+              style={{ background: a11y.autoSpeak ? selectedTeacher.accent : "rgba(255,255,255,0.15)" }}
+            >
+              <span
+                className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                style={{ left: a11y.autoSpeak ? "calc(100% - 18px)" : "2px" }}
+              />
+            </span>
+          </button>
+
+          {/* Speed */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-sm text-white/70">
+              <span className="flex items-center gap-2">
+                <Icon name="Gauge" size={15} />
+                Скорость голоса
+              </span>
+              <span className="font-bold" style={{ color: selectedTeacher.accent }}>
+                {a11y.speed < 0.9 ? "медленно" : a11y.speed > 1.1 ? "быстро" : "обычно"}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0.7}
+              max={1.3}
+              step={0.1}
+              value={a11y.speed}
+              onChange={e => updateA11y({ speed: parseFloat(e.target.value) })}
+              className="w-full accent-current cursor-pointer"
+              style={{ accentColor: selectedTeacher.accent }}
+            />
+          </div>
+
+          {/* Big text */}
+          <button
+            onClick={() => updateA11y({ bigText: !a11y.bigText })}
+            className="flex items-center justify-between gap-2 text-sm text-white/70 hover:text-white transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Icon name="Type" size={15} />
+              Крупный текст
+            </span>
+            <span
+              className="w-10 h-5 rounded-full relative transition-colors flex-shrink-0"
+              style={{ background: a11y.bigText ? selectedTeacher.accent : "rgba(255,255,255,0.15)" }}
+            >
+              <span
+                className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                style={{ left: a11y.bigText ? "calc(100% - 18px)" : "2px" }}
+              />
+            </span>
+          </button>
+        </div>
+
         <button
           onClick={stopDemo}
           className="flex items-center gap-2 text-white/40 hover:text-white text-xs transition-colors justify-center py-2"
@@ -116,11 +197,13 @@ export default function LessonRoom({
           <div className="relative w-10 h-10 rounded-xl overflow-hidden flex-shrink-0" style={{ boxShadow: `inset 0 0 0 2px ${selectedTeacher.accent}50` }}>
             <img src={selectedTeacher.image} alt={selectedTeacher.name} className="w-full h-full object-cover" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="font-montserrat font-bold text-sm text-white">{selectedTeacher.fullName}</p>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-neon-green inline-block animate-pulse"></span>
-              <span className="text-xs text-white/50">{selectedTeacher.subject} · В эфире</span>
+              <span className="text-xs text-white/50 truncate">
+                {lessonTitle ? `Урок: ${lessonTitle}` : `${selectedTeacher.subject} · В эфире`}
+              </span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -152,14 +235,25 @@ export default function LessonRoom({
                   <img src={selectedTeacher.image} alt={selectedTeacher.name} className="w-full h-full object-cover" />
                 </div>
               )}
-              <div
-                className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.from === "student"
-                    ? "bg-purple-500/20 border border-purple-500/30 text-white rounded-tr-sm"
-                    : "bg-white/6 border border-white/8 text-white/90 rounded-tl-sm"
-                }`}
-              >
-                {msg.text}
+              <div className={`max-w-[78%] flex flex-col gap-1.5 ${msg.from === "student" ? "items-end" : "items-start"}`}>
+                <div
+                  className={`px-4 py-2.5 rounded-2xl ${msgTextSize} leading-relaxed whitespace-pre-wrap ${
+                    msg.from === "student"
+                      ? "bg-purple-500/20 border border-purple-500/30 text-white rounded-tr-sm"
+                      : "bg-white/6 border border-white/8 text-white/90 rounded-tl-sm"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+                {msg.from === "teacher" && (
+                  <button
+                    onClick={() => repeatVoice(msg.text)}
+                    className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white px-2 py-1 rounded-lg hover:bg-white/8 transition-all"
+                  >
+                    <Icon name="Volume2" size={14} />
+                    Прослушать
+                  </button>
+                )}
               </div>
               {msg.from === "student" && (
                 <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-base flex-shrink-0 mt-0.5">

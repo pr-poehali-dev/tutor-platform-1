@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import TeacherPicker from "./teacher/TeacherPicker";
 import LessonRoom from "./teacher/LessonRoom";
+import SuperCoursePicker from "./teacher/SuperCoursePicker";
 import { useVoiceInput } from "./teacher/useVoiceInput";
+import { useAccessibility } from "./teacher/useAccessibility";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
+import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
 
 export default function AITeacher() {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
@@ -15,6 +18,8 @@ export default function AITeacher() {
   const [userXP, setUserXP] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeLesson, setActiveLesson] = useState<{ course: SuperCourse; lesson: CourseLesson } | null>(null);
+  const { settings, update } = useAccessibility();
   const chatRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -23,13 +28,14 @@ export default function AITeacher() {
   }, [visibleMessages, isLoading]);
 
   // ─── TTS ───
-  const speak = async (text: string, teacherId: string) => {
+  const speak = async (text: string, teacherId: string, force = false) => {
     if (!voiceEnabled) return;
+    if (!force && !settings.autoSpeak) return;
     try {
       const res = await fetch(TTS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, teacher_id: teacherId }),
+        body: JSON.stringify({ text, teacher_id: teacherId, speed: settings.speed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -74,6 +80,11 @@ export default function AITeacher() {
           teacher_id: selectedTeacher.id,
           message: userMsg,
           history: visibleMessages,
+          voice_mode: settings.autoSpeak,
+          subject: activeLesson?.course.subject || selectedTeacher.subject,
+          course_title: activeLesson
+            ? `${activeLesson.course.title} · урок «${activeLesson.lesson.title}»`
+            : "",
         }),
       });
       const data = await res.json();
@@ -98,12 +109,61 @@ export default function AITeacher() {
   const startDemo = async (teacher: Teacher) => {
     if (audioRef.current) audioRef.current.pause();
     setSelectedTeacher(teacher);
+    setActiveLesson(null);
     setDemoActive(true);
     setVisibleMessages([{ id: 0, from: "teacher", text: teacher.greeting, type: "question" }]);
     setUserXP(0);
     setError(null);
     setEmotion("happy");
-    await speak(teacher.greeting, teacher.id);
+    await speak(teacher.greeting, teacher.id, true);
+  };
+
+  const startLesson = async (course: SuperCourse, lesson: CourseLesson) => {
+    if (audioRef.current) audioRef.current.pause();
+    document.getElementById("ai-teacher")?.scrollIntoView({ behavior: "smooth" });
+    const teacher = TEACHERS.find(t => t.id === course.teacherId) || TEACHERS[0];
+    setSelectedTeacher(teacher);
+    setActiveLesson({ course, lesson });
+    setDemoActive(true);
+    setUserXP(0);
+    setError(null);
+    setEmotion("thinking");
+    const intro = `${course.emoji} Урок «${lesson.title}». ${lesson.goal}. Поехали!`;
+    setVisibleMessages([
+      { id: 0, from: "teacher", text: intro, type: "task" },
+      { id: 1, from: "student", text: lesson.starter },
+    ]);
+    setIsLoading(true);
+    try {
+      const res = await fetch(AI_CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacher_id: teacher.id,
+          message: lesson.starter,
+          history: [],
+          voice_mode: settings.autoSpeak,
+          subject: course.subject,
+          course_title: `${course.title} · урок «${lesson.title}»`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Ошибка наставника");
+      const reply = data.reply || "Давай начнём. С чего хочешь, чтобы я объяснил?";
+      setVisibleMessages(prev => [...prev, { id: Date.now(), from: "teacher", text: reply, type: "hint" }]);
+      setEmotion("explaining");
+      await speak(reply, teacher.id);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Неизвестная ошибка");
+      setEmotion("neutral");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const repeatVoice = async (text: string) => {
+    if (audioRef.current) audioRef.current.pause();
+    await speak(text, selectedTeacher.id, true);
   };
 
   const sendMessage = async () => {
@@ -126,6 +186,7 @@ export default function AITeacher() {
   const stopDemo = () => {
     if (audioRef.current) audioRef.current.pause();
     setDemoActive(false);
+    setActiveLesson(null);
     setVisibleMessages([]);
     setIsSpeaking(false);
     setEmotion("neutral");
@@ -167,13 +228,16 @@ export default function AITeacher() {
         </div>
 
         {!demoActive ? (
-          <TeacherPicker
-            selectedTeacher={selectedTeacher}
-            setSelectedTeacher={setSelectedTeacher}
-            voiceEnabled={voiceEnabled}
-            setVoiceEnabled={setVoiceEnabled}
-            startDemo={startDemo}
-          />
+          <>
+            <TeacherPicker
+              selectedTeacher={selectedTeacher}
+              setSelectedTeacher={setSelectedTeacher}
+              voiceEnabled={voiceEnabled}
+              setVoiceEnabled={setVoiceEnabled}
+              startDemo={startDemo}
+            />
+            <SuperCoursePicker startLesson={startLesson} />
+          </>
         ) : (
           <LessonRoom
             selectedTeacher={selectedTeacher}
@@ -196,6 +260,10 @@ export default function AITeacher() {
             startRecording={voice.start}
             stopRecording={voice.stop}
             cancelRecording={voice.cancel}
+            a11y={settings}
+            updateA11y={update}
+            repeatVoice={repeatVoice}
+            lessonTitle={activeLesson?.lesson.title}
           />
         )}
 

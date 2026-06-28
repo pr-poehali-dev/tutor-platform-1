@@ -438,6 +438,8 @@ def handler(event, context):
         text = body.get('text', '').strip()
         teacher_id = body.get('teacher_id', 'alex')
         sing = bool(body.get('sing', False))
+        # Скорость речи: задаётся фронтом (режим для малышей/пожилых — медленнее)
+        speed_override = body.get('speed', None)
 
         if not text:
             return {
@@ -464,7 +466,15 @@ def handler(event, context):
                 'body': json.dumps({'error': 'YANDEX_SPEECHKIT_API_KEY не настроен'}, ensure_ascii=False),
             }
 
-        voice_cfg = VOICE_MAP.get(teacher_id, VOICE_MAP['alex'])
+        voice_cfg = dict(VOICE_MAP.get(teacher_id, VOICE_MAP['alex']))
+        # Переопределение скорости из запроса (0.5–2.0). Для малышей/пожилых — 0.8
+        if speed_override is not None:
+            try:
+                spd = float(speed_override)
+                spd = max(0.5, min(2.0, spd))
+                voice_cfg['speed'] = f'{spd:.2f}'
+            except (ValueError, TypeError):
+                pass
         folder_id = os.environ.get('YANDEX_FOLDER_ID', '').strip()
 
         # Если у голоса задан child_pitch — синтезируем в сыром LPCM,
