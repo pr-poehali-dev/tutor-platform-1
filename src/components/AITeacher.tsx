@@ -4,6 +4,7 @@ import LessonRoom from "./teacher/LessonRoom";
 import SuperCoursePicker from "./teacher/SuperCoursePicker";
 import { useVoiceInput } from "./teacher/useVoiceInput";
 import { useAccessibility } from "./teacher/useAccessibility";
+import { useSuperProgress } from "./teacher/useSuperProgress";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
 import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
 
@@ -20,6 +21,7 @@ export default function AITeacher() {
   const [error, setError] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState<{ course: SuperCourse; lesson: CourseLesson } | null>(null);
   const { settings, update } = useAccessibility();
+  const superProgress = useSuperProgress();
   const chatRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -95,6 +97,8 @@ export default function AITeacher() {
       const newMsg: LessonMessage = { id: Date.now(), from: "teacher", text: reply, type: "hint" };
       setVisibleMessages(prev => [...prev, newMsg]);
       setUserXP(p => p + 20);
+      // Активный урок курса засчитываем как пройденный — ученик позанимался по теме
+      if (activeLesson) superProgress.markDone(activeLesson.lesson.id);
       setEmotion("explaining");
       await speak(reply, selectedTeacher.id);
     } catch (e: unknown) {
@@ -151,6 +155,7 @@ export default function AITeacher() {
       if (!res.ok) throw new Error(data.error || "Ошибка наставника");
       const reply = data.reply || "Давай начнём. С чего хочешь, чтобы я объяснил?";
       setVisibleMessages(prev => [...prev, { id: Date.now(), from: "teacher", text: reply, type: "hint" }]);
+      superProgress.markDone(lesson.id);
       setEmotion("explaining");
       await speak(reply, teacher.id);
     } catch (e: unknown) {
@@ -236,7 +241,7 @@ export default function AITeacher() {
               setVoiceEnabled={setVoiceEnabled}
               startDemo={startDemo}
             />
-            <SuperCoursePicker startLesson={startLesson} />
+            <SuperCoursePicker startLesson={startLesson} progress={superProgress} />
           </>
         ) : (
           <LessonRoom
