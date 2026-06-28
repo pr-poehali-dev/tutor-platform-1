@@ -240,6 +240,36 @@ export default function CoursesPage() {
         </p>
       </section>
 
+      {/* Супер-курсы — флагманские программы с наставником и голосом */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-2 mb-2">
+        <Link
+          to="/super-courses"
+          className="group block rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/12 via-purple-500/10 to-transparent p-5 md:p-6 hover:border-cyan-400/50 transition-all"
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+              <Icon name="Sparkles" size={24} className="text-cyan-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 uppercase tracking-wider">Новинка</span>
+                <span className="text-white/40 text-xs">⚡ Физика · 📐 Математика · 💻 Информатика</span>
+              </div>
+              <h2 className="font-montserrat font-black text-lg md:text-xl text-white">
+                Супер-курсы уровня репетитора — с наставником и голосом
+              </h2>
+              <p className="text-white/55 text-sm mt-0.5">
+                Полная школьная программа + профильный ЕГЭ и ДВИ. Первый урок бесплатно.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-2.5 rounded-2xl flex-shrink-0 group-hover:opacity-90 transition-opacity">
+              Открыть
+              <Icon name="ArrowRight" size={15} />
+            </span>
+          </div>
+        </Link>
+      </section>
+
       {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
       {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
         <BestsellersBlock />

@@ -27,6 +27,7 @@ const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Courses = lazy(() => import("./pages/Courses"));
+const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
@@ -133,6 +134,7 @@ const App = () => (
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/super-courses" element={<SuperCourses />} />
                     <Route path="/remote-professions" element={<RemoteProfessions />} />
                     <Route path="/tech-trends" element={<TechTrends />} />
                     <Route path="/intensive" element={<Intensive />} />

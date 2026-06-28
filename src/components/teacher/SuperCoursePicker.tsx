@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { SUPER_COURSES, SuperCourse, CourseLesson } from "./superCourses";
+import { SUPER_COURSES, SuperCourse, CourseLesson, isLessonFree } from "./superCourses";
 import DiagnosticModal from "./DiagnosticModal";
 
 interface ProgressApi {
@@ -11,9 +11,13 @@ interface ProgressApi {
 interface Props {
   startLesson: (course: SuperCourse, lesson: CourseLesson) => void;
   progress: ProgressApi;
+  /** Есть ли у пользователя доступ ко всем урокам (подписка). */
+  hasAccess?: boolean;
+  /** Открыть тарифы/покупку. */
+  onBuy?: () => void;
 }
 
-export default function SuperCoursePicker({ startLesson, progress }: Props) {
+export default function SuperCoursePicker({ startLesson, progress, hasAccess = false, onBuy }: Props) {
   const [activeCourse, setActiveCourse] = useState<string>(SUPER_COURSES[0].id);
   const [diagOpen, setDiagOpen] = useState(false);
   const course = SUPER_COURSES.find(c => c.id === activeCourse) || SUPER_COURSES[0];
@@ -22,6 +26,14 @@ export default function SuperCoursePicker({ startLesson, progress }: Props) {
   const totalLessons = allLessonIds.length;
   const doneCount = progress.countDone(allLessonIds);
   const coursePct = totalLessons ? Math.round((doneCount / totalLessons) * 100) : 0;
+
+  // Можно ли открыть урок: есть доступ ИЛИ это бесплатный демо-урок.
+  const canOpen = (lesson: CourseLesson) => hasAccess || isLessonFree(course, lesson.id);
+
+  const handleLessonClick = (lesson: CourseLesson) => {
+    if (canOpen(lesson)) startLesson(course, lesson);
+    else onBuy?.();
+  };
 
   return (
     <div id="super-courses" className="mt-16">
@@ -121,6 +133,41 @@ export default function SuperCoursePicker({ startLesson, progress }: Props) {
           </p>
         </div>
 
+        {/* Price / access CTA */}
+        {!hasAccess && (
+          <div
+            className="mb-6 rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+            style={{ background: `${course.accent}10`, borderColor: `${course.accent}35` }}
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-montserrat font-black text-2xl text-white">
+                  {course.price.toLocaleString("ru-RU")} ₽
+                </span>
+                <span className="text-white/40 text-sm line-through">
+                  {course.oldPrice.toLocaleString("ru-RU")} ₽
+                </span>
+                <span
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                  style={{ background: `${course.accent}30`, color: course.accent }}
+                >
+                  −{Math.round((1 - course.price / course.oldPrice) * 100)}%
+                </span>
+              </div>
+              <p className="text-white/55 text-xs">
+                Полный доступ ко всем {totalLessons} урокам курса с наставником и голосом. Первый урок — бесплатно.
+              </p>
+            </div>
+            <button
+              onClick={onBuy}
+              className="px-6 py-3 rounded-2xl font-bold text-white whitespace-nowrap transition-all hover:scale-[1.03]"
+              style={{ background: `linear-gradient(135deg, ${course.accent}, ${course.accent}aa)` }}
+            >
+              Открыть полный доступ
+            </button>
+          </div>
+        )}
+
         {/* Diagnostic banner */}
         <button
           onClick={() => setDiagOpen(true)}
@@ -162,29 +209,37 @@ export default function SuperCoursePicker({ startLesson, progress }: Props) {
                 <div className="flex flex-col gap-2">
                   {mod.lessons.map(lesson => {
                     const done = progress.isDone(lesson.id);
+                    const locked = !canOpen(lesson);
+                    const free = isLessonFree(course, lesson.id);
                     return (
                       <button
                         key={lesson.id}
-                        onClick={() => startLesson(course, lesson)}
+                        onClick={() => handleLessonClick(lesson)}
                         className="group flex items-center gap-3 text-left px-3 py-2.5 rounded-xl bg-white/4 hover:bg-white/8 border border-white/6 transition-all"
                       >
                         <span
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                          style={{ background: done ? `${course.accent}` : `${course.accent}22` }}
+                          style={{ background: done ? `${course.accent}` : locked ? "rgba(255,255,255,0.06)" : `${course.accent}22` }}
                         >
                           <Icon
-                            name={done ? "Check" : "Play"}
+                            name={done ? "Check" : locked ? "Lock" : "Play"}
                             size={14}
-                            style={{ color: done ? "#0a0a14" : course.accent }}
+                            style={{ color: done ? "#0a0a14" : locked ? "rgba(255,255,255,0.5)" : course.accent }}
                           />
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-semibold leading-tight ${done ? "text-white/60" : "text-white"}`}>
+                          <p className={`text-sm font-semibold leading-tight ${done ? "text-white/60" : locked ? "text-white/55" : "text-white"}`}>
                             {lesson.title}
                           </p>
-                          <p className="text-white/40 text-xs truncate">{done ? "Пройдено · повторить" : lesson.goal}</p>
+                          <p className="text-white/40 text-xs truncate">
+                            {done ? "Пройдено · повторить" : free ? "Бесплатный урок" : locked ? "Откроется с полным доступом" : lesson.goal}
+                          </p>
                         </div>
-                        <Icon name="ChevronRight" size={16} className="text-white/30 group-hover:text-white/70 transition-colors" />
+                        <Icon
+                          name={locked ? "Lock" : "ChevronRight"}
+                          size={16}
+                          className="text-white/30 group-hover:text-white/70 transition-colors flex-shrink-0"
+                        />
                       </button>
                     );
                   })}

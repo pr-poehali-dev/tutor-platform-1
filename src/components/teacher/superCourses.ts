@@ -26,7 +26,14 @@ export interface SuperCourse {
   accent: string;
   tagline: string;
   level: string;
+  price: number; // цена полного доступа, ₽
+  oldPrice: number; // зачёркнутая цена для показа выгоды, ₽
   modules: CourseModule[];
+}
+
+/** Доступен ли урок бесплатно: первый урок первого раздела — демо. */
+export function isLessonFree(course: SuperCourse, lessonId: string): boolean {
+  return course.modules[0]?.lessons[0]?.id === lessonId;
 }
 
 const physics: SuperCourse = {
@@ -38,6 +45,8 @@ const physics: SuperCourse = {
   accent: "#00d4ff",
   level: "7 класс → ЕГЭ 90+ · ДВИ · олимпиады",
   tagline: "Вся школьная программа + углублённый уровень для поступления в технический вуз",
+  price: 1990,
+  oldPrice: 4990,
   modules: [
     {
       id: "ph-kin",
@@ -192,6 +201,8 @@ const math: SuperCourse = {
   accent: "#a855f7",
   level: "5 класс → профильный ЕГЭ 90+ · ДВИ",
   tagline: "Вся школьная программа + параметры, стереометрия и анализ для технического вуза",
+  price: 1990,
+  oldPrice: 4990,
   modules: [
     {
       id: "m-base",
@@ -310,6 +321,8 @@ const cs: SuperCourse = {
   accent: "#22c55e",
   level: "Основы → ЕГЭ 90+ · задания 17-27",
   tagline: "Вся школьная программа + алгоритмы, Python и сложные задания ЕГЭ для технического вуза",
+  price: 1990,
+  oldPrice: 4990,
   modules: [
     {
       id: "cs-base",

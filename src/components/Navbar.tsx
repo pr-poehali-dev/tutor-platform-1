@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
 // Главные разделы — всегда в строке
 const NAV_LINKS = [
   { label: "Курсы",        short: "Курсы",   icon: "Library",        path: "/courses" },
+  { label: "Супер-курсы",  short: "Супер",   icon: "Sparkles",       path: "/super-courses" },
   { label: "Лента",        short: "Лента",   icon: "Newspaper",      path: "/feed" },
   { label: "ОГЭ и ЕГЭ",    short: "ЕГЭ",     icon: "GraduationCap",  path: "/exam-bank" },
   { label: "Психологу",    short: "Психо",   icon: "HeartHandshake", path: "/psychology" },
@@ -42,6 +43,18 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
   const { isAuthenticated, openLogin } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Якоря "ИИ-учитель"/"Рейтинг" есть только на главной.
+  // Если мы на другой странице — уводим на главную к нужной секции.
+  const handleScrollTo = (section: string) => {
+    if (location.pathname === "/") {
+      onScrollTo(section);
+    } else {
+      navigate(`/?section=${section}`);
+    }
+  };
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -68,7 +81,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.section}
-                onClick={() => onScrollTo(item.section)}
+                onClick={() => handleScrollTo(item.section)}
                 aria-label={item.label}
                 title={item.label}
                 aria-current={activeSection === item.section ? "page" : undefined}
@@ -201,7 +214,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.section}
-                onClick={() => onScrollTo(item.section)}
+                onClick={() => handleScrollTo(item.section)}
                 aria-label={`Перейти к разделу ${item.label}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 transition-all"
               >
@@ -213,6 +226,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               <Link
                 key={link.path}
                 to={link.path}
+                onClick={onToggleMobile}
                 aria-label={`Открыть страницу: ${link.label}`}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-300 hover:bg-purple-500/15 transition-all border border-purple-500/25"
               >

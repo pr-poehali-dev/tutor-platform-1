@@ -8,7 +8,13 @@ import { useSuperProgress } from "./teacher/useSuperProgress";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
 import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
 
-export default function AITeacher() {
+interface AITeacherProps {
+  showSuperCourses?: boolean;
+  superHasAccess?: boolean;
+  onBuySuper?: () => void;
+}
+
+export default function AITeacher({ showSuperCourses = false, superHasAccess = false, onBuySuper }: AITeacherProps) {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
   const [demoActive, setDemoActive] = useState(false);
   const [visibleMessages, setVisibleMessages] = useState<LessonMessage[]>([]);
@@ -241,7 +247,14 @@ export default function AITeacher() {
               setVoiceEnabled={setVoiceEnabled}
               startDemo={startDemo}
             />
-            <SuperCoursePicker startLesson={startLesson} progress={superProgress} />
+            {showSuperCourses && (
+              <SuperCoursePicker
+                startLesson={startLesson}
+                progress={superProgress}
+                hasAccess={superHasAccess}
+                onBuy={onBuySuper}
+              />
+            )}
           </>
         ) : (
           <LessonRoom

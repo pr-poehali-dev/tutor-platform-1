@@ -11,6 +11,26 @@ export function useActiveSection() {
     document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Переход с другой страницы: /?section=ai-teacher — плавно скроллим к секции.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get("section");
+    if (!section) return;
+    // Даём странице отрисоваться (lazy-секции), затем скроллим.
+    const tryScroll = (attempt = 0) => {
+      const el = document.getElementById(section);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        setActiveSection(section);
+        // Чистим URL, чтобы не скроллило при последующих переходах.
+        window.history.replaceState(null, "", "/");
+      } else if (attempt < 10) {
+        setTimeout(() => tryScroll(attempt + 1), 300);
+      }
+    };
+    tryScroll();
+  }, []);
+
   // Автообновление activeSection при скролле
   useEffect(() => {
     const ids = ["myspace", "ai-teacher", "leaderboard"];
