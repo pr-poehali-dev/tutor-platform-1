@@ -62,8 +62,9 @@ export default function SuperCoursePicker({ startLesson }: Props) {
             <h4 className="font-montserrat font-black text-xl text-white">{course.title}</h4>
             <p className="text-white/50 text-sm">{course.tagline}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/8 text-white/70">{course.level}</span>
+            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/8 text-white/70">{course.modules.length} разделов</span>
             <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/8 text-white/70">{totalLessons} уроков</span>
           </div>
         </div>
