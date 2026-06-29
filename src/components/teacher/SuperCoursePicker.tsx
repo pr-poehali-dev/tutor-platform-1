@@ -11,16 +11,18 @@ interface ProgressApi {
 interface Props {
   startLesson: (course: SuperCourse, lesson: CourseLesson) => void;
   progress: ProgressApi;
-  /** Есть ли у пользователя доступ ко всем урокам (подписка). */
-  hasAccess?: boolean;
-  /** Открыть тарифы/покупку. */
-  onBuy?: () => void;
+  /** Куплен ли конкретный супер-курс (по его courseId). */
+  hasCourseAccess?: (courseId: number) => boolean;
+  /** Купить конкретный супер-курс. */
+  onBuy?: (course: SuperCourse) => void;
 }
 
-export default function SuperCoursePicker({ startLesson, progress, hasAccess = false, onBuy }: Props) {
+export default function SuperCoursePicker({ startLesson, progress, hasCourseAccess, onBuy }: Props) {
   const [activeCourse, setActiveCourse] = useState<string>(SUPER_COURSES[0].id);
   const [diagOpen, setDiagOpen] = useState(false);
   const course = SUPER_COURSES.find(c => c.id === activeCourse) || SUPER_COURSES[0];
+
+  const hasAccess = hasCourseAccess ? hasCourseAccess(course.courseId) : false;
 
   const allLessonIds = course.modules.flatMap(m => m.lessons.map(l => l.id));
   const totalLessons = allLessonIds.length;
@@ -32,7 +34,7 @@ export default function SuperCoursePicker({ startLesson, progress, hasAccess = f
 
   const handleLessonClick = (lesson: CourseLesson) => {
     if (canOpen(lesson)) startLesson(course, lesson);
-    else onBuy?.();
+    else onBuy?.(course);
   };
 
   return (
@@ -159,11 +161,11 @@ export default function SuperCoursePicker({ startLesson, progress, hasAccess = f
               </p>
             </div>
             <button
-              onClick={onBuy}
+              onClick={() => onBuy?.(course)}
               className="px-6 py-3 rounded-2xl font-bold text-white whitespace-nowrap transition-all hover:scale-[1.03]"
               style={{ background: `linear-gradient(135deg, ${course.accent}, ${course.accent}aa)` }}
             >
-              Открыть полный доступ
+              Купить за {course.price.toLocaleString("ru-RU")} ₽
             </button>
           </div>
         )}

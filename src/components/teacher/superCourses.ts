@@ -19,6 +19,7 @@ export interface CourseModule {
 
 export interface SuperCourse {
   id: string;
+  courseId: number; // числовой ID для оплаты через кассу (course_purchases)
   subject: string; // соответствует предмету и наставнику
   teacherId: string; // alex / dmitry
   title: string;
@@ -38,6 +39,7 @@ export function isLessonFree(course: SuperCourse, lessonId: string): boolean {
 
 const physics: SuperCourse = {
   id: "physics",
+  courseId: 9001,
   subject: "Физика",
   teacherId: "dmitry",
   title: "Физика: от нуля до Бауманки",
@@ -194,6 +196,7 @@ const physics: SuperCourse = {
 
 const math: SuperCourse = {
   id: "math",
+  courseId: 9002,
   subject: "Математика",
   teacherId: "alex",
   title: "Математика: профиль и поступление в Бауманку",
@@ -314,6 +317,7 @@ const math: SuperCourse = {
 
 const cs: SuperCourse = {
   id: "cs",
+  courseId: 9003,
   subject: "Информатика",
   teacherId: "alex",
   title: "Информатика: ЕГЭ, код и поступление",

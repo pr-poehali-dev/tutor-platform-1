@@ -10,11 +10,11 @@ import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
 
 interface AITeacherProps {
   showSuperCourses?: boolean;
-  superHasAccess?: boolean;
-  onBuySuper?: () => void;
+  hasCourseAccess?: (courseId: number) => boolean;
+  onBuySuper?: (course: SuperCourse) => void;
 }
 
-export default function AITeacher({ showSuperCourses = false, superHasAccess = false, onBuySuper }: AITeacherProps) {
+export default function AITeacher({ showSuperCourses = false, hasCourseAccess, onBuySuper }: AITeacherProps) {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher>(TEACHERS[0]);
   const [demoActive, setDemoActive] = useState(false);
   const [visibleMessages, setVisibleMessages] = useState<LessonMessage[]>([]);
@@ -251,7 +251,7 @@ export default function AITeacher({ showSuperCourses = false, superHasAccess = f
               <SuperCoursePicker
                 startLesson={startLesson}
                 progress={superProgress}
-                hasAccess={superHasAccess}
+                hasCourseAccess={hasCourseAccess}
                 onBuy={onBuySuper}
               />
             )}
