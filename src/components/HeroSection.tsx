@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 
 const HERO_IMAGE =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
@@ -22,22 +23,25 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* LEFT */}
           <div className="lg:col-span-7">
-            {/* Бейдж — социальное доказательство */}
-            <div className="inline-flex items-center gap-3 bg-white/5 border border-white/12 rounded-full pl-1.5 pr-4 py-1.5 mb-5 animate-fade-in-up backdrop-blur-sm">
-              <div className="flex -space-x-2">
-                {AVATAR_COLORS.map((c, i) => (
-                  <div
-                    key={i}
-                    className="w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ background: `linear-gradient(135deg, ${c}, ${c}aa)` }}
-                  >
-                    {String.fromCharCode(65 + i)}
-                  </div>
-                ))}
+            {/* Бейджи — социальное доказательство + партнёр-маркер доверия */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-5 animate-fade-in-up">
+              <div className="inline-flex items-center gap-3 bg-white/5 border border-white/12 rounded-full pl-1.5 pr-4 py-1.5 backdrop-blur-sm">
+                <div className="flex -space-x-2">
+                  {AVATAR_COLORS.map((c, i) => (
+                    <div
+                      key={i}
+                      className="w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{ background: `linear-gradient(135deg, ${c}, ${c}aa)` }}
+                    >
+                      {String.fromCharCode(65 + i)}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs md:text-sm text-white/85 font-medium">
+                  12 000+ школьников сейчас на платформе
+                </span>
               </div>
-              <span className="text-xs md:text-sm text-white/85 font-medium">
-                12 000+ школьников сейчас на платформе
-              </span>
+              <TochkaPartnerBadge />
             </div>
 
             <h1 className="font-montserrat text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] mb-5 animate-fade-in-up animate-delay-100">
