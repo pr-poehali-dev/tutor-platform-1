@@ -1,99 +1,18 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import Icon from "@/components/ui/icon";
+import { useSearchParams } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
-import CourseCardCompact from "@/components/courses/CourseCardCompact";
 import BestsellersBlock from "@/components/courses/BestsellersBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
   COURSES,
-  SUBJECTS,
-  GRADES,
-  FORMAT,
-  SORT_OPTIONS,
   SortKey,
   getCoursePrice,
 } from "@/components/courses/coursesData";
-import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
-
-type BadgeFilter = "all" | "free" | "new" | "hit" | "sale" | "trial";
-
-const BADGES: { id: BadgeFilter; label: string; icon: string }[] = [
-  { id: "all", label: "Все", icon: "Sparkle" },
-  { id: "free", label: "Бесплатные", icon: "Gift" },
-  { id: "hit", label: "Хиты", icon: "Flame" },
-  { id: "new", label: "Новинки", icon: "Sparkles" },
-  { id: "sale", label: "Со скидкой", icon: "Tag" },
-  { id: "trial", label: "Есть пробный", icon: "Star" },
-];
-
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
-
-// JSON-LD: каталог курсов как ItemList со вложенными Course schema.org
-// Это даёт rich snippets в Google: список курсов с рейтингом, провайдером, описанием
-const COURSES_JSON_LD = [
-  {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Каталог онлайн-курсов УЧИСЬПРО",
-    description: "Полный каталог онлайн-курсов для школьников 1–11 классов и подготовки к ОГЭ/ЕГЭ",
-    numberOfItems: COURSES.length,
-    itemListElement: COURSES.map((c, idx) => ({
-      "@type": "ListItem",
-      position: idx + 1,
-      item: {
-        "@type": "Course",
-        "@id": `${SITE_URL}/course-checkout/${c.id}`,
-        name: c.title,
-        description: c.description,
-        url: `${SITE_URL}/course-checkout/${c.id}`,
-        provider: {
-          "@type": "EducationalOrganization",
-          name: "УЧИСЬПРО",
-          sameAs: SITE_URL,
-        },
-        educationalLevel:
-          c.grade === "ege" ? "ЕГЭ" :
-          c.grade === "oge" ? "ОГЭ" :
-          c.grade === "1-4" ? "1–4 класс" :
-          c.grade === "5-9" ? "5–9 класс" :
-          c.grade === "10-11" ? "10–11 класс" : c.grade,
-        teaches: c.tags.join(", "),
-        inLanguage: "ru-RU",
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: c.rating,
-          reviewCount: c.reviews,
-          bestRating: 5,
-          worstRating: 1,
-        },
-        offers: {
-          "@type": "Offer",
-          price: getCoursePrice(c),
-          priceCurrency: "RUB",
-          availability: "https://schema.org/InStock",
-          category: c.trialAvailable ? "Подписка с пробным периодом" : "Подписка",
-          url: `${SITE_URL}/course-checkout/${c.id}`,
-        },
-        hasCourseInstance: {
-          "@type": "CourseInstance",
-          courseMode: c.format === "online" ? "online" : c.format === "offline" ? "onsite" : "online",
-          courseWorkload: `PT${c.lessons * 30}M`,
-        },
-      },
-    })),
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Каталог курсов", item: `${SITE_URL}/courses` },
-    ],
-  },
-];
+import { BadgeFilter, COURSES_JSON_LD } from "@/components/courses/catalog/coursesCatalogData";
+import CoursesHeader from "@/components/courses/catalog/CoursesHeader";
+import CoursesFilters from "@/components/courses/catalog/CoursesFilters";
+import CoursesGrid from "@/components/courses/catalog/CoursesGrid";
 
 export default function CoursesPage() {
   const [searchParams] = useSearchParams();
@@ -199,300 +118,38 @@ export default function CoursesPage() {
         ))}
       </div>
 
-      {/* Header bar */}
-      <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
-        <nav className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4" aria-label="Шапка сайта">
-          <Link to="/" className="flex items-center gap-2.5 group" aria-label="На главную УЧИСЬПРО">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg" aria-hidden="true">🚀</div>
-            <span className="font-montserrat font-black text-base gradient-text-purple tracking-wide group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
-          </Link>
-          <div className="hidden md:block">
-            <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Каталог курсов" }]} />
-          </div>
-          <Link
-            to="/pricing"
-            aria-label="Посмотреть тарифы"
-            className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            <Icon name="Sparkles" size={14} aria-hidden="true" />
-            Тарифы
-          </Link>
-        </nav>
-      </header>
+      <CoursesHeader />
 
       <main>
-      {/* Hero */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-4" aria-labelledby="courses-hero-title">
-        <Link to="/" className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-5 transition-colors">
-          <Icon name="ArrowLeft" size={14} />
-          На главную
-        </Link>
-
-        <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/25 rounded-full px-3.5 py-1 mb-4">
-          <Icon name="Library" size={13} className="text-purple-300" />
-          <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">Каталог · {COURSES.length} курсов</span>
-        </div>
-        <h1 id="courses-hero-title" className="font-montserrat font-black text-3xl md:text-5xl text-white mb-3 leading-tight">
-          Все курсы <span className="gradient-text-purple">УЧИСЬПРО</span>
-        </h1>
-        <p className="text-white/55 text-base md:text-lg max-w-2xl">
-          Школьная программа 1–11 классов и подготовка к ОГЭ/ЕГЭ. Найди свой курс — поиском, по предмету или классу.
-        </p>
-      </section>
-
-      {/* Супер-курсы — флагманские программы с наставником и голосом */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-2 mb-2">
-        <Link
-          to="/super-courses"
-          className="group block rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/12 via-purple-500/10 to-transparent p-5 md:p-6 hover:border-cyan-400/50 transition-all"
-        >
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-              <Icon name="Sparkles" size={24} className="text-cyan-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 uppercase tracking-wider">Новинка</span>
-                <span className="text-white/40 text-xs">⚡ Физика · 📐 Математика · 💻 Информатика</span>
-              </div>
-              <h2 className="font-montserrat font-black text-lg md:text-xl text-white">
-                Супер-курсы уровня репетитора — с наставником и голосом
-              </h2>
-              <p className="text-white/55 text-sm mt-0.5">
-                Полная школьная программа + профильный ЕГЭ и ДВИ. Первый урок бесплатно.
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-2.5 rounded-2xl flex-shrink-0 group-hover:opacity-90 transition-opacity">
-              Открыть
-              <Icon name="ArrowRight" size={15} />
-            </span>
-          </div>
-        </Link>
-      </section>
-
-      {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
-      {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
-        <BestsellersBlock />
-      )}
-
-      {/* Search + Filters */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mt-6" aria-label="Поиск и фильтрация курсов">
-        {/* Search */}
-        <div className="relative mb-5">
-          <Icon name="Search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск по названию, теме или преподавателю..."
-            aria-label="Поиск курсов"
-            className="w-full bg-white/5 border border-white/12 rounded-2xl pl-12 pr-12 py-4 text-white placeholder:text-white/35 focus:outline-none focus:border-purple-500/50 focus:bg-white/8 transition-colors"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              aria-label="Очистить поиск"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/45 hover:text-white p-1.5 rounded-lg hover:bg-white/8 transition-colors"
-            >
-              <Icon name="X" size={16} aria-hidden="true" />
-            </button>
-          )}
-        </div>
-
-        {/* Subjects chips */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-white/40 text-[11px] uppercase tracking-wider font-semibold">Предмет</p>
-            {subject !== "all" && SUBJECTS_SEO.some((s) => s.subjectId === subject) && (
-              <Link
-                to={`/courses/${SUBJECTS_SEO.find((s) => s.subjectId === subject)?.slug}`}
-                className="inline-flex items-center gap-1 text-xs text-purple-300 hover:text-purple-200 font-medium transition-colors"
-              >
-                Открыть страницу предмета
-                <Icon name="ArrowUpRight" size={12} />
-              </Link>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECTS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSubject(s.id)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                  subject === s.id
-                    ? "bg-purple-500/25 border border-purple-500/45 text-white"
-                    : "bg-white/5 border border-white/10 text-white/65 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <span>{s.emoji}</span>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grades chips */}
-        <div className="mb-4">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider font-semibold mb-2">Класс</p>
-          <div className="flex flex-wrap gap-2">
-            {GRADES.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setGrade(g.id)}
-                className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                  grade === g.id
-                    ? "bg-cyan-500/25 border border-cyan-500/45 text-white"
-                    : "bg-white/5 border border-white/10 text-white/65 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Secondary filters row */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider font-semibold w-full mb-1">Особое</p>
-          {BADGES.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => setBadge(b.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                badge === b.id
-                  ? "bg-amber-500/20 border border-amber-500/40 text-amber-200"
-                  : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Icon name={b.icon} size={12} />
-              {b.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Results bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 py-4 border-t border-white/8 mb-6">
-          <p className="text-white/70 text-sm">
-            Найдено: <span className="font-bold text-white">{filtered.length}</span>{" "}
-            {filtered.length === 1 ? "курс" : filtered.length >= 2 && filtered.length <= 4 ? "курса" : "курсов"}
-            {activeFilters > 0 && (
-              <button
-                onClick={resetAll}
-                className="ml-3 inline-flex items-center gap-1.5 text-purple-300 hover:text-purple-200 text-xs font-medium underline-offset-2 hover:underline transition-colors"
-              >
-                <Icon name="X" size={12} />
-                Сбросить фильтры
-              </button>
-            )}
-          </p>
-          <div className="flex items-center gap-2">
-            <label className="text-white/45 text-xs">Формат:</label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
-            >
-              {FORMAT.map((f) => (
-                <option key={f.id} value={f.id} className="bg-background">{f.label}</option>
-              ))}
-            </select>
-            <label className="text-white/45 text-xs ml-2">Сортировка:</label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.id} value={o.id} className="bg-background">{o.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      {/* Grid */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16" aria-label="Результаты поиска курсов">
-        {!readyLoaded ? (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center" role="status">
-            <Icon name="Loader2" size={28} className="animate-spin text-purple-300 mx-auto mb-3" />
-            <p className="text-white/55 text-sm">Загружаем актуальный каталог...</p>
-          </div>
-        ) : readyIds.size === 0 ? (
-          <div className="rounded-3xl border border-amber-500/30 bg-amber-500/[0.05] p-12 text-center" role="status">
-            <div className="text-6xl mb-4" aria-hidden="true">🚀</div>
-            <h3 className="font-montserrat font-black text-xl text-white mb-2">Курсы готовятся к запуску</h3>
-            <p className="text-white/65 text-sm mb-5 max-w-md mx-auto">
-              Сейчас наши методисты собирают финальные программы. Подпишись на уведомления — пришлём, как только первые курсы выйдут.
-            </p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-12 text-center" role="status">
-            <div className="text-6xl mb-4" aria-hidden="true">🔍</div>
-            <h3 className="font-montserrat font-black text-xl text-white mb-2">Ничего не нашлось</h3>
-            <p className="text-white/55 text-sm mb-5 max-w-md mx-auto">
-              Попробуй другой поисковый запрос или сбрось фильтры.
-            </p>
-            <button
-              onClick={resetAll}
-              aria-label="Сбросить все фильтры"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity"
-            >
-              <Icon name="RefreshCw" size={14} aria-hidden="true" />
-              Сбросить фильтры
-            </button>
-          </div>
-        ) : (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 list-none p-0 m-0">
-            {filtered.map((c) => (
-              <li key={c.id}>
-                <CourseCardCompact course={c} />
-              </li>
-            ))}
-          </ul>
+        {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
+        {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
+          <BestsellersBlock />
         )}
-      </section>
 
-      {/* SEO-перелинковка: предметные лендинги */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16" aria-labelledby="subjects-heading">
-        <article className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider font-bold mb-2 text-center">Предметные подборки</p>
-          <h2 id="subjects-heading" className="font-montserrat font-black text-2xl md:text-3xl text-white text-center mb-2">
-            Курсы по предметам
-          </h2>
-          <p className="text-white/55 text-sm md:text-base text-center max-w-2xl mx-auto mb-8">
-            Подробные страницы по каждому предмету: программа, темы, FAQ, подготовка к ЕГЭ и ОГЭ.
-          </p>
-          <nav className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3" aria-label="Каталог предметов">
-            {SUBJECTS_SEO.map((s) => (
-              <Link
-                key={s.slug}
-                to={`/courses/${s.slug}`}
-                aria-label={`Открыть страницу предмета: ${s.name}`}
-                className="group relative bg-card border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 hover:translate-y-[-2px] transition-all"
-              >
-                <div className="relative aspect-square overflow-hidden">
-                  <img
-                    src={s.ogImage}
-                    alt={`${s.name} — курсы УЧИСЬПРО`}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" aria-hidden="true" />
-                  <div className={`absolute top-2 right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center text-lg shadow-lg`} aria-hidden="true">
-                    {s.emoji}
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <p className="font-montserrat font-black text-white text-sm leading-tight mb-0.5 drop-shadow-lg">{s.name}</p>
-                    <p className="text-white/70 text-[10px] font-medium">
-                      {COURSES.filter((c) => c.subject === s.subjectId).length} курсов
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </nav>
-        </article>
-      </section>
+        <CoursesFilters
+          query={query}
+          setQuery={setQuery}
+          subject={subject}
+          setSubject={setSubject}
+          grade={grade}
+          setGrade={setGrade}
+          format={format}
+          setFormat={setFormat}
+          badge={badge}
+          setBadge={setBadge}
+          sort={sort}
+          setSort={setSort}
+          filteredCount={filtered.length}
+          activeFilters={activeFilters}
+          resetAll={resetAll}
+        />
+
+        <CoursesGrid
+          readyLoaded={readyLoaded}
+          readyIds={readyIds}
+          filtered={filtered}
+          resetAll={resetAll}
+        />
       </main>
 
       <SiteFooter />
