@@ -78,6 +78,26 @@ export default function SiteFooter() {
           </nav>
         </div>
 
+        {/* Партнёр — банк Точка */}
+        <div className="pt-6 border-t border-white/8 flex flex-col items-center text-center gap-2 mb-4">
+          <p className="text-white/40 text-xs uppercase tracking-wider">Наш партнёр</p>
+          <img
+            src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/c1930ec7-56ab-47a8-8283-bd6d4823fc5d.jpg"
+            alt="Сертификат партнёра — банк Точка"
+            loading="lazy"
+            className="w-40 md:w-48 rounded-xl border border-white/10 opacity-90 hover:opacity-100 transition-opacity"
+          />
+          <a
+            href="https://partner.tochka.com?referer1=6312223437"
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="text-cyan-200/80 hover:text-cyan-100 text-xs transition-colors inline-flex items-center gap-1.5"
+          >
+            <Icon name="Landmark" size={12} aria-hidden="true" />
+            Открыть расчётный счёт в банке Точка
+          </a>
+        </div>
+
         {/* Bottom */}
         <div className="pt-6 border-t border-white/8 flex flex-col gap-4">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
