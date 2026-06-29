@@ -136,6 +136,37 @@ export default function RemoteProfessions() {
           })}
         </div>
 
+        {/* Хочешь работать на себя — курс по запуску бизнеса */}
+        {(() => {
+          const biz = COURSES.find((c) => c.id === 75);
+          if (!biz) return null;
+          return (
+            <Link
+              to={`/course-checkout/${biz.id}`}
+              className="block rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/12 to-fuchsia-500/8 hover:border-violet-400/40 transition-all p-5 sm:p-6 mb-4"
+            >
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${biz.color} flex items-center justify-center text-2xl flex-shrink-0`}>
+                  {biz.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 text-[11px] text-violet-200 font-bold uppercase tracking-wider mb-1">
+                    <Icon name="Rocket" size={12} /> Работать на себя
+                  </div>
+                  <h3 className="font-montserrat font-black text-white text-base leading-snug mb-1">{biz.title}</h3>
+                  <p className="text-white/55 text-xs leading-snug">ИП и налоги, расчётный счёт, касса, первые клиенты — пошагово, без бумажной волокиты.</p>
+                </div>
+                <div className="flex sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto justify-between flex-shrink-0">
+                  <div className="font-montserrat font-black text-xl text-white">{getCoursePriceLabel(biz)}</div>
+                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
+                    Открыть <Icon name="ChevronRight" size={14} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })()}
+
         {/* Партнёр — банк Точка: для тех, кто хочет работать на себя */}
         <TochkaBusinessBanner
           className="mb-12"
