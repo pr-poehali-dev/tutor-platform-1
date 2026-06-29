@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 
 export default function SiteFooter() {
   return (
@@ -88,7 +89,7 @@ export default function SiteFooter() {
             className="w-32 md:w-40 rounded-xl border border-white/10 shadow-lg opacity-90 hover:opacity-100 transition-opacity"
           />
           <a
-            href="https://partner.tochka.com?referer1=6312223437"
+            href={TOCHKA_PARTNER_URL}
             target="_blank"
             rel="noopener noreferrer sponsored"
             className="text-cyan-200/80 hover:text-cyan-100 text-xs transition-colors inline-flex items-center gap-1.5"

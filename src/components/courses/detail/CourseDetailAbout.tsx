@@ -14,7 +14,10 @@ interface Props {
 const BUSINESS_SUBJECTS = ["business", "marketing", "sales", "tenders", "ved", "product"];
 
 export default function CourseDetailAbout({ course, detail, examLabel }: Props) {
-  const showTochka = course.grade === "adult" && BUSINESS_SUBJECTS.includes(course.subject);
+  const isAdult = course.grade === "adult";
+  const showTochkaAccount = isAdult && BUSINESS_SUBJECTS.includes(course.subject);
+  // ИИ-курсы для взрослых — рекомендуем продукт «Точка 24 AI».
+  const showTochkaAI = isAdult && course.subject === "ai";
   return (
     <div className="animate-fade-in space-y-6">
       {/* Description */}
@@ -72,10 +75,19 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
       </div>
 
       {/* Рекомендация партнёра — банк Точка (только для бизнес-курсов взрослых) */}
-      {showTochka && (
+      {showTochkaAccount && (
         <TochkaBusinessBanner
           title="Применяй знания на практике — открой бизнес с Точкой"
           text="Освоив курс, легально запусти своё дело: регистрация ИП или ООО без визита в налоговую и расчётный счёт для бизнеса — бесплатно у нашего партнёра, банка Точка."
+        />
+      )}
+
+      {/* Рекомендация партнёра — Точка 24 AI (для ИИ-курсов взрослых) */}
+      {showTochkaAI && (
+        <TochkaBusinessBanner
+          variant="ai"
+          title="Применяй ИИ в работе — попробуй Точка 24 AI"
+          text="Точка 24 AI — встроенный в банк ИИ-ассистент для предпринимателей: помогает с финансами, документами и рутиной 24/7. Отличная практика навыков из курса в реальном деле. Продукт нашего партнёра, банка Точка."
         />
       )}
 

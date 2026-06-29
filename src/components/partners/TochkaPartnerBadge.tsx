@@ -1,6 +1,5 @@
 import Icon from "@/components/ui/icon";
-
-const TOCHKA_PARTNER_URL = "https://partner.tochka.com?referer1=6312223437";
+import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 
 interface Props {
   className?: string;
