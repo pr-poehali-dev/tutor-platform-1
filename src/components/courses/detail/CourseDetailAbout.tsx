@@ -2,6 +2,7 @@ import Icon from "@/components/ui/icon";
 import { Course, getAgeRating, getCourseDisclaimers } from "@/components/courses/coursesData";
 import { CourseDetail } from "@/components/courses/courseDetailsData";
 import CourseDetailValue from "./CourseDetailValue";
+import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 
 interface Props {
   course: Course;
@@ -9,7 +10,11 @@ interface Props {
   examLabel: string | null;
 }
 
+// Бизнес-курсы для взрослых, где уместна рекомендация открыть счёт/бизнес в Точке.
+const BUSINESS_SUBJECTS = ["business", "marketing", "sales", "tenders", "ved", "product"];
+
 export default function CourseDetailAbout({ course, detail, examLabel }: Props) {
+  const showTochka = course.grade === "adult" && BUSINESS_SUBJECTS.includes(course.subject);
   return (
     <div className="animate-fade-in space-y-6">
       {/* Description */}
@@ -65,6 +70,14 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
           ))}
         </div>
       </div>
+
+      {/* Рекомендация партнёра — банк Точка (только для бизнес-курсов взрослых) */}
+      {showTochka && (
+        <TochkaBusinessBanner
+          title="Применяй знания на практике — открой бизнес с Точкой"
+          text="Освоив курс, легально запусти своё дело: регистрация ИП или ООО без визита в налоговую и расчётный счёт для бизнеса — бесплатно у нашего партнёра, банка Точка."
+        />
+      )}
 
       {/* Ценность курса: как устроено обучение, что входит, частые вопросы */}
       <CourseDetailValue course={course} />

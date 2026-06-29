@@ -11,6 +11,7 @@ import CasesBlock from "@/components/intensive/CasesBlock";
 import PricingBlock from "@/components/intensive/PricingBlock";
 import AccessBanner from "@/components/intensive/AccessBanner";
 import ConnectionCalculator from "@/components/intensive/ConnectionCalculator";
+import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 import FaqBlock from "@/components/intensive/FaqBlock";
 import Reveal from "@/components/intensive/Reveal";
 import { INTENSIVE_META, LESSONS, PROGRAM, PROJECT, PRICING, FAQ } from "@/components/intensive/data";
@@ -147,6 +148,16 @@ export default function Intensive() {
         <section id="calculator" className="mb-14">
           <Reveal>
             <ConnectionCalculator onStart={scrollToPricing} />
+          </Reveal>
+        </section>
+
+        {/* ПАРТНЁР — БАНК ТОЧКА: расчётный счёт для автоматизированного бизнеса */}
+        <section className="mb-14">
+          <Reveal>
+            <TochkaBusinessBanner
+              title="Автоматизировал процессы — наведи порядок и в финансах"
+              text="Расчётный счёт для бизнеса и регистрация ИП или ООО без визита в налоговую — бесплатно у нашего партнёра, банка Точка. Удобный банк для предпринимателей, которые ценят своё время."
+            />
           </Reveal>
         </section>
 

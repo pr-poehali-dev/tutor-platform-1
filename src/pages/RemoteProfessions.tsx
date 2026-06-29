@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
+import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 import { COURSES, getCoursePrice, getCoursePriceLabel } from "@/components/courses/coursesData";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
@@ -134,6 +135,13 @@ export default function RemoteProfessions() {
             );
           })}
         </div>
+
+        {/* Партнёр — банк Точка: для тех, кто хочет работать на себя */}
+        <TochkaBusinessBanner
+          className="mb-12"
+          title="Хочешь работать на себя? Начни с Точкой"
+          text="Освоив новую профессию, легко перейти на фриланс или открыть своё дело. Регистрация ИП и расчётный счёт — бесплатно у нашего партнёра, банка Точка."
+        />
 
         {/* Почему наши курсы */}
         <div className="grid sm:grid-cols-3 gap-3 mb-12">
