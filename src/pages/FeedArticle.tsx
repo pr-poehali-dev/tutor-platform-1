@@ -130,6 +130,12 @@ export default function FeedArticlePage() {
   const paragraphs = fullText.split(/\n+/).filter(Boolean);
   const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
 
+  // Обложка-документ (вертикальный сертификат) — показываем целиком, без обрезки 16:9.
+  const isDocCover =
+    !!article.cover_url &&
+    (/sertifikat|certificate|partnyorskie|partner/i.test(article.slug) ||
+      (article.tags || []).some((t) => /сертификат|партнёрств|партнерств/i.test(t)));
+
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -270,9 +276,31 @@ export default function FeedArticlePage() {
 
         {/* Обложка */}
         {article.cover_url && (
-          <div className="aspect-[16/9] rounded-3xl overflow-hidden mb-6 border border-white/10">
-            <img src={article.cover_url} alt={article.title} loading="eager" className="w-full h-full object-cover" />
-          </div>
+          isDocCover ? (
+            // Вертикальный документ (сертификат): показываем целиком, без обрезки
+            <a
+              href={article.cover_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Открыть сертификат в полном размере"
+              className="group block rounded-3xl overflow-hidden mb-6 border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 md:p-6"
+            >
+              <img
+                src={article.cover_url}
+                alt={article.title}
+                loading="eager"
+                className="mx-auto w-auto max-w-full max-h-[80vh] rounded-xl shadow-2xl shadow-black/40 group-hover:scale-[1.01] transition-transform"
+              />
+              <span className="mt-3 flex items-center justify-center gap-1.5 text-white/55 group-hover:text-white/80 text-xs transition-colors">
+                <Icon name="ZoomIn" size={13} />
+                Нажмите, чтобы открыть сертификат в полном размере
+              </span>
+            </a>
+          ) : (
+            <div className="aspect-[16/9] rounded-3xl overflow-hidden mb-6 border border-white/10">
+              <img src={article.cover_url} alt={article.title} loading="eager" className="w-full h-full object-cover" />
+            </div>
+          )
         )}
 
         {/* Лид */}
