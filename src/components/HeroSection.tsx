@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
@@ -18,6 +19,7 @@ const TRUST_POINTS = [
 const AVATAR_COLORS = ["#a855f7", "#06b6d4", "#f59e0b", "#ec4899", "#10b981"];
 
 export default function HeroSection() {
+  const [certOpen, setCertOpen] = useState(false);
   return (
     <section
       id="hero"
@@ -116,13 +118,12 @@ export default function HeroSection() {
             </div>
 
             {/* Сертификат партнёра — знак доверия от банка Точка */}
-            <a
-              href={TOCHKA_PARTNER_URL}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              aria-label="Сертификат партнёра банка Точка — открыть расчётный счёт"
+            <button
+              type="button"
+              onClick={() => setCertOpen(true)}
+              aria-label="Открыть сертификат партнёра банка Точка"
               title="УЧИСЬПРО — партнёр банка Точка"
-              className="group absolute -bottom-4 -right-3 sm:-right-4 w-24 sm:w-28 lg:w-32 rotate-[-5deg] hover:rotate-0 transition-transform duration-300"
+              className="group absolute -bottom-4 -right-3 sm:-right-4 w-24 sm:w-28 lg:w-32 rotate-[-5deg] hover:rotate-0 transition-transform duration-300 cursor-zoom-in"
             >
               <img
                 src={TOCHKA_CERT_IMG}
@@ -135,9 +136,9 @@ export default function HeroSection() {
                 Партнёр банка Точка
               </span>
 
-              {/* Крупное превью сертификата при наведении */}
+              {/* Крупное превью сертификата при наведении (десктоп) */}
               <span
-                className="pointer-events-none absolute bottom-0 right-0 z-30 w-[78vw] max-w-md origin-bottom-right rotate-[5deg] scale-90 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:rotate-0"
+                className="hidden sm:block pointer-events-none absolute bottom-0 right-0 z-30 w-[78vw] max-w-md origin-bottom-right rotate-[5deg] scale-90 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:rotate-0"
                 aria-hidden="true"
               >
                 <img
@@ -146,7 +147,7 @@ export default function HeroSection() {
                   className="w-full rounded-2xl border border-white/25 shadow-2xl shadow-purple-900/50 ring-1 ring-black/20"
                 />
               </span>
-            </a>
+            </button>
           </div>
         </div>
 
@@ -186,6 +187,42 @@ export default function HeroSection() {
       {/* Фоновые блики */}
       <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+
+      {/* Полноэкранный просмотр сертификата (для мобильных) */}
+      {certOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Сертификат партнёра банка Точка"
+          onClick={() => setCertOpen(false)}
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-black/85 backdrop-blur-sm p-4 animate-fade-in"
+        >
+          <button
+            type="button"
+            onClick={() => setCertOpen(false)}
+            aria-label="Закрыть"
+            className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <Icon name="X" size={22} />
+          </button>
+          <img
+            src={TOCHKA_CERT_IMG}
+            alt="Сертификат партнёра — УЧИСЬПРО является партнёром и другом банка Точка"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-[75vh] w-auto rounded-2xl border border-white/20 shadow-2xl"
+          />
+          <a
+            href={TOCHKA_PARTNER_URL}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-2 bg-[#7c4dff] hover:bg-[#6a3df0] text-white text-sm font-bold px-6 py-3 rounded-2xl transition-colors"
+          >
+            <Icon name="Landmark" size={16} aria-hidden="true" />
+            Открыть счёт в банке Точка
+          </a>
+        </div>
+      )}
     </section>
   );
 }
