@@ -25,6 +25,15 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
       ? "ИИ-куратор"
       : "Редакция";
 
+  // Обложка-документ (вертикальный сертификат): вписываем целиком, не обрезаем.
+  const isDocCover =
+    !!article.cover_url &&
+    (/sertifikat|certificate|partnyorskie|partner/i.test(article.slug) ||
+      (article.tags || []).some((t) => /сертификат|партнёрств|партнерств/i.test(t)));
+  const coverFit = isDocCover
+    ? "object-contain bg-[#7c4dff]/15"
+    : "object-cover group-hover:scale-105";
+
   // Флаг страны источника (для зарубежных статей с переводом)
   const countryFlag = !article.source_country || article.source_country === "Россия"
     ? ""
@@ -50,7 +59,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
                 src={article.cover_url}
                 alt=""
                 loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`w-full h-full transition-transform duration-500 ${coverFit}`}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl opacity-30">
@@ -120,7 +129,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
       >
         <div className="w-16 h-16 rounded-xl bg-white/[0.04] overflow-hidden flex-shrink-0">
           {article.cover_url ? (
-            <img src={article.cover_url} alt="" loading="lazy" className="w-full h-full object-cover" />
+            <img src={article.cover_url} alt="" loading="lazy" className={`w-full h-full ${isDocCover ? "object-contain bg-[#7c4dff]/15" : "object-cover"}`} />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-2xl opacity-50">{CATEGORY_META[article.category].emoji}</div>
           )}
@@ -151,7 +160,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
             src={article.cover_url}
             alt=""
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full transition-transform duration-500 ${coverFit}`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl opacity-30">
