@@ -130,6 +130,10 @@ export default function HeroSection() {
                 loading="lazy"
                 className="w-full rounded-xl border border-white/20 shadow-xl shadow-purple-900/30"
               />
+              <span className="mt-1.5 flex items-center justify-center gap-1 whitespace-nowrap text-[10px] font-semibold text-white/70 group-hover:text-white transition-colors">
+                <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#7c4dff] text-white text-[8px] font-black leading-none" aria-hidden="true">т</span>
+                Партнёр банка Точка
+              </span>
             </a>
           </div>
         </div>
