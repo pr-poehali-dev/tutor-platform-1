@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
+import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 
 const HERO_IMAGE =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
+
+const TOCHKA_CERT_IMG =
+  "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/27eb9e3b-2e0c-484b-9b80-4a129f46befa.png";
 
 const TRUST_POINTS = [
   { icon: "Zap", text: "Первый урок — за 30 секунд" },
@@ -110,6 +114,23 @@ export default function HeroSection() {
                 className="w-full aspect-square object-cover"
               />
             </div>
+
+            {/* Сертификат партнёра — знак доверия от банка Точка */}
+            <a
+              href={TOCHKA_PARTNER_URL}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              aria-label="Сертификат партнёра банка Точка — открыть расчётный счёт"
+              title="УЧИСЬПРО — партнёр банка Точка"
+              className="group absolute -bottom-4 -right-3 sm:-right-4 w-24 sm:w-28 lg:w-32 rotate-[-5deg] hover:rotate-0 transition-transform duration-300"
+            >
+              <img
+                src={TOCHKA_CERT_IMG}
+                alt="Сертификат партнёра — УЧИСЬПРО является партнёром и другом банка Точка"
+                loading="lazy"
+                className="w-full rounded-xl border border-white/20 shadow-xl shadow-purple-900/30"
+              />
+            </a>
           </div>
         </div>
 

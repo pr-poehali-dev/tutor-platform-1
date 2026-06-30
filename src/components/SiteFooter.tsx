@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 
 export default function SiteFooter() {
   return (
@@ -77,26 +76,6 @@ export default function SiteFooter() {
               <p className="text-white/70 flex items-center gap-1.5"><Icon name="Lock" size={12} className="text-cyan-400" aria-hidden="true" /> Шифрование HTTPS</p>
             </div>
           </nav>
-        </div>
-
-        {/* Партнёр — банк Точка */}
-        <div className="pt-6 border-t border-white/8 flex flex-col items-center text-center gap-2 mb-4">
-          <p className="text-white/40 text-xs uppercase tracking-wider">Наш партнёр</p>
-          <img
-            src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/27eb9e3b-2e0c-484b-9b80-4a129f46befa.png"
-            alt="Сертификат партнёра — УЧИСЬПРО.РФ является партнёром и другом банка Точка"
-            loading="lazy"
-            className="w-32 md:w-40 rounded-xl border border-white/10 shadow-lg opacity-90 hover:opacity-100 transition-opacity"
-          />
-          <a
-            href={TOCHKA_PARTNER_URL}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            className="text-cyan-200/80 hover:text-cyan-100 text-xs transition-colors inline-flex items-center gap-1.5"
-          >
-            <Icon name="Landmark" size={12} aria-hidden="true" />
-            Открыть расчётный счёт в банке Точка
-          </a>
         </div>
 
         {/* Bottom */}
