@@ -117,23 +117,23 @@ export default function HeroSection() {
               />
             </div>
 
-            {/* Сертификат партнёра — знак доверия от банка Точка */}
+            {/* Сертификат партнёра — знак доверия от Точка Банк */}
             <button
               type="button"
               onClick={() => setCertOpen(true)}
-              aria-label="Открыть сертификат партнёра банка Точка"
-              title="УЧИСЬПРО — партнёр банка Точка"
+              aria-label="Открыть сертификат партнёра Точка Банк"
+              title="УЧИСЬПРО — партнёр Точка Банк"
               className="group absolute -bottom-4 -right-3 sm:-right-4 w-24 sm:w-28 lg:w-32 rotate-[-5deg] hover:rotate-0 transition-transform duration-300 cursor-zoom-in"
             >
               <img
                 src={TOCHKA_CERT_IMG}
-                alt="Сертификат партнёра — УЧИСЬПРО является партнёром и другом банка Точка"
+                alt="Сертификат партнёра — УЧИСЬПРО является партнёром и другом Точка Банк"
                 loading="lazy"
                 className="w-full rounded-xl border border-white/20 shadow-xl shadow-purple-900/30"
               />
               <span className="mt-1.5 flex items-center justify-center gap-1 whitespace-nowrap text-[10px] font-semibold text-white/70 group-hover:text-white transition-colors">
                 <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#7c4dff] text-white text-[8px] font-black leading-none" aria-hidden="true">т</span>
-                Партнёр банка Точка
+                Партнёр Точка Банк
               </span>
 
               {/* Крупное превью сертификата при наведении (десктоп) */}
