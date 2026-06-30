@@ -1,7 +1,7 @@
 {
   "name": "УЧИСЬПРО — ИИ-репетитор онлайн 24/7",
   "short_name": "УЧИСЬПРО",
-  "description": "Образовательная платформа с персональным ИИ-репетитором. Курсы, подготовка к ЕГЭ и ОГЭ, профориентация, лента научных новостей.",
+  "description": "Образовательная платформа с персональным ИИ-репетитором. Подготовка к ЕГЭ и ОГЭ, профориентация, курсы для взрослых по нейросетям, бизнесу и удалённым профессиям, лента научных новостей.",
   "start_url": "/?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -19,19 +19,19 @@
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/565c75c2-6b6a-4efd-99f6-86ab094c6cb4.jpg",
+      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/565c75c2-6b6a-4efd-99f6-86ab094c6cb4.jpg",
+      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/565c75c2-6b6a-4efd-99f6-86ab094c6cb4.jpg",
+      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "maskable"
