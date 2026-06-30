@@ -134,6 +134,18 @@ export default function HeroSection() {
                 <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#7c4dff] text-white text-[8px] font-black leading-none" aria-hidden="true">т</span>
                 Партнёр банка Точка
               </span>
+
+              {/* Крупное превью сертификата при наведении */}
+              <span
+                className="pointer-events-none absolute bottom-0 right-0 z-30 w-[78vw] max-w-md origin-bottom-right rotate-[5deg] scale-90 opacity-0 invisible translate-y-2 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 group-hover:rotate-0"
+                aria-hidden="true"
+              >
+                <img
+                  src={TOCHKA_CERT_IMG}
+                  alt=""
+                  className="w-full rounded-2xl border border-white/25 shadow-2xl shadow-purple-900/50 ring-1 ring-black/20"
+                />
+              </span>
             </a>
           </div>
         </div>
