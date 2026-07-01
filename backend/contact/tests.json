@@ -5,6 +5,9 @@
     {"name": "feedback empty name", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"","message":"test","contact_email":"a@b.ru"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "feedback no contacts", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"Алексей","message":"Хочу узнать тарифы подробнее, помогите пожалуйста."}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "feedback valid", "method": "POST", "path": "/?action=feedback_submit", "body": {"contact_name":"Алексей","contact_email":"test@example.com","subject":"general","message":"Хочу узнать тарифы подробнее, помогите пожалуйста."}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
+    {"name": "partner_lead empty name", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"","contact_email":"school@example.com"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "partner_lead no contacts", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"Мария","company":"Школа Успех"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "partner_lead valid", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"Мария","contact_email":"school@example.com","company":"Школа Успех","audience_type":"school","topic":"Английский для детей","students_est":"100-500","plan_interest":"pro","message":"Хотим перенести школу на вашу платформу."}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
     {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }

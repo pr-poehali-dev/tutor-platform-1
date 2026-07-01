@@ -7,6 +7,9 @@ POST /?action=review_submit  X-Auth-Token    body: {author_name, author_role, ra
 
 FEEDBACK:
 POST /?action=feedback_submit                body: {contact_name, contact_email|phone, subject, message}
+
+B2B КОНСТРУКТОР ШКОЛ:
+POST /?action=partner_lead                   body: {contact_name, contact_email|phone, company, audience_type, topic, students_est, plan_interest, message, utm}
 """
 import json
 import os
@@ -162,8 +165,59 @@ def handle_feedback_submit(token: str, body: dict, source_ip: str) -> dict:
         conn.close()
 
 
+ALLOWED_AUDIENCE = {'author', 'school', 'business', 'edu'}
+ALLOWED_PLAN = {'start', 'pro', 'scale'}
+
+
+def handle_partner_lead(token: str, body: dict) -> dict:
+    name = (body.get('contact_name') or '').strip()[:160]
+    email = (body.get('contact_email') or '').strip().lower()[:200]
+    phone = (body.get('contact_phone') or '').strip()[:40]
+    company = (body.get('company') or '').strip()[:200]
+    audience = (body.get('audience_type') or '').strip()
+    topic = (body.get('topic') or '').strip()[:500]
+    students = (body.get('students_est') or '').strip()[:40]
+    plan = (body.get('plan_interest') or '').strip()
+    message = (body.get('message') or '').strip()[:5000]
+    utm = body.get('utm') if isinstance(body.get('utm'), dict) else None
+
+    if not name or len(name) < 2:
+        return err('Укажите имя', 400)
+    if email and not EMAIL_RE.match(email):
+        return err('Email указан некорректно', 400)
+    if phone and not PHONE_RE.match(phone):
+        return err('Телефон указан некорректно', 400)
+    if not email and not phone:
+        return err('Оставьте email или телефон для связи', 400)
+    if audience and audience not in ALLOWED_AUDIENCE:
+        audience = None
+    if plan and plan not in ALLOWED_PLAN:
+        plan = None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO partner_leads "
+                "(contact_name, contact_email, contact_phone, company, audience_type, "
+                "topic, students_est, plan_interest, message, utm) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                (name, email or None, phone or None, company or None, audience or None,
+                 topic or None, students or None, plan or None, message or None,
+                 json.dumps(utm, ensure_ascii=False) if utm else None)
+            )
+            lid = cur.fetchone()[0]
+            conn.commit()
+            return ok({
+                'ok': True, 'id': lid,
+                'message': 'Спасибо! Мы свяжемся с вами в течение рабочего дня и покажем платформу.',
+            })
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
-    """Отзывы и обратная связь."""
+    """Отзывы, обратная связь и B2B-заявки на конструктор онлайн-школ."""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': cors(), 'body': ''}
@@ -184,5 +238,7 @@ def handler(event: dict, context) -> dict:
         return handle_review_submit(token, body)
     if action == 'feedback_submit' and method == 'POST':
         return handle_feedback_submit(token, body, ip)
+    if action == 'partner_lead' and method == 'POST':
+        return handle_partner_lead(token, body)
 
     return err('Неизвестное действие', 404)

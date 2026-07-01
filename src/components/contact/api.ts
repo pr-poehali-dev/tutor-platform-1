@@ -76,3 +76,34 @@ export async function submitFeedback(payload: FeedbackPayload): Promise<{ ok: bo
     return { ok: false, message: "Сеть недоступна" };
   }
 }
+
+export interface PartnerLeadPayload {
+  contact_name: string;
+  contact_email?: string;
+  contact_phone?: string;
+  company?: string;
+  audience_type?: "author" | "school" | "business" | "edu";
+  topic?: string;
+  students_est?: string;
+  plan_interest?: "start" | "pro" | "scale";
+  message?: string;
+  utm?: Record<string, string>;
+}
+
+export async function submitPartnerLead(payload: PartnerLeadPayload): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const t = token();
+    if (t) headers["X-Auth-Token"] = t;
+    const res = await fetch(`${URL}?action=partner_lead`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true, message: data.message };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
