@@ -57,10 +57,88 @@ def cors() -> dict:
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token, X-Admin-Pin',
         'Access-Control-Max-Age': '86400',
         'Content-Type': 'application/json',
     }
+
+
+def check_admin(headers: dict) -> bool:
+    pin_env = os.environ.get('ADMIN_PIN', '')
+    if not pin_env:
+        return False
+    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
+    return pin == pin_env
+
+
+LEAD_STATUSES = {'new', 'in_progress', 'won', 'lost'}
+
+
+def handle_leads_list() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, contact_name, contact_email, contact_phone, company, "
+                "audience_type, topic, students_est, plan_interest, message, source, "
+                "status, note, created_at, updated_at "
+                "FROM partner_leads ORDER BY created_at DESC LIMIT 500"
+            )
+            rows = cur.fetchall()
+            items = [{
+                'id': r[0], 'contact_name': r[1], 'contact_email': r[2],
+                'contact_phone': r[3], 'company': r[4], 'audience_type': r[5],
+                'topic': r[6], 'students_est': r[7], 'plan_interest': r[8],
+                'message': r[9], 'source': r[10], 'status': r[11], 'note': r[12],
+                'created_at': r[13].isoformat() if r[13] else None,
+                'updated_at': r[14].isoformat() if r[14] else None,
+            } for r in rows]
+            counts = {s: 0 for s in LEAD_STATUSES}
+            for it in items:
+                counts[it['status']] = counts.get(it['status'], 0) + 1
+            return ok({'items': items, 'total': len(items), 'counts': counts})
+    finally:
+        conn.close()
+
+
+def handle_lead_update(body: dict) -> dict:
+    try:
+        lead_id = int(body.get('id'))
+    except (TypeError, ValueError):
+        return err('Некорректный id', 400)
+    status = (body.get('status') or '').strip()
+    note = body.get('note')
+    if status and status not in LEAD_STATUSES:
+        return err('Недопустимый статус', 400)
+    if note is not None:
+        note = str(note).strip()[:2000] or None
+
+    sets, args = [], []
+    if status:
+        sets.append('status=%s')
+        args.append(status)
+    if 'note' in body:
+        sets.append('note=%s')
+        args.append(note)
+    if not sets:
+        return err('Нечего обновлять', 400)
+    sets.append('updated_at=now()')
+    args.append(lead_id)
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE partner_leads SET " + ', '.join(sets) + " WHERE id=%s",
+                tuple(args)
+            )
+            if cur.rowcount == 0:
+                conn.rollback()
+                return err('Заявка не найдена', 404)
+            conn.commit()
+            return ok({'ok': True, 'id': lead_id})
+    finally:
+        conn.close()
 
 
 def ok(d: dict, s: int = 200) -> dict:
@@ -301,5 +379,13 @@ def handler(event: dict, context) -> dict:
         return handle_feedback_submit(token, body, ip)
     if action == 'partner_lead' and method == 'POST':
         return handle_partner_lead(token, body)
+
+    if action in ('leads_list', 'lead_update'):
+        if not check_admin(headers):
+            return err('Доступ запрещён', 403)
+        if action == 'leads_list':
+            return handle_leads_list()
+        if action == 'lead_update' and method == 'POST':
+            return handle_lead_update(body)
 
     return err('Неизвестное действие', 404)

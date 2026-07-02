@@ -91,6 +91,7 @@ const Olympiad = lazy(() => import("./pages/Olympiad"));
 const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
+const Leads = lazy(() => import("./pages/admin/Leads"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
@@ -206,6 +207,7 @@ const App = () => (
                     <Route path="/olympiad" element={<Olympiad />} />
                     <Route path="/admin" element={<AdminHub />} />
                     <Route path="/admin/sales" element={<SalesDashboard />} />
+                    <Route path="/admin/leads" element={<Leads />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />
                     <Route path="/app" element={<AppDownload />} />

@@ -8,6 +8,8 @@
     {"name": "partner_lead empty name", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"","contact_email":"school@example.com"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "partner_lead no contacts", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"Мария","company":"Школа Успех"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "partner_lead valid", "method": "POST", "path": "/?action=partner_lead", "body": {"contact_name":"Мария","contact_email":"school@example.com","company":"Школа Успех","audience_type":"school","topic":"Английский для детей","students_est":"100-500","plan_interest":"pro","message":"Хотим перенести школу на вашу платформу."}, "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
+    {"name": "leads_list without pin", "method": "GET", "path": "/?action=leads_list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "lead_update without pin", "method": "POST", "path": "/?action=lead_update", "body": {"id":1,"status":"won"}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }
