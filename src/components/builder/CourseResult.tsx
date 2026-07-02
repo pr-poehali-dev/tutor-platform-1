@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import type { BuilderCourse, GenerateResult } from "./api";
 import { printCoursePdf } from "@/lib/coursePdf";
+import { useAuth } from "@/context/AuthContext";
+import { saveCourseToSchool } from "@/components/school/api";
 
 const LESSON_TYPE: Record<string, { label: string; color: string; icon: string }> = {
   theory: { label: "Теория", color: "text-sky-300 bg-sky-500/15", icon: "BookOpen" },
@@ -23,6 +26,30 @@ interface Props {
 export default function CourseResult({ result, onRestart, onLead }: Props) {
   const c: BuilderCourse = result.course;
   const [openModule, setOpenModule] = useState<number>(0);
+  const { isAuthenticated, openLogin } = useAuth();
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const saveToSchool = async () => {
+    if (saving || saved) return;
+    if (!isAuthenticated) {
+      try {
+        sessionStorage.setItem("pending_school_course", JSON.stringify({ course: c, builderId: result.id }));
+      } catch {
+        /* ignore */
+      }
+      openLogin();
+      return;
+    }
+    setSaving(true);
+    const res = await saveCourseToSchool(c, result.id);
+    setSaving(false);
+    if (res.ok) {
+      setSaved(true);
+      setTimeout(() => navigate("/school"), 900);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -222,16 +249,24 @@ export default function CourseResult({ result, onRestart, onLead }: Props) {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
-            onClick={onLead}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform"
+            onClick={saveToSchool}
+            disabled={saving || saved}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform disabled:opacity-70"
           >
-            <Icon name="Rocket" size={18} /> Запустить мою школу
+            <Icon name={saved ? "Check" : saving ? "Loader2" : "FolderPlus"} size={18} className={saving ? "animate-spin" : ""} />
+            {saved ? "Сохранено! Открываю школу…" : saving ? "Сохраняю…" : "Сохранить в мою школу"}
+          </button>
+          <button
+            onClick={onLead}
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white border border-white/15 px-5 py-3 rounded-xl transition-colors"
+          >
+            <Icon name="Rocket" size={16} /> Запустить целиком
           </button>
           <button
             onClick={onRestart}
             className="inline-flex items-center gap-2 text-white/70 hover:text-white border border-white/15 px-5 py-3 rounded-xl transition-colors"
           >
-            <Icon name="RotateCcw" size={16} /> Собрать другой курс
+            <Icon name="RotateCcw" size={16} /> Другой курс
           </button>
         </div>
       </div>

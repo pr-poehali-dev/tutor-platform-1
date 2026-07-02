@@ -88,9 +88,14 @@ export default function SchoolBuilder() {
             <span className="font-montserrat font-black text-base gradient-text-purple">УЧИСЬПРО</span>
             <span className="hidden sm:inline text-[11px] text-white/45 border border-white/15 rounded-lg px-2 py-0.5">конструктор</span>
           </Link>
-          <Link to="/for-business" className="text-sm text-white/65 hover:text-white transition-colors inline-flex items-center gap-1.5">
-            <Icon name="Building2" size={15} /> Для бизнеса
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/school" className="text-sm text-white/65 hover:text-white transition-colors inline-flex items-center gap-1.5">
+              <Icon name="School" size={15} /> Моя школа
+            </Link>
+            <Link to="/for-business" className="hidden sm:inline-flex text-sm text-white/65 hover:text-white transition-colors items-center gap-1.5">
+              <Icon name="Building2" size={15} /> Для бизнеса
+            </Link>
+          </div>
         </div>
       </div>
 
