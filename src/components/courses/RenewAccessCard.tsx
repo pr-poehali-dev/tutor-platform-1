@@ -12,7 +12,7 @@ interface PeriodOption {
   note?: string;
 }
 
-const PRO_MONTHLY = 1290;
+const PRO_MONTHLY = 5990;
 
 const OPTIONS: PeriodOption[] = [
   { id: "month", label: "На месяц", monthly: PRO_MONTHLY },

@@ -20,7 +20,7 @@ const TOOLS = [
   },
   {
     label: "Подбор тарифа",
-    description: "От 590 ₽ в месяц",
+    description: "От 3999 ₽ в месяц",
     icon: "Sparkles",
     to: "/pricing",
     accent: "from-amber-500/25 to-rose-500/15",

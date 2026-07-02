@@ -23,7 +23,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
   base: {
     id: "base",
     name: "Базовый",
-    price: 590,
+    price: 3999,
     period: "месяц",
     description: "Все курсы + ИИ-методист",
     features: ["Все 36+ курсов", "200 сообщений ИИ в день", "Голосовые ответы", "Полная аналитика"],
@@ -32,7 +32,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
   pro: {
     id: "pro",
     name: "Профи",
-    price: 1290,
+    price: 5990,
     period: "месяц",
     description: "Полная подготовка к ЕГЭ и ОГЭ",
     features: ["Всё из «Базового»", "Безлимитные сообщения ИИ", "Подготовка к ЕГЭ/ОГЭ", "Разбор сочинений", "Пробные экзамены"],
@@ -41,7 +41,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
   family: {
     id: "family",
     name: "Семейный",
-    price: 1990,
+    price: 9990,
     period: "месяц",
     description: "До 3 учеников на одной подписке",
     features: ["Всё из «Профи»", "До 3 учеников", "Отдельный прогресс", "Родительский кабинет"],

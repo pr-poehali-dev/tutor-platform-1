@@ -78,9 +78,9 @@ COURSE_ID_PRICE_KOPECKS = {
 # Тарифы подписки (server-side, нельзя подделать с клиента).
 # Годовая цена = 12 мес со скидкой 40% (платишь как за ~7 месяцев).
 SUBSCRIPTION_PLANS = {
-    "base":   {"name": "Базовый",  "price_kopecks":  59000, "period_days": 30},
-    "pro":    {"name": "Профи",    "price_kopecks": 129000, "period_days": 30},
-    "family": {"name": "Семейный", "price_kopecks": 199000, "period_days": 30},
+    "base":   {"name": "Базовый",  "price_kopecks": 399900, "period_days": 30},
+    "pro":    {"name": "Профи",    "price_kopecks": 599000, "period_days": 30},
+    "family": {"name": "Семейный", "price_kopecks": 999000, "period_days": 30},
     # Абонемент «Малыш»: 399 ₽/мес. Первый платёж по акции — 1 ₽ за 3 месяца.
     "kids":   {"name": "Малыш",    "price_kopecks":  39900, "period_days": 30},
 }

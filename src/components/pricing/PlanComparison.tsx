@@ -19,7 +19,7 @@ const ROWS: Row[] = [
   { feature: "Приоритетная скорость ответов", trial: false, base: false, pro: true, family: true },
   { feature: "Число учеников", trial: "1", base: "1", pro: "1", family: "до 3" },
   { feature: "Родительский кабинет с отчётами", trial: false, base: false, pro: false, family: true },
-  { feature: "Цена в месяц", trial: "0 ₽", base: "590 ₽", pro: "1290 ₽", family: "1990 ₽" },
+  { feature: "Цена в месяц", trial: "0 ₽", base: "3999 ₽", pro: "5990 ₽", family: "9990 ₽" },
 ];
 
 const COLS = [

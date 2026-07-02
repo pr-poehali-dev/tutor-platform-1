@@ -33,8 +33,7 @@ const PLANS = [
   {
     id: "base",
     name: "Базовый",
-    price: 590,
-    oldPrice: 990,
+    price: 3999,
     period: "в месяц",
     badge: "Старт",
     color: "from-cyan-500/15 to-blue-500/10",
@@ -53,8 +52,7 @@ const PLANS = [
   {
     id: "pro",
     name: "Профи",
-    price: 1290,
-    oldPrice: 1990,
+    price: 5990,
     period: "в месяц",
     badge: "Рекомендуем",
     color: "from-purple-500/20 to-pink-500/15",
@@ -74,8 +72,7 @@ const PLANS = [
   {
     id: "family",
     name: "Семейный",
-    price: 1990,
-    oldPrice: 2990,
+    price: 9990,
     period: "в месяц",
     badge: "До 3 учеников",
     color: "from-green-500/15 to-emerald-500/10",
@@ -183,7 +180,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Тарифы и цены УЧИСЬПРО — подписка на ИИ-репетитора"
-        description="Тарифные планы УЧИСЬПРО: пробный период 7 дней бесплатно, Базовый от 590 ₽/мес, Профи с подготовкой к ЕГЭ и ОГЭ. Оплата российскими картами и через СБП. Возврат по 7-дневному правилу. Подробности на учисьпро.рф/pricing."
+        description="Тарифные планы УЧИСЬПРО: пробный период 7 дней бесплатно, Базовый от 3999 ₽/мес, Профи с подготовкой к ЕГЭ и ОГЭ. Оплата российскими картами и через СБП. Возврат по 7-дневному правилу. Подробности на учисьпро.рф/pricing."
         canonical="https://xn--h1agdcde2c.xn--p1ai/pricing"
         keywords="учисьпро тарифы, цены онлайн школа, подписка ии репетитор, стоимость подготовки егэ, тарифы репетитора"
         jsonLd={PRICING_JSON_LD}
@@ -301,7 +298,7 @@ export default function Pricing() {
             </div>
             {period === "year" && (
               <p className="text-emerald-300/90 text-sm font-medium mt-3">
-                💰 Выгода до {(yearPrice(1990) ? (1990 * 12 - yearPrice(1990)) : 0).toLocaleString("ru-RU")} ₽ в год на «Семейном»
+                💰 Выгода до {(9990 * 12 - yearPrice(9990)).toLocaleString("ru-RU")} ₽ в год на «Семейном»
               </p>
             )}
           </div>
@@ -351,9 +348,6 @@ export default function Pricing() {
                       </span>
                       <span className="text-white/55 text-sm">₽ / {plan.period}</span>
                     </div>
-                    {plan.oldPrice && (
-                      <p className="text-white/35 text-xs line-through mt-1">{plan.oldPrice.toLocaleString("ru-RU")} ₽</p>
-                    )}
                   </>
                 )}
               </div>
