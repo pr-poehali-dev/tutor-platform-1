@@ -23,22 +23,34 @@ import psycopg2
 MAX_API_BASE = "https://botapi.max.ru"
 
 
-def notify_max(text: str) -> None:
-    """Отправляет уведомление владельцу в MAX. Тихо игнорирует ошибки."""
-    token = os.environ.get('MAX_BOT_TOKEN', '')
-    chat_id = os.environ.get('MAX_ADMIN_CHAT_ID', '')
-    if not token or not chat_id:
-        return
-    url = (f"{MAX_API_BASE}/messages"
-           f"?access_token={urllib.parse.quote(token, safe='')}&chat_id={chat_id}")
+def _max_post(token: str, param: str, ident, text: str) -> tuple:
+    url = f"{MAX_API_BASE}/messages?{param}={ident}"
     payload = json.dumps({'text': text}).encode('utf-8')
     req = urllib.request.Request(url, data=payload, method='POST',
-                                 headers={'Content-Type': 'application/json'})
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': token})
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            resp.read()
-    except Exception:
-        pass
+            return True, resp.read().decode('utf-8', 'ignore')[:300]
+    except urllib.error.HTTPError as e:
+        return False, f'HTTP {e.code}: {e.read().decode("utf-8", "ignore")[:300]}'
+    except Exception as e:
+        return False, str(e)[:300]
+
+
+def notify_max(text: str) -> None:
+    """Отправляет уведомление владельцу в MAX. Логирует результат."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    ident = os.environ.get('MAX_ADMIN_CHAT_ID', '')
+    if not token or not ident:
+        print(f'[notify_max] skip: token={bool(token)} chat_id={bool(ident)}')
+        return
+    ok1, info1 = _max_post(token, 'chat_id', ident, text)
+    print(f'[notify_max] chat_id -> ok={ok1} info={info1}')
+    if ok1:
+        return
+    ok2, info2 = _max_post(token, 'user_id', ident, text)
+    print(f'[notify_max] user_id -> ok={ok2} info={info2}')
 
 ALLOWED_ROLES = {'student', 'parent', 'teacher'}
 ALLOWED_SUBJECTS = {'general', 'payment', 'tech', 'idea', 'cooperation', 'press'}
