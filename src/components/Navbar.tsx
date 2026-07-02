@@ -21,6 +21,7 @@ const NAV_LINKS = [
 
 // Остальные разделы — в выпадающем меню «Ещё»
 const MORE_LINKS = [
+  { label: "Для бизнеса", icon: "Building2", path: "/for-business" },
   { label: "Автоматизация", icon: "Workflow",  path: "/intensive" },
   { label: "Тренды IT",    icon: "Cpu",       path: "/tech-trends" },
   { label: "Удалённые профессии", icon: "Briefcase", path: "/remote-professions" },
