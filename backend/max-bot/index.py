@@ -74,10 +74,11 @@ def max_send_message(chat_id: int, text: str) -> tuple:
     token = os.environ.get('MAX_BOT_TOKEN', '')
     if not token:
         return False, 'MAX_BOT_TOKEN not set'
-    url = f"{MAX_API_BASE}/messages?access_token={urllib.parse.quote(token, safe='')}&chat_id={chat_id}"
+    url = f"{MAX_API_BASE}/messages?chat_id={chat_id}"
     payload = json.dumps({'text': text}).encode('utf-8')
     req = urllib.request.Request(url, data=payload, method='POST',
-                                 headers={'Content-Type': 'application/json'})
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': token})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             resp.read()
