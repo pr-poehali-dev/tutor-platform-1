@@ -246,6 +246,14 @@ def handle_webhook(conn, body: dict) -> dict:
     if not chat_id:
         return ok({'ok': True})
 
+    low = text.lower().strip()
+    if low in ('/id', 'chatid', 'chat id', 'мой id', '/chatid'):
+        max_send_message(chat_id,
+                         f"Ваш chat_id: {chat_id}\n\n"
+                         "Впишите это число в секрет MAX_ADMIN_CHAT_ID на сайте — "
+                         "и сюда начнут приходить новые заявки на конструктор школ.")
+        return ok({'ok': True})
+
     code = None
     if text.lower().startswith('/start'):
         parts = text.split()

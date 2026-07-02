@@ -14,8 +14,31 @@ POST /?action=partner_lead                   body: {contact_name, contact_email|
 import json
 import os
 import re
+import urllib.request
+import urllib.error
+import urllib.parse
 from datetime import datetime, timezone
 import psycopg2
+
+MAX_API_BASE = "https://botapi.max.ru"
+
+
+def notify_max(text: str) -> None:
+    """Отправляет уведомление владельцу в MAX. Тихо игнорирует ошибки."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    chat_id = os.environ.get('MAX_ADMIN_CHAT_ID', '')
+    if not token or not chat_id:
+        return
+    url = (f"{MAX_API_BASE}/messages"
+           f"?access_token={urllib.parse.quote(token, safe='')}&chat_id={chat_id}")
+    payload = json.dumps({'text': text}).encode('utf-8')
+    req = urllib.request.Request(url, data=payload, method='POST',
+                                 headers={'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+    except Exception:
+        pass
 
 ALLOWED_ROLES = {'student', 'parent', 'teacher'}
 ALLOWED_SUBJECTS = {'general', 'payment', 'tech', 'idea', 'cooperation', 'press'}
@@ -208,6 +231,35 @@ def handle_partner_lead(token: str, body: dict) -> dict:
             )
             lid = cur.fetchone()[0]
             conn.commit()
+
+            aud_labels = {'author': 'Автор/эксперт', 'school': 'Онлайн-школа',
+                          'business': 'Компания', 'edu': 'Учебное заведение'}
+            plan_labels = {'start': 'Старт (8%)', 'pro': 'Про (5%)', 'scale': 'Масштаб (3%)'}
+            lines = [f"🚀 Новая заявка на конструктор школ #{lid}", ""]
+            lines.append(f"👤 Имя: {name}")
+            if company:
+                lines.append(f"🏢 Компания: {company}")
+            contacts = []
+            if email:
+                contacts.append(email)
+            if phone:
+                contacts.append(phone)
+            if contacts:
+                lines.append(f"📞 Контакт: {', '.join(contacts)}")
+            if audience:
+                lines.append(f"🎯 Кто: {aud_labels.get(audience, audience)}")
+            if students:
+                lines.append(f"👥 Учеников: {students}")
+            if plan:
+                lines.append(f"💳 Тариф: {plan_labels.get(plan, plan)}")
+            if topic:
+                lines.append(f"📚 Тема курсов: {topic}")
+            if message:
+                lines.append(f"✍️ Сообщение: {message}")
+            if utm:
+                lines.append(f"🔗 UTM: {json.dumps(utm, ensure_ascii=False)}")
+            notify_max("\n".join(lines))
+
             return ok({
                 'ok': True, 'id': lid,
                 'message': 'Спасибо! Мы свяжемся с вами в течение рабочего дня и покажем платформу.',
