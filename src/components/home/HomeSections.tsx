@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import HeroSection from "@/components/HeroSection";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
+import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
 
@@ -69,6 +70,9 @@ export default function HomeSections() {
 
       {/* 5. Полезные инструменты — без регистрации */}
       <QuickTools />
+
+      {/* 5.5. B2B — конструктор онлайн-школ */}
+      <BusinessPromoBanner />
 
       {/* 6. Рейтинг — социальное доказательство + финальный CTA */}
       <Suspense fallback={<SectionSkeleton />}>
