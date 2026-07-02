@@ -75,24 +75,24 @@ const PLANS: {
   {
     id: "start",
     name: "Старт",
-    price: "для авторов",
-    note: "Своя мини-школа за вечер",
-    features: ["1 школа, свой бренд", "ИИ-генерация курсов", "Приём оплат", "До 300 учеников"],
+    price: "8%",
+    note: "для авторов и экспертов",
+    features: ["1 школа, свой бренд", "ИИ-генерация курсов", "Приём оплат внутри", "До 300 учеников", "Без абонплаты"],
   },
   {
     id: "pro",
     name: "Про",
-    price: "для школ",
-    note: "Растущий бизнес на потоке",
-    features: ["Свой домен", "ИИ-преподаватель 24/7", "Промокоды и рассрочка", "Аналитика продаж", "До 3000 учеников"],
+    price: "5%",
+    note: "для растущих школ",
+    features: ["Свой домен", "ИИ-преподаватель 24/7", "Промокоды и рассрочка", "Аналитика продаж", "До 3000 учеников", "Без абонплаты"],
     highlight: true,
   },
   {
     id: "scale",
     name: "Масштаб",
-    price: "для сетей",
-    note: "Много курсов и команда",
-    features: ["Несколько школ", "Роли и команда", "API и интеграции", "Приоритетная поддержка", "Без лимитов"],
+    price: "3%",
+    note: "для сетей и команд",
+    features: ["Несколько школ", "Роли и команда", "API и интеграции", "Приоритетная поддержка", "Без лимитов", "Без абонплаты"],
   },
 ];
 
@@ -107,7 +107,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Как устроена оплата платформы?",
-    a: "Абонентская плата по тарифу плюс небольшой процент с оборота школы. Точную цену под вашу задачу рассчитаем на демо.",
+    a: "Никакой абонплаты. Мы берём только небольшой процент с ваших продаж: 8% на старте, 5% для школ и 3% для сетей. Пока школа не заработала — вы не платите ничего. Приём платежей уже входит в этот процент.",
   },
   {
     q: "Можно отредактировать то, что сгенерировал ИИ?",
@@ -164,7 +164,7 @@ export default function ForBusiness() {
             </span>
           </h1>
           <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto mb-7">
-            Вводите тему — искусственный интеллект собирает курс целиком: программу, уроки, тесты и видео. А затем работает преподавателем для ваших учеников 24/7. Ваш бренд, ваш домен, ваши деньги.
+            Вводите тему — искусственный интеллект собирает курс целиком: программу, уроки, тесты и видео. А затем работает преподавателем для ваших учеников 24/7. Ваш бренд, ваш домен, ваши деньги. Без абонплаты — платите только процент с продаж.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
@@ -275,9 +275,9 @@ export default function ForBusiness() {
 
         {/* Тарифы */}
         <section className="mb-16">
-          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-2">Тарифы под вашу задачу</h2>
+          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-2">Платите, только когда зарабатываете</h2>
           <p className="text-white/55 text-center text-sm max-w-xl mx-auto mb-8">
-            Абонплата + небольшой процент с оборота. Точную цену рассчитаем на демо.
+            Никакой абонплаты. Только процент с ваших продаж — приём платежей уже входит. Нет продаж — нет платы.
           </p>
           <div className="grid md:grid-cols-3 gap-4">
             {PLANS.map((p) => (
@@ -295,7 +295,10 @@ export default function ForBusiness() {
                   </span>
                 )}
                 <h3 className="font-montserrat font-black text-white text-xl mb-1">{p.name}</h3>
-                <p className="text-white/50 text-sm mb-1">{p.price}</p>
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span className="font-montserrat font-black text-3xl bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">{p.price}</span>
+                  <span className="text-white/45 text-xs">с продаж</span>
+                </div>
                 <p className="text-white/70 text-sm mb-4">{p.note}</p>
                 <ul className="space-y-2 mb-6 flex-1">
                   {p.features.map((f) => (

@@ -78,6 +78,29 @@ export default function FeedArticleCtas({ article }: Props) {
         </div>
       )}
 
+      {/* CTA конструктор школ — для статей с тегом «для бизнеса» */}
+      {article.tags && article.tags.some((t) => t.toLowerCase() === "для бизнеса") && (
+        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/30 via-fuchsia-600/20 to-cyan-700/30 p-5 md:p-6 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">🚀</div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Запустите свою онлайн-школу за вечер
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
+              ИИ соберёт курс за час и станет преподавателем для ваших учеников 24/7. Ваш бренд, ваш домен. Без абонплаты — только процент с продаж.
+            </p>
+            <Link
+              to="/for-business"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-violet-500/20"
+            >
+              <Icon name="Rocket" size={18} />
+              Получить демо и цену
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* CTA три обновлённых курса — для статьи с тегом «обновление» */}
       {article.tags && article.tags.some((t) => t.toLowerCase() === "обновление") && (
         <div className="relative overflow-hidden rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-700/30 via-fuchsia-600/20 to-cyan-700/30 p-5 md:p-6 mb-8">
