@@ -415,6 +415,29 @@ export default function ForBusiness() {
             ))}
           </div>
         </section>
+
+        {/* Финальный CTA */}
+        <section className="mb-8">
+          <div className="relative overflow-hidden rounded-3xl border border-violet-400/30 bg-gradient-to-br from-violet-600/25 via-fuchsia-500/15 to-cyan-600/20 p-8 md:p-12 text-center">
+            <div className="absolute -top-20 -right-10 w-64 h-64 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
+            <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <div className="text-4xl mb-3">🚀</div>
+              <h2 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-3 leading-tight">
+                Запустите свою школу уже сегодня
+              </h2>
+              <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto mb-7">
+                Оставьте заявку — покажем платформу и прямо на демо соберём ваш первый курс на ИИ. Без абонплаты: платите только процент с продаж.
+              </p>
+              <a
+                href="#lead"
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-violet-500/25"
+              >
+                <Icon name="Rocket" size={18} /> Получить демо и цену
+              </a>
+            </div>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />
