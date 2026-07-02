@@ -69,6 +69,45 @@ def resolve_user_id(conn, token: str):
 
 # ---------- MAX Bot API ----------
 
+WEBHOOK_URL = "https://functions.poehali.dev/63e9b695-9607-4b29-aa00-b08e1fa1b7be?action=webhook"
+
+
+def max_api(method: str, path: str, payload: dict = None) -> tuple:
+    """Универсальный вызов Bot API MAX. Возвращает (ok, body_str)."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    if not token:
+        return False, 'MAX_BOT_TOKEN not set'
+    url = f"{MAX_API_BASE}{path}"
+    data = json.dumps(payload).encode('utf-8') if payload is not None else None
+    req = urllib.request.Request(url, data=data, method=method,
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': token})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return True, resp.read().decode('utf-8', 'ignore')[:600]
+    except urllib.error.HTTPError as e:
+        return False, f'HTTP {e.code}: {e.read().decode("utf-8", "ignore")[:600]}'
+    except Exception as e:
+        return False, str(e)[:400]
+
+
+def handle_setup() -> dict:
+    """Регистрирует webhook-подписку бота в MAX и возвращает диагностику."""
+    ok_me, me = max_api('GET', '/me')
+    ok_sub, sub = max_api('POST', '/subscriptions', {'url': WEBHOOK_URL})
+    print(f'[setup] me ok={ok_me} {me}')
+    print(f'[setup] subscribe ok={ok_sub} {sub}')
+    return ok({'me_ok': ok_me, 'me': me, 'subscribe_ok': ok_sub, 'subscribe': sub,
+               'webhook_url': WEBHOOK_URL})
+
+
+def handle_check() -> dict:
+    """Показывает данные бота и активные подписки."""
+    ok_me, me = max_api('GET', '/me')
+    ok_subs, subs = max_api('GET', '/subscriptions')
+    return ok({'me_ok': ok_me, 'me': me, 'subscriptions_ok': ok_subs, 'subscriptions': subs})
+
+
 def max_send_message(chat_id: int, text: str) -> tuple:
     """Отправка текстового сообщения в чат MAX. Возвращает (ok, error)."""
     token = os.environ.get('MAX_BOT_TOKEN', '')
@@ -377,6 +416,12 @@ def handler(event: dict, context) -> dict:
     # Публичный health-check
     if method == 'GET' and action in ('', 'ping'):
         return ok({'ok': True, 'service': 'max-bot'})
+
+    # Настройка вебхука/подписки бота в MAX (одноразово)
+    if action == 'setup':
+        return handle_setup()
+    if action == 'check':
+        return handle_check()
 
     # Webhook от MAX — без авторизации пользователя
     if action == 'webhook':
