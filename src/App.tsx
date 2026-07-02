@@ -101,6 +101,7 @@ const TechTrends = lazy(() => import("./pages/TechTrends"));
 const Intensive = lazy(() => import("./pages/Intensive"));
 const AiAssistant = lazy(() => import("./pages/AiAssistant"));
 const ForBusiness = lazy(() => import("./pages/ForBusiness"));
+const SchoolBuilder = lazy(() => import("./pages/SchoolBuilder"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -142,6 +143,7 @@ const App = () => (
                     <Route path="/intensive" element={<Intensive />} />
                     <Route path="/ai-assistant" element={<AiAssistant />} />
                     <Route path="/for-business" element={<ForBusiness />} />
+                    <Route path="/school-builder" element={<SchoolBuilder />} />
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />

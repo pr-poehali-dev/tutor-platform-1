@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "generate empty topic", "method": "POST", "path": "/?action=generate", "body": {"topic": "a"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "get not found", "method": "GET", "path": "/?action=get&id=999999", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "list without pin", "method": "GET", "path": "/?action=list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}

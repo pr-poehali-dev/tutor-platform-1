@@ -157,12 +157,20 @@ export default function ForBusiness() {
             <span className="font-montserrat font-black text-base gradient-text-purple group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
             <span className="hidden sm:inline text-[11px] text-white/45 border border-white/15 rounded-lg px-2 py-0.5">для бизнеса</span>
           </Link>
-          <a
-            href="#lead"
-            className="text-sm font-bold bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:scale-[1.02] transition-transform"
-          >
-            Получить демо
-          </a>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/school-builder"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-violet-400/50 px-4 py-2 rounded-xl transition-colors"
+            >
+              <Icon name="Sparkles" size={15} className="text-violet-300" /> Собрать курс
+            </Link>
+            <a
+              href="#lead"
+              className="text-sm font-bold bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:scale-[1.02] transition-transform"
+            >
+              Получить демо
+            </a>
+          </div>
         </div>
       </div>
 
@@ -194,12 +202,12 @@ export default function ForBusiness() {
             >
               <Icon name="Rocket" size={18} /> Получить демо и цену
             </a>
-            <a
-              href="#how"
-              className="inline-flex items-center justify-center gap-2 border border-white/15 text-white/80 font-bold px-6 py-3.5 rounded-xl hover:bg-white/[0.04] transition-colors"
+            <Link
+              to="/school-builder"
+              className="inline-flex items-center justify-center gap-2 border border-violet-400/40 bg-violet-500/10 text-white font-bold px-6 py-3.5 rounded-xl hover:bg-violet-500/20 transition-colors"
             >
-              Как это работает
-            </a>
+              <Icon name="Sparkles" size={18} className="text-violet-300" /> Собрать курс бесплатно
+            </Link>
           </div>
         </section>
 
