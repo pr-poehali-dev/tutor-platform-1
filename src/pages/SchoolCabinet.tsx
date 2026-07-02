@@ -14,8 +14,12 @@ import {
 } from "@/components/school/api";
 import type { BuilderCourse } from "@/components/builder/api";
 import SchoolCourseCard from "@/components/school/SchoolCourseCard";
+import SchoolStudents from "@/components/school/SchoolStudents";
+import SchoolBrand from "@/components/school/SchoolBrand";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+
+type Tab = "courses" | "students" | "brand";
 
 export default function SchoolCabinet() {
   const { isAuthenticated, loading: authLoading, openLogin } = useAuth();
@@ -25,6 +29,7 @@ export default function SchoolCabinet() {
   const [error, setError] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [tab, setTab] = useState<Tab>("courses");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -168,45 +173,54 @@ export default function SchoolCabinet() {
                 </div>
               </div>
 
-              {/* Возможности следующих этапов (пока в разработке) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-5">
-                {[
-                  { icon: "Users", label: "Ученики", soon: true },
-                  { icon: "Wallet", label: "Оплаты", soon: true },
-                  { icon: "Palette", label: "Бренд", soon: true },
-                  { icon: "Globe", label: "Свой домен", soon: true },
-                ].map((f) => (
-                  <div key={f.label} className="rounded-xl border border-white/8 bg-white/[0.02] p-3 text-center relative">
-                    <Icon name={f.icon} size={16} className="text-white/50 mx-auto mb-1" />
-                    <div className="text-white/70 text-xs">{f.label}</div>
-                    {f.soon && <div className="text-[9px] text-violet-300/70 mt-0.5">скоро</div>}
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Курсы */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-montserrat font-bold text-lg text-white">Курсы школы</h2>
-            </div>
-
-            {courses.length === 0 ? (
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
-                <Icon name="BookOpen" size={30} className="text-white/40 mx-auto mb-3" />
-                <p className="text-white/60 text-sm mb-4">Пока нет курсов. Соберите первый с помощью ИИ.</p>
-                <Link
-                  to="/school-builder"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-5 py-2.5 rounded-xl hover:scale-[1.02] transition-transform"
+            {/* Вкладки */}
+            <div className="flex items-center gap-1 mb-5 border-b border-white/8">
+              {([
+                { id: "courses", label: "Курсы", icon: "BookOpen" },
+                { id: "students", label: "Ученики", icon: "Users" },
+                { id: "brand", label: "Бренд", icon: "Palette" },
+              ] as { id: Tab; label: string; icon: string }[]).map((tb) => (
+                <button
+                  key={tb.id}
+                  onClick={() => setTab(tb.id)}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    tab === tb.id
+                      ? "border-violet-400 text-white"
+                      : "border-transparent text-white/55 hover:text-white"
+                  }`}
                 >
-                  <Icon name="Sparkles" size={16} /> Собрать курс
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {courses.map((c) => (
-                  <SchoolCourseCard key={c.id} course={c} onDelete={() => removeCourse(c.id)} />
-                ))}
-              </div>
+                  <Icon name={tb.icon} size={15} /> {tb.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "courses" && (
+              courses.length === 0 ? (
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
+                  <Icon name="BookOpen" size={30} className="text-white/40 mx-auto mb-3" />
+                  <p className="text-white/60 text-sm mb-4">Пока нет курсов. Соберите первый с помощью ИИ.</p>
+                  <Link
+                    to="/school-builder"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-5 py-2.5 rounded-xl hover:scale-[1.02] transition-transform"
+                  >
+                    <Icon name="Sparkles" size={16} /> Собрать курс
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {courses.map((c) => (
+                    <SchoolCourseCard key={c.id} course={c} onDelete={() => removeCourse(c.id)} />
+                  ))}
+                </div>
+              )
+            )}
+
+            {tab === "students" && <SchoolStudents courses={courses} />}
+
+            {tab === "brand" && school && (
+              <SchoolBrand school={school} onUpdated={(s) => setSchool(s)} />
             )}
           </>
         )}

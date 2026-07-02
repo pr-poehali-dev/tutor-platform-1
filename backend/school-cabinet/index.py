@@ -19,6 +19,12 @@ GET  /?action=public_course&id=NN       -> витрина опубликован
 POST /?action=buy_course      body: {course_id, return_url}  -> платёж ЮKassa (нужен вход ученика)
 POST /?action=sync_payment              -> подстраховка активации после оплаты
 GET  /?action=my_enrollments            -> курсы, купленные учеником
+
+Бренд и ученики (Этапы 4 и 2):
+POST /?action=upload_logo     body: {image_base64, content_type}  -> логотип школы в S3
+GET  /?action=students                  -> ученики школы (кто купил/приглашён)
+POST /?action=invite_student  body: {course_id, email}  -> выдать доступ вручную
+POST /?action=remove_student  body: {id}  -> убрать ученика
 """
 import json
 import os
@@ -28,9 +34,31 @@ import base64
 from urllib.request import Request, urlopen
 from datetime import datetime, timezone
 import psycopg2
+import boto3
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
+
+
+def upload_logo(school_id: int, base64_data: str, content_type: str) -> str:
+    """Загружает логотип школы в S3 и возвращает CDN-URL."""
+    if ',' in base64_data:
+        base64_data = base64_data.split(',', 1)[1]
+    raw = base64.b64decode(base64_data)
+    ext = 'png'
+    if 'jpeg' in content_type or 'jpg' in content_type:
+        ext = 'jpg'
+    elif 'webp' in content_type:
+        ext = 'webp'
+    elif 'svg' in content_type:
+        ext = 'svg'
+    key = f"schools/{school_id}/logo-{uuid.uuid4().hex[:8]}.{ext}"
+    s3 = boto3.client(
+        's3', endpoint_url='https://bucket.poehali.dev',
+        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+    s3.put_object(Bucket='files', Key=key, Body=raw, ContentType=content_type or 'image/png')
+    return f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
 
 def cors() -> dict:
@@ -511,6 +539,111 @@ def handle_my_enrollments(conn, uid: int) -> dict:
         return ok({'items': items, 'total': len(items)})
 
 
+# ---------- Этап 4: бренд школы ----------
+
+def handle_upload_logo(conn, uid: int, body: dict) -> dict:
+    data = body.get('image_base64') or ''
+    content_type = (body.get('content_type') or 'image/png').strip()
+    if not data:
+        return err('Нет изображения', 400)
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            get_or_create_school(cur, uid)
+            conn.commit()
+            sid = get_school_id(cur, uid)
+    try:
+        url = upload_logo(sid, data, content_type)
+    except Exception as e:
+        return err(f'Ошибка загрузки: {str(e)[:150]}', 502)
+    with conn.cursor() as cur:
+        cur.execute("UPDATE " + t('schools') + " SET brand_logo_url=%s, updated_at=now() WHERE id=%s",
+                    (url, sid))
+        conn.commit()
+    return ok({'ok': True, 'brand_logo_url': url})
+
+
+# ---------- Этап 2: ученики школы ----------
+
+def handle_students(conn, uid: int) -> dict:
+    """Список учеников школы (кто купил/приглашён), с курсом."""
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            return ok({'items': [], 'total': 0})
+        cur.execute(
+            "SELECT e.id, e.student_email, e.source, e.status, e.created_at, "
+            "sc.title, u.name "
+            "FROM " + t('school_enrollments') + " e "
+            "JOIN " + t('school_courses') + " sc ON sc.id = e.school_course_id "
+            "LEFT JOIN " + t('auth_users') + " u ON u.id = e.student_user_id "
+            "WHERE e.school_id=%s ORDER BY e.created_at DESC LIMIT 500", (sid,))
+        items = [{
+            'id': r[0], 'email': r[1], 'source': r[2], 'status': r[3],
+            'created_at': r[4].isoformat() if r[4] else None,
+            'course_title': r[5], 'name': r[6],
+        } for r in cur.fetchall()]
+        return ok({'items': items, 'total': len(items)})
+
+
+EMAIL_RE = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+
+
+def handle_invite_student(conn, uid: int, body: dict) -> dict:
+    """Ручное приглашение ученика на курс по email (доступ выдаётся сразу)."""
+    email = (body.get('email') or '').strip().lower()[:200]
+    try:
+        cid = int(body.get('course_id'))
+    except (TypeError, ValueError):
+        return err('Некорректный курс', 400)
+    if not EMAIL_RE.match(email):
+        return err('Некорректный email', 400)
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            return err('Школа не найдена', 404)
+        cur.execute("SELECT 1 FROM " + t('school_courses') + " WHERE id=%s AND school_id=%s",
+                    (cid, sid))
+        if not cur.fetchone():
+            return err('Курс не найден', 404)
+        # Привязываем к пользователю, если он уже зарегистрирован по этому email
+        cur.execute("SELECT id FROM " + t('auth_users') + " WHERE lower(email)=%s LIMIT 1", (email,))
+        urow = cur.fetchone()
+        student_uid = urow[0] if urow else None
+        if student_uid:
+            cur.execute(
+                "SELECT 1 FROM " + t('school_enrollments') +
+                " WHERE school_course_id=%s AND student_user_id=%s", (cid, student_uid))
+            if cur.fetchone():
+                return err('Ученик уже добавлен на этот курс', 400)
+        cur.execute(
+            "INSERT INTO " + t('school_enrollments') +
+            " (school_course_id, school_id, student_user_id, student_email, source) "
+            "VALUES (%s,%s,%s,%s,'invite') RETURNING id",
+            (cid, sid, student_uid, email))
+        eid = cur.fetchone()[0]
+        conn.commit()
+        return ok({'ok': True, 'id': eid})
+
+
+def handle_remove_student(conn, uid: int, body: dict) -> dict:
+    try:
+        eid = int(body.get('id'))
+    except (TypeError, ValueError):
+        return err('Некорректный id', 400)
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            return err('Не найдено', 404)
+        cur.execute("DELETE FROM " + t('school_enrollments') + " WHERE id=%s AND school_id=%s",
+                    (eid, sid))
+        if cur.rowcount == 0:
+            conn.rollback()
+            return err('Не найдено', 404)
+        conn.commit()
+        return ok({'ok': True})
+
+
 def handler(event: dict, context) -> dict:
     """Кабинет онлайн-школы: школа автора и её курсы."""
     method = event.get('httpMethod', 'GET')
@@ -559,6 +692,14 @@ def handler(event: dict, context) -> dict:
             return handle_update_course(conn, uid, body)
         if action == 'delete_course' and method == 'POST':
             return handle_delete_course(conn, uid, body)
+        if action == 'upload_logo' and method == 'POST':
+            return handle_upload_logo(conn, uid, body)
+        if action == 'students':
+            return handle_students(conn, uid)
+        if action == 'invite_student' and method == 'POST':
+            return handle_invite_student(conn, uid, body)
+        if action == 'remove_student' and method == 'POST':
+            return handle_remove_student(conn, uid, body)
 
         return err('Неизвестное действие', 404)
     finally:

@@ -162,3 +162,39 @@ export interface EnrollmentItem {
 export function fetchMyEnrollments() {
   return req<{ items: EnrollmentItem[]; total: number }>("my_enrollments");
 }
+
+// ---------- Этап 4: бренд ----------
+
+export function uploadSchoolLogo(imageBase64: string, contentType: string) {
+  return req<{ ok: boolean; brand_logo_url: string }>("upload_logo", {
+    method: "POST",
+    body: { image_base64: imageBase64, content_type: contentType },
+  });
+}
+
+// ---------- Этап 2: ученики ----------
+
+export interface StudentItem {
+  id: number;
+  email: string | null;
+  name: string | null;
+  source: string;
+  status: string;
+  course_title: string;
+  created_at: string | null;
+}
+
+export function fetchStudents() {
+  return req<{ items: StudentItem[]; total: number }>("students");
+}
+
+export function inviteStudent(courseId: number, email: string) {
+  return req<{ ok: boolean; id: number }>("invite_student", {
+    method: "POST",
+    body: { course_id: courseId, email },
+  });
+}
+
+export function removeStudent(id: number) {
+  return req<{ ok: boolean }>("remove_student", { method: "POST", body: { id } });
+}
