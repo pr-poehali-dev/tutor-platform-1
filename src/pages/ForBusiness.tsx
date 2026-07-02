@@ -64,6 +64,27 @@ const COMPARE: { feature: string; us: boolean; others: string }[] = [
   { feature: "Запуск школы за один вечер", us: true, others: "Недели настройки" },
 ];
 
+const TESTIMONIALS: { name: string; role: string; emoji: string; text: string }[] = [
+  {
+    name: "Марина К.",
+    role: "автор курсов по английскому",
+    emoji: "🎤",
+    text: "Запускала школу три месяца на другом конструкторе и бросила. Здесь ИИ собрал программу и уроки за вечер — я только отредактировала под себя. Первые продажи пошли на той же неделе.",
+  },
+  {
+    name: "Онлайн-школа «Логос»",
+    role: "подготовка к ЕГЭ",
+    emoji: "🏫",
+    text: "Перенесли 8 курсов на платформу. ИИ-преподаватель закрыл боль с ответами ученикам ночью — доходимость до конца курса выросла заметно, а нам не пришлось расширять штат кураторов.",
+  },
+  {
+    name: "Дмитрий В.",
+    role: "эксперт по маркетингу",
+    emoji: "💼",
+    text: "Модель без абонплаты — то, что нужно на старте. Плачу процент только с реальных продаж, а не за воздух. Свой домен и логотип: ученики даже не знают, что под капотом чужая платформа.",
+  },
+];
+
 const PLANS: {
   id: "start" | "pro" | "scale";
   name: string;
@@ -268,6 +289,32 @@ export default function ForBusiness() {
                   <Icon name="CircleCheck" size={20} className="text-emerald-400" />
                 </div>
                 <div className="w-28 text-center text-white/40 text-xs hidden sm:block">{c.others}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Отзывы */}
+        <section className="mb-16">
+          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-8">Что говорят наши партнёры</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col">
+                <div className="flex text-amber-400 mb-3" aria-hidden="true">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Icon key={i} name="Star" size={15} className="fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-white/75 text-sm leading-relaxed flex-1 mb-4">«{t.text}»</p>
+                <div className="flex items-center gap-3 pt-3 border-t border-white/8">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500/30 to-cyan-500/30 flex items-center justify-center text-lg flex-shrink-0">
+                    {t.emoji}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-white text-sm truncate">{t.name}</p>
+                    <p className="text-white/45 text-xs truncate">{t.role}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
