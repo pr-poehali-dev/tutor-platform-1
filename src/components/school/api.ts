@@ -100,3 +100,65 @@ export function updateSchoolCourse(
 export function deleteSchoolCourse(id: number) {
   return req<{ ok: boolean }>("delete_course", { method: "POST", body: { id } });
 }
+
+// ---------- Публичная витрина и оплата (Этап 3) ----------
+
+export interface PublicCoursePreviewLesson {
+  title: string;
+  type: string;
+}
+export interface PublicCourseModule {
+  title: string;
+  lessons: PublicCoursePreviewLesson[];
+}
+export interface PublicCourse {
+  id: number;
+  title: string;
+  topic: string | null;
+  lessons_count: number;
+  modules_count: number;
+  price_kopecks: number;
+  description: string | null;
+  tagline: string | null;
+  outcomes: string[];
+  target_audience: string | null;
+  estimated_hours: number;
+  modules: PublicCourseModule[];
+  school: { id: number; name: string; brand_color: string | null; brand_logo_url: string | null };
+}
+
+export async function fetchPublicCourse(
+  id: number
+): Promise<{ ok: boolean; data?: { course: PublicCourse }; error?: string }> {
+  try {
+    const res = await fetch(`${URL}?action=public_course&id=${id}`);
+    const data = await res.json();
+    if (!res.ok) return { ok: false, error: data?.error || `Ошибка ${res.status}` };
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "Сеть недоступна" };
+  }
+}
+
+export function buySchoolCourse(courseId: number, returnUrl: string) {
+  return req<{ ok?: boolean; already_owned?: boolean; confirmation_url?: string; purchase_id?: number }>(
+    "buy_course",
+    { method: "POST", body: { course_id: courseId, return_url: returnUrl } }
+  );
+}
+
+export function syncSchoolPayment() {
+  return req<{ synced: boolean; activated: number[] }>("sync_payment", { method: "POST" });
+}
+
+export interface EnrollmentItem {
+  id: number;
+  title: string;
+  lessons_count: number;
+  modules_count: number;
+  school_name: string;
+}
+
+export function fetchMyEnrollments() {
+  return req<{ items: EnrollmentItem[]; total: number }>("my_enrollments");
+}

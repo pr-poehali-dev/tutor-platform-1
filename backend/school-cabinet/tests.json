@@ -4,6 +4,9 @@
     {"name": "my_school without token", "method": "GET", "path": "/?action=my_school", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "courses without token", "method": "GET", "path": "/?action=courses", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "save_course without token", "method": "POST", "path": "/?action=save_course", "body": {"course": {"modules": []}}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "public_course not found", "method": "GET", "path": "/?action=public_course&id=999999", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "buy_course without token", "method": "POST", "path": "/?action=buy_course", "body": {"course_id": 1, "return_url": "https://example.com"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "my_enrollments without token", "method": "GET", "path": "/?action=my_enrollments", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "unknown action without token", "method": "GET", "path": "/?action=unknown", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }

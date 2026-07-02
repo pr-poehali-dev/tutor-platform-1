@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { fetchSchoolCourse, updateSchoolCourse, type SchoolCourseListItem } from "./api";
 import { printCoursePdf } from "@/lib/coursePdf";
@@ -15,8 +16,14 @@ function fmtDate(iso: string | null): string {
 
 export default function SchoolCourseCard({ course, onDelete }: Props) {
   const [published, setPublished] = useState(course.is_published);
+  const [priceRub, setPriceRub] = useState(Math.round(course.price_kopecks / 100));
+  const [savedPrice, setSavedPrice] = useState(Math.round(course.price_kopecks / 100));
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const publicUrl = `${window.location.origin}/course/${course.id}`;
 
   const downloadPdf = async () => {
     setBusy(true);
@@ -25,10 +32,31 @@ export default function SchoolCourseCard({ course, onDelete }: Props) {
     if (res.ok && res.data) printCoursePdf(res.data.course.data);
   };
 
+  const savePrice = async () => {
+    const kopecks = Math.max(0, Math.round(priceRub)) * 100;
+    await updateSchoolCourse(course.id, { price_kopecks: kopecks });
+    setSavedPrice(Math.round(priceRub));
+    setNotice("Цена сохранена");
+    setTimeout(() => setNotice(null), 1500);
+  };
+
   const togglePublish = async () => {
     const next = !published;
+    if (next && (priceRub <= 0)) {
+      setNotice("Укажите цену больше 0, чтобы опубликовать");
+      setTimeout(() => setNotice(null), 2500);
+      return;
+    }
+    if (next && priceRub !== savedPrice) await savePrice();
     setPublished(next);
     await updateSchoolCourse(course.id, { is_published: next });
+  };
+
+  const copyLink = () => {
+    navigator.clipboard?.writeText(publicUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   };
 
   return (
@@ -53,6 +81,26 @@ export default function SchoolCourseCard({ course, onDelete }: Props) {
         </div>
       </div>
 
+      {/* Цена */}
+      <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/12 rounded-lg px-3 py-1.5">
+          <input
+            type="number"
+            min={0}
+            value={priceRub}
+            onChange={(e) => setPriceRub(Number(e.target.value))}
+            className="w-24 bg-transparent text-white text-sm focus:outline-none"
+          />
+          <span className="text-white/45 text-sm">₽</span>
+        </div>
+        {priceRub !== savedPrice && (
+          <button onClick={savePrice} className="text-sm text-violet-300 hover:text-violet-200 px-2 py-1.5">
+            Сохранить цену
+          </button>
+        )}
+        {notice && <span className="text-xs text-emerald-300">{notice}</span>}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2 mt-3">
         <button
           onClick={downloadPdf}
@@ -71,6 +119,22 @@ export default function SchoolCourseCard({ course, onDelete }: Props) {
         >
           <Icon name={published ? "EyeOff" : "Globe"} size={14} /> {published ? "Снять с публикации" : "Опубликовать"}
         </button>
+        {published && (
+          <>
+            <Link
+              to={`/course/${course.id}`}
+              className="inline-flex items-center gap-1.5 text-sm text-white/75 hover:text-white border border-white/12 hover:border-violet-400/40 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <Icon name="ExternalLink" size={14} /> Страница
+            </Link>
+            <button
+              onClick={copyLink}
+              className="inline-flex items-center gap-1.5 text-sm text-white/75 hover:text-white border border-white/12 hover:border-violet-400/40 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              <Icon name={copied ? "Check" : "Link"} size={14} /> {copied ? "Скопировано" : "Ссылка"}
+            </button>
+          </>
+        )}
 
         <div className="ml-auto">
           {confirmDel ? (

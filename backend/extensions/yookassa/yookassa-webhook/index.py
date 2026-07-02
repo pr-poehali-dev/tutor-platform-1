@@ -282,6 +282,53 @@ def handler(event, context):
                 'body': json.dumps({'status': 'ok', 'kind': 'subscription'})
             }
 
+        # ── Branch SC: покупка курса онлайн-школы (school_course_purchases) ──
+        if metadata.get('kind') == 'school_course':
+            sc_purchase_raw = metadata.get('purchase_id')
+            try:
+                sc_purchase_id = int(sc_purchase_raw) if sc_purchase_raw is not None else None
+            except (TypeError, ValueError):
+                sc_purchase_id = None
+
+            if not sc_purchase_id:
+                return {
+                    'statusCode': 400,
+                    'headers': HEADERS,
+                    'body': json.dumps({'error': 'Missing purchase_id in metadata'})
+                }
+
+            if payment_status == 'succeeded':
+                cur.execute(f"""
+                    UPDATE {S}school_course_purchases
+                    SET status = 'paid', payment_id = %s, paid_at = NOW(), updated_at = NOW()
+                    WHERE id = %s AND status <> 'paid'
+                    RETURNING school_course_id, school_id, buyer_user_id, buyer_email
+                """, (payment_id, sc_purchase_id))
+                paid = cur.fetchone()
+                if paid:
+                    scid, sid, buyer_uid, buyer_email = paid
+                    cur.execute(f"""
+                        INSERT INTO {S}school_enrollments
+                            (school_course_id, school_id, student_user_id, student_email, source)
+                        VALUES (%s, %s, %s, %s, 'purchase')
+                        ON CONFLICT (school_course_id, student_user_id)
+                            WHERE student_user_id IS NOT NULL DO NOTHING
+                    """, (scid, sid, buyer_uid, buyer_email))
+                conn.commit()
+            elif payment_status == 'canceled':
+                cur.execute(f"""
+                    UPDATE {S}school_course_purchases
+                    SET status = 'canceled', updated_at = NOW()
+                    WHERE id = %s AND status = 'pending'
+                """, (sc_purchase_id,))
+                conn.commit()
+
+            return {
+                'statusCode': 200,
+                'headers': HEADERS,
+                'body': json.dumps({'status': 'ok', 'kind': 'school_course'})
+            }
+
         # ── Branch A: разовая покупка курса (course_purchases) ──
         if metadata.get('kind') == 'course_purchase':
             purchase_id_raw = metadata.get('purchase_id')

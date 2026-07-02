@@ -115,12 +115,17 @@ export default function SchoolCabinet() {
             <span className="font-montserrat font-black text-base gradient-text-purple">УЧИСЬПРО</span>
             <span className="hidden sm:inline text-[11px] text-white/45 border border-white/15 rounded-lg px-2 py-0.5">кабинет школы</span>
           </Link>
-          <Link
-            to="/school-builder"
-            className="inline-flex items-center gap-1.5 text-sm font-bold bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:scale-[1.02] transition-transform"
-          >
-            <Icon name="Plus" size={15} /> Новый курс
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/school/learning" className="hidden sm:inline-flex text-sm text-white/65 hover:text-white transition-colors items-center gap-1.5">
+              <Icon name="BookMarked" size={15} /> Моё обучение
+            </Link>
+            <Link
+              to="/school-builder"
+              className="inline-flex items-center gap-1.5 text-sm font-bold bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:scale-[1.02] transition-transform"
+            >
+              <Icon name="Plus" size={15} /> Новый курс
+            </Link>
+          </div>
         </div>
       </div>
 
