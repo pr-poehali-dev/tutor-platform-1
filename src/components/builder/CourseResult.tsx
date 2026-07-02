@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import type { BuilderCourse, GenerateResult } from "./api";
+import { printCoursePdf } from "@/lib/coursePdf";
 
 const LESSON_TYPE: Record<string, { label: string; color: string; icon: string }> = {
   theory: { label: "Теория", color: "text-sky-300 bg-sky-500/15", icon: "BookOpen" },
@@ -27,13 +28,21 @@ export default function CourseResult({ result, onRestart, onLead }: Props) {
     <div className="space-y-6">
       {/* Заголовок курса */}
       <div className="rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-cyan-500/5 p-6 md:p-8">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-3 py-1">
-            <Icon name="Check" size={12} /> Курс готов
-          </span>
-          {result.is_fallback && (
-            <span className="text-xs text-amber-300/80">черновой шаблон</span>
-          )}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-3 py-1">
+              <Icon name="Check" size={12} /> Курс готов
+            </span>
+            {result.is_fallback && (
+              <span className="text-xs text-amber-300/80">черновой шаблон</span>
+            )}
+          </div>
+          <button
+            onClick={() => printCoursePdf(c)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white border border-white/15 hover:border-violet-400/50 rounded-xl px-3 py-1.5 transition-colors flex-shrink-0"
+          >
+            <Icon name="Download" size={15} /> <span className="hidden sm:inline">Скачать PDF</span>
+          </button>
         </div>
         <h2 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">{c.course_title}</h2>
         {c.tagline && <p className="text-violet-200/90 text-base md:text-lg mb-3">{c.tagline}</p>}
