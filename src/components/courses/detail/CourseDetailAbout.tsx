@@ -2,6 +2,7 @@ import Icon from "@/components/ui/icon";
 import { Course, getAgeRating, getCourseDisclaimers } from "@/components/courses/coursesData";
 import { CourseDetail } from "@/components/courses/courseDetailsData";
 import CourseDetailValue from "./CourseDetailValue";
+import CourseDetailResult from "./CourseDetailResult";
 import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 
 interface Props {
@@ -27,6 +28,9 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
         </h3>
         <p className="text-white/70 text-sm leading-relaxed">{course.description}</p>
       </div>
+
+      {/* Обещание результата — только для курсов взрослых (продаём экспертность) */}
+      <CourseDetailResult course={course} detail={detail} />
 
       {/* Плашка формата экзамена — только для экзаменационных курсов */}
       {examLabel && (
