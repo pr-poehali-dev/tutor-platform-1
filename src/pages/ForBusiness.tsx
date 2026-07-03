@@ -8,6 +8,7 @@ import ForBusinessExpertise from "@/components/business/for-business/ForBusiness
 import ForBusinessValue from "@/components/business/for-business/ForBusinessValue";
 import ForBusinessEcosystem from "@/components/business/for-business/ForBusinessEcosystem";
 import ForBusinessForecast from "@/components/business/for-business/ForBusinessForecast";
+import ForBusinessLicense from "@/components/business/for-business/ForBusinessLicense";
 import ForBusinessOffer from "@/components/business/for-business/ForBusinessOffer";
 import { FOR_BUSINESS_FAQ_JSON_LD } from "@/components/business/for-business/forBusinessData";
 
@@ -44,6 +45,7 @@ export default function ForBusiness() {
         <ForBusinessValue />
         <ForBusinessEcosystem />
         <ForBusinessForecast />
+        <ForBusinessLicense />
         <ForBusinessOffer />
       </main>
 
