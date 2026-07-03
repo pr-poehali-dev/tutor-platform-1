@@ -153,6 +153,7 @@ export interface PublicCourse {
   target_audience: string | null;
   estimated_hours: number;
   modules: PublicCourseModule[];
+  cover_url: string | null;
   school: { id: number; name: string; brand_color: string | null; brand_logo_url: string | null };
 }
 

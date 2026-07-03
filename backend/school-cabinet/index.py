@@ -458,6 +458,7 @@ def handle_public_course(conn, course_id: str) -> dict:
             'target_audience': data.get('target_audience'),
             'estimated_hours': data.get('estimated_hours'),
             'modules': preview_modules,
+            'cover_url': data.get('cover_url'),
             'school': {'id': r[8], 'name': r[9], 'brand_color': r[10], 'brand_logo_url': r[11]},
         }})
 
