@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 interface Props {
   article: FeedArticleType;
@@ -8,15 +9,54 @@ interface Props {
 
 export default function FeedArticleCtas({ article }: Props) {
   const tags = (article.tags || []).map((t) => t.toLowerCase());
+  // Статья про прогноз/калькулятор EduFlow AI — ведём прямо на калькулятор.
+  const isForecast =
+    tags.some((t) => ["eduflow ai", "прогноз"].includes(t)) ||
+    /eduflow|prognoz/i.test(article.slug);
   const isSchoolBuilder =
-    tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
-    /shkol/i.test(article.slug);
+    !isForecast &&
+    (tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
+      /shkol/i.test(article.slug));
   const isGrants =
     tags.some((t) => ["гранты", "заявка на грант", "конкурсы"].includes(t)) ||
     /grant/i.test(article.slug);
 
   return (
     <>
+      {/* CTA прогноз EduFlow AI — прямой переход к калькулятору прибыли школы */}
+      {isForecast && (
+        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/40 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 bg-violet-500/20 border border-violet-400/30 rounded-full px-3 py-1 mb-3">
+              <Icon name="Sparkles" size={12} className="text-violet-200" />
+              <span className="text-violet-100 text-[11px] font-bold uppercase tracking-wider">EduFlow AI</span>
+            </div>
+            <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
+              Посчитайте прибыль своей школы за 30 секунд
+            </h3>
+            <p className="text-white/80 text-sm md:text-base max-w-lg mx-auto mb-4">
+              Задайте нишу, цену курса и бюджет — ИИ-прогноз покажет выручку, доходимость и чистую
+              прибыль ещё до первого вложенного рубля. Бесплатно и без регистрации.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-white/60 text-xs mb-5">
+              <span className="inline-flex items-center gap-1.5"><Icon name="TrendingUp" size={13} className="text-emerald-300" /> Выручка и прибыль</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="Percent" size={13} className="text-cyan-300" /> ROMI рекламы</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="Clock" size={13} className="text-fuchsia-300" /> Срок окупаемости</span>
+            </div>
+            <Link
+              to="/for-business#forecast"
+              onClick={() => trackGoal("article_forecast_cta_click", { slug: article.slug })}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
+            >
+              <Icon name="Calculator" size={18} />
+              Открыть калькулятор прогноза
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* CTA помощник по грантам — прямой переход к подготовке заявки */}
       {isGrants && (
         <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">

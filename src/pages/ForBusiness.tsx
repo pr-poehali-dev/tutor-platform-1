@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import ForBusinessHeader from "@/components/business/for-business/ForBusinessHeader";
@@ -11,6 +13,19 @@ import { FOR_BUSINESS_FAQ_JSON_LD } from "@/components/business/for-business/for
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
 export default function ForBusiness() {
+  const location = useLocation();
+
+  // Плавный переход к секции по якорю (#forecast, #ecosystem, #lead),
+  // в т.ч. при переходе со статьи в ленте.
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [location.hash]);
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
