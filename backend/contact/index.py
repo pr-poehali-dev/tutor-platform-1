@@ -10,15 +10,25 @@ POST /?action=feedback_submit                body: {contact_name, contact_email|
 
 B2B КОНСТРУКТОР ШКОЛ:
 POST /?action=partner_lead                   body: {contact_name, contact_email|phone, company, audience_type, topic, students_est, plan_interest, message, utm}
+
+АДМИН (X-Admin-Pin):
+GET  /?action=leads_list
+POST /?action=lead_update      body: {id, status?, note?}
+POST /?action=invite_grant     body: {lead_id?|email}   -> выдать доступ в конструктор + ссылка
+GET  /?action=invites_list                              -> выданные приглашения
+POST /?action=invite_revoke    body: {id}               -> отозвать приглашение
 """
 import json
 import os
 import re
+import uuid
 import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import datetime, timezone
 import psycopg2
+
+SITE_URL = "https://xn--h1agdcde2c.xn--p1ai"  # учисьпро.рф
 
 MAX_API_BASE = "https://botapi.max.ru"
 
@@ -137,6 +147,94 @@ def handle_lead_update(body: dict) -> dict:
                 return err('Заявка не найдена', 404)
             conn.commit()
             return ok({'ok': True, 'id': lead_id})
+    finally:
+        conn.close()
+
+
+EMAIL_RE = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+
+
+def invite_link(token: str) -> str:
+    return f"{SITE_URL}/school/invite/{token}"
+
+
+def handle_invite_grant(body: dict) -> dict:
+    """Выдать персональный доступ в конструктор школ под email.
+    Можно передать email напрямую или lead_id (email возьмётся из заявки)."""
+    email = (body.get('email') or '').strip().lower()[:200]
+    lead_id = body.get('lead_id')
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if not email and lead_id is not None:
+                cur.execute("SELECT lower(contact_email) FROM partner_leads WHERE id=%s",
+                            (int(lead_id),))
+                r = cur.fetchone()
+                if r and r[0]:
+                    email = r[0]
+            if not email or not EMAIL_RE.match(email):
+                return err('У заявки нет email — укажите email вручную', 400)
+            # Уже есть активное приглашение под этот email?
+            cur.execute(
+                "SELECT token, status FROM school_builder_invites "
+                "WHERE lower(email)=%s AND status<>'revoked' ORDER BY id DESC LIMIT 1", (email,))
+            existing = cur.fetchone()
+            if existing:
+                token = existing[0]
+                created = False
+            else:
+                token = 'inv-' + uuid.uuid4().hex + uuid.uuid4().hex[:8]
+                lid = int(lead_id) if lead_id is not None else None
+                cur.execute(
+                    "INSERT INTO school_builder_invites (email, token, lead_id, status) "
+                    "VALUES (%s, %s, %s, 'pending')", (email, token, lid))
+                created = True
+            # Помечаем заявку как won, если пришли из неё
+            if lead_id is not None:
+                cur.execute("UPDATE partner_leads SET status='won', updated_at=now() WHERE id=%s",
+                            (int(lead_id),))
+            conn.commit()
+        link = invite_link(token)
+        if created:
+            notify_max(f"✅ Выдан доступ в конструктор школ\n📧 {email}\n🔗 {link}")
+        return ok({'ok': True, 'email': email, 'token': token, 'link': link, 'created': created})
+    finally:
+        conn.close()
+
+
+def handle_invites_list() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, email, token, lead_id, status, created_at, accepted_at "
+                "FROM school_builder_invites ORDER BY id DESC LIMIT 500")
+            items = [{
+                'id': r[0], 'email': r[1], 'token': r[2], 'lead_id': r[3],
+                'status': r[4],
+                'created_at': r[5].isoformat() if r[5] else None,
+                'accepted_at': r[6].isoformat() if r[6] else None,
+                'link': invite_link(r[2]),
+            } for r in cur.fetchall()]
+            return ok({'items': items, 'total': len(items)})
+    finally:
+        conn.close()
+
+
+def handle_invite_revoke(body: dict) -> dict:
+    try:
+        inv_id = int(body.get('id'))
+    except (TypeError, ValueError):
+        return err('Некорректный id', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE school_builder_invites SET status='revoked' WHERE id=%s", (inv_id,))
+            if cur.rowcount == 0:
+                conn.rollback()
+                return err('Приглашение не найдено', 404)
+            conn.commit()
+            return ok({'ok': True})
     finally:
         conn.close()
 
@@ -380,12 +478,18 @@ def handler(event: dict, context) -> dict:
     if action == 'partner_lead' and method == 'POST':
         return handle_partner_lead(token, body)
 
-    if action in ('leads_list', 'lead_update'):
+    if action in ('leads_list', 'lead_update', 'invite_grant', 'invites_list', 'invite_revoke'):
         if not check_admin(headers):
             return err('Доступ запрещён', 403)
         if action == 'leads_list':
             return handle_leads_list()
         if action == 'lead_update' and method == 'POST':
             return handle_lead_update(body)
+        if action == 'invite_grant' and method == 'POST':
+            return handle_invite_grant(body)
+        if action == 'invites_list':
+            return handle_invites_list()
+        if action == 'invite_revoke' and method == 'POST':
+            return handle_invite_revoke(body)
 
     return err('Неизвестное действие', 404)

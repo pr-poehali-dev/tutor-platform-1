@@ -57,9 +57,9 @@ export interface SchoolCourseFull extends SchoolCourseListItem {
 async function req<T>(
   action: string,
   opts: { method?: string; body?: unknown; query?: Record<string, string> } = {}
-): Promise<{ ok: boolean; data?: T; error?: string; needAuth?: boolean }> {
+): Promise<{ ok: boolean; data?: T; error?: string; needAuth?: boolean; status?: number }> {
   const t = token();
-  if (!t) return { ok: false, error: "Войдите в аккаунт", needAuth: true };
+  if (!t) return { ok: false, error: "Войдите в аккаунт", needAuth: true, status: 401 };
   const params = new URLSearchParams({ action, ...(opts.query || {}) });
   try {
     const res = await fetch(`${URL}?${params.toString()}`, {
@@ -68,15 +68,29 @@ async function req<T>(
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
     const data = await res.json();
-    if (!res.ok) return { ok: false, error: data?.error || `Ошибка ${res.status}`, needAuth: res.status === 401 };
-    return { ok: true, data };
+    if (!res.ok)
+      return { ok: false, error: data?.error || `Ошибка ${res.status}`, needAuth: res.status === 401, status: res.status };
+    return { ok: true, data, status: res.status };
   } catch {
     return { ok: false, error: "Сеть недоступна" };
   }
 }
 
 export function fetchMySchool() {
-  return req<{ school: School }>("my_school");
+  return req<{ school: School | null; has_access: boolean }>("my_school");
+}
+
+// ---------- Доступ в конструктор по приглашению ----------
+
+export function fetchAccessStatus() {
+  return req<{ has_access: boolean }>("access_status");
+}
+
+export function acceptInvite(token: string) {
+  return req<{ ok: boolean; school: School }>("accept_invite", {
+    method: "POST",
+    body: { token },
+  });
 }
 
 export function updateSchool(

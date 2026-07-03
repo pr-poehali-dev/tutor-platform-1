@@ -30,6 +30,7 @@ export default function CourseResult({ result, onRestart, onLead }: Props) {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [noAccess, setNoAccess] = useState(false);
 
   const saveToSchool = async () => {
     if (saving || saved) return;
@@ -43,11 +44,14 @@ export default function CourseResult({ result, onRestart, onLead }: Props) {
       return;
     }
     setSaving(true);
+    setNoAccess(false);
     const res = await saveCourseToSchool(c, result.id);
     setSaving(false);
     if (res.ok) {
       setSaved(true);
       setTimeout(() => navigate("/school"), 900);
+    } else if (res.status === 403) {
+      setNoAccess(true);
     }
   };
 
@@ -269,6 +273,23 @@ export default function CourseResult({ result, onRestart, onLead }: Props) {
             <Icon name="RotateCcw" size={16} /> Другой курс
           </button>
         </div>
+
+        {noAccess && (
+          <div className="mt-5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-left max-w-xl mx-auto">
+            <div className="flex items-center gap-2 text-amber-200 font-medium mb-1">
+              <Icon name="Lock" size={16} /> Создание школы — по приглашению
+            </div>
+            <p className="text-white/65 text-sm mb-3">
+              Чтобы сохранить курс в свою школу, нужен доступ к конструктору. Оставьте заявку — мы вышлем персональную ссылку.
+            </p>
+            <button
+              onClick={() => navigate("/school")}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-4 py-2 rounded-xl hover:scale-[1.02] transition-transform text-sm"
+            >
+              <Icon name="Send" size={15} /> Оставить заявку на доступ
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

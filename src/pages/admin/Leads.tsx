@@ -73,6 +73,9 @@ export default function Leads() {
   const [error, setError] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<number, string>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [grantId, setGrantId] = useState<number | null>(null);
+  const [grantLinks, setGrantLinks] = useState<Record<number, string>>({});
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (!pin) return;
@@ -130,6 +133,38 @@ export default function Leads() {
     } finally {
       setSavingId(null);
     }
+  };
+
+  const grantAccess = async (lead: Lead) => {
+    if (grantId) return;
+    if (!lead.contact_email) {
+      setError(`У заявки #${lead.id} нет email — доступ выдаётся под email.`);
+      return;
+    }
+    setGrantId(lead.id);
+    setError(null);
+    try {
+      const res = await fetch(`${CONTACT_URL}?action=invite_grant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Pin": pin },
+        body: JSON.stringify({ lead_id: lead.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Ошибка ${res.status}`);
+      setGrantLinks((p) => ({ ...p, [lead.id]: data.link }));
+      setItems((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: "won" } : l)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGrantId(null);
+    }
+  };
+
+  const copyLink = (id: number, link: string) => {
+    navigator.clipboard?.writeText(link).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 1500);
+    });
   };
 
   const filtered = useMemo(
@@ -282,6 +317,38 @@ export default function Leads() {
                         {STATUS_META[s].label}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Выдача доступа в конструктор */}
+                  <div className="mb-3">
+                    {grantLinks[l.id] ? (
+                      <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.06] p-3">
+                        <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium mb-2">
+                          <Icon name="CircleCheck" size={15} /> Персональная ссылка для {l.contact_email}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-xs text-white/80 bg-black/20 rounded px-2 py-1.5 truncate">{grantLinks[l.id]}</code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyLink(l.id, grantLinks[l.id])}
+                            className="text-white/70 hover:text-white border border-white/10 flex-shrink-0"
+                          >
+                            <Icon name={copiedId === l.id ? "Check" : "Copy"} size={14} />
+                          </Button>
+                        </div>
+                        <p className="text-white/45 text-[11px] mt-1.5">Отправьте ссылку автору. Доступ активируется, когда он войдёт под этим email.</p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => grantAccess(l)}
+                        disabled={grantId === l.id || !l.contact_email}
+                        className="inline-flex items-center gap-2 rounded-lg border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-200 text-sm font-medium px-3 py-1.5 transition-colors disabled:opacity-50"
+                      >
+                        <Icon name={grantId === l.id ? "Loader2" : "KeyRound"} size={15} className={grantId === l.id ? "animate-spin" : ""} />
+                        Выдать доступ в конструктор
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-start gap-2">

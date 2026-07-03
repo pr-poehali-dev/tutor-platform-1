@@ -30,6 +30,10 @@ POST /?action=remove_student  body: {id}  -> убрать ученика
 POST /?action=set_domain      body: {domain}  -> привязать домен + вернуть DNS-инструкцию
 POST /?action=verify_domain             -> проверить TXT-запись и подтвердить домен
 POST /?action=remove_domain             -> отвязать домен
+
+Доступ по приглашению:
+GET  /?action=access_status             -> {has_access}
+POST /?action=accept_invite   body: {token}  -> активация персонального приглашения
 """
 import json
 import os
@@ -131,20 +135,52 @@ SCHOOL_COLS = ("id, name, slug, description, brand_logo_url, brand_color, "
                "ai_teacher_enabled, ai_teacher_persona, status, created_at, domain_verify_token")
 
 
+class AccessDenied(Exception):
+    """У пользователя нет подтверждённого доступа к конструктору школ."""
+
+
+def user_email(cur, uid: int):
+    cur.execute("SELECT lower(email) FROM " + t('auth_users') + " WHERE id=%s", (uid,))
+    r = cur.fetchone()
+    return r[0] if r and r[0] else None
+
+
+def has_builder_access(cur, uid: int) -> bool:
+    """Доступ есть, если у пользователя уже есть школа с доступом
+    или существует принятый/ожидающий инвайт под его email."""
+    cur.execute("SELECT builder_access FROM " + t('schools') +
+                " WHERE owner_user_id=%s LIMIT 1", (uid,))
+    r = cur.fetchone()
+    if r and r[0]:
+        return True
+    email = user_email(cur, uid)
+    if not email:
+        return False
+    cur.execute(
+        "SELECT 1 FROM " + t('school_builder_invites') +
+        " WHERE lower(email)=%s AND status IN ('pending','accepted') LIMIT 1", (email,))
+    return cur.fetchone() is not None
+
+
+def create_school_for(cur, uid: int) -> dict:
+    slug = slugify('moya-shkola', uid)
+    cur.execute(
+        "INSERT INTO " + t('schools') + " (owner_user_id, name, slug, builder_access) "
+        "VALUES (%s, %s, %s, true) RETURNING " + SCHOOL_COLS,
+        (uid, 'Моя школа', slug)
+    )
+    return school_dict(cur.fetchone())
+
+
 def get_or_create_school(cur, uid: int) -> dict:
     cur.execute("SELECT " + SCHOOL_COLS + " FROM " + t('schools') +
                 " WHERE owner_user_id=%s LIMIT 1", (uid,))
     row = cur.fetchone()
     if row:
         return school_dict(row)
-    slug = slugify('moya-shkola', uid)
-    cur.execute(
-        "INSERT INTO " + t('schools') + " (owner_user_id, name, slug) "
-        "VALUES (%s, %s, %s) RETURNING " + SCHOOL_COLS,
-        (uid, 'Моя школа', slug)
-    )
-    row = cur.fetchone()
-    return school_dict(row)
+    if not has_builder_access(cur, uid):
+        raise AccessDenied()
+    return create_school_for(cur, uid)
 
 
 def get_school_id(cur, uid: int):
@@ -155,12 +191,68 @@ def get_school_id(cur, uid: int):
 
 def handle_my_school(conn, uid: int) -> dict:
     with conn.cursor() as cur:
-        school = get_or_create_school(cur, uid)
-        conn.commit()
+        # Есть ли уже школа
+        cur.execute("SELECT " + SCHOOL_COLS + " FROM " + t('schools') +
+                    " WHERE owner_user_id=%s LIMIT 1", (uid,))
+        row = cur.fetchone()
+        if not row:
+            if not has_builder_access(cur, uid):
+                return ok({'school': None, 'has_access': False})
+            school = create_school_for(cur, uid)
+            conn.commit()
+        else:
+            school = school_dict(row)
         cur.execute("SELECT COUNT(*) FROM " + t('school_courses') + " WHERE school_id=%s",
                     (school['id'],))
         school['courses_count'] = cur.fetchone()[0]
-        return ok({'school': school})
+        return ok({'school': school, 'has_access': True})
+
+
+def handle_access_status(conn, uid: int) -> dict:
+    """Проверка доступа к конструктору без создания школы."""
+    with conn.cursor() as cur:
+        return ok({'has_access': has_builder_access(cur, uid)})
+
+
+def handle_accept_invite(conn, uid: int, body: dict) -> dict:
+    """Активация персонального приглашения по токену. Работает только
+    если вошедший пользователь совпадает по email с приглашением."""
+    token = (body.get('token') or '').strip()[:80]
+    if not token:
+        return err('Нет токена приглашения', 400)
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, lower(email), status FROM " + t('school_builder_invites') +
+            " WHERE token=%s LIMIT 1", (token,))
+        inv = cur.fetchone()
+        if not inv:
+            return err('Приглашение не найдено', 404)
+        inv_id, inv_email, status = inv
+        if status == 'revoked':
+            return err('Приглашение отозвано', 403)
+        email = user_email(cur, uid)
+        if not email:
+            return err('В вашем аккаунте не указан email. Добавьте email, чтобы принять приглашение.', 400)
+        if email != inv_email:
+            return err('Это приглашение оформлено на другой email. Войдите под ' + inv_email, 403)
+        # Отмечаем принятым (если ещё не)
+        if status != 'accepted':
+            cur.execute(
+                "UPDATE " + t('school_builder_invites') +
+                " SET status='accepted', accepted_user_id=%s, accepted_at=now() WHERE id=%s",
+                (uid, inv_id))
+        # Создаём школу, если её ещё нет
+        cur.execute("SELECT " + SCHOOL_COLS + " FROM " + t('schools') +
+                    " WHERE owner_user_id=%s LIMIT 1", (uid,))
+        row = cur.fetchone()
+        if row:
+            school = school_dict(row)
+            cur.execute("UPDATE " + t('schools') + " SET builder_access=true WHERE owner_user_id=%s",
+                        (uid,))
+        else:
+            school = create_school_for(cur, uid)
+        conn.commit()
+        return ok({'ok': True, 'school': school})
 
 
 def handle_update_school(conn, uid: int, body: dict) -> dict:
@@ -790,7 +882,7 @@ def handler(event: dict, context) -> dict:
         if not uid:
             return err('Требуется вход в аккаунт', 401)
 
-        # Оплата и доступ ученика
+        # Оплата и доступ ученика (не требуют доступа в конструктор)
         if action == 'buy_course' and method == 'POST':
             return handle_buy_course(conn, uid, body)
         if action == 'sync_payment' and method == 'POST':
@@ -798,34 +890,43 @@ def handler(event: dict, context) -> dict:
         if action == 'my_enrollments':
             return handle_my_enrollments(conn, uid)
 
-        if action == 'my_school':
-            return handle_my_school(conn, uid)
-        if action == 'update_school' and method == 'POST':
-            return handle_update_school(conn, uid, body)
-        if action == 'courses':
-            return handle_courses(conn, uid)
-        if action == 'save_course' and method == 'POST':
-            return handle_save_course(conn, uid, body)
-        if action == 'course':
-            return handle_course(conn, uid, qs.get('id'))
-        if action == 'update_course' and method == 'POST':
-            return handle_update_course(conn, uid, body)
-        if action == 'delete_course' and method == 'POST':
-            return handle_delete_course(conn, uid, body)
-        if action == 'upload_logo' and method == 'POST':
-            return handle_upload_logo(conn, uid, body)
-        if action == 'students':
-            return handle_students(conn, uid)
-        if action == 'invite_student' and method == 'POST':
-            return handle_invite_student(conn, uid, body)
-        if action == 'remove_student' and method == 'POST':
-            return handle_remove_student(conn, uid, body)
-        if action == 'set_domain' and method == 'POST':
-            return handle_set_domain(conn, uid, body)
-        if action == 'verify_domain' and method == 'POST':
-            return handle_verify_domain(conn, uid)
-        if action == 'remove_domain' and method == 'POST':
-            return handle_remove_domain(conn, uid)
+        # Доступ в конструктор по приглашению
+        if action == 'access_status':
+            return handle_access_status(conn, uid)
+        if action == 'accept_invite' and method == 'POST':
+            return handle_accept_invite(conn, uid, body)
+
+        try:
+            if action == 'my_school':
+                return handle_my_school(conn, uid)
+            if action == 'update_school' and method == 'POST':
+                return handle_update_school(conn, uid, body)
+            if action == 'courses':
+                return handle_courses(conn, uid)
+            if action == 'save_course' and method == 'POST':
+                return handle_save_course(conn, uid, body)
+            if action == 'course':
+                return handle_course(conn, uid, qs.get('id'))
+            if action == 'update_course' and method == 'POST':
+                return handle_update_course(conn, uid, body)
+            if action == 'delete_course' and method == 'POST':
+                return handle_delete_course(conn, uid, body)
+            if action == 'upload_logo' and method == 'POST':
+                return handle_upload_logo(conn, uid, body)
+            if action == 'students':
+                return handle_students(conn, uid)
+            if action == 'invite_student' and method == 'POST':
+                return handle_invite_student(conn, uid, body)
+            if action == 'remove_student' and method == 'POST':
+                return handle_remove_student(conn, uid, body)
+            if action == 'set_domain' and method == 'POST':
+                return handle_set_domain(conn, uid, body)
+            if action == 'verify_domain' and method == 'POST':
+                return handle_verify_domain(conn, uid)
+            if action == 'remove_domain' and method == 'POST':
+                return handle_remove_domain(conn, uid)
+        except AccessDenied:
+            return err('Доступ в конструктор школ выдаётся по приглашению', 403)
 
         return err('Неизвестное действие', 404)
     finally:

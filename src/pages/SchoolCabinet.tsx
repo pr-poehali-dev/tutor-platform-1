@@ -18,6 +18,7 @@ import SchoolStudents from "@/components/school/SchoolStudents";
 import SchoolBrand from "@/components/school/SchoolBrand";
 import SchoolTeacher from "@/components/school/SchoolTeacher";
 import SchoolDomain from "@/components/school/SchoolDomain";
+import NoAccessGate from "@/components/school/NoAccessGate";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -32,18 +33,23 @@ export default function SchoolCabinet() {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [tab, setTab] = useState<Tab>("courses");
+  const [hasAccess, setHasAccess] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [s, cs] = await Promise.all([fetchMySchool(), fetchSchoolCourses()]);
+    const s = await fetchMySchool();
     if (s.ok && s.data) {
-      setSchool(s.data.school);
-      setNameDraft(s.data.school.name);
+      setHasAccess(s.data.has_access);
+      if (s.data.school) {
+        setSchool(s.data.school);
+        setNameDraft(s.data.school.name);
+        const cs = await fetchSchoolCourses();
+        if (cs.ok && cs.data) setCourses(cs.data.items);
+      }
     } else if (s.error) {
       setError(s.error);
     }
-    if (cs.ok && cs.data) setCourses(cs.data.items);
     setLoading(false);
   }, []);
 
@@ -103,6 +109,10 @@ export default function SchoolCabinet() {
         </div>
       </div>
     );
+  }
+
+  if (!loading && !hasAccess && !school) {
+    return <NoAccessGate />;
   }
 
   return (
