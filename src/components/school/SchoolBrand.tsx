@@ -16,20 +16,35 @@ export default function SchoolBrand({ school, onUpdated }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const clearInput = () => {
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMsg("Выберите изображение (PNG, JPG, SVG)");
+      clearInput();
+      return;
+    }
     if (file.size > 2 * 1024 * 1024) {
       setMsg("Файл слишком большой (макс. 2 МБ)");
+      clearInput();
       return;
     }
     const reader = new FileReader();
+    reader.onerror = () => {
+      setMsg("Не удалось прочитать файл");
+      clearInput();
+    };
     reader.onload = async () => {
       const base64 = String(reader.result || "");
       setUploading(true);
       setMsg(null);
       const res = await uploadSchoolLogo(base64, file.type);
       setUploading(false);
+      clearInput();
       if (res.ok && res.data) {
         setLogo(res.data.brand_logo_url);
         setMsg("Логотип обновлён");
@@ -98,7 +113,9 @@ export default function SchoolBrand({ school, onUpdated }: Props) {
         </div>
       </div>
 
-      {msg && <p className="text-emerald-300 text-sm">{msg}</p>}
+      {msg && (
+        <p className={`text-sm ${/^(Не|Файл|Выберите)/.test(msg) ? "text-rose-300" : "text-emerald-300"}`}>{msg}</p>
+      )}
     </div>
   );
 }

@@ -10,10 +10,30 @@ interface Props {
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    navigator.clipboard?.writeText(value).then(() => {
+    const ok = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    });
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(value).then(ok).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = value;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        ok();
+      } catch {
+        /* ignore */
+      }
+    }
   };
   return (
     <div>
@@ -42,6 +62,7 @@ export default function SchoolDomain({ school, onUpdated }: Props) {
   );
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [confirmUnbind, setConfirmUnbind] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err" | "info"; text: string } | null>(null);
 
   const verified = school.domain_verified && !!school.custom_domain;
@@ -78,12 +99,15 @@ export default function SchoolDomain({ school, onUpdated }: Props) {
   };
 
   const unbind = async () => {
+    setConfirmUnbind(false);
     const res = await removeSchoolDomain();
     if (res.ok && res.data) {
       onUpdated(res.data.school);
       setDns(null);
       setDomain("");
       setMsg({ type: "info", text: "Домен отвязан." });
+    } else {
+      setMsg({ type: "err", text: res.error || "Не удалось отвязать домен" });
     }
   };
 
@@ -176,11 +200,25 @@ export default function SchoolDomain({ school, onUpdated }: Props) {
         </div>
       )}
 
-      {school.custom_domain && (
-        <button onClick={unbind} className="text-white/40 hover:text-rose-300 text-sm transition-colors">
-          Отвязать домен
-        </button>
-      )}
+      {school.custom_domain &&
+        (confirmUnbind ? (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-white/60">Отвязать {school.custom_domain}?</span>
+            <button onClick={unbind} className="text-rose-300 hover:text-rose-200 font-medium">
+              Да, отвязать
+            </button>
+            <button onClick={() => setConfirmUnbind(false)} className="text-white/45 hover:text-white">
+              Отмена
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmUnbind(true)}
+            className="text-white/40 hover:text-rose-300 text-sm transition-colors"
+          >
+            Отвязать домен
+          </button>
+        ))}
     </div>
   );
 }

@@ -12,6 +12,7 @@ export default function TeacherChat({ courseId }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,12 +37,13 @@ export default function TeacherChat({ courseId }: Props) {
     setMessages((m) => [...m, { role: "user", content: text }]);
     setInput("");
     setSending(true);
+    setChatError(null);
     const res = await askTeacher(courseId, text, history);
     setSending(false);
     if (res.ok && res.data) {
       setMessages((m) => [...m, { role: "assistant", content: res.data!.reply }]);
     } else {
-      setMessages((m) => [...m, { role: "assistant", content: res.error || "Не удалось получить ответ." }]);
+      setChatError(res.error || "Не удалось получить ответ. Попробуйте ещё раз.");
     }
   };
 
@@ -96,6 +98,12 @@ export default function TeacherChat({ courseId }: Props) {
             <div className="bg-white/[0.06] border border-white/8 rounded-2xl px-4 py-3">
               <Icon name="Loader2" size={16} className="text-violet-300 animate-spin" />
             </div>
+          </div>
+        )}
+        {chatError && (
+          <div className="flex items-center gap-2 text-rose-300 text-xs bg-rose-500/8 border border-rose-500/20 rounded-xl px-3 py-2">
+            <Icon name="CircleAlert" size={14} className="flex-shrink-0" />
+            <span>{chatError}</span>
           </div>
         )}
         <div ref={bottomRef} />

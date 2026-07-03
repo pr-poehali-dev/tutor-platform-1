@@ -22,17 +22,23 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SchoolStudents({ courses }: Props) {
   const [items, setItems] = useState<StudentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [courseId, setCourseId] = useState<number | "">(courses[0]?.id ?? "");
   const [inviting, setInviting] = useState(false);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const load = () => {
+    setError(null);
     fetchStudents().then((r) => {
       if (r.ok && r.data) setItems(r.data.items);
+      else setError(r.error || "Не удалось загрузить учеников");
       setLoading(false);
     });
   };
@@ -42,7 +48,7 @@ export default function SchoolStudents({ courses }: Props) {
   const invite = async () => {
     if (inviting) return;
     if (!courseId) return setMsg({ type: "err", text: "Выберите курс" });
-    if (!email.includes("@")) return setMsg({ type: "err", text: "Укажите email" });
+    if (!EMAIL_RE.test(email.trim())) return setMsg({ type: "err", text: "Введите корректный email" });
     setInviting(true);
     setMsg(null);
     const res = await inviteStudent(Number(courseId), email.trim());
@@ -57,8 +63,14 @@ export default function SchoolStudents({ courses }: Props) {
   };
 
   const remove = async (id: number) => {
-    setItems((prev) => prev.filter((s) => s.id !== id));
-    await removeStudent(id);
+    const prev = items;
+    setItems((p) => p.filter((s) => s.id !== id));
+    setConfirmId(null);
+    const res = await removeStudent(id);
+    if (!res.ok) {
+      setItems(prev);
+      setMsg({ type: "err", text: res.error || "Не удалось убрать ученика" });
+    }
   };
 
   return (
@@ -73,7 +85,9 @@ export default function SchoolStudents({ courses }: Props) {
           <div className="flex flex-wrap gap-2">
             <input
               value={email}
+              type="email"
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && invite()}
               placeholder="email ученика"
               className="flex-1 min-w-[200px] bg-white/[0.05] border border-white/12 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-violet-500/50"
             />
@@ -106,6 +120,13 @@ export default function SchoolStudents({ courses }: Props) {
       {/* Список */}
       {loading ? (
         <div className="text-white/50 text-sm py-8 text-center">Загружаем учеников…</div>
+      ) : error ? (
+        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-6 text-center">
+          <p className="text-rose-300 text-sm mb-3">{error}</p>
+          <button onClick={load} className="text-sm text-white/70 hover:text-white border border-white/15 rounded-lg px-4 py-2">
+            Повторить
+          </button>
+        </div>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <Icon name="Users" size={26} className="text-white/40 mx-auto mb-2" />
@@ -127,13 +148,24 @@ export default function SchoolStudents({ courses }: Props) {
                   {s.course_title} · {SOURCE_LABEL[s.source] || s.source} · {fmtDate(s.created_at)}
                 </div>
               </div>
-              <button
-                onClick={() => remove(s.id)}
-                className="text-white/30 hover:text-rose-300 p-1.5 flex-shrink-0"
-                title="Убрать доступ"
-              >
-                <Icon name="X" size={16} />
-              </button>
+              {confirmId === s.id ? (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button onClick={() => remove(s.id)} className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1">
+                    Убрать
+                  </button>
+                  <button onClick={() => setConfirmId(null)} className="text-xs text-white/45 hover:text-white px-2 py-1">
+                    Отмена
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmId(s.id)}
+                  className="text-white/30 hover:text-rose-300 p-1.5 flex-shrink-0"
+                  title="Убрать доступ"
+                >
+                  <Icon name="X" size={16} />
+                </button>
+              )}
             </div>
           ))}
         </div>

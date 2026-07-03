@@ -25,38 +25,64 @@ export default function SchoolCourseCard({ course, onDelete }: Props) {
 
   const publicUrl = `${window.location.origin}/course/${course.id}`;
 
+  const flash = (text: string, ms = 1600) => {
+    setNotice(text);
+    setTimeout(() => setNotice(null), ms);
+  };
+
   const downloadPdf = async () => {
     setBusy(true);
     const res = await fetchSchoolCourse(course.id);
     setBusy(false);
     if (res.ok && res.data) printCoursePdf(res.data.course.data);
+    else flash("err:Не удалось скачать PDF", 2500);
   };
 
-  const savePrice = async () => {
+  const savePrice = async (): Promise<boolean> => {
     const kopecks = Math.max(0, Math.round(priceRub)) * 100;
-    await updateSchoolCourse(course.id, { price_kopecks: kopecks });
-    setSavedPrice(Math.round(priceRub));
-    setNotice("Цена сохранена");
-    setTimeout(() => setNotice(null), 1500);
+    const res = await updateSchoolCourse(course.id, { price_kopecks: kopecks });
+    if (res.ok) {
+      setSavedPrice(Math.round(priceRub));
+      flash("Цена сохранена");
+      return true;
+    }
+    flash("err:" + (res.error || "Ошибка сохранения цены"), 2500);
+    return false;
   };
 
   const togglePublish = async () => {
+    if (busy) return;
     const next = !published;
-    if (next && (priceRub <= 0)) {
-      setNotice("Укажите цену больше 0, чтобы опубликовать");
-      setTimeout(() => setNotice(null), 2500);
+    if (next && priceRub <= 0) {
+      flash("err:Укажите цену больше 0, чтобы опубликовать", 2500);
       return;
     }
-    if (next && priceRub !== savedPrice) await savePrice();
-    setPublished(next);
-    await updateSchoolCourse(course.id, { is_published: next });
+    setBusy(true);
+    if (next && priceRub !== savedPrice) {
+      const priceOk = await savePrice();
+      if (!priceOk) {
+        setBusy(false);
+        return;
+      }
+    }
+    const res = await updateSchoolCourse(course.id, { is_published: next });
+    setBusy(false);
+    if (res.ok) {
+      setPublished(next);
+      flash(next ? "Курс опубликован" : "Снят с публикации");
+    } else {
+      flash("err:" + (res.error || "Не удалось изменить статус"), 2500);
+    }
   };
 
   const copyLink = () => {
-    navigator.clipboard?.writeText(publicUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard
+      ?.writeText(publicUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => flash("err:Не удалось скопировать", 2000));
   };
 
   return (
@@ -94,11 +120,15 @@ export default function SchoolCourseCard({ course, onDelete }: Props) {
           <span className="text-white/45 text-sm">₽</span>
         </div>
         {priceRub !== savedPrice && (
-          <button onClick={savePrice} className="text-sm text-violet-300 hover:text-violet-200 px-2 py-1.5">
+          <button onClick={() => savePrice()} className="text-sm text-violet-300 hover:text-violet-200 px-2 py-1.5">
             Сохранить цену
           </button>
         )}
-        {notice && <span className="text-xs text-emerald-300">{notice}</span>}
+        {notice && (
+          <span className={`text-xs ${notice.startsWith("err:") ? "text-rose-300" : "text-emerald-300"}`}>
+            {notice.replace(/^err:/, "")}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mt-3">

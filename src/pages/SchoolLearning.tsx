@@ -11,11 +11,14 @@ export default function SchoolLearning() {
   const { isAuthenticated, loading: authLoading, openLogin } = useAuth();
   const [items, setItems] = useState<EnrollmentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
+    setError(null);
     fetchMyEnrollments().then((r) => {
       if (r.ok && r.data) setItems(r.data.items);
+      else setError(r.error || "Не удалось загрузить курсы");
       setLoading(false);
     });
   }, [isAuthenticated]);
@@ -51,6 +54,11 @@ export default function SchoolLearning() {
         <h1 className="font-montserrat font-black text-2xl md:text-3xl mb-6">Моё обучение</h1>
         {loading ? (
           <div className="text-white/50 text-sm py-10 text-center">Загружаем ваши курсы…</div>
+        ) : error ? (
+          <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] p-8 text-center">
+            <Icon name="CircleAlert" size={28} className="text-rose-300 mx-auto mb-3" />
+            <p className="text-white/60 text-sm">{error}</p>
+          </div>
         ) : items.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
             <Icon name="BookOpen" size={30} className="text-white/40 mx-auto mb-3" />
