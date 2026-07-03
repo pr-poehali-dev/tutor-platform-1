@@ -3,6 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import ForBusinessHeader from "@/components/business/for-business/ForBusinessHeader";
 import ForBusinessHero from "@/components/business/for-business/ForBusinessHero";
 import ForBusinessValue from "@/components/business/for-business/ForBusinessValue";
+import ForBusinessForecast from "@/components/business/for-business/ForBusinessForecast";
 import ForBusinessOffer from "@/components/business/for-business/ForBusinessOffer";
 import { FOR_BUSINESS_FAQ_JSON_LD } from "@/components/business/for-business/forBusinessData";
 
@@ -23,6 +24,7 @@ export default function ForBusiness() {
       <main className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-8 pb-16">
         <ForBusinessHero />
         <ForBusinessValue />
+        <ForBusinessForecast />
         <ForBusinessOffer />
       </main>
 
