@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { useAuth } from "@/context/AuthContext";
 import {
   generateGrant,
@@ -17,6 +18,22 @@ import GrantForm, { LOADING_STEPS } from "@/components/grants/page/GrantForm";
 import GrantBenefits from "@/components/grants/page/GrantBenefits";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+
+const GRANT_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "ИИ-помощник по грантам",
+  serviceType: "Подготовка заявки на грант",
+  description:
+    "ИИ-эксперт готовит профессиональную заявку на грант: актуальность, цели, задачи, смету, календарный план и разбор по критериям с оценкой шансов.",
+  provider: {
+    "@type": "Organization",
+    name: "УЧИСЬПРО",
+    url: "https://учисьпро.рф",
+  },
+  areaServed: "RU",
+  url: "https://учисьпро.рф/grants",
+};
 
 export default function GrantAssistant() {
   const { isAuthenticated, openLogin } = useAuth();
@@ -137,6 +154,7 @@ export default function GrantAssistant() {
         title="ИИ-помощник по грантам · Подготовьте заявку на грант за минуты — УЧИСЬПРО"
         description="Опишите грант и проект — ИИ-эксперт подготовит профессиональную заявку: актуальность, цели, смета, календарный план и проверка по критериям. Услуга дешевле рынка."
         canonical={`${SITE_URL}/grants`}
+        jsonLd={[GRANT_JSON_LD]}
       />
 
       <GrantHeader />
@@ -151,6 +169,9 @@ export default function GrantAssistant() {
           <GrantResult app={app} onRestart={restart} />
         ) : (
           <>
+            <div className="mb-6">
+              <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Помощник по грантам" }]} />
+            </div>
             <GrantHero priceRub={priceRub} />
             <GrantForm
               loading={loading}
