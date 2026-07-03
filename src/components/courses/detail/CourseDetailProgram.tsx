@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { Course } from "@/components/courses/coursesData";
+import { Course, getCoursePrice } from "@/components/courses/coursesData";
 import { CourseDetail } from "@/components/courses/courseDetailsData";
 import { RealCurriculum } from "@/hooks/useCourseCurriculum";
 import { useAuth } from "@/context/AuthContext";
@@ -69,8 +69,8 @@ export default function CourseDetailProgram({
         Программа делится на {detail.modules.length} {detail.modules.length === 1 ? "модуль" : "модуля"}. Нажми на любой урок — ИИ-методист откроет его прямо сейчас с теорией, разобранными примерами и задачами для самопроверки.
       </p>
 
-      {/* Плашка подписки: показываем, когда у пользователя нет доступа к курсу.
-          Первый урок бесплатный, остальные открываются по подписке.
+      {/* Плашка покупки курса: показываем, когда у пользователя нет доступа к курсу.
+          Первый урок бесплатный, остальные открываются после покупки курса.
           Во время акции «ДОБРО» всё бесплатно — плашку не показываем. */}
       {!canAccessCourse(course.id) && !course.freeForever && !isPromoActive() && (
         <div className="mb-4 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/15 via-fuchsia-500/10 to-cyan-500/15 p-4">
@@ -80,31 +80,20 @@ export default function CourseDetailProgram({
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-montserrat font-black text-white text-sm md:text-base">
-                Открой все уроки по подписке
+                Открой все уроки курса — {getCoursePrice(course).toLocaleString("ru-RU")} ₽
               </p>
               <p className="text-white/60 text-xs mt-0.5 leading-relaxed">
-                Первый урок — бесплатно. Подписка открывает все уроки этого курса,
-                остальные 36+ курсов и индивидуальный маршрут.
+                Первый урок — бесплатно. Покупка открывает все уроки этого курса навсегда,
+                с личным ИИ-наставником и проверкой заданий.
               </p>
             </div>
           </div>
           <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                try {
-                  sessionStorage.setItem("pending_checkout_plan", "pro");
-                  sessionStorage.setItem("pending_checkout_period", "month");
-                  sessionStorage.setItem("pending_checkout_from", window.location.pathname);
-                } catch { /* ignore */ }
-                openLogin();
-                return;
-              }
-              navigate(`/checkout/pro?from=${encodeURIComponent(window.location.pathname)}`);
-            }}
+            onClick={() => navigate(`/course-checkout/${course.id}`)}
             className="mt-3 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity glow-purple"
           >
-            <Icon name="Unlock" size={16} />
-            Открыть все уроки по подписке
+            <Icon name="CreditCard" size={16} />
+            Купить курс
           </button>
         </div>
       )}

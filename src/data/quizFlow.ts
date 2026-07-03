@@ -150,8 +150,8 @@ export function buildResult(answers: Record<string, string[]>): QuizResult {
     primarySubjects: subjectNames,
     recommendedTrack,
     estimateMonths,
-    ctaLabel: "Начать бесплатно",
-    ctaPath: "/pricing",
+    ctaLabel: "Подобрать курс",
+    ctaPath: "/courses",
     secondaryCtaLabel: "Посмотреть задания экзамена",
     secondaryCtaPath: "/exam-bank",
   };

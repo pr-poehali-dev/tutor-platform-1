@@ -198,11 +198,11 @@ export default function GraduatePrep() {
             Готов начать?
           </h2>
           <p className="text-white/75 text-sm md:text-base mb-5 max-w-xl mx-auto">
-            Первая неделя — бесплатно. Без карты. Дальше — тариф «Выпускник» с полным доступом к курсу и ИИ-репетитору.
+            Первая неделя — бесплатно. Без карты. Курс покупается отдельно, оплата разовая — доступ к материалам и ИИ-репетитору открывается навсегда.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Link
-              to="/pricing"
+              to="/courses"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm md:text-base font-black px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/30"
             >
               <Icon name="Sparkles" size={16} />

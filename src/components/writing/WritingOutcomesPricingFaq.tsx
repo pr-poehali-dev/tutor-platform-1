@@ -65,13 +65,6 @@ export default function WritingOutcomesPricingFaq() {
             <Icon name="Sparkles" size={16} />
             Начать пробный урок
           </Link>
-          <Link
-            to="/pricing"
-            className="inline-flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white font-bold text-sm px-5 py-3 rounded-xl"
-          >
-            <Icon name="CreditCard" size={16} />
-            Тарифы и оплата
-          </Link>
         </div>
       </div>
 

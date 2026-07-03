@@ -151,11 +151,11 @@ export default function SubjectLanding() {
             />
           </div>
           <Link
-            to="/pricing"
+            to="/courses"
             className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Icon name="Sparkles" size={14} />
-            Тарифы
+            Все курсы
           </Link>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function SubjectLanding() {
             <p className="text-white/65 text-base md:text-lg leading-relaxed max-w-2xl mb-6">{seo.intro}</p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                to="/pricing"
+                to="/courses"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
               >
                 <Icon name="Rocket" size={14} />
@@ -313,7 +313,7 @@ export default function SubjectLanding() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
             <div className="text-5xl mb-3">📚</div>
             <h3 className="font-montserrat font-black text-lg text-white mb-2">Скоро здесь будут курсы</h3>
-            <p className="text-white/55 text-sm">Мы готовим программы по {seo.nameGenitive}. Загляни через пару дней или подпишись на тарифы — получишь доступ сразу при запуске.</p>
+            <p className="text-white/55 text-sm">Мы готовим программы по {seo.nameGenitive}. Загляни в каталог через пару дней — купить курс можно будет сразу при запуске.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
@@ -385,7 +385,7 @@ export default function SubjectLanding() {
               Начни с бесплатной диагностики. За 10 минут поймёшь свой уровень и получишь персональный план обучения.
             </p>
             <Link
-              to="/pricing"
+              to="/courses"
               className="inline-flex items-center gap-2 bg-white text-purple-700 text-sm md:text-base font-black px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl"
             >
               <Icon name="Rocket" size={16} />

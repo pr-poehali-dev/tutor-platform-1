@@ -37,7 +37,7 @@ export default function MGUTrackFooterSections() {
             </li>
           ))}
         </ul>
-        <Link to="/pricing" className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-sm px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform">
+        <Link to="/courses" className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-sm px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform">
           <Icon name="Sparkles" size={14} />
           Оформить МГУ-трек Премиум
         </Link>

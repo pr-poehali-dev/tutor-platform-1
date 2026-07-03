@@ -393,13 +393,13 @@ export default function LearningJourney() {
                 Твой персональный маршрут готов
               </h2>
               <p className="text-white/65 text-sm md:text-base leading-relaxed mb-6 max-w-md mx-auto">
-                Диагностику ты прошёл бесплатно. <strong className="text-white">Индивидуальный маршрут с трекингом прогресса и адаптивными модулями</strong> доступен по подписке.
+                Диагностику ты прошёл бесплатно. <strong className="text-white">Индивидуальный маршрут с трекингом прогресса и адаптивными модулями</strong> входит в курс — оплата разовая, доступ навсегда.
               </p>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 text-left max-w-md mx-auto">
                 <p className="text-white/85 text-sm font-semibold mb-3 flex items-center gap-2">
                   <Icon name="Sparkles" size={14} className="text-purple-300" />
-                  Что входит в подписку
+                  Что входит в курс
                 </p>
                 <ul className="space-y-2 text-sm text-white/70">
                   <li className="flex items-start gap-2"><Icon name="Check" size={14} className="text-green-400 mt-0.5 flex-shrink-0" /> Персональный маршрут под твой уровень</li>
@@ -411,11 +411,11 @@ export default function LearningJourney() {
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  onClick={() => navigate(`/pricing?from=${encodeURIComponent(window.location.pathname)}`)}
+                  onClick={() => navigate(`/courses?from=${encodeURIComponent(window.location.pathname)}`)}
                   className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-7 py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
                 >
                   <Icon name="Sparkles" size={16} />
-                  Посмотреть тарифы
+                  Выбрать курс
                 </button>
                 <button
                   onClick={() => setStep("results")}

@@ -106,7 +106,7 @@ export default function PrepCourseHero({
         {/* CTA */}
         <div className="flex flex-wrap gap-2">
           <Link
-            to="/pricing"
+            to="/courses"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-black px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/30"
           >
             <Icon name="Sparkles" size={14} />

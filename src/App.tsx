@@ -25,7 +25,6 @@ const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 const Courses = lazy(() => import("./pages/Courses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
@@ -142,7 +141,6 @@ const App = () => (
                     <Route path="/legal/offer" element={<Offer />} />
                     <Route path="/legal/privacy" element={<Privacy />} />
                     <Route path="/legal/terms" element={<Terms />} />
-                    <Route path="/pricing" element={<Pricing />} />
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/super-courses" element={<SuperCourses />} />
                     <Route path="/remote-professions" element={<RemoteProfessions />} />

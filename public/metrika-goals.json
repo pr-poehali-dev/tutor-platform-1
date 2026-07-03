@@ -23,15 +23,6 @@
       "description": "Пользователь зашёл в каталог курсов"
     },
     {
-      "name": "Открыты тарифы",
-      "id": "view_pricing",
-      "type": "URL",
-      "condition": "содержит /pricing",
-      "value": 30,
-      "category": "Конверсия",
-      "description": "Просмотр страницы тарифов — высокая ценность"
-    },
-    {
       "name": "Клик «Купить курс»",
       "id": "course_buy_click",
       "type": "JS event",

@@ -299,15 +299,15 @@ export default function ExamChecklist() {
                 Готовься системно — с ИИ-репетитором
               </h2>
               <p className="text-white/75 text-sm md:text-base mb-4 max-w-xl mx-auto">
-                Подписка УЧИСЬПРО открывает все курсы, банк заданий и личного ИИ-наставника по каждому предмету.
+                В каталоге УЧИСЬПРО — курсы по каждому предмету, банк заданий и личный ИИ-наставник. Каждый курс покупается отдельно, оплата разовая — доступ навсегда.
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <Link
-                  to="/pricing"
+                  to="/courses"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-black px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/30"
                 >
                   <Icon name="Sparkles" size={16} />
-                  Открыть полный доступ
+                  Выбрать курс
                 </Link>
                 <Link
                   to="/graduate"

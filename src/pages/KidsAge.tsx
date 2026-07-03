@@ -88,11 +88,11 @@ export default function KidsAge() {
             <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Малыш", href: "/kids" }, { label: stage.label }]} />
           </div>
           <Link
-            to="/pricing"
+            to="/kids"
             className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Icon name="Sparkles" size={14} />
-            Тарифы
+            Малыш
           </Link>
         </div>
       </div>

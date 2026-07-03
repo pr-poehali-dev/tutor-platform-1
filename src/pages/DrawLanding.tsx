@@ -65,9 +65,9 @@ export default function DrawLanding() {
           <div className="hidden md:block">
             <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Рисовашка" }]} />
           </div>
-          <Link to="/pricing" className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl">
+          <Link to="/kids" className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl">
             <Icon name="Sparkles" size={14} />
-            Тарифы
+            Малыш
           </Link>
         </div>
       </div>

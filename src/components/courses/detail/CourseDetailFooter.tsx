@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course, getCoursePrice } from "@/components/courses/coursesData";
-import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 
 interface Props {
@@ -20,7 +19,6 @@ export default function CourseDetailFooter({
   setExpandedModule,
 }: Props) {
   const navigate = useNavigate();
-  const { isAuthenticated, openLogin } = useAuth();
   const { canAccessCourse, hasSubscription } = useAccess();
 
   return (
@@ -69,27 +67,6 @@ export default function CourseDetailFooter({
           >
             <Icon name="Gift" size={14} />
             Пробный урок
-          </button>
-          {/* Подписка на всё — альтернатива покупке одного курса.
-              После оплаты возвращаем пользователя на эту же страницу. */}
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                try {
-                  sessionStorage.setItem("pending_checkout_plan", "pro");
-                  sessionStorage.setItem("pending_checkout_period", "month");
-                  sessionStorage.setItem("pending_checkout_from", window.location.pathname);
-                } catch { /* ignore */ }
-                openLogin();
-                return;
-              }
-              navigate(`/checkout/pro?from=${encodeURIComponent(window.location.pathname)}`);
-            }}
-            className="flex items-center gap-2 bg-white/8 border border-purple-400/40 text-white text-sm font-bold px-4 md:px-5 py-3 md:py-3.5 rounded-2xl hover:bg-purple-500/15 transition-colors"
-          >
-            <Icon name="Sparkles" size={16} className="text-purple-300" />
-            <span className="hidden sm:inline">Подписка на всё</span>
-            <span className="sm:hidden">Подписка</span>
           </button>
           <button
             onClick={() => navigate(`/course-checkout/${course.id}`)}

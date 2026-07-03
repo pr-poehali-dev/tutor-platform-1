@@ -116,16 +116,16 @@ export default function Cabinet() {
               ) : (
                 <>
                   <h2 className="font-montserrat font-black text-2xl text-white mb-1">Подписки нет</h2>
-                  <p className="text-white/70 text-sm">Выбери тариф, чтобы открыть все курсы и ИИ-репетитора</p>
+                  <p className="text-white/70 text-sm">Выбери курс в каталоге — оплата разовая, доступ открывается навсегда</p>
                 </>
               )}
             </div>
             <Link
-              to="/pricing"
+              to="/courses"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-purple-500/30 transition-all whitespace-nowrap"
             >
               <Icon name={hasActiveSub ? "Settings" : "Rocket"} size={14} />
-              {hasActiveSub ? "Управлять" : "Выбрать тариф"}
+              {hasActiveSub ? "Управлять" : "Выбрать курс"}
             </Link>
           </div>
         </div>
@@ -182,14 +182,14 @@ export default function Cabinet() {
               Открой все возможности платформы
             </h3>
             <p className="text-white/70 text-sm md:text-base mb-5 max-w-lg mx-auto">
-              ИИ-репетитор, голосовые ответы, разбор сочинений, пробные экзамены — всё это в подписке от 3999 ₽/мес
+              ИИ-репетитор, голосовые ответы, разбор сочинений, пробные экзамены — всё это в курсах. Каждый курс покупается отдельно, оплата разовая — доступ навсегда.
             </p>
             <Link
-              to="/pricing"
+              to="/courses"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold text-sm hover:scale-[1.02] shadow-lg shadow-purple-500/30 transition-all"
             >
               <Icon name="Sparkles" size={16} />
-              Выбрать тариф
+              Выбрать курс
             </Link>
           </div>
         )}

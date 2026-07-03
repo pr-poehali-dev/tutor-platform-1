@@ -51,29 +51,7 @@ export default function LoginModal() {
       return;
     }
     closeLogin();
-    let pendingPlan: string | null = null;
-    let pendingPeriod: string | null = null;
-    let pendingFrom: string | null = null;
-    try {
-      pendingPlan = sessionStorage.getItem("pending_checkout_plan");
-      pendingPeriod = sessionStorage.getItem("pending_checkout_period");
-      pendingFrom = sessionStorage.getItem("pending_checkout_from");
-      if (pendingPlan) sessionStorage.removeItem("pending_checkout_plan");
-      if (pendingPeriod) sessionStorage.removeItem("pending_checkout_period");
-      if (pendingFrom) sessionStorage.removeItem("pending_checkout_from");
-    } catch {
-      // ignore
-    }
-    if (pendingPlan) {
-      const parts: string[] = [];
-      if (pendingPeriod === "year") parts.push("period=year");
-      // Возврат на курс после оплаты — только безопасный относительный путь.
-      if (pendingFrom && /^\/[^/]/.test(pendingFrom)) {
-        parts.push(`from=${encodeURIComponent(pendingFrom)}`);
-      }
-      navigate(`/checkout/${pendingPlan}${parts.length ? `?${parts.join("&")}` : ""}`);
-    }
-    else navigate("/cabinet");
+    navigate("/cabinet");
   };
 
   return (

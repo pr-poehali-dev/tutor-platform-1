@@ -117,11 +117,11 @@ export default function PracticeLayout(p: Props) {
             <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: p.subjectName, href: p.parentLandingHref }, { label: "Задачи-тренажёр" }]} />
           </div>
           <Link
-            to="/pricing"
+            to="/courses"
             className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Icon name="Sparkles" size={14} />
-            Тарифы
+            Все курсы
           </Link>
         </div>
       </div>

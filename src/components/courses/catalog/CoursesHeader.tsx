@@ -17,12 +17,12 @@ export default function CoursesHeader() {
             <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Каталог курсов" }]} />
           </div>
           <Link
-            to="/pricing"
-            aria-label="Посмотреть тарифы"
+            to="/super-courses"
+            aria-label="Супер-курсы"
             className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Icon name="Sparkles" size={14} aria-hidden="true" />
-            Тарифы
+            Супер-курсы
           </Link>
         </nav>
       </header>

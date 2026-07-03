@@ -178,11 +178,11 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
                   Войти
                 </button>
                 <Link
-                  to="/pricing"
-                  aria-label="Посмотреть тарифы"
+                  to="/courses"
+                  aria-label="Все курсы"
                   className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs lg:text-sm font-semibold px-3 lg:px-4 py-2 rounded-lg hover:opacity-90 transition-opacity glow-purple"
                 >
-                  Тарифы
+                  Все курсы
                 </Link>
               </>
             )}
@@ -256,11 +256,11 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
                     Войти
                   </button>
                   <Link
-                    to="/pricing"
-                    aria-label="Посмотреть тарифы"
+                    to="/courses"
+                    aria-label="Все курсы"
                     className="bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-semibold px-5 py-3 rounded-xl text-center"
                   >
-                    Тарифы
+                    Все курсы
                   </Link>
                 </>
               )}

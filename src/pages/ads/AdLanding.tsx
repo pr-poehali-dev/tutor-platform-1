@@ -77,8 +77,8 @@ export default function AdLanding() {
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <Link
-                to="/pricing"
-                onClick={() => handleCtaClick("pricing")}
+                to="/courses"
+                onClick={() => handleCtaClick("courses")}
                 className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r ${campaign.color} text-white text-base font-bold px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl`}
               >
                 <Icon name="Rocket" size={16} />
@@ -186,7 +186,7 @@ export default function AdLanding() {
               Первый урок бесплатно. Без привязки карты. Подписку можно отменить в любой момент.
             </p>
             <Link
-              to="/pricing"
+              to="/courses"
               onClick={() => handleCtaClick("final_cta")}
               className="inline-flex items-center gap-2 bg-white text-purple-700 text-base font-black px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl"
             >

@@ -81,9 +81,9 @@ export default function Checkout() {
         <div className="max-w-md text-center">
           <div className="text-5xl mb-4">🤔</div>
           <h1 className="font-montserrat font-black text-2xl mb-2">Такого тарифа нет</h1>
-          <Link to="/pricing" className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-sm">
+          <Link to="/courses" className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-sm">
             <Icon name="ArrowLeft" size={14} />
-            К тарифам
+            К курсам
           </Link>
         </div>
       </div>
@@ -171,9 +171,9 @@ export default function Checkout() {
       />
 
       <div className="max-w-3xl mx-auto px-4 pt-10 md:pt-14">
-        <Link to="/pricing" className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-6 transition-colors">
+        <Link to={fromPath || "/kids"} className="inline-flex items-center gap-2 text-white/55 hover:text-white text-sm mb-6 transition-colors">
           <Icon name="ArrowLeft" size={16} />
-          К тарифам
+          Назад
         </Link>
 
         <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-2">Оформление подписки</p>

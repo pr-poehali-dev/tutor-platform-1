@@ -106,13 +106,13 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       { label: "39 курсов", description: "По всем темам ЕГЭ", path: "/courses/math" },
       { label: "Тренажёр задач", description: "С проверкой ответов", path: "/math-problems" },
       { label: "Калькулятор баллов", description: "Прогноз результата", path: "/score-calculator" },
-      { label: "Тарифы", description: "От 590 ₽/мес", path: "/pricing" },
+      { label: "Все курсы", description: "Оплата разовая", path: "/courses" },
     ],
     refinements: [
       "Первый урок бесплатно",
       "ИИ-преподаватель 24/7",
       "Без записи и расписания",
-      "Подписка от 590 ₽/мес",
+      "Оплата курса разовая",
       "Чек 54-ФЗ",
       "Возврат 7 дней",
     ],
@@ -173,7 +173,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       { label: "Все курсы", description: "По всем предметам", path: "/courses" },
       { label: "Банк заданий ОГЭ", description: "Открытые типовые", path: "/exam-bank" },
       { label: "Калькулятор баллов", description: "Прогноз оценки", path: "/score-calculator" },
-      { label: "Тарифы", description: "Семейный от 199 ₽", path: "/pricing" },
+      { label: "Купить курс", description: "Оплата разовая", path: "/courses" },
     ],
     refinements: [
       "Все 4 предмета ОГЭ",
@@ -246,7 +246,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       { label: "Диагностика", description: "Бесплатно за 2 мин", path: "/kids/test" },
       { label: "Библиотека сказок", description: "С озвучкой", path: "/kids/library" },
       { label: "Занятия по возрасту", description: "От 1 до 6 лет", path: "/kids" },
-      { label: "Тарифы", description: "Семейный 199 ₽", path: "/pricing" },
+      { label: "Абонемент «Малыш»", description: "399 ₽/мес", path: "/kids" },
     ],
     refinements: [
       "От 1 года до 6 лет",
@@ -308,7 +308,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       { label: "Каталог 39 курсов", description: "Все предметы", path: "/courses" },
       { label: "Математика", description: "1-11 класс", path: "/courses/math" },
       { label: "Английский", description: "Уровни A1-C1", path: "/courses/english" },
-      { label: "Тарифы", description: "От 590 ₽/мес", path: "/pricing" },
+      { label: "Купить курс", description: "Оплата разовая", path: "/courses" },
     ],
     refinements: [
       "39 курсов в каталоге",
