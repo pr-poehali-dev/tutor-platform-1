@@ -7,8 +7,48 @@ interface Props {
 }
 
 export default function FeedArticleCtas({ article }: Props) {
+  const tags = (article.tags || []).map((t) => t.toLowerCase());
+  const isSchoolBuilder =
+    tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
+    /shkol/i.test(article.slug);
+
   return (
     <>
+      {/* CTA конструктор школ — прямой переход к запуску школы */}
+      {isSchoolBuilder && (
+        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">🚀</div>
+            <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
+              Создайте свою школу прямо сейчас
+            </h3>
+            <p className="text-white/80 text-sm md:text-base max-w-lg mx-auto mb-3">
+              Опишите тему — ИИ соберёт программу курса за минуту. Подключите оплаты, бренд и персонального
+              ИИ-преподавателя. Первый курс можно собрать бесплатно, без карты.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-white/60 text-xs mb-5">
+              <span className="inline-flex items-center gap-1.5"><Icon name="Sparkles" size={13} className="text-violet-300" /> Курс за минуту</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="Wallet" size={13} className="text-cyan-300" /> Приём оплат</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="GraduationCap" size={13} className="text-fuchsia-300" /> ИИ-наставник 24/7</span>
+            </div>
+            <Link
+              to="/school-builder"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
+            >
+              <Icon name="Rocket" size={18} />
+              Создать свою школу
+            </Link>
+            <div className="mt-3">
+              <Link to="/for-business" className="text-white/45 hover:text-white/70 text-xs underline underline-offset-2 transition-colors">
+                Узнать о возможностях для бизнеса
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CTA «Малыш» — для статей про детей/дошкольников */}
       {article.tags && article.tags.some((t) => ["дети", "развитие детей", "дошкольное образование", "аудиосказки"].includes(t.toLowerCase())) && (
         <div className="relative overflow-hidden rounded-2xl border border-pink-400/30 bg-gradient-to-br from-pink-600/30 via-rose-500/20 to-amber-500/20 p-5 md:p-6 mb-8 text-center">
