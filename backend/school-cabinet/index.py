@@ -476,6 +476,22 @@ def has_access(cur, cid: int, uid: int) -> bool:
     return cur.fetchone() is not None
 
 
+def claim_enrollments_by_email(cur, uid: int) -> None:
+    """Привязывает к пользователю доступы, выданные ранее на его email
+    (например, приглашение до регистрации). Делает идемпотентно."""
+    email = get_user_email(cur, uid)
+    if not email:
+        return
+    # Берём «висящие» записи по email, которых ещё нет у пользователя на этом курсе
+    cur.execute(
+        "UPDATE " + t('school_enrollments') + " e "
+        "SET student_user_id=%s "
+        "WHERE e.student_user_id IS NULL AND lower(e.student_email)=lower(%s) "
+        "AND NOT EXISTS (SELECT 1 FROM " + t('school_enrollments') + " e2 "
+        "  WHERE e2.school_course_id=e.school_course_id AND e2.student_user_id=%s)",
+        (uid, email, uid))
+
+
 def create_yookassa_payment(amount_rub: float, description: str, return_url: str,
                             email: str, metadata: dict) -> dict:
     shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
@@ -549,7 +565,9 @@ def handle_buy_course(conn, uid: int, body: dict) -> dict:
         title, price_kopecks, _, school_id, fee_pct = r
         if price_kopecks <= 0:
             return err('У курса не задана цена', 400)
+        claim_enrollments_by_email(cur, uid)
         if has_access(cur, cid, uid):
+            conn.commit()
             return ok({'already_owned': True})
 
         email = get_user_email(cur, uid) or 'noreply@example.com'
@@ -632,6 +650,8 @@ def handle_sync_school_payment(conn, uid: int) -> dict:
 def handle_my_enrollments(conn, uid: int) -> dict:
     """Курсы, к которым у ученика есть доступ."""
     with conn.cursor() as cur:
+        claim_enrollments_by_email(cur, uid)
+        conn.commit()
         cur.execute(
             "SELECT sc.id, sc.title, sc.lessons_count, sc.modules_count, s.name "
             "FROM " + t('school_enrollments') + " e "
@@ -720,6 +740,12 @@ def handle_invite_student(conn, uid: int, body: dict) -> dict:
                 " WHERE school_course_id=%s AND student_user_id=%s", (cid, student_uid))
             if cur.fetchone():
                 return err('Ученик уже добавлен на этот курс', 400)
+        # Защита от дублей по email (в т.ч. для ещё не зарегистрированных учеников)
+        cur.execute(
+            "SELECT 1 FROM " + t('school_enrollments') +
+            " WHERE school_course_id=%s AND lower(student_email)=%s LIMIT 1", (cid, email))
+        if cur.fetchone():
+            return err('Ученик с этим email уже добавлен на курс', 400)
         cur.execute(
             "INSERT INTO " + t('school_enrollments') +
             " (school_course_id, school_id, student_user_id, student_email, source) "

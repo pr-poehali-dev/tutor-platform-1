@@ -61,6 +61,22 @@ def resolve_user(cur, token: str):
     return r[0] if r else None
 
 
+def claim_enrollments_by_email(cur, uid: int) -> None:
+    """Привязывает доступы, выданные ранее на email пользователя (до регистрации)."""
+    cur.execute("SELECT email FROM " + t('auth_users') + " WHERE id=%s LIMIT 1", (uid,))
+    r = cur.fetchone()
+    email = r[0] if r and r[0] else None
+    if not email:
+        return
+    cur.execute(
+        "UPDATE " + t('school_enrollments') + " e "
+        "SET student_user_id=%s "
+        "WHERE e.student_user_id IS NULL AND lower(e.student_email)=lower(%s) "
+        "AND NOT EXISTS (SELECT 1 FROM " + t('school_enrollments') + " e2 "
+        "  WHERE e2.school_course_id=e.school_course_id AND e2.student_user_id=%s)",
+        (uid, email, uid))
+
+
 def has_access(cur, cid: int, uid: int) -> bool:
     cur.execute(
         "SELECT 1 FROM " + t('school_enrollments') +
@@ -144,6 +160,8 @@ def handle_info(conn, uid: int, course_id: str) -> dict:
     except (TypeError, ValueError):
         return err('Некорректный курс', 400)
     with conn.cursor() as cur:
+        claim_enrollments_by_email(cur, uid)
+        conn.commit()
         if not has_access(cur, cid, uid):
             return err('Нет доступа к курсу', 403)
         ctx = load_course_context(cur, cid)
@@ -167,6 +185,8 @@ def handle_ask(conn, uid: int, body: dict) -> dict:
         return err('Пустой вопрос', 400)
     history = body.get('history') or []
     with conn.cursor() as cur:
+        claim_enrollments_by_email(cur, uid)
+        conn.commit()
         if not has_access(cur, cid, uid):
             return err('Нет доступа к курсу', 403)
         ctx = load_course_context(cur, cid)
