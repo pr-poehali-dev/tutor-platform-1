@@ -17,8 +17,20 @@ function formatDate(iso: string | null): string {
   } catch { return ""; }
 }
 
+// Статья считается новой первые 3 дня после публикации.
+function isFresh(iso: string | null): boolean {
+  if (!iso) return false;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return false;
+  return Date.now() - t < 3 * 24 * 60 * 60 * 1000;
+}
+
+const NEW_BADGE =
+  "inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white shadow-lg shadow-fuchsia-500/30 animate-pulse";
+
 export default function ArticleCard({ article, variant = "default" }: Props) {
   const meta = CATEGORY_META[article.category];
+  const isNew = isFresh(article.published_at);
   const sourceKindLabel = article.source_kind === "user"
     ? "Статья читателя"
     : article.source_kind === "agent"
@@ -66,10 +78,18 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
                 {meta.emoji}
               </div>
             )}
-            <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${meta.tone}`}>
-              <span>{meta.emoji}</span>
-              {meta.label}
-            </span>
+            <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+              {isNew && (
+                <span className={NEW_BADGE}>
+                  <Icon name="Sparkles" size={10} />
+                  Новое
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${meta.tone}`}>
+                <span>{meta.emoji}</span>
+                {meta.label}
+              </span>
+            </div>
             {countryFlag && (
               <span
                 className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/45 backdrop-blur text-white px-2 py-1 rounded-full border border-white/20"
@@ -136,6 +156,11 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 flex items-center gap-1 ${meta.tone.split(" ")[0]}`}>
+            {isNew && (
+              <span className="inline-flex items-center gap-0.5 text-fuchsia-300">
+                <Icon name="Sparkles" size={9} /> Новое ·
+              </span>
+            )}
             {meta.label}
             {countryFlag && <span title={article.source_country || ""}>{countryFlag}</span>}
           </p>
@@ -167,10 +192,18 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
             {meta.emoji}
           </div>
         )}
-        <span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${meta.tone}`}>
-          <span>{meta.emoji}</span>
-          {meta.label}
-        </span>
+        <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+          {isNew && (
+            <span className={NEW_BADGE}>
+              <Icon name="Sparkles" size={10} />
+              Новое
+            </span>
+          )}
+          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${meta.tone}`}>
+            <span>{meta.emoji}</span>
+            {meta.label}
+          </span>
+        </div>
         {countryFlag && (
           <span
             className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/45 backdrop-blur text-white px-2 py-1 rounded-full border border-white/20"
