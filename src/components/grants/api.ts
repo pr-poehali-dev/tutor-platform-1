@@ -19,6 +19,7 @@ export interface GrantPreview {
   tasks_preview: string[];
   expert_score: number | null;
   expert_verdict: string | null;
+  is_fallback?: boolean;
   sections_locked: string[];
 }
 

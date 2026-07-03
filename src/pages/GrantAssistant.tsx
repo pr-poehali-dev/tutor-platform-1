@@ -6,12 +6,14 @@ import { useAuth } from "@/context/AuthContext";
 import {
   generateGrant,
   fetchGrant,
+  fetchGrantPrice,
   syncGrantPayment,
   type GrantApplication,
 } from "@/components/grants/api";
 import GrantResult from "@/components/grants/GrantResult";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const IDEA_MAX = 5000;
 
 const LOADING_STEPS = [
   "Анализирую грант и критерии оценки…",
@@ -44,7 +46,16 @@ export default function GrantAssistant() {
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [app, setApp] = useState<GrantApplication | null>(null);
+  const [priceRub, setPriceRub] = useState<number | null>(null);
+  const [openingApp, setOpeningApp] = useState(false);
   const stepTimer = useRef<number | null>(null);
+
+  // Цена полного пакета — показываем ДО генерации, чтобы не терять доверие
+  useEffect(() => {
+    fetchGrantPrice().then((r) => {
+      if (r.ok && r.data) setPriceRub(Math.round(r.data.price_kopecks / 100));
+    });
+  }, []);
 
   useEffect(() => {
     if (loading) {
@@ -84,10 +95,15 @@ export default function GrantAssistant() {
     const appId = Number(searchParams.get("app"));
     if (searchParams.get("paid") === "1") return; // обработано выше
     if (appId && isAuthenticated && !app) {
+      setOpeningApp(true);
+      setError(null);
       fetchGrant(appId).then((res) => {
+        setOpeningApp(false);
         if (res.ok && res.data) {
           setApp(res.data);
           window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          setError(res.error || "Заявка не найдена. Возможно, она была удалена.");
         }
       });
     }
@@ -154,7 +170,12 @@ export default function GrantAssistant() {
       </div>
 
       <main className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-8 pb-16">
-        {app ? (
+        {openingApp ? (
+          <div className="py-24 text-center">
+            <Icon name="Loader2" size={30} className="text-violet-300 animate-spin mx-auto mb-4" />
+            <p className="text-white/60 text-sm">Открываю заявку…</p>
+          </div>
+        ) : app ? (
           <GrantResult app={app} onRestart={restart} />
         ) : (
           <>
@@ -172,6 +193,17 @@ export default function GrantAssistant() {
                 Опишите грант и свой проект — ИИ-эксперт подготовит профессиональную заявку: актуальность, цели, задачи,
                 смету, календарный план и разбор по критериям. Черновик — бесплатно.
               </p>
+              <div className="inline-flex items-center gap-2 mt-5 bg-white/[0.04] border border-white/10 rounded-full px-4 py-1.5">
+                <Icon name="Sparkles" size={13} className="text-emerald-300" />
+                <span className="text-sm text-white/75">
+                  Черновик и оценка шансов — <span className="text-emerald-300 font-bold">бесплатно</span>
+                  {priceRub != null && (
+                    <>
+                      {" · "}полный пакет — <span className="text-white font-bold">{priceRub.toLocaleString("ru-RU")} ₽</span>
+                    </>
+                  )}
+                </span>
+              </div>
             </section>
 
             {/* Форма */}
@@ -220,11 +252,13 @@ export default function GrantAssistant() {
                   <label className="block text-white/70 text-sm font-medium mb-2">Расскажите о проекте</label>
                   <textarea
                     value={projectIdea}
-                    onChange={(e) => setProjectIdea(e.target.value)}
+                    onChange={(e) => setProjectIdea(e.target.value.slice(0, IDEA_MAX))}
                     rows={4}
+                    maxLength={IDEA_MAX}
                     placeholder="Что за проект, какую проблему решает, для кого, что планируете сделать…"
-                    className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-white/35 focus:outline-none focus:border-violet-500/50 resize-y mb-3"
+                    className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-white/35 focus:outline-none focus:border-violet-500/50 resize-y mb-1"
                   />
+                  <div className="text-right text-xs text-white/35 mb-3">{projectIdea.length} / {IDEA_MAX}</div>
 
                   <button
                     onClick={() => setShowMore((v) => !v)}
@@ -246,7 +280,17 @@ export default function GrantAssistant() {
                     </div>
                   )}
 
-                  {error && <p className="text-rose-300 text-sm mb-3">{error}</p>}
+                  {error && (
+                    <div className="flex items-center justify-between gap-3 bg-rose-500/10 border border-rose-500/25 rounded-xl px-3.5 py-2.5 mb-3">
+                      <p className="text-rose-200 text-sm">{error}</p>
+                      <button
+                        onClick={submit}
+                        className="flex-shrink-0 text-xs font-bold text-white bg-rose-500/25 hover:bg-rose-500/40 border border-rose-400/30 rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        Повторить
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     onClick={submit}
@@ -255,7 +299,10 @@ export default function GrantAssistant() {
                     <Icon name="Wand2" size={18} /> Подготовить заявку
                   </button>
                   <p className="text-white/40 text-xs text-center mt-3">
-                    Черновик и оценка шансов — бесплатно. Полный пакет — по желанию, дешевле рынка.
+                    Черновик и оценка шансов — бесплатно.
+                    {priceRub != null
+                      ? ` Полный пакет — ${priceRub.toLocaleString("ru-RU")} ₽, дешевле рынка в десятки раз.`
+                      : " Полный пакет — по желанию, дешевле рынка."}
                   </p>
                 </>
               )}

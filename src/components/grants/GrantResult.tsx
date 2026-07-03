@@ -79,6 +79,20 @@ export default function GrantResult({ app, onRestart }: Props) {
         </div>
       </div>
 
+      {/* Предупреждение об упрощённой генерации */}
+      {p.is_fallback && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.08] p-4 flex items-start gap-3">
+          <Icon name="TriangleAlert" size={18} className="text-amber-300 flex-shrink-0 mt-0.5" />
+          <div>
+            <div className="text-amber-200 font-medium text-sm mb-0.5">Черновик собран в упрощённом режиме</div>
+            <p className="text-white/65 text-sm">
+              ИИ не смог подготовить полноценную заявку — попробуйте сформировать её заново, добавив больше деталей о проекте.
+              Оплата такого черновика недоступна.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Цель */}
       {p.goal && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
@@ -113,43 +127,58 @@ export default function GrantResult({ app, onRestart }: Props) {
             </div>
           )}
 
-          {/* Платный блок */}
-          <div className="relative overflow-hidden rounded-3xl border border-violet-400/30 bg-gradient-to-br from-violet-700/30 via-fuchsia-600/15 to-cyan-700/25 p-6 md:p-8">
-            <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon name="Lock" size={18} className="text-violet-200" />
-                <h3 className="font-montserrat font-black text-xl md:text-2xl text-white">
-                  Откройте полный пакет заявки
-                </h3>
-              </div>
-              <p className="text-white/75 text-sm md:text-base mb-4 max-w-xl">
-                ИИ уже подготовил профессиональную заявку целиком. После оплаты вы получите готовые к подаче блоки:
+          {/* Платный блок — недоступен для упрощённого (fallback) черновика */}
+          {p.is_fallback ? (
+            <div className="rounded-3xl border border-white/12 bg-white/[0.03] p-6 md:p-8 text-center">
+              <Icon name="RefreshCw" size={22} className="text-violet-300 mx-auto mb-3" />
+              <p className="text-white/70 text-sm mb-5 max-w-md mx-auto">
+                Полный пакет откроется, когда ИИ подготовит полноценную заявку. Добавьте деталей и попробуйте снова.
               </p>
-              <div className="grid sm:grid-cols-2 gap-2 mb-6">
-                {p.sections_locked.map((s) => (
-                  <div key={s} className="flex items-center gap-2 text-white/80 text-sm">
-                    <Icon name="CircleCheck" size={15} className="text-emerald-400 flex-shrink-0" />
-                    {s}
-                  </div>
-                ))}
-              </div>
-              {error && <p className="text-rose-300 text-sm mb-3">{error}</p>}
-              <div className="flex flex-wrap items-center gap-4">
-                <button
-                  onClick={pay}
-                  disabled={paying}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-violet-500/25 disabled:opacity-60"
-                >
-                  {paying ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="Unlock" size={18} />}
-                  Открыть за {priceRub.toLocaleString("ru-RU")} ₽
-                </button>
-                <span className="text-white/45 text-xs">
-                  На рынке подготовка заявки стоит от 150 000 ₽. Оплата через ЮKassa.
-                </span>
+              <button
+                onClick={onRestart}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3 rounded-xl hover:scale-[1.02] transition-transform"
+              >
+                <Icon name="Wand2" size={16} /> Сформировать заново
+              </button>
+            </div>
+          ) : (
+            <div className="relative overflow-hidden rounded-3xl border border-violet-400/30 bg-gradient-to-br from-violet-700/30 via-fuchsia-600/15 to-cyan-700/25 p-6 md:p-8">
+              <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name="Lock" size={18} className="text-violet-200" />
+                  <h3 className="font-montserrat font-black text-xl md:text-2xl text-white">
+                    Откройте полный пакет заявки
+                  </h3>
+                </div>
+                <p className="text-white/75 text-sm md:text-base mb-4 max-w-xl">
+                  ИИ уже подготовил профессиональную заявку целиком. После оплаты вы получите готовые к подаче блоки:
+                </p>
+                <div className="grid sm:grid-cols-2 gap-2 mb-6">
+                  {p.sections_locked.map((s) => (
+                    <div key={s} className="flex items-center gap-2 text-white/80 text-sm">
+                      <Icon name="CircleCheck" size={15} className="text-emerald-400 flex-shrink-0" />
+                      {s}
+                    </div>
+                  ))}
+                </div>
+                {error && <p className="text-rose-300 text-sm mb-3">{error}</p>}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+                  <button
+                    onClick={pay}
+                    disabled={paying}
+                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {paying ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="Unlock" size={18} />}
+                    Открыть за {priceRub.toLocaleString("ru-RU")} ₽
+                  </button>
+                  <span className="text-white/45 text-xs">
+                    На рынке подготовка заявки стоит от 150 000 ₽. Оплата через ЮKassa.
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </>
       )}
 
@@ -189,10 +218,13 @@ function FullPackage({ full }: { full: NonNullable<GrantApplication["full"]> }) 
         <Icon name="ShieldCheck" size={16} /> Полный пакет открыт
       </div>
 
-      <Section title="Актуальность и проблема">
-        <p className="text-white/80 text-sm whitespace-pre-line">{full.relevance}</p>
-      </Section>
+      {full.relevance && (
+        <Section title="Актуальность и проблема">
+          <p className="text-white/80 text-sm whitespace-pre-line">{full.relevance}</p>
+        </Section>
+      )}
 
+      {full.tasks?.length > 0 && (
       <Section title="Задачи проекта">
         <ul className="space-y-1.5">
           {full.tasks?.map((tsk, i) => (
@@ -205,6 +237,7 @@ function FullPackage({ full }: { full: NonNullable<GrantApplication["full"]> }) 
           ))}
         </ul>
       </Section>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <Section title="Целевая аудитория">

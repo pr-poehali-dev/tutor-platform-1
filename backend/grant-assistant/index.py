@@ -227,6 +227,7 @@ def split_preview_full(data: dict) -> tuple:
         'tasks_preview': (data.get('tasks') or [])[:2],
         'expert_score': review.get('score'),
         'expert_verdict': review.get('verdict'),
+        'is_fallback': bool(data.get('_fallback')),
         'sections_locked': [
             'Полное обоснование актуальности',
             'Задачи и целевая аудитория',
@@ -291,6 +292,17 @@ def handle_generate(conn, uid: int, body: dict) -> dict:
         return err('Укажите название гранта или конкурса', 400)
     if len(project_idea) < 20:
         return err('Опишите проект подробнее (хотя бы пару предложений)', 400)
+
+    # Защита от спама: не более 8 бесплатных генераций в сутки на пользователя.
+    # Каждая генерация расходует токены ИИ, поэтому лимитируем.
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) FROM " + t('grant_applications') +
+            " WHERE user_id=%s AND created_at > NOW() - INTERVAL '24 hours'", (uid,))
+        recent = cur.fetchone()[0]
+    if recent >= 8:
+        return err('Вы подготовили слишком много заявок за сегодня. '
+                   'Попробуйте завтра или откройте одну из готовых заявок.', 429)
 
     app = {
         'grant_name': grant_name,
@@ -412,15 +424,33 @@ def handle_pay(conn, uid: int, body: dict) -> dict:
         return err('Приём оплат ещё не настроен', 503)
 
     with conn.cursor() as cur:
-        cur.execute("SELECT grant_name, price_kopecks, is_paid FROM " + t('grant_applications') +
-                    " WHERE id=%s AND user_id=%s", (aid, uid))
+        cur.execute("SELECT grant_name, price_kopecks, is_paid, preview_data FROM " +
+                    t('grant_applications') + " WHERE id=%s AND user_id=%s", (aid, uid))
         r = cur.fetchone()
         if not r:
             return err('Заявка не найдена', 404)
-        grant_name, price_kopecks, is_paid = r
+        grant_name, price_kopecks, is_paid, preview = r
         if is_paid:
             return ok({'already_paid': True})
+        # Не даём оплачивать аварийный (fallback) черновик — там нет полноценной заявки.
+        if isinstance(preview, dict) and preview.get('is_fallback'):
+            return err('Эта заявка сгенерирована в упрощённом режиме. '
+                       'Сформируйте её заново с более подробным описанием проекта.', 409)
         email = get_user_email(cur, uid) or 'noreply@example.com'
+        # Идемпотентность: если уже есть незавершённый платёж со ссылкой — вернём его,
+        # чтобы двойной клик не создавал два платежа в ЮKassa.
+        cur.execute(
+            "SELECT id, payment_id FROM " + t('grant_payments') +
+            " WHERE application_id=%s AND user_id=%s AND status='pending' "
+            "AND payment_id IS NOT NULL AND created_at > NOW() - INTERVAL '1 hour' "
+            "ORDER BY id DESC LIMIT 1", (aid, uid))
+        existing = cur.fetchone()
+        if existing and existing[1]:
+            pay = get_yookassa_payment(existing[1])
+            if pay and pay.get('status') == 'pending':
+                url = (pay.get('confirmation') or {}).get('confirmation_url')
+                if url:
+                    return ok({'ok': True, 'confirmation_url': url})
         cur.execute(
             "INSERT INTO " + t('grant_payments') +
             " (application_id, user_id, amount_kopecks, status) VALUES (%s,%s,%s,'pending') "
