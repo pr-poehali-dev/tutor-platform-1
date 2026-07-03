@@ -10,6 +10,8 @@
     {"name": "students without token", "method": "GET", "path": "/?action=students", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "invite_student without token", "method": "POST", "path": "/?action=invite_student", "body": {"course_id": 1, "email": "a@b.ru"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "upload_logo without token", "method": "POST", "path": "/?action=upload_logo", "body": {"image_base64": "x"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "set_domain without token", "method": "POST", "path": "/?action=set_domain", "body": {"domain": "school.ru"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "verify_domain without token", "method": "POST", "path": "/?action=verify_domain", "body": {}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "unknown action without token", "method": "GET", "path": "/?action=unknown", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }

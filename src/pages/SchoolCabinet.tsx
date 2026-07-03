@@ -17,10 +17,11 @@ import SchoolCourseCard from "@/components/school/SchoolCourseCard";
 import SchoolStudents from "@/components/school/SchoolStudents";
 import SchoolBrand from "@/components/school/SchoolBrand";
 import SchoolTeacher from "@/components/school/SchoolTeacher";
+import SchoolDomain from "@/components/school/SchoolDomain";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
-type Tab = "courses" | "students" | "brand" | "ai";
+type Tab = "courses" | "students" | "brand" | "ai" | "domain";
 
 export default function SchoolCabinet() {
   const { isAuthenticated, loading: authLoading, openLogin } = useAuth();
@@ -183,6 +184,7 @@ export default function SchoolCabinet() {
                 { id: "students", label: "Ученики", icon: "Users" },
                 { id: "brand", label: "Бренд", icon: "Palette" },
                 { id: "ai", label: "ИИ-препод", icon: "Sparkles" },
+                { id: "domain", label: "Домен", icon: "Globe" },
               ] as { id: Tab; label: string; icon: string }[]).map((tb) => (
                 <button
                   key={tb.id}
@@ -227,6 +229,10 @@ export default function SchoolCabinet() {
 
             {tab === "ai" && school && (
               <SchoolTeacher school={school} onUpdated={(s) => setSchool(s)} />
+            )}
+
+            {tab === "domain" && school && (
+              <SchoolDomain school={school} onUpdated={(s) => setSchool(s)} />
             )}
           </>
         )}

@@ -28,6 +28,14 @@ export interface School {
   status: string;
   created_at: string | null;
   courses_count?: number;
+  domain_verify_token?: string | null;
+}
+
+export interface DomainDns {
+  txt_name: string;
+  txt_value: string;
+  cname_name: string;
+  cname_value: string;
 }
 
 export interface SchoolCourseListItem {
@@ -204,4 +212,24 @@ export function inviteStudent(courseId: number, email: string) {
 
 export function removeStudent(id: number) {
   return req<{ ok: boolean }>("remove_student", { method: "POST", body: { id } });
+}
+
+// ---------- Этап 5: свой домен ----------
+
+export function setSchoolDomain(domain: string) {
+  return req<{ ok: boolean; school: School; dns: DomainDns }>("set_domain", {
+    method: "POST",
+    body: { domain },
+  });
+}
+
+export function verifySchoolDomain() {
+  return req<{ ok: boolean; verified: boolean; school?: School; message?: string; found?: string[] }>(
+    "verify_domain",
+    { method: "POST" }
+  );
+}
+
+export function removeSchoolDomain() {
+  return req<{ ok: boolean; school: School }>("remove_domain", { method: "POST" });
 }

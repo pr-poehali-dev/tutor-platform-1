@@ -25,6 +25,11 @@ POST /?action=upload_logo     body: {image_base64, content_type}  -> логот�
 GET  /?action=students                  -> ученики школы (кто купил/приглашён)
 POST /?action=invite_student  body: {course_id, email}  -> выдать доступ вручную
 POST /?action=remove_student  body: {id}  -> убрать ученика
+
+Домен (Этап 5):
+POST /?action=set_domain      body: {domain}  -> привязать домен + вернуть DNS-инструкцию
+POST /?action=verify_domain             -> проверить TXT-запись и подтвердить домен
+POST /?action=remove_domain             -> отвязать домен
 """
 import json
 import os
@@ -32,6 +37,7 @@ import re
 import uuid
 import base64
 from urllib.request import Request, urlopen
+from urllib.parse import quote as urllib_quote
 from datetime import datetime, timezone
 import psycopg2
 import boto3
@@ -116,12 +122,13 @@ def school_dict(row) -> dict:
         'ai_teacher_enabled': row[10], 'ai_teacher_persona': row[11],
         'status': row[12],
         'created_at': row[13].isoformat() if row[13] else None,
+        'domain_verify_token': row[14] if len(row) > 14 else None,
     }
 
 
 SCHOOL_COLS = ("id, name, slug, description, brand_logo_url, brand_color, "
                "custom_domain, domain_verified, payments_enabled, platform_fee_percent, "
-               "ai_teacher_enabled, ai_teacher_persona, status, created_at")
+               "ai_teacher_enabled, ai_teacher_persona, status, created_at, domain_verify_token")
 
 
 def get_or_create_school(cur, uid: int) -> dict:
@@ -649,6 +656,114 @@ def handle_remove_student(conn, uid: int, body: dict) -> dict:
         return ok({'ok': True})
 
 
+# ---------- Этап 5: свой домен школы ----------
+
+DOMAIN_RE = re.compile(r'^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$')
+CNAME_TARGET = 'schools.xn--h1agdcde2c.xn--p1ai'
+
+
+def normalize_domain(raw: str) -> str:
+    d = (raw or '').strip().lower()
+    d = re.sub(r'^https?://', '', d)
+    d = d.split('/')[0].strip().rstrip('.')
+    if d.startswith('www.'):
+        d = d[4:]
+    return d
+
+
+def handle_set_domain(conn, uid: int, body: dict) -> dict:
+    domain = normalize_domain(body.get('domain') or '')
+    if not domain or not DOMAIN_RE.match(domain) or len(domain) > 200:
+        return err('Введите корректный домен, например school.ru', 400)
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            get_or_create_school(cur, uid)
+            conn.commit()
+            sid = get_school_id(cur, uid)
+        # Домен не должен быть занят другой школой
+        cur.execute(
+            "SELECT id FROM " + t('schools') + " WHERE lower(custom_domain)=%s AND id<>%s LIMIT 1",
+            (domain, sid))
+        if cur.fetchone():
+            return err('Этот домен уже привязан к другой школе', 400)
+        verify_token = 'uchisipro-verify-' + uuid.uuid4().hex[:24]
+        cur.execute(
+            "UPDATE " + t('schools') + " SET custom_domain=%s, domain_verified=false, "
+            "domain_verify_token=%s, domain_added_at=now(), updated_at=now() WHERE id=%s "
+            "RETURNING " + SCHOOL_COLS,
+            (domain, verify_token, sid))
+        row = cur.fetchone()
+        conn.commit()
+    return ok({
+        'ok': True,
+        'school': school_dict(row),
+        'dns': {
+            'txt_name': f'_uchisipro.{domain}',
+            'txt_value': verify_token,
+            'cname_name': domain,
+            'cname_value': CNAME_TARGET,
+        },
+    })
+
+
+def dns_txt_lookup(name: str) -> list:
+    """Запрос TXT-записей через DNS-over-HTTPS (Google). Возвращает список строк."""
+    url = 'https://dns.google/resolve?name=' + urllib_quote(name) + '&type=TXT'
+    req = Request(url, headers={'Accept': 'application/dns-json'}, method='GET')
+    try:
+        with urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception:
+        return []
+    out = []
+    for ans in (data.get('Answer') or []):
+        val = (ans.get('data') or '').strip().strip('"')
+        if val:
+            out.append(val)
+    return out
+
+
+def handle_verify_domain(conn, uid: int) -> dict:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, custom_domain, domain_verify_token FROM " + t('schools') +
+            " WHERE owner_user_id=%s LIMIT 1", (uid,))
+        r = cur.fetchone()
+        if not r or not r[1]:
+            return err('Сначала привяжите домен', 400)
+        sid, domain, token = r
+    txt_records = dns_txt_lookup(f'_uchisipro.{domain}')
+    verified = token in txt_records
+    if verified:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE " + t('schools') + " SET domain_verified=true, updated_at=now() WHERE id=%s "
+                "RETURNING " + SCHOOL_COLS, (sid,))
+            row = cur.fetchone()
+            conn.commit()
+        return ok({'ok': True, 'verified': True, 'school': school_dict(row)})
+    return ok({
+        'ok': True, 'verified': False,
+        'message': 'TXT-запись пока не найдена. DNS может обновляться до 24 часов — попробуйте позже.',
+        'found': txt_records,
+    })
+
+
+def handle_remove_domain(conn, uid: int) -> dict:
+    with conn.cursor() as cur:
+        sid = get_school_id(cur, uid)
+        if not sid:
+            return err('Не найдено', 404)
+        cur.execute(
+            "UPDATE " + t('schools') + " SET custom_domain=NULL, domain_verified=false, "
+            "domain_verify_token=NULL, domain_added_at=NULL, updated_at=now() WHERE id=%s "
+            "RETURNING " + SCHOOL_COLS, (sid,))
+        row = cur.fetchone()
+        conn.commit()
+    return ok({'ok': True, 'school': school_dict(row)})
+
+
 def handler(event: dict, context) -> dict:
     """Кабинет онлайн-школы: школа автора и её курсы."""
     method = event.get('httpMethod', 'GET')
@@ -705,6 +820,12 @@ def handler(event: dict, context) -> dict:
             return handle_invite_student(conn, uid, body)
         if action == 'remove_student' and method == 'POST':
             return handle_remove_student(conn, uid, body)
+        if action == 'set_domain' and method == 'POST':
+            return handle_set_domain(conn, uid, body)
+        if action == 'verify_domain' and method == 'POST':
+            return handle_verify_domain(conn, uid)
+        if action == 'remove_domain' and method == 'POST':
+            return handle_remove_domain(conn, uid)
 
         return err('Неизвестное действие', 404)
     finally:
