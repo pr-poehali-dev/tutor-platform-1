@@ -128,6 +128,13 @@ export default function SchoolCoursePublic() {
       </div>
 
       <main className="max-w-4xl mx-auto px-5 md:px-8 py-8 pb-16">
+        {/* Обложка курса */}
+        {course.cover_url && (
+          <div className="rounded-3xl overflow-hidden border border-white/10 mb-6 aspect-[16/7]">
+            <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+
         {/* Hero */}
         <div className="rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-cyan-500/5 p-6 md:p-8 mb-6">
           <h1 className="font-montserrat font-black text-2xl md:text-4xl text-white mb-2">{course.title}</h1>
