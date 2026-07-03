@@ -34,8 +34,28 @@ export function downloadGrantDoc(app: GrantApplication): void {
   const title = esc(full.project_title || app.project_title || "Грантовая заявка");
   const parts: string[] = [];
 
+  const today = new Date().toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  // Официальная шапка документа: заявитель, грант, дата, контакты
+  const headerRows: string[] = [];
+  if (app.organization) {
+    headerRows.push(`<tr><td><b>Заявитель:</b></td><td>${esc(app.organization)}</td></tr>`);
+  }
+  headerRows.push(`<tr><td><b>Грант / конкурс:</b></td><td>${esc(app.grant_name)}</td></tr>`);
+  if (app.contact_email) {
+    headerRows.push(`<tr><td><b>Контакт:</b></td><td>${esc(app.contact_email)}</td></tr>`);
+  }
+  headerRows.push(`<tr><td><b>Дата подготовки:</b></td><td>${esc(today)}</td></tr>`);
+
   parts.push(`<h1>${title}</h1>`);
-  parts.push(`<p><i>Заявка на: ${esc(app.grant_name)}</i></p>`);
+  parts.push(
+    `<table class="head" cellpadding="4" cellspacing="0">${headerRows.join("")}</table>`
+  );
+  parts.push(`<hr/>`);
 
   if (full.annotation) {
     parts.push(h("Аннотация проекта"), p(full.annotation));
@@ -132,6 +152,9 @@ export function downloadGrantDoc(app: GrantApplication): void {
   body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; line-height: 1.5; }
   h1 { font-size: 18pt; text-align: center; }
   h2 { font-size: 14pt; border-bottom: 1px solid #999; padding-bottom: 4px; margin-top: 18px; }
+  table.head { border: none; margin: 0 auto 8px; }
+  table.head td { border: none; padding: 2px 8px; font-size: 11pt; }
+  hr { border: none; border-top: 1px solid #999; margin: 12px 0; }
   table { margin: 8px 0; }
   th { background: #f0f0f0; text-align: left; }
   ul { margin: 6px 0; }

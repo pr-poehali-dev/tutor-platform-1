@@ -275,6 +275,8 @@ def app_row_public(r, include_full=False) -> dict:
         'is_paid': r[3], 'price_kopecks': r[4], 'status': r[5],
         'created_at': r[6].isoformat() if r[6] else None,
         'preview': r[7] or {},
+        'organization': r[9],
+        'contact_email': r[10],
     }
     if include_full and r[3]:  # full только если оплачено
         d['full'] = r[8]
@@ -282,7 +284,7 @@ def app_row_public(r, include_full=False) -> dict:
 
 
 APP_COLS = ("id, grant_name, project_title, is_paid, price_kopecks, status, "
-            "created_at, preview_data, full_data")
+            "created_at, preview_data, full_data, organization, contact_email")
 
 
 def handle_generate(conn, uid: int, body: dict) -> dict:

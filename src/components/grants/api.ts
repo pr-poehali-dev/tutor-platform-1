@@ -76,6 +76,8 @@ export interface GrantApplication {
   created_at: string | null;
   preview: GrantPreview;
   full?: GrantFull | null;
+  organization?: string | null;
+  contact_email?: string | null;
 }
 
 export interface GeneratePayload {
