@@ -159,6 +159,12 @@ export default function ForBusiness() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
+              to="/grants"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-violet-400/50 px-4 py-2 rounded-xl transition-colors"
+            >
+              <Icon name="Target" size={15} className="text-violet-300" /> Гранты
+            </Link>
+            <Link
               to="/school-builder"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-violet-400/50 px-4 py-2 rounded-xl transition-colors"
             >
@@ -208,6 +214,47 @@ export default function ForBusiness() {
             >
               <Icon name="Sparkles" size={18} className="text-violet-300" /> Собрать курс бесплатно
             </Link>
+          </div>
+        </section>
+
+        {/* ИИ-помощник по грантам */}
+        <section className="mb-16">
+          <div className="relative overflow-hidden rounded-3xl border border-violet-400/30 bg-gradient-to-br from-violet-700/25 via-fuchsia-600/12 to-cyan-700/20 p-6 md:p-10">
+            <div className="absolute -top-20 -right-10 w-72 h-72 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-3 py-1 mb-4">
+                <span className="text-lg">🎯</span>
+                <span className="text-xs text-white font-bold uppercase tracking-wider">Новое · ИИ-помощник по грантам</span>
+              </div>
+              <h2 className="font-montserrat font-black text-2xl md:text-4xl mb-3 leading-tight">
+                Заявка на грант, которую{" "}
+                <span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">не стыдно подать</span>
+              </h2>
+              <p className="text-white/75 text-sm md:text-base max-w-2xl mb-6">
+                Опишите любой грант или конкурс и свой проект — ИИ-эксперт подготовит профессиональную заявку:
+                актуальность, цели, задачи, социальный эффект, смету, календарный план и разбор по критериям с оценкой шансов.
+                На рынке такая услуга стоит от 150 000 ₽ — у нас в разы дешевле, а черновик бесплатный.
+              </p>
+              <div className="grid sm:grid-cols-4 gap-2 mb-7">
+                {[
+                  { icon: "FileText", t: "Готовый текст заявки" },
+                  { icon: "Calculator", t: "Смета и бюджет" },
+                  { icon: "CalendarClock", t: "Календарный план" },
+                  { icon: "ShieldCheck", t: "Проверка по критериям" },
+                ].map((c) => (
+                  <div key={c.t} className="flex items-center gap-2 bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2.5">
+                    <Icon name={c.icon} size={16} className="text-violet-300 flex-shrink-0" />
+                    <span className="text-white/80 text-xs leading-tight">{c.t}</span>
+                  </div>
+                ))}
+              </div>
+              <Link
+                to="/grants"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-violet-500/25"
+              >
+                <Icon name="Wand2" size={18} /> Подготовить заявку — бесплатный черновик
+              </Link>
+            </div>
           </div>
         </section>
 

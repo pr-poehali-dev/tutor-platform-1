@@ -106,6 +106,7 @@ const SchoolCabinet = lazy(() => import("./pages/SchoolCabinet"));
 const SchoolCoursePublic = lazy(() => import("./pages/SchoolCoursePublic"));
 const SchoolLearning = lazy(() => import("./pages/SchoolLearning"));
 const SchoolInvite = lazy(() => import("./pages/SchoolInvite"));
+const GrantAssistant = lazy(() => import("./pages/GrantAssistant"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -152,6 +153,7 @@ const App = () => (
                     <Route path="/school/invite/:token" element={<SchoolInvite />} />
                     <Route path="/school/learning" element={<SchoolLearning />} />
                     <Route path="/course/:id" element={<SchoolCoursePublic />} />
+                    <Route path="/grants" element={<GrantAssistant />} />
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />

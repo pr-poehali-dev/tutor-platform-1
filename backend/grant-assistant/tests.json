@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "price public", "method": "GET", "path": "/?action=price", "expectedStatus": 200, "expectedBody": {"price_kopecks": 490000}, "bodyMatcher": "partial"},
+    {"name": "generate without token", "method": "POST", "path": "/?action=generate", "body": {"grant_name": "Тест", "project_idea": "Идея проекта для проверки авторизации в тесте"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "list without token", "method": "GET", "path": "/?action=list", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "get without token", "method": "GET", "path": "/?action=get&id=1", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "pay without token", "method": "POST", "path": "/?action=pay", "body": {"id": 1, "return_url": "https://example.com"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "admin_list without pin", "method": "GET", "path": "/?action=admin_list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "unknown action without token", "method": "GET", "path": "/?action=unknown", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}
