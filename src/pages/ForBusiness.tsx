@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import ForBusinessHeader from "@/components/business/for-business/ForBusinessHeader";
 import ForBusinessHero from "@/components/business/for-business/ForBusinessHero";
+import ForBusinessExpertise from "@/components/business/for-business/ForBusinessExpertise";
 import ForBusinessValue from "@/components/business/for-business/ForBusinessValue";
 import ForBusinessEcosystem from "@/components/business/for-business/ForBusinessEcosystem";
 import ForBusinessForecast from "@/components/business/for-business/ForBusinessForecast";
@@ -39,6 +40,7 @@ export default function ForBusiness() {
 
       <main className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-8 pb-16">
         <ForBusinessHero />
+        <ForBusinessExpertise />
         <ForBusinessValue />
         <ForBusinessEcosystem />
         <ForBusinessForecast />
