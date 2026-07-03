@@ -16,10 +16,11 @@ import type { BuilderCourse } from "@/components/builder/api";
 import SchoolCourseCard from "@/components/school/SchoolCourseCard";
 import SchoolStudents from "@/components/school/SchoolStudents";
 import SchoolBrand from "@/components/school/SchoolBrand";
+import SchoolTeacher from "@/components/school/SchoolTeacher";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
-type Tab = "courses" | "students" | "brand";
+type Tab = "courses" | "students" | "brand" | "ai";
 
 export default function SchoolCabinet() {
   const { isAuthenticated, loading: authLoading, openLogin } = useAuth();
@@ -181,6 +182,7 @@ export default function SchoolCabinet() {
                 { id: "courses", label: "Курсы", icon: "BookOpen" },
                 { id: "students", label: "Ученики", icon: "Users" },
                 { id: "brand", label: "Бренд", icon: "Palette" },
+                { id: "ai", label: "ИИ-препод", icon: "Sparkles" },
               ] as { id: Tab; label: string; icon: string }[]).map((tb) => (
                 <button
                   key={tb.id}
@@ -221,6 +223,10 @@ export default function SchoolCabinet() {
 
             {tab === "brand" && school && (
               <SchoolBrand school={school} onUpdated={(s) => setSchool(s)} />
+            )}
+
+            {tab === "ai" && school && (
+              <SchoolTeacher school={school} onUpdated={(s) => setSchool(s)} />
             )}
           </>
         )}

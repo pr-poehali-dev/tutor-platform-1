@@ -173,6 +173,11 @@ def handle_update_school(conn, uid: int, body: dict) -> dict:
             sets.append('brand_color=%s'); args.append((body.get('brand_color') or '').strip()[:20] or None)
         if 'brand_logo_url' in body:
             sets.append('brand_logo_url=%s'); args.append((body.get('brand_logo_url') or '').strip()[:1000] or None)
+        if 'ai_teacher_enabled' in body:
+            sets.append('ai_teacher_enabled=%s'); args.append(bool(body.get('ai_teacher_enabled')))
+        if 'ai_teacher_persona' in body:
+            persona = (body.get('ai_teacher_persona') or '').strip()[:2000]
+            sets.append('ai_teacher_persona=%s'); args.append(persona or None)
         if not sets:
             return err('Нечего обновлять', 400)
         sets.append('updated_at=now()')

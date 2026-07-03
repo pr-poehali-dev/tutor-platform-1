@@ -1,0 +1,8 @@
+{
+  "tests": [
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "info without token", "method": "GET", "path": "/?action=info&course_id=1", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "ask without token", "method": "POST", "path": "/?action=ask", "body": {"course_id": 1, "message": "привет"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "unknown action without token", "method": "GET", "path": "/?action=unknown", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}

@@ -71,7 +71,14 @@ export function fetchMySchool() {
   return req<{ school: School }>("my_school");
 }
 
-export function updateSchool(patch: Partial<Pick<School, "name" | "description" | "brand_color" | "brand_logo_url">>) {
+export function updateSchool(
+  patch: Partial<
+    Pick<
+      School,
+      "name" | "description" | "brand_color" | "brand_logo_url" | "ai_teacher_enabled" | "ai_teacher_persona"
+    >
+  >
+) {
   return req<{ ok: boolean; school: School }>("update_school", { method: "POST", body: patch });
 }
 
