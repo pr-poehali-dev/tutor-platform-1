@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { payGrant, type GrantApplication } from "./api";
+import { downloadGrantDoc } from "./downloadDoc";
 
 interface Props {
   app: GrantApplication;
@@ -190,12 +191,20 @@ export default function GrantResult({ app, onRestart }: Props) {
           <Icon name="Plus" size={15} /> Новая заявка
         </button>
         {full && (
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white border border-white/15 px-5 py-2.5 rounded-xl transition-colors text-sm"
-          >
-            <Icon name="Download" size={15} /> Сохранить / печать
-          </button>
+          <>
+            <button
+              onClick={() => downloadGrantDoc(app)}
+              className="inline-flex items-center gap-2 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 border border-emerald-500/30 px-5 py-2.5 rounded-xl transition-colors text-sm font-medium"
+            >
+              <Icon name="FileDown" size={15} /> Скачать в Word
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 text-white/70 hover:text-white border border-white/15 px-5 py-2.5 rounded-xl transition-colors text-sm"
+            >
+              <Icon name="Printer" size={15} /> Печать / PDF
+            </button>
+          </>
         )}
       </div>
     </div>
