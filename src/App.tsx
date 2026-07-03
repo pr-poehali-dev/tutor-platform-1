@@ -92,6 +92,7 @@ const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const Leads = lazy(() => import("./pages/admin/Leads"));
+const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
@@ -107,6 +108,7 @@ const SchoolCoursePublic = lazy(() => import("./pages/SchoolCoursePublic"));
 const SchoolLearning = lazy(() => import("./pages/SchoolLearning"));
 const SchoolInvite = lazy(() => import("./pages/SchoolInvite"));
 const GrantAssistant = lazy(() => import("./pages/GrantAssistant"));
+const GrantMy = lazy(() => import("./pages/GrantMy"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -154,6 +156,7 @@ const App = () => (
                     <Route path="/school/learning" element={<SchoolLearning />} />
                     <Route path="/course/:id" element={<SchoolCoursePublic />} />
                     <Route path="/grants" element={<GrantAssistant />} />
+                    <Route path="/grants/my" element={<GrantMy />} />
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
@@ -220,6 +223,7 @@ const App = () => (
                     <Route path="/admin" element={<AdminHub />} />
                     <Route path="/admin/sales" element={<SalesDashboard />} />
                     <Route path="/admin/leads" element={<Leads />} />
+                    <Route path="/admin/grants" element={<GrantApplications />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />
                     <Route path="/app" element={<AppDownload />} />
