@@ -430,4 +430,10 @@
   <!-- Интенсив «Твой первый автопилот» — автоматизация микробизнеса -->
   <url><loc>https://учисьпро.рф/intensive</loc><lastmod>2026-06-26</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
 
+  <!-- ИИ-помощник по грантам — подготовка заявки на грант -->
+  <url><loc>https://учисьпро.рф/grants</loc><lastmod>2026-07-03</lastmod><changefreq>weekly</changefreq><priority>0.92</priority></url>
+
+  <!-- Конструктор онлайн-школ для бизнеса — white-label платформа -->
+  <url><loc>https://учисьпро.рф/for-business</loc><lastmod>2026-07-03</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+
 </urlset>
