@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 export default function CheckoutSuccess() {
   const [params] = useSearchParams();
@@ -18,6 +19,15 @@ export default function CheckoutSuccess() {
   const { hasSubscription, confirmDemoPurchase, syncPayment } = useAccess();
   const [status, setStatus] = useState<"checking" | "active" | "pending">("checking");
   const [demoActivating, setDemoActivating] = useState(false);
+  const goalSent = useRef(false);
+
+  // Цель конверсии в Метрику — один раз при подтверждении оплаты
+  useEffect(() => {
+    if (status === "active" && !goalSent.current) {
+      goalSent.current = true;
+      trackGoal("purchase_success", { plan: planParam || "subscription" });
+    }
+  }, [status, planParam]);
 
   // Поллинг доступа после возврата с ЮKassa (webhook может задержаться).
   // Ждём до 60 секунд — банк/ЮKassa иногда подтверждают платёж не сразу.

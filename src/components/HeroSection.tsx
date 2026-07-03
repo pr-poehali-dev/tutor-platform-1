@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const HERO_IMAGE =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
@@ -73,6 +74,7 @@ export default function HeroSection() {
             <div className="mb-6 animate-fade-in-up animate-delay-300">
               <Link
                 to="/courses"
+                onClick={() => trackGoal("hero_cta_click")}
                 className="group inline-flex bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-2xl text-base items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
               >
                 <span>Начать учиться бесплатно</span>

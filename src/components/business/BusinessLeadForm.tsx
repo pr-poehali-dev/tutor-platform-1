@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { submitPartnerLead, PartnerLeadPayload } from "@/components/contact/api";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const AUDIENCE: { value: NonNullable<PartnerLeadPayload["audience_type"]>; label: string; emoji: string }[] = [
   { value: "author", label: "Автор / эксперт", emoji: "🎤" },
@@ -62,6 +63,7 @@ export default function BusinessLeadForm({ defaultPlan }: Props) {
     });
     setLoading(false);
     if (!res.ok) return setError(res.error || res.message || "Не удалось отправить");
+    trackGoal("lead_form_success", { form_type: "business", audience: audience || "unknown" });
     setDone(res.message || "Заявка принята!");
   };
 

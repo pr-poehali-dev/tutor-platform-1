@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import func2url from "../../backend/func2url.json";
 import { safeFetch } from "@/lib/safeFetch";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const AUTH_URL = (func2url as Record<string, string>).auth;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveToken(data.token);
       setToken(data.token);
       setUser(data.user ?? null);
+      trackGoal(data.is_new ? "user_registered" : "user_login", { via: "email" });
       await refresh();
       return { ok: true, isNew: !!data.is_new };
     } catch {
@@ -128,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveToken(data.token);
       setToken(data.token);
       setUser(data.user ?? null);
+      trackGoal("user_login", { via: "email" });
       await refresh();
       return { ok: true };
     } catch {
@@ -164,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveToken(data.token);
       setToken(data.token);
       setUser(data.user ?? null);
+      trackGoal(data.is_new ? "user_registered" : "user_login", { via: "yandex" });
       await refresh();
       return { ok: true };
     } catch {

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 import { useAuth } from "@/context/AuthContext";
 import {
   generateGrant,
@@ -138,6 +139,7 @@ export default function GrantAssistant() {
     });
     setLoading(false);
     if (!res.ok || !res.data) return setError(res.error || "Не удалось подготовить заявку");
+    trackGoal("grant_draft_created");
     setApp(res.data);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

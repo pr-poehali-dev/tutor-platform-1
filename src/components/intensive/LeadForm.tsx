@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { submitLead } from "./api";
 import { INTENSIVE_META } from "./data";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 interface Props {
   source?: string;
@@ -30,6 +31,7 @@ export default function LeadForm({ source = "landing" }: Props) {
     });
     setLoading(false);
     if (!res.ok) return setError(res.error || "Не удалось отправить");
+    trackGoal("lead_form_success", { form_type: "intensive", track: INTENSIVE_META.track });
     setDone(res.message || "Заявка принята!");
   };
 
