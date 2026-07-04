@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import AvatarHelper from "@/components/silent/AvatarHelper";
+import HelpProject from "@/components/silent/HelpProject";
 import {
   SILENT_COVER,
   COURSE_FEATURES,
@@ -182,6 +183,9 @@ export default function Silent() {
             ))}
           </div>
         </section>
+
+        {/* Помочь проекту */}
+        <HelpProject />
 
         {/* FAQ */}
         <section className="mb-6">
