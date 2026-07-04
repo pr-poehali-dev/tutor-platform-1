@@ -108,6 +108,8 @@ const SchoolLearning = lazy(() => import("./pages/SchoolLearning"));
 const SchoolInvite = lazy(() => import("./pages/SchoolInvite"));
 const GrantAssistant = lazy(() => import("./pages/GrantAssistant"));
 const GrantMy = lazy(() => import("./pages/GrantMy"));
+const Silent = lazy(() => import("./pages/Silent"));
+const SilentLesson = lazy(() => import("./pages/SilentLesson"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -177,6 +179,8 @@ const App = () => (
                     <Route path="/know-yourself" element={<KnowYourself />} />
                     <Route path="/know-yourself/result" element={<KnowYourselfResult />} />
                     <Route path="/psychology" element={<Psychology />} />
+                    <Route path="/silent" element={<Silent />} />
+                    <Route path="/silent/lesson" element={<SilentLesson />} />
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />
