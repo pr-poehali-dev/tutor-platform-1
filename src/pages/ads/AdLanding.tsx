@@ -82,7 +82,7 @@ export default function AdLanding() {
                 className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r ${campaign.color} text-white text-base font-bold px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl`}
               >
                 <Icon name="Rocket" size={16} />
-                Начать бесплатно
+                Выбрать курс — первый урок бесплатно
                 <Icon name="ArrowRight" size={16} />
               </Link>
               <Link

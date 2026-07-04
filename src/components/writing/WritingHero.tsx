@@ -44,7 +44,7 @@ export default function WritingHero() {
             className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-black text-sm px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform"
           >
             <Icon name="Sparkles" size={16} />
-            Начать пробный урок бесплатно
+            Выбрать курс — первый урок бесплатно
           </Link>
           <a
             href="#program"

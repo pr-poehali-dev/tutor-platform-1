@@ -183,7 +183,7 @@ export default function SubjectLanding() {
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-opacity glow-purple"
               >
                 <Icon name="Rocket" size={14} />
-                Начать бесплатно
+                Выбрать курс — первый урок бесплатно
               </Link>
               <a
                 href="#courses-list"
