@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import AvatarHelper from "@/components/silent/AvatarHelper";
 import HelpProject from "@/components/silent/HelpProject";
+import AboutSignLanguage from "@/components/silent/AboutSignLanguage";
 import {
   SILENT_COVER,
   COURSE_FEATURES,
@@ -190,6 +191,9 @@ export default function Silent() {
             ))}
           </div>
         </section>
+
+        {/* О жестовом языке */}
+        <AboutSignLanguage />
 
         {/* Помочь проекту */}
         <HelpProject />
