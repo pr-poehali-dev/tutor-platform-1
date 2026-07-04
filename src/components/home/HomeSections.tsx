@@ -4,6 +4,7 @@ import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
 import HowItWorks from "@/components/home/HowItWorks";
+import StudentResults from "@/components/home/StudentResults";
 import TrustGuarantee from "@/components/home/TrustGuarantee";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
@@ -67,6 +68,9 @@ export default function HomeSections() {
           <MentorCompanion />
         </Suspense>
       </section>
+
+      {/* 3.6. Результаты и отзывы учеников — доверие до покупки */}
+      <StudentResults />
 
       {/* 4. Премиум-направления */}
       <Suspense fallback={<SectionSkeleton />}>
