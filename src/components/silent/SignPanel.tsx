@@ -29,7 +29,7 @@ export default function SignPanel({ sign }: Props) {
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Встроенный жест: видео (если есть) или анимированная иллюстрация */}
-        <div className="w-40 h-40 flex-shrink-0 rounded-2xl bg-white/90 border border-white/10 overflow-hidden flex items-center justify-center">
+        <div className="w-40 h-40 flex-shrink-0 rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
           {sign.videoUrl ? (
             <video
               ref={videoRef}
@@ -44,7 +44,7 @@ export default function SignPanel({ sign }: Props) {
             <img
               src={sign.image}
               alt={`Жест «${sign.word}» на русском жестовом языке`}
-              className={`w-full h-full object-contain p-2 sign-motion-${sign.motion}`}
+              className={`w-full h-full object-cover sign-motion-${sign.motion}`}
               loading="lazy"
             />
           )}

@@ -6,65 +6,62 @@
 @keyframes sign-wave {
   0%,
   100% {
-    transform: rotate(-9deg);
+    transform: scale(1.04) translateX(-3px);
   }
   50% {
-    transform: rotate(9deg);
+    transform: scale(1.04) translateX(3px);
   }
 }
 @keyframes sign-forward {
   0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: scale(1.02);
   }
   50% {
-    transform: translateY(-10px) scale(1.06);
+    transform: scale(1.07);
   }
 }
 @keyframes sign-down {
-  0% {
-    transform: translateY(-8px);
+  0%,
+  100% {
+    transform: scale(1.04) translateY(-3px);
   }
   50% {
-    transform: translateY(8px);
-  }
-  100% {
-    transform: translateY(-8px);
+    transform: scale(1.04) translateY(3px);
   }
 }
 @keyframes sign-shake {
   0%,
   100% {
-    transform: translateX(0);
+    transform: scale(1.04) translateX(-3px);
   }
   25% {
-    transform: translateX(-5px);
+    transform: scale(1.04) translateX(3px);
   }
   75% {
-    transform: translateX(5px);
+    transform: scale(1.04) translateX(-2px);
   }
 }
 @keyframes sign-sway {
   0%,
   100% {
-    transform: translateX(-6px) rotate(-4deg);
+    transform: scale(1.04) translateX(-4px);
   }
   50% {
-    transform: translateX(6px) rotate(4deg);
+    transform: scale(1.04) translateX(4px);
   }
 }
 @keyframes sign-point {
   0%,
   100% {
-    transform: translateX(0);
+    transform: scale(1.03);
   }
   50% {
-    transform: translateX(8px);
+    transform: scale(1.06) translateX(3px);
   }
 }
 .sign-motion-wave {
   animation: sign-wave 1.6s ease-in-out infinite;
-  transform-origin: 60% 90%;
 }
 .sign-motion-forward {
   animation: sign-forward 1.8s ease-in-out infinite;

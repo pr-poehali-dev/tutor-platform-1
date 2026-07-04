@@ -97,6 +97,13 @@ export default function Silent() {
               >
                 Как это устроено
               </a>
+              <a
+                href="#help"
+                className="inline-flex items-center gap-2 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-400/30 text-teal-100 font-semibold px-6 py-4 rounded-2xl transition-colors"
+              >
+                <Icon name="HeartHandshake" size={18} />
+                Стать частью проекта
+              </a>
             </div>
           </div>
           <div className="rounded-3xl overflow-hidden border border-white/12 shadow-2xl shadow-purple-500/20">

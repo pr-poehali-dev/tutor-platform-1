@@ -42,7 +42,7 @@ export default function HelpProject() {
   };
 
   return (
-    <section className="mb-14">
+    <section id="help" className="mb-14 scroll-mt-24">
       <div className="rounded-3xl border border-teal-400/25 bg-gradient-to-br from-teal-500/[0.1] via-transparent to-purple-500/[0.08] p-6 md:p-9">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center">
