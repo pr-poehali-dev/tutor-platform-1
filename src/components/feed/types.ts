@@ -26,6 +26,7 @@ export interface FeedArticle {
   auto_moderation_at?: string | null;
   source_language?: string | null;
   source_country?: string | null;
+  audio_url?: string | null;
 }
 
 export interface FeedListResponse {

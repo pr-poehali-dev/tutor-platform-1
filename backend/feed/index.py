@@ -123,6 +123,7 @@ def serialize_article(row, detail: bool = False) -> dict:
         'auto_moderation_at': (row[21].isoformat() if len(row) > 21 and row[21] else None),
         'source_language': row[22] if len(row) > 22 else 'ru',
         'source_country': row[23] if len(row) > 23 else None,
+        'audio_url': row[24] if len(row) > 24 else None,
     }
     if detail:
         data['content'] = row[4] or ''
@@ -134,7 +135,7 @@ ARTICLE_COLS = (
     "source_name, source_url, author_display_name, status, tags, "
     "reading_time_min, views, likes, published_at, created_at, "
     "auto_moderation_score, auto_moderation_verdict, auto_moderation_reasoning, "
-    "auto_moderation_at, source_language, source_country"
+    "auto_moderation_at, source_language, source_country, audio_url"
 )
 
 

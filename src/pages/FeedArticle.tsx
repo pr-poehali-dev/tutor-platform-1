@@ -10,6 +10,7 @@ import { LoadingState, LimitedState, NotFoundState } from "@/components/feed/art
 import FeedArticleHeader from "@/components/feed/article/FeedArticleHeader";
 import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
 import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
+import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 
 export default function FeedArticlePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -149,6 +150,10 @@ export default function FeedArticlePage() {
       <main className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-16">
 
         <FeedArticleHeader article={article} meta={meta} isDocCover={isDocCover} />
+
+        {article.audio_url && (
+          <FeedAudioPlayer src={article.audio_url} title={`Слушать: ${article.title}`} />
+        )}
 
         {/* Контент */}
         <article className="prose-feed text-white/85 text-base md:text-lg leading-relaxed space-y-4 mb-8">
