@@ -169,8 +169,95 @@ export const COLORS_LESSON: Lesson = {
   ],
 };
 
+export const FAMILY_LESSON: Lesson = {
+  slug: "semya",
+  title: "Урок 3. Моя семья",
+  subtitle: "Самые близкие люди рядом с нами",
+  steps: [
+    { id: 1, caption: "Семья", detail: "Семья — это самые близкие люди, которые любят и заботятся о тебе.", visual: "👨‍👩‍👧‍👦", avatar: { text: "Сегодня учим слова про семью. Это самые тёплые слова!", emoji: "❤️", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Мама", detail: "Мама — самый родной человек, который всегда рядом.", visual: "👩", avatar: { text: "Мама — очень доброе слово. Покажи жест вместе со мной.", emoji: "🤗", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Папа", detail: "Папа — сильный и заботливый, он тоже очень любит тебя.", visual: "👨", avatar: { text: "Отлично! Папа — надёжный и добрый.", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Бабушка", detail: "Бабушка — мама твоей мамы или папы. С ней тепло и уютно.", visual: "👵", avatar: { text: "Подумай: как ты покажешь «бабушка»?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Дедушка", detail: "Дедушка — папа твоей мамы или папы. Он много знает и любит рассказывать.", visual: "👴", avatar: { text: "Ты выучил всю семью! Ты большой молодец!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
+export const NUMBERS_LESSON: Lesson = {
+  slug: "cifry",
+  title: "Урок 4. Считаем от 1 до 5",
+  subtitle: "Первые цифры на пальцах",
+  steps: [
+    { id: 1, caption: "Один", detail: "Один — это когда предмет всего один. Подними один палец.", visual: "1️⃣", avatar: { text: "Учимся считать! Показывай цифры на пальцах вместе со мной.", emoji: "✋", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Два", detail: "Два — это пара. Например, два глаза или две руки.", visual: "2️⃣", avatar: { text: "Два пальца — отлично!", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Три", detail: "Три — это на один больше, чем два.", visual: "3️⃣", avatar: { text: "Здорово получается!", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Четыре", detail: "Четыре пальца — почти вся ладонь.", visual: "4️⃣", avatar: { text: "Сколько пальцев осталось до пяти? Подумай!", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Пять", detail: "Пять — это вся ладонь целиком. Ты сосчитал до пяти!", visual: "5️⃣", avatar: { text: "Ты умеешь считать до пяти! Молодец!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
+export const ANIMALS_LESSON: Lesson = {
+  slug: "zhivotnye",
+  title: "Урок 5. Животные",
+  subtitle: "Кто живёт рядом с нами",
+  steps: [
+    { id: 1, caption: "Кошка", detail: "Кошка — мягкая и пушистая, говорит «мяу».", visual: "🐱", avatar: { text: "Сегодня учим животных! Начнём с кошки.", emoji: "🐾", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Собака", detail: "Собака — верный друг, она виляет хвостом.", visual: "🐶", avatar: { text: "Собака — добрый друг человека!", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Птица", detail: "Птица умеет летать и петь. У неё есть клюв и крылья.", visual: "🐦", avatar: { text: "Как красиво летают птицы! Молодец.", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Рыба", detail: "Рыба живёт в воде и умеет плавать.", visual: "🐟", avatar: { text: "Подумай: где живёт рыба?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Медведь", detail: "Медведь большой и сильный, живёт в лесу.", visual: "🐻", avatar: { text: "Ты выучил пять животных! Отлично!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
+export const FOOD_LESSON: Lesson = {
+  slug: "eda",
+  title: "Урок 6. Еда и напитки",
+  subtitle: "Что мы едим и пьём каждый день",
+  steps: [
+    { id: 1, caption: "Еда", detail: "Еда даёт нам силы. Мы едим, когда хотим кушать.", visual: "🍽️", avatar: { text: "Сегодня про еду. Это важные и вкусные слова!", emoji: "😋", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Вода", detail: "Воду мы пьём, когда хотим пить. Без воды нельзя.", visual: "💧", avatar: { text: "Вода очень нужна каждому!", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Хлеб", detail: "Хлеб — мягкий и вкусный, его едят почти каждый день.", visual: "🍞", avatar: { text: "Хлеб — всему голова. Здорово!", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Молоко", detail: "Молоко белое и полезное, его любят дети.", visual: "🥛", avatar: { text: "Подумай: какого цвета молоко?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Яблоко", detail: "Яблоко — сладкий и сочный фрукт.", visual: "🍎", avatar: { text: "Ты выучил слова про еду! Молодец!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
+export const EMOTIONS_LESSON: Lesson = {
+  slug: "emocii",
+  title: "Урок 7. Наши чувства",
+  subtitle: "Как мы себя чувствуем",
+  steps: [
+    { id: 1, caption: "Радость", detail: "Радость — когда весело и хорошо. Мы улыбаемся.", visual: "😀", avatar: { text: "Сегодня про чувства. Смотри и на лицо тоже — оно важно!", emoji: "😊", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Грусть", detail: "Грусть — когда немного печально. Так бывает, и это нормально.", visual: "😢", avatar: { text: "Иногда грустно — и это тоже нормально.", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Страх", detail: "Страх — когда что-то пугает. Тогда можно попросить помощи.", visual: "😨", avatar: { text: "Если страшно — рядом всегда есть взрослый. Молодец!", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Злость", detail: "Злость — когда что-то очень не нравится. Её можно спокойно выразить.", visual: "😠", avatar: { text: "Подумай: что помогает успокоиться, когда злишься?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Любовь", detail: "Любовь — самое тёплое чувство к близким людям.", visual: "❤️", avatar: { text: "Любовь — самое доброе чувство. Ты справился!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
+export const POLITE_LESSON: Lesson = {
+  slug: "vezhlivye-slova",
+  title: "Урок 8. Вежливые слова",
+  subtitle: "Слова, которые помогают дружить",
+  steps: [
+    { id: 1, caption: "Пожалуйста", detail: "«Пожалуйста» говорят, когда о чём-то просят.", visual: "🙏", avatar: { text: "Учим вежливые слова — с ними приятно общаться!", emoji: "😊", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Извини", detail: "«Извини» говорят, когда нечаянно кого-то обидели.", visual: "🤝", avatar: { text: "Уметь извиняться — очень важно и по-доброму.", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Да", detail: "«Да» — когда мы соглашаемся.", visual: "✅", avatar: { text: "Отлично! «Да» — простой и важный жест.", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Нет", detail: "«Нет» — когда мы не соглашаемся. Отказывать тоже можно вежливо.", visual: "❌", avatar: { text: "Подумай: как вежливо сказать «нет»?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Помоги", detail: "«Помоги» говорят, когда нужна помощь. Просить помощь — это нормально.", visual: "🆘", avatar: { text: "Ты выучил вежливые слова! Ты настоящий молодец!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
 /** Все уроки курса по порядку. */
-export const LESSONS: Lesson[] = [DEMO_LESSON, COLORS_LESSON];
+export const LESSONS: Lesson[] = [
+  DEMO_LESSON,
+  COLORS_LESSON,
+  FAMILY_LESSON,
+  NUMBERS_LESSON,
+  ANIMALS_LESSON,
+  FOOD_LESSON,
+  EMOTIONS_LESSON,
+  POLITE_LESSON,
+];
 
 /** Найти урок по slug (или первый по умолчанию). */
 export function findLesson(slug?: string): Lesson {

@@ -103,6 +103,228 @@ export const SIGN_LIBRARY: Record<string, SignEntry> = {
     motion: "sway",
     dictionaryUrl: `${STS}синий`,
   },
+
+  // --- Урок: Семья ---
+  семья: {
+    word: "семья",
+    description: "Обе кисти рисуют круг перед собой — «все вместе, семья».",
+    image: `${IMG}/d819f990-764a-45f4-a400-71f82c15d2e7.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}семья`,
+  },
+  мама: {
+    word: "мама",
+    description: "Раскрытая ладонь дважды касается щеки — «мама».",
+    image: `${IMG}/d819f990-764a-45f4-a400-71f82c15d2e7.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}мама`,
+  },
+  папа: {
+    word: "папа",
+    description: "Раскрытая ладонь дважды касается лба — «папа».",
+    image: `${IMG}/d819f990-764a-45f4-a400-71f82c15d2e7.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}папа`,
+  },
+  бабушка: {
+    word: "бабушка",
+    description: "Мягкий жест у щеки с наклоном — «бабушка».",
+    image: `${IMG}/d819f990-764a-45f4-a400-71f82c15d2e7.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}бабушка`,
+  },
+  дедушка: {
+    word: "дедушка",
+    description: "Жест у подбородка — «дедушка».",
+    image: `${IMG}/d819f990-764a-45f4-a400-71f82c15d2e7.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}дедушка`,
+  },
+
+  // --- Урок: Цифры 1–5 ---
+  один: {
+    word: "один",
+    description: "Поднят один указательный палец — «1».",
+    image: `${IMG}/6bb4035c-db48-4ca4-8833-ad996fa07883.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}один`,
+  },
+  два: {
+    word: "два",
+    description: "Подняты два пальца — «2».",
+    image: `${IMG}/6bb4035c-db48-4ca4-8833-ad996fa07883.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}два`,
+  },
+  три: {
+    word: "три",
+    description: "Подняты три пальца — «3».",
+    image: `${IMG}/6bb4035c-db48-4ca4-8833-ad996fa07883.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}три`,
+  },
+  четыре: {
+    word: "четыре",
+    description: "Подняты четыре пальца — «4».",
+    image: `${IMG}/6bb4035c-db48-4ca4-8833-ad996fa07883.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}четыре`,
+  },
+  пять: {
+    word: "пять",
+    description: "Раскрыта вся ладонь, пять пальцев — «5».",
+    image: `${IMG}/6bb4035c-db48-4ca4-8833-ad996fa07883.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}пять`,
+  },
+
+  // --- Урок: Животные ---
+  кошка: {
+    word: "кошка",
+    description: "Пальцы у щеки будто рисуют усы — «кошка».",
+    image: `${IMG}/c34b2d4f-e526-4f85-8281-72d53240f87b.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}кошка`,
+  },
+  собака: {
+    word: "собака",
+    description: "Похлопывание по бедру или щелчок — «собака».",
+    image: `${IMG}/c34b2d4f-e526-4f85-8281-72d53240f87b.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}собака`,
+  },
+  птица: {
+    word: "птица",
+    description: "Пальцы у губ открываются-закрываются, как клюв — «птица».",
+    image: `${IMG}/c34b2d4f-e526-4f85-8281-72d53240f87b.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}птица`,
+  },
+  рыба: {
+    word: "рыба",
+    description: "Ладонь плывёт волной вперёд — «рыба».",
+    image: `${IMG}/c34b2d4f-e526-4f85-8281-72d53240f87b.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}рыба`,
+  },
+  медведь: {
+    word: "медведь",
+    description: "Скрещённые руки «царапают» плечи — «медведь».",
+    image: `${IMG}/c34b2d4f-e526-4f85-8281-72d53240f87b.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}медведь`,
+  },
+
+  // --- Урок: Еда и напитки ---
+  еда: {
+    word: "еда",
+    description: "Собранные пальцы подносятся ко рту — «есть, еда».",
+    image: `${IMG}/14d132c3-cbe9-4a54-9e9b-37c9ad35563e.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}еда`,
+  },
+  вода: {
+    word: "вода",
+    description: "Пальцы у губ, лёгкое движение — «вода, пить».",
+    image: `${IMG}/14d132c3-cbe9-4a54-9e9b-37c9ad35563e.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}вода`,
+  },
+  хлеб: {
+    word: "хлеб",
+    description: "Рука будто отрезает ломоть — «хлеб».",
+    image: `${IMG}/14d132c3-cbe9-4a54-9e9b-37c9ad35563e.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}хлеб`,
+  },
+  молоко: {
+    word: "молоко",
+    description: "Кисть сжимается-разжимается — «молоко».",
+    image: `${IMG}/14d132c3-cbe9-4a54-9e9b-37c9ad35563e.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}молоко`,
+  },
+  яблоко: {
+    word: "яблоко",
+    description: "Согнутый палец у щеки поворачивается — «яблоко».",
+    image: `${IMG}/14d132c3-cbe9-4a54-9e9b-37c9ad35563e.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}яблоко`,
+  },
+
+  // --- Урок: Эмоции ---
+  радость: {
+    word: "радость",
+    description: "Раскрытые ладони поднимаются к груди, улыбка — «радость».",
+    image: `${IMG}/7cd806c5-18b9-41cd-80d5-a5e26d6adf3b.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}радость`,
+  },
+  грусть: {
+    word: "грусть",
+    description: "Ладони опускаются вниз вдоль лица, грустная мимика — «грусть».",
+    image: `${IMG}/7cd806c5-18b9-41cd-80d5-a5e26d6adf3b.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}грусть`,
+  },
+  страх: {
+    word: "страх",
+    description: "Ладони резко прикрывают грудь, тревожная мимика — «страх».",
+    image: `${IMG}/7cd806c5-18b9-41cd-80d5-a5e26d6adf3b.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}страх`,
+  },
+  любовь: {
+    word: "любовь",
+    description: "Скрещённые руки прижимаются к груди — «любовь».",
+    image: `${IMG}/7cd806c5-18b9-41cd-80d5-a5e26d6adf3b.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}любовь`,
+  },
+  злость: {
+    word: "злость",
+    description: "Напряжённые пальцы у лица, нахмуренная мимика — «злость».",
+    image: `${IMG}/7cd806c5-18b9-41cd-80d5-a5e26d6adf3b.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}злость`,
+  },
+
+  // --- Урок: Вежливые слова ---
+  пожалуйста: {
+    word: "пожалуйста",
+    description: "Раскрытая ладонь на груди мягко движется по кругу — «пожалуйста».",
+    image: `${IMG}/735b1898-6a8e-47dc-b715-ce5c3db40d53.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}пожалуйста`,
+  },
+  извини: {
+    word: "извини",
+    description: "Кулак на груди мягко движется — «извини, прости».",
+    image: `${IMG}/735b1898-6a8e-47dc-b715-ce5c3db40d53.jpg`,
+    motion: "sway",
+    dictionaryUrl: `${STS}извини`,
+  },
+  да: {
+    word: "да",
+    description: "Кулак кивает вниз, как голова — «да».",
+    image: `${IMG}/735b1898-6a8e-47dc-b715-ce5c3db40d53.jpg`,
+    motion: "down",
+    dictionaryUrl: `${STS}да`,
+  },
+  нет: {
+    word: "нет",
+    description: "Два пальца смыкаются с большим — «нет».",
+    image: `${IMG}/735b1898-6a8e-47dc-b715-ce5c3db40d53.jpg`,
+    motion: "shake",
+    dictionaryUrl: `${STS}нет`,
+  },
+  помоги: {
+    word: "помоги",
+    description: "Одна ладонь поднимает другую вверх — «помоги, помощь».",
+    image: `${IMG}/735b1898-6a8e-47dc-b715-ce5c3db40d53.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}помощь`,
+  },
 };
 
 /** Нормализует подпись слова в ключ реестра. */
