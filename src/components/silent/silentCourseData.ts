@@ -26,7 +26,14 @@ export interface LessonStep {
   signVideo?: boolean;
 }
 
-export const DEMO_LESSON = {
+export interface Lesson {
+  slug: string;
+  title: string;
+  subtitle: string;
+  steps: LessonStep[];
+}
+
+export const DEMO_LESSON: Lesson = {
   slug: "privetstvie",
   title: "Урок 1. Знакомимся и здороваемся",
   subtitle: "Первые слова, которые пригодятся каждый день",
@@ -91,8 +98,85 @@ export const DEMO_LESSON = {
       },
       signVideo: true,
     },
-  ] as LessonStep[],
+  ],
 };
+
+export const COLORS_LESSON: Lesson = {
+  slug: "cveta",
+  title: "Урок 2. Учим цвета",
+  subtitle: "Четыре главных цвета вокруг нас",
+  steps: [
+    {
+      id: 1,
+      caption: "Цвет",
+      detail: "Цвет — это то, каким мы видим предмет. Небо, трава, солнце — у всего свой цвет.",
+      visual: "🎨",
+      avatar: {
+        text: "Снова привет! Сегодня учим цвета. Смотри на кружок — его цвет и есть подсказка.",
+        emoji: "🌈",
+        mood: "hello",
+      },
+      signVideo: true,
+    },
+    {
+      id: 2,
+      caption: "Красный",
+      detail: "Красный — цвет клубники, помидора и пожарной машины.",
+      visual: "🔴",
+      avatar: {
+        text: "Красный — яркий и тёплый. Найди вокруг себя что-нибудь красное!",
+        emoji: "👀",
+        mood: "point",
+      },
+      signVideo: true,
+    },
+    {
+      id: 3,
+      caption: "Жёлтый",
+      detail: "Жёлтый — цвет солнышка, банана и цыплёнка.",
+      visual: "🟡",
+      avatar: {
+        text: "Жёлтый — солнечный и весёлый. У тебя отлично получается!",
+        emoji: "⭐",
+        mood: "cheer",
+      },
+      signVideo: true,
+    },
+    {
+      id: 4,
+      caption: "Зелёный",
+      detail: "Зелёный — цвет травы, листьев и огурца.",
+      visual: "🟢",
+      avatar: {
+        text: "Подумай: что ещё бывает зелёным? Ёлка, лягушка, яблоко…",
+        emoji: "💭",
+        mood: "think",
+      },
+      signVideo: true,
+    },
+    {
+      id: 5,
+      caption: "Синий",
+      detail: "Синий — цвет неба, моря и воды.",
+      visual: "🔵",
+      avatar: {
+        text: "Ты выучил четыре цвета! Ты большой молодец. До новой встречи!",
+        emoji: "🎉",
+        mood: "bye",
+      },
+      signVideo: true,
+    },
+  ],
+};
+
+/** Все уроки курса по порядку. */
+export const LESSONS: Lesson[] = [DEMO_LESSON, COLORS_LESSON];
+
+/** Найти урок по slug (или первый по умолчанию). */
+export function findLesson(slug?: string): Lesson {
+  if (!slug) return LESSONS[0];
+  return LESSONS.find((l) => l.slug === slug) || LESSONS[0];
+}
 
 export const COURSE_FEATURES = [
   {

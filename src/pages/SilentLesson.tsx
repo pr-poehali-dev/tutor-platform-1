@@ -1,29 +1,39 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import AvatarHelper from "@/components/silent/AvatarHelper";
 import SignPanel from "@/components/silent/SignPanel";
-import { DEMO_LESSON } from "@/components/silent/silentCourseData";
+import { findLesson, LESSONS } from "@/components/silent/silentCourseData";
 import { findSign } from "@/components/silent/signLibrary";
 
-const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/silent/lesson";
-
 export default function SilentLesson() {
+  const { slug } = useParams<{ slug: string }>();
+  const lesson = findLesson(slug);
   const [idx, setIdx] = useState(0);
-  const steps = DEMO_LESSON.steps;
+
+  // При переходе к другому уроку — начинаем с первого шага.
+  useEffect(() => {
+    setIdx(0);
+    window.scrollTo(0, 0);
+  }, [lesson.slug]);
+
+  const steps = lesson.steps;
   const step = steps[idx];
   const isLast = idx === steps.length - 1;
   const progress = ((idx + 1) / steps.length) * 100;
   const sign = findSign(step.caption);
 
+  const lessonPos = LESSONS.findIndex((l) => l.slug === lesson.slug);
+  const nextLesson = lessonPos >= 0 ? LESSONS[lessonPos + 1] : undefined;
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title={`${DEMO_LESSON.title} — курс для глухих детей | УЧИСЬПРО`}
-        description="Демо-урок с полными субтитрами, визуальной подачей и аватаром-помощником. Учимся без звука — всё показано текстом и картинками."
-        canonical={CANONICAL}
+        title={`${lesson.title} — курс для глухих детей | УЧИСЬПРО`}
+        description="Урок с полными субтитрами, визуальной подачей и аватаром-помощником. Учимся без звука — всё показано текстом и картинками."
+        canonical={`https://xn--h1agdcde2c.xn--p1ai/silent/lesson/${lesson.slug}`}
       />
 
       {/* Top bar */}
@@ -46,7 +56,7 @@ export default function SilentLesson() {
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-16">
-        <h1 className="sr-only">{DEMO_LESSON.title}</h1>
+        <h1 className="sr-only">{lesson.title}</h1>
 
         {/* Аватар-помощник ведёт урок */}
         <div className="mb-6">
@@ -85,13 +95,23 @@ export default function SilentLesson() {
           </button>
 
           {isLast ? (
-            <Link
-              to="/silent"
-              className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.01] transition-transform"
-            >
-              <Icon name="CircleCheck" size={18} />
-              Урок пройден!
-            </Link>
+            nextLesson ? (
+              <Link
+                to={`/silent/lesson/${nextLesson.slug}`}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.01] transition-transform"
+              >
+                <Icon name="ArrowRight" size={18} />
+                Следующий урок
+              </Link>
+            ) : (
+              <Link
+                to="/silent"
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.01] transition-transform"
+              >
+                <Icon name="CircleCheck" size={18} />
+                Урок пройден!
+              </Link>
+            )
           ) : (
             <button
               onClick={() => setIdx((i) => Math.min(steps.length - 1, i + 1))}

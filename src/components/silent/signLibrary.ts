@@ -59,6 +59,30 @@ export const SIGN_LIBRARY: Record<string, SignEntry> = {
     dictionaryUrl: `${STS}пока`,
     status: "dictionary",
   },
+  красный: {
+    word: "красный",
+    description: "Кончик указательного пальца проводит по губам сверху вниз — цвет губ.",
+    dictionaryUrl: `${STS}красный`,
+    status: "dictionary",
+  },
+  жёлтый: {
+    word: "жёлтый",
+    description: "Кисть с растопыренными пальцами покачивается у щеки — «солнечный» жёлтый.",
+    dictionaryUrl: `${STS}жёлтый`,
+    status: "dictionary",
+  },
+  зелёный: {
+    word: "зелёный",
+    description: "Кисть слегка встряхивается перед собой — ассоциация с листвой.",
+    dictionaryUrl: `${STS}зелёный`,
+    status: "dictionary",
+  },
+  синий: {
+    word: "синий",
+    description: "Раскрытая ладонь покачивается перед собой — «цвет воды и неба».",
+    dictionaryUrl: `${STS}синий`,
+    status: "dictionary",
+  },
 };
 
 /** Нормализует подпись слова в ключ реестра. */

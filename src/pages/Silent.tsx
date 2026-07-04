@@ -7,7 +7,7 @@ import {
   SILENT_COVER,
   COURSE_FEATURES,
   COURSE_FAQ,
-  DEMO_LESSON,
+  LESSONS,
 } from "@/components/silent/silentCourseData";
 
 const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/silent";
@@ -137,31 +137,49 @@ export default function Silent() {
           </div>
         </section>
 
-        {/* Что внутри демо-урока */}
-        <section className="rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-500/[0.08] to-cyan-500/[0.06] p-6 md:p-8 mb-14">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="flex-1">
-              <span className="text-[11px] text-purple-200 font-bold uppercase tracking-wider">Пилотный урок</span>
-              <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mt-1 mb-2">
-                {DEMO_LESSON.title}
-              </h2>
-              <p className="text-white/70 mb-4">{DEMO_LESSON.subtitle}</p>
-              <div className="flex flex-wrap gap-2">
-                {DEMO_LESSON.steps.map((s) => (
-                  <span key={s.id} className="inline-flex items-center gap-1.5 bg-white/8 border border-white/12 rounded-full px-3 py-1.5 text-sm text-white/80">
-                    <span aria-hidden="true">{s.visual}</span>
-                    {s.caption}
+        {/* Уроки курса */}
+        <section className="mb-14">
+          <h2 className="font-montserrat font-black text-3xl md:text-4xl text-center mb-3">
+            Уроки курса
+          </h2>
+          <p className="text-white/60 text-center max-w-2xl mx-auto mb-8">
+            Проходи по порядку, в своём темпе. Каждый урок — короткий и понятный.
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {LESSONS.map((lesson, i) => (
+              <div
+                key={lesson.slug}
+                className="rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-500/[0.08] to-cyan-500/[0.06] p-6 flex flex-col"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-black text-white text-sm">
+                    {i + 1}
                   </span>
-                ))}
+                  <span className="text-[11px] text-purple-200 font-bold uppercase tracking-wider">
+                    {lesson.steps.length} слов
+                  </span>
+                </div>
+                <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+                  {lesson.title}
+                </h3>
+                <p className="text-white/65 text-sm mb-4">{lesson.subtitle}</p>
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {lesson.steps.map((s) => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 bg-white/8 border border-white/12 rounded-full px-3 py-1.5 text-sm text-white/80">
+                      <span aria-hidden="true">{s.visual}</span>
+                      {s.caption}
+                    </span>
+                  ))}
+                </div>
+                <Link
+                  to={`/silent/lesson/${lesson.slug}`}
+                  className="mt-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform"
+                >
+                  <Icon name="Play" size={18} />
+                  Начать урок
+                </Link>
               </div>
-            </div>
-            <Link
-              to="/silent/lesson"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform whitespace-nowrap"
-            >
-              <Icon name="Play" size={18} />
-              Начать урок
-            </Link>
+            ))}
           </div>
         </section>
 

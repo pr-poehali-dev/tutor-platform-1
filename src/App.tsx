@@ -181,6 +181,7 @@ const App = () => (
                     <Route path="/psychology" element={<Psychology />} />
                     <Route path="/silent" element={<Silent />} />
                     <Route path="/silent/lesson" element={<SilentLesson />} />
+                    <Route path="/silent/lesson/:slug" element={<SilentLesson />} />
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />
