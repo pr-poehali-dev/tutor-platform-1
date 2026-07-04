@@ -2,6 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- Анимации жестов РЖЯ (курс для глухих детей) --- */
+@keyframes sign-wave {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+@keyframes sign-forward {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.06);
+  }
+}
+@keyframes sign-down {
+  0% {
+    transform: translateY(-8px);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes sign-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+@keyframes sign-sway {
+  0%,
+  100% {
+    transform: translateX(-6px) rotate(-4deg);
+  }
+  50% {
+    transform: translateX(6px) rotate(4deg);
+  }
+}
+@keyframes sign-point {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+.sign-motion-wave {
+  animation: sign-wave 1.6s ease-in-out infinite;
+  transform-origin: 60% 90%;
+}
+.sign-motion-forward {
+  animation: sign-forward 1.8s ease-in-out infinite;
+}
+.sign-motion-down {
+  animation: sign-down 1.8s ease-in-out infinite;
+}
+.sign-motion-shake {
+  animation: sign-shake 1.2s ease-in-out infinite;
+}
+.sign-motion-sway {
+  animation: sign-sway 2s ease-in-out infinite;
+}
+.sign-motion-point {
+  animation: sign-point 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sign-motion-wave,
+  .sign-motion-forward,
+  .sign-motion-down,
+  .sign-motion-shake,
+  .sign-motion-sway,
+  .sign-motion-point {
+    animation: none;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -6,12 +6,11 @@ interface Props {
   sign: SignEntry;
 }
 
-/** Авто-панель жеста РЖЯ под текущим субтитром. Показывает своё видео либо
- *  описание артикуляции + переход в официальный видеословарь. */
+/** Панель жеста РЖЯ под субтитром. Жест ВСТРОЕН в курс: показывает своё видео
+ *  (если записано) либо анимированную иллюстрацию руки. Ничего искать не нужно. */
 export default function SignPanel({ sign }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // При смене слова — перезапускаем видео жеста автоматически.
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -28,42 +27,44 @@ export default function SignPanel({ sign }: Props) {
         <span className="text-cyan-200 text-sm font-bold">Жест на РЖЯ: «{sign.word}»</span>
       </div>
 
-      {sign.videoUrl ? (
-        <video
-          ref={videoRef}
-          src={sign.videoUrl}
-          className="w-full max-w-xs mx-auto rounded-xl border border-white/10 bg-black/40"
-          autoPlay
-          loop
-          muted
-          playsInline
-          controls
-        />
-      ) : (
-        <div className="flex flex-col sm:flex-row items-start gap-4">
-          <div className="w-full sm:w-40 flex-shrink-0 aspect-square rounded-xl bg-white/5 border border-dashed border-cyan-400/30 flex flex-col items-center justify-center text-center px-3">
-            <span className="text-4xl mb-1" aria-hidden="true">🤟</span>
-            <span className="text-white/50 text-xs leading-snug">
-              Видео с носителем РЖЯ записывается
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/85 text-base leading-relaxed mb-3">
-              {sign.description}
-            </p>
-            <a
-              href={sign.dictionaryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-100 text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
-            >
-              <Icon name="Play" size={14} />
-              Смотреть видео жеста
-              <Icon name="ExternalLink" size={13} />
-            </a>
-          </div>
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        {/* Встроенный жест: видео (если есть) или анимированная иллюстрация */}
+        <div className="w-40 h-40 flex-shrink-0 rounded-2xl bg-white/90 border border-white/10 overflow-hidden flex items-center justify-center">
+          {sign.videoUrl ? (
+            <video
+              ref={videoRef}
+              src={sign.videoUrl}
+              className="w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          ) : (
+            <img
+              src={sign.image}
+              alt={`Жест «${sign.word}» на русском жестовом языке`}
+              className={`w-full h-full object-contain p-2 sign-motion-${sign.motion}`}
+              loading="lazy"
+            />
+          )}
         </div>
-      )}
+
+        <div className="flex-1 min-w-0 text-center sm:text-left">
+          <p className="text-white/85 text-base leading-relaxed mb-3">
+            {sign.description}
+          </p>
+          <a
+            href={sign.dictionaryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-cyan-200/80 hover:text-cyan-100 text-xs font-semibold transition-colors"
+          >
+            <Icon name="ExternalLink" size={12} />
+            Проверить у носителя языка
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
