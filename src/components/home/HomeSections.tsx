@@ -11,7 +11,6 @@ import { SectionSkeleton } from "./constants";
 
 const AITeacher = lazy(() => import("@/components/AITeacher"));
 const PremiumTracks = lazy(() => import("@/components/PremiumTracks"));
-const LeaderboardSection = lazy(() => import("@/components/LeaderboardSection"));
 const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
 const MentorCompanion = lazy(() => import("@/components/mentor/MentorCompanion"));
 
@@ -38,9 +37,6 @@ export default function HomeSections() {
           <PremiumTracks />
         </Suspense>
         <QuickTools />
-        <Suspense fallback={<SectionSkeleton />}>
-          <LeaderboardSection />
-        </Suspense>
       </main>
     );
   }
