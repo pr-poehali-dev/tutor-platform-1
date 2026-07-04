@@ -325,6 +325,43 @@ export const SIGN_LIBRARY: Record<string, SignEntry> = {
     motion: "forward",
     dictionaryUrl: `${STS}помощь`,
   },
+
+  // --- Урок: Дактиль (азбука руками) ---
+  дактиль: {
+    word: "дактиль",
+    description: "Дактиль — азбука пальцами: каждой букве соответствует своя фигура руки (дактилема).",
+    image: `${IMG}/2c4938ea-c17e-485d-85fe-51986069041e.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}алфавит`,
+  },
+  "буква_а": {
+    word: "буква А",
+    description: "Рука сжата в кулак, большой палец сбоку — это дактилема буквы «А».",
+    image: `${IMG}/4889c07d-fc43-4617-be6a-99ff51d22cc7.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}буква а`,
+  },
+  "буква_б": {
+    word: "буква Б",
+    description: "Ладонь раскрыта, пальцы вместе и подняты вверх — дактилема буквы «Б».",
+    image: `${IMG}/cd5f6257-fd75-4e09-80e3-6bab49144500.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}буква б`,
+  },
+  "буква_в": {
+    word: "буква В",
+    description: "Кисть образует полукруг (форма «В») — дактилема буквы «В».",
+    image: `${IMG}/26b34468-51b6-4c5e-928e-c05d028f7d33.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}буква в`,
+  },
+  моё_имя: {
+    word: "моё имя",
+    description: "Имя показывают по буквам — дактилем за дактилемой складывают слово целиком.",
+    image: `${IMG}/54ee4812-e321-4934-9c4e-658c0b6711ec.jpg`,
+    motion: "forward",
+    dictionaryUrl: `${STS}имя`,
+  },
 };
 
 /** Нормализует подпись слова в ключ реестра. */

@@ -247,6 +247,19 @@ export const POLITE_LESSON: Lesson = {
   ],
 };
 
+export const DACTYL_LESSON: Lesson = {
+  slug: "daktil-azbuka",
+  title: "Урок 9. Дактиль: азбука руками",
+  subtitle: "Как показывать буквы и своё имя",
+  steps: [
+    { id: 1, caption: "Дактиль", detail: "Дактиль — это азбука пальцами. Каждой букве соответствует своя фигура руки. Так показывают слова по буквам.", visual: "🔤", avatar: { text: "Сегодня научимся показывать буквы руками — это называется дактиль!", emoji: "✋", mood: "hello" }, signVideo: true },
+    { id: 2, caption: "Буква А", detail: "Буква «А» — рука сжата в кулак, большой палец сбоку. С неё начинается азбука.", visual: "🅰️", avatar: { text: "Начнём с буквы «А». Повтори фигуру руки за мной.", emoji: "👀", mood: "point" }, signVideo: true },
+    { id: 3, caption: "Буква Б", detail: "Буква «Б» — ладонь раскрыта, пальцы вместе и подняты вверх.", visual: "🅱️", avatar: { text: "Отлично! Теперь «Б». У тебя здорово получается!", emoji: "⭐", mood: "cheer" }, signVideo: true },
+    { id: 4, caption: "Буква В", detail: "Буква «В» — кисть образует полукруг, похожий на букву.", visual: "🔠", avatar: { text: "Подумай: какие ещё буквы есть в твоём имени?", emoji: "💭", mood: "think" }, signVideo: true },
+    { id: 5, caption: "Моё имя", detail: "Имя показывают по буквам: одну дактилему за другой складывают в слово. Так можно назвать любое имя!", visual: "🙋", avatar: { text: "Ты научился дактилю! Теперь ты можешь показать своё имя по буквам. Молодец!", emoji: "🎉", mood: "bye" }, signVideo: true },
+  ],
+};
+
 /** Все уроки курса по порядку. */
 export const LESSONS: Lesson[] = [
   DEMO_LESSON,
@@ -257,6 +270,7 @@ export const LESSONS: Lesson[] = [
   FOOD_LESSON,
   EMOTIONS_LESSON,
   POLITE_LESSON,
+  DACTYL_LESSON,
 ];
 
 /** Найти урок по slug (или первый по умолчанию). */
