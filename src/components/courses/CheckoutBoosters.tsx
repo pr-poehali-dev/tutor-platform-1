@@ -180,6 +180,34 @@ export function PaymentSteps() {
   );
 }
 
+/** Блок «Что входит в курс» — обоснование ценности перед оплатой. */
+export function CourseValueBlock({ lessons }: { lessons: number }) {
+  const items = [
+    { icon: "BookOpen", text: `${lessons} уроков с теорией и практикой` },
+    { icon: "Bot", text: "Личный ИИ-репетитор проверяет задания 24/7" },
+    { icon: "Infinity", text: "Доступ навсегда — без подписки и автосписаний" },
+    { icon: "Award", text: "Сертификат о прохождении курса" },
+  ];
+  return (
+    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-4">
+      <p className="text-white/55 text-[11px] uppercase tracking-wider font-semibold mb-3 flex items-center gap-1.5">
+        <Icon name="Gift" size={12} className="text-purple-300" />
+        Что ты получишь
+      </p>
+      <div className="space-y-2.5">
+        {items.map((it) => (
+          <div key={it.text} className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
+              <Icon name={it.icon} size={14} className="text-purple-300" />
+            </div>
+            <span className="text-white/80 text-sm leading-tight">{it.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Значок защищённой оплаты ЮKassa + принимаемые платёжные системы. */
 export function SecurePaymentBadge() {
   const methods = ["Мир", "Visa", "Mastercard", "СБП"];

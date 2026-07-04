@@ -3,6 +3,13 @@ import Icon from "@/components/ui/icon";
 import { useYookassa, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { setPaidEmail } from "@/components/intensive/api";
 import type { Course } from "@/components/courses/coursesData";
+import {
+  CourseValueBlock,
+  SocialProof,
+  PaymentSteps,
+  MoneyBackGuarantee,
+  SecurePaymentBadge,
+} from "@/components/courses/CheckoutBoosters";
 import func2url from "../../../../backend/func2url.json";
 
 const YOOKASSA_URL = (func2url as Record<string, string>)["yookassa-yookassa"];
@@ -74,6 +81,12 @@ export default function CourseEmailPay({ course, price }: Props) {
         Доступ навсегда · оплата картой или СБП · чек по 54-ФЗ
       </p>
 
+      {/* Ценность и доверие — ДО формы, чтобы снять страх перед оплатой */}
+      <CourseValueBlock lessons={course.lessons} />
+      <SocialProof courseId={course.id} popularity={course.students} />
+      <PaymentSteps />
+      <MoneyBackGuarantee />
+
       <div className="space-y-3">
         <input
           value={name}
@@ -113,9 +126,8 @@ export default function CourseEmailPay({ course, price }: Props) {
         {isLoading ? "Переходим к оплате..." : "Оплатить и получить доступ"}
       </button>
 
-      <div className="flex items-center justify-center gap-2 mt-3 text-white/35 text-[11px]">
-        <Icon name="ShieldCheck" size={13} />
-        Безопасная оплата картой или СБП через ЮKassa
+      <div className="mt-4">
+        <SecurePaymentBadge />
       </div>
     </div>
   );

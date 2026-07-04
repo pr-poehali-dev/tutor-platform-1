@@ -1,7 +1,13 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course } from "@/components/courses/coursesData";
-import { SecurePaymentBadge } from "@/components/courses/CheckoutBoosters";
+import {
+  SecurePaymentBadge,
+  CourseValueBlock,
+  SocialProof,
+  MoneyBackGuarantee,
+  PaymentSteps,
+} from "@/components/courses/CheckoutBoosters";
 
 interface CoursePurchaseFormProps {
   course: Course;
@@ -46,6 +52,12 @@ export default function CoursePurchaseForm({
         </div>
         <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
       </div>
+
+      {/* Обоснование ценности и доверие — ДО кнопки, чтобы снять страх покупки */}
+      <CourseValueBlock lessons={course.lessons} />
+      <SocialProof courseId={course.id} popularity={course.students} />
+      <PaymentSteps />
+      <MoneyBackGuarantee />
 
       {/* Email для чека 54-ФЗ */}
       {isAuthenticated && (

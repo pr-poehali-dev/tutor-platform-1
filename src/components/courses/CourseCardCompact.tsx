@@ -101,18 +101,30 @@ export default function CourseCardCompact({ course }: Props) {
         )}
 
         <div className="flex items-center justify-between pt-3 border-t border-white/8">
-          <div>
+          <div className="min-w-0">
             <p className="text-white/40 text-[10px] uppercase tracking-wider">Цена</p>
             {course.freeForever ? (
               <p className="font-montserrat font-black text-lg text-emerald-300">Бесплатно</p>
             ) : promoOn ? (
               <p className="font-montserrat font-black text-lg text-rose-300">Бесплатно</p>
             ) : (
-              <p className="font-montserrat font-black text-lg text-white">{price.toLocaleString("ru-RU")} ₽</p>
+              <>
+                <p className="font-montserrat font-black text-lg text-white">{price.toLocaleString("ru-RU")} ₽</p>
+                {!owned && (
+                  <p className="flex items-center gap-1 text-[11px] text-emerald-300/80 leading-none mt-0.5">
+                    <Icon name="Star" size={10} className="text-amber-400" />
+                    {course.rating.toFixed(1)} · первый урок бесплатно
+                  </p>
+                )}
+              </>
             )}
           </div>
-          <span className="inline-flex items-center gap-1.5 bg-purple-500/15 border border-purple-500/30 text-purple-200 text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-purple-500/25 transition-colors">
-            {course.freeForever || promoOn || owned ? "Открыть" : "Купить"}
+          <span className="inline-flex items-center gap-1.5 flex-shrink-0 bg-purple-500/15 border border-purple-500/30 text-purple-200 text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-purple-500/25 transition-colors">
+            {course.freeForever || promoOn
+              ? "Начать"
+              : owned
+              ? "Продолжить"
+              : `Купить за ${price.toLocaleString("ru-RU")} ₽`}
             <Icon name="ArrowRight" size={12} />
           </span>
         </div>

@@ -3,6 +3,8 @@ import HeroSection from "@/components/HeroSection";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
+import HowItWorks from "@/components/home/HowItWorks";
+import TrustGuarantee from "@/components/home/TrustGuarantee";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
 
@@ -51,6 +53,9 @@ export default function HomeSections() {
       {/* 2. Точка входа — бесплатные курсы */}
       <FreeCoursesBlock />
 
+      {/* 2.5. Как это работает — путь ученика в 4 шага */}
+      <HowItWorks />
+
       {/* 3. Главный продукт — демо ИИ-учителя */}
       <Suspense fallback={<SectionSkeleton />}>
         <AITeacher />
@@ -71,13 +76,11 @@ export default function HomeSections() {
       {/* 5. Полезные инструменты — без регистрации */}
       <QuickTools />
 
-      {/* 5.5. B2B — конструктор онлайн-школ */}
-      <BusinessPromoBanner />
+      {/* 5.5. Полоса доверия — гарантии и безопасность оплаты */}
+      <TrustGuarantee />
 
-      {/* 6. Рейтинг — социальное доказательство + финальный CTA */}
-      <Suspense fallback={<SectionSkeleton />}>
-        <LeaderboardSection />
-      </Suspense>
+      {/* 5.6. B2B — конструктор онлайн-школ */}
+      <BusinessPromoBanner />
     </main>
   );
 }
