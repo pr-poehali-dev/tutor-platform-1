@@ -13,7 +13,7 @@ const TOCHKA_CERT_IMG =
 
 const TRUST_POINTS = [
   { icon: "Zap", text: "Первый урок — за 30 секунд" },
-  { icon: "CreditCard", text: "Без карты, без обязательств" },
+  { icon: "Gift", text: "Первый урок бесплатно, без карты" },
   { icon: "ShieldCheck", text: "Данные на серверах в РФ" },
 ];
 
@@ -77,7 +77,7 @@ export default function HeroSection() {
                 onClick={() => trackGoal("hero_cta_click")}
                 className="group inline-flex bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-2xl text-base items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
               >
-                <span>Начать учиться бесплатно</span>
+                <span>Выбрать курс — первый урок бесплатно</span>
                 <Icon
                   name="ArrowRight"
                   size={18}
