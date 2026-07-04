@@ -4,7 +4,9 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import AvatarHelper from "@/components/silent/AvatarHelper";
+import SignPanel from "@/components/silent/SignPanel";
 import { DEMO_LESSON } from "@/components/silent/silentCourseData";
+import { findSign } from "@/components/silent/signLibrary";
 
 const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/silent/lesson";
 
@@ -14,6 +16,7 @@ export default function SilentLesson() {
   const step = steps[idx];
   const isLast = idx === steps.length - 1;
   const progress = ((idx + 1) / steps.length) * 100;
+  const sign = findSign(step.caption);
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
@@ -63,18 +66,10 @@ export default function SilentLesson() {
           </p>
         </div>
 
-        {/* Плейсхолдер под РЖЯ-видео носителя языка */}
-        {step.signVideo && (
-          <div className="rounded-2xl border border-dashed border-cyan-400/30 bg-cyan-500/[0.05] p-5 mb-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-cyan-500/15 flex items-center justify-center flex-shrink-0">
-              <Icon name="Hand" size={22} className="text-cyan-300" />
-            </div>
-            <div>
-              <p className="text-cyan-200 font-bold text-sm">Видео на жестовом языке — скоро</p>
-              <p className="text-white/55 text-sm mt-0.5">
-                Здесь появится видео с носителем РЖЯ, который покажет это слово жестами.
-              </p>
-            </div>
+        {/* Авто-панель жеста РЖЯ — всегда видна под субтитром */}
+        {sign && (
+          <div className="mb-6">
+            <SignPanel sign={sign} />
           </div>
         )}
 

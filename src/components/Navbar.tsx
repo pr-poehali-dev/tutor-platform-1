@@ -32,6 +32,7 @@ const MORE_LINKS = [
   { label: "Рисовашка",    icon: "Palette",  path: "/draw" },
   { label: "Познай себя",  icon: "Compass",  path: "/know-yourself" },
   { label: "Выпускник",    icon: "Award",    path: "/graduate" },
+  { label: "Для глухих детей", icon: "Hand", path: "/silent" },
 ];
 
 interface NavbarProps {
