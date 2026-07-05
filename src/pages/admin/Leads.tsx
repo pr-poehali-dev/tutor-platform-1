@@ -127,6 +127,7 @@ export default function Leads() {
           next[patch.status!] = (next[patch.status!] || 0) + 1;
           return next;
         });
+        load();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
