@@ -39,6 +39,25 @@ interface HistoryRow {
   created_at: string | null;
 }
 
+interface PayoutRequest {
+  id: number;
+  school_id: number;
+  school_name: string | null;
+  amount_kopecks: number;
+  requisites: string | null;
+  comment: string | null;
+  status: string;
+  admin_note: string | null;
+  created_at: string | null;
+}
+
+const REQ_STATUS: Record<string, { label: string; color: string }> = {
+  new: { label: "Новая", color: "text-sky-300 bg-sky-500/15 border-sky-500/30" },
+  processing: { label: "В обработке", color: "text-amber-300 bg-amber-500/15 border-amber-500/30" },
+  done: { label: "Выплачено", color: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30" },
+  rejected: { label: "Отклонена", color: "text-rose-300 bg-rose-500/15 border-rose-500/30" },
+};
+
 function rub(kopecks: number): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(kopecks / 100) + " ₽";
 }
@@ -54,6 +73,8 @@ export default function Payouts() {
   const [rows, setRows] = useState<PayoutRow[]>([]);
   const [totals, setTotals] = useState<Totals | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [requests, setRequests] = useState<PayoutRequest[]>([]);
+  const [reqBusyId, setReqBusyId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<number | null>(null);
@@ -66,9 +87,10 @@ export default function Payouts() {
     setLoading(true);
     setError(null);
     try {
-      const [sumRes, histRes] = await Promise.all([
+      const [sumRes, histRes, reqRes] = await Promise.all([
         fetch(`${CONTACT_URL}?action=payouts_summary`, { headers: { "X-Admin-Pin": pin } }),
         fetch(`${CONTACT_URL}?action=payouts_history`, { headers: { "X-Admin-Pin": pin } }),
+        fetch(`${CONTACT_URL}?action=payout_requests`, { headers: { "X-Admin-Pin": pin } }),
       ]);
       if (!sumRes.ok) {
         const e = await sumRes.json().catch(() => ({}));
@@ -80,6 +102,10 @@ export default function Payouts() {
       if (histRes.ok) {
         const h = await histRes.json();
         setHistory(h.items || []);
+      }
+      if (reqRes.ok) {
+        const rq = await reqRes.json();
+        setRequests(rq.items || []);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -120,6 +146,27 @@ export default function Payouts() {
       setPayingId(null);
     }
   };
+
+  const updateRequest = async (id: number, status: string) => {
+    setReqBusyId(id);
+    setError(null);
+    try {
+      const res = await fetch(`${CONTACT_URL}?action=payout_request_update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Pin": pin },
+        body: JSON.stringify({ id, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Ошибка ${res.status}`);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReqBusyId(null);
+    }
+  };
+
+  const openRequests = useMemo(() => requests.filter((r) => r.status === "new" || r.status === "processing"), [requests]);
 
   const totalCards = useMemo(() => totals && [
     { label: "Выручка (оплачено)", value: rub(totals.gross_kopecks), color: "text-white" },
@@ -178,6 +225,64 @@ export default function Payouts() {
         {error && (
           <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-rose-300 text-sm">
             {error}
+          </div>
+        )}
+
+        {openRequests.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-montserrat font-bold text-white mb-3 flex items-center gap-2">
+              <Icon name="Send" size={17} className="text-amber-300" />
+              Заявки на вывод
+              <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300">{openRequests.length}</span>
+            </h2>
+            <div className="space-y-3">
+              {openRequests.map((r) => {
+                const meta = REQ_STATUS[r.status] || REQ_STATUS.new;
+                return (
+                  <Card key={r.id} className="border border-amber-500/25 bg-amber-500/[0.05] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-montserrat font-bold text-white">{r.school_name || `Школа #${r.school_id}`}</span>
+                          <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-medium ${meta.color}`}>{meta.label}</span>
+                        </div>
+                        <div className="text-white/45 text-xs mt-1">{fmtDate(r.created_at)}</div>
+                      </div>
+                      <span className="font-montserrat font-black text-lg text-amber-300">{rub(r.amount_kopecks)}</span>
+                    </div>
+
+                    <div className="rounded-lg bg-black/20 border border-white/10 px-3 py-2 mb-3 text-sm">
+                      <div className="text-white/45 text-xs mb-0.5">Реквизиты для перевода</div>
+                      <div className="text-white/90 break-words">{r.requisites || "—"}</div>
+                      {r.comment && <div className="text-white/55 text-xs mt-1">Комментарий: {r.comment}</div>}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {r.status === "new" && (
+                        <Button size="sm" variant="ghost" disabled={reqBusyId === r.id}
+                          onClick={() => updateRequest(r.id, "processing")}
+                          className="text-amber-200 border border-amber-500/30 hover:bg-amber-500/10">
+                          <Icon name="Clock" size={14} className="mr-1" /> В обработку
+                        </Button>
+                      )}
+                      <Button size="sm" disabled={reqBusyId === r.id}
+                        onClick={() => updateRequest(r.id, "done")}
+                        className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+                        <Icon name={reqBusyId === r.id ? "Loader2" : "Check"} size={14} className={reqBusyId === r.id ? "animate-spin mr-1" : "mr-1"} /> Выплачено
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={reqBusyId === r.id}
+                        onClick={() => updateRequest(r.id, "rejected")}
+                        className="text-rose-300 border border-rose-500/30 hover:bg-rose-500/10">
+                        <Icon name="X" size={14} className="mr-1" /> Отклонить
+                      </Button>
+                    </div>
+                    <p className="text-white/35 text-[11px] mt-2">
+                      «Выплачено» отметит заявку выполненной. Не забудь также отметить сумму в реестре школы ниже.
+                    </p>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
 

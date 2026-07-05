@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { fetchSchoolStats, type SchoolStats } from "@/components/school/api";
+import { fetchSchoolStats, requestPayout, type SchoolStats } from "@/components/school/api";
 
 function rub(kopecks: number): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(kopecks / 100) + " ₽";
@@ -11,25 +11,50 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
 }
 
+const REQ_STATUS_LABEL: Record<string, string> = {
+  new: "Заявка принята, ожидает обработки",
+  processing: "Выплата в обработке",
+};
+
 export default function SchoolAnalytics() {
   const [stats, setStats] = useState<SchoolStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requisites, setRequisites] = useState("");
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetchSchoolStats();
+    if (res.ok && res.data) setStats(res.data.stats);
+    else setError(res.error || "Не удалось загрузить статистику");
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      const res = await fetchSchoolStats();
-      if (!alive) return;
-      if (res.ok && res.data) setStats(res.data.stats);
-      else setError(res.error || "Не удалось загрузить статистику");
-      setLoading(false);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+    load();
+  }, [load]);
+
+  const submitPayout = async () => {
+    if (!requisites.trim()) {
+      setError("Укажите реквизиты для перевода");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    const res = await requestPayout(requisites.trim(), comment.trim() || undefined);
+    setSending(false);
+    if (res.ok) {
+      setSent(true);
+      setRequisites("");
+      setComment("");
+      await load();
+    } else {
+      setError(res.error || "Не удалось отправить заявку");
+    }
+  };
 
   if (loading) {
     return <div className="text-white/50 text-sm py-10 text-center">Загружаем статистику…</div>;
@@ -98,6 +123,67 @@ export default function SchoolAnalytics() {
         <p className="text-white/40 text-[11px] mt-4">
           Приём платежей и комиссия уже включены. Выплаты вашей доли приходят от платформы.
         </p>
+      </div>
+
+      {/* Запрос выплаты */}
+      <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Icon name="Send" size={17} className="text-violet-300" />
+          <h3 className="font-montserrat font-bold text-white">Вывод средств</h3>
+        </div>
+
+        {stats.open_request ? (
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3">
+            <div className="flex items-center gap-2 text-amber-300 text-sm font-medium mb-1">
+              <Icon name="Clock" size={15} />
+              {REQ_STATUS_LABEL[stats.open_request.status] || "Заявка в работе"}
+            </div>
+            <p className="text-white/70 text-sm">
+              Сумма к выплате: <span className="font-bold">{rub(stats.open_request.amount_kopecks)}</span>
+            </p>
+            <p className="text-white/40 text-[11px] mt-1">
+              Мы свяжемся с вами и переведём деньги по указанным реквизитам.
+            </p>
+          </div>
+        ) : sent ? (
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-3 flex items-center gap-2 text-emerald-300 text-sm font-medium">
+            <Icon name="CircleCheck" size={16} /> Заявка отправлена! Мы переведём деньги в ближайшее время.
+          </div>
+        ) : stats.available_kopecks <= 0 ? (
+          <p className="text-white/55 text-sm">
+            Сейчас нет доступных к выводу средств. Как только ученики оплатят курсы — здесь появится сумма к выплате.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-white/60 text-sm">Доступно к выводу:</span>
+              <span className="text-emerald-300 font-bold text-lg">{rub(stats.available_kopecks)}</span>
+            </div>
+            <input
+              value={requisites}
+              onChange={(e) => setRequisites(e.target.value)}
+              placeholder="Реквизиты: номер карты или счёта для перевода"
+              className="w-full bg-white/[0.05] border border-white/12 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-violet-500/50"
+            />
+            <input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Комментарий (необязательно)"
+              className="w-full bg-white/[0.05] border border-white/12 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-violet-500/50"
+            />
+            <button
+              onClick={submitPayout}
+              disabled={sending || !requisites.trim()}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-5 py-2.5 rounded-xl hover:scale-[1.01] transition-transform disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <Icon name={sending ? "Loader2" : "Send"} size={16} className={sending ? "animate-spin" : ""} />
+              Запросить выплату {rub(stats.available_kopecks)}
+            </button>
+            <p className="text-white/40 text-[11px]">
+              Будет создана заявка на всю доступную сумму. Платформа переведёт деньги по вашим реквизитам.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Последние оплаты */}

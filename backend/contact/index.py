@@ -22,6 +22,8 @@ POST /?action=invite_revoke    body: {id}               -> отозвать пр
 GET  /?action=payouts_summary                           -> реестр начислений по школам
 POST /?action=payout_create   body: {school_id, amount_kopecks, method?, note?}
 GET  /?action=payouts_history[&school_id=NN]            -> история выплат
+GET  /?action=payout_requests                          -> заявки школ на вывод средств
+POST /?action=payout_request_update  body: {id, status, admin_note?}
 """
 import json
 import os
@@ -593,6 +595,61 @@ def handle_payouts_history(qs: dict) -> dict:
         conn.close()
 
 
+PAYOUT_REQ_STATUSES = {'new', 'processing', 'done', 'rejected'}
+
+
+def handle_payout_requests() -> dict:
+    """Заявки школ на вывод средств для админки."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT r.id, r.school_id, s.name, r.amount_kopecks, r.requisites, "
+                "r.comment, r.status, r.admin_note, r.created_at "
+                "FROM " + tbl('school_payout_requests') + " r "
+                "LEFT JOIN " + tbl('schools') + " s ON s.id = r.school_id "
+                "ORDER BY CASE WHEN r.status='new' THEN 0 WHEN r.status='processing' THEN 1 ELSE 2 END, "
+                "r.created_at DESC LIMIT 300"
+            )
+            items = [{
+                'id': r[0], 'school_id': r[1], 'school_name': r[2],
+                'amount_kopecks': int(r[3]), 'requisites': r[4], 'comment': r[5],
+                'status': r[6], 'admin_note': r[7],
+                'created_at': r[8].isoformat() if r[8] else None,
+            } for r in cur.fetchall()]
+            return ok({'items': items})
+    finally:
+        conn.close()
+
+
+def handle_payout_request_update(body: dict) -> dict:
+    """Сменить статус заявки на выплату (new/processing/done/rejected)."""
+    try:
+        req_id = int(body.get('id'))
+    except (TypeError, ValueError):
+        return err('Некорректный id', 400)
+    status = (body.get('status') or '').strip()
+    if status not in PAYOUT_REQ_STATUSES:
+        return err('Недопустимый статус', 400)
+    admin_note = (body.get('admin_note') or '').strip()[:1000] or None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE " + tbl('school_payout_requests') +
+                " SET status=%s, admin_note=COALESCE(%s, admin_note), updated_at=now() "
+                "WHERE id=%s",
+                (status, admin_note, req_id))
+            if cur.rowcount == 0:
+                conn.rollback()
+                return err('Заявка не найдена', 404)
+            conn.commit()
+            return ok({'ok': True, 'id': req_id, 'status': status})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Отзывы, обратная связь и B2B-заявки на конструктор онлайн-школ."""
     method = event.get('httpMethod', 'GET')
@@ -619,7 +676,8 @@ def handler(event: dict, context) -> dict:
         return handle_partner_lead(token, body)
 
     if action in ('leads_list', 'lead_update', 'invite_grant', 'invites_list', 'invite_revoke',
-                  'payouts_summary', 'payout_create', 'payouts_history'):
+                  'payouts_summary', 'payout_create', 'payouts_history',
+                  'payout_requests', 'payout_request_update'):
         if not check_admin(headers):
             return err('Доступ запрещён', 403)
         if action == 'leads_list':
@@ -638,5 +696,9 @@ def handler(event: dict, context) -> dict:
             return handle_payout_create(body)
         if action == 'payouts_history':
             return handle_payouts_history(qs)
+        if action == 'payout_requests':
+            return handle_payout_requests()
+        if action == 'payout_request_update' and method == 'POST':
+            return handle_payout_request_update(body)
 
     return err('Неизвестное действие', 404)

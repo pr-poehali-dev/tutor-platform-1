@@ -24,6 +24,7 @@ GET  /?action=my_enrollments            -> курсы, купленные уче
 POST /?action=upload_logo     body: {image_base64, content_type}  -> логотип школы в S3
 GET  /?action=students                  -> ученики школы (кто купил/приглашён)
 GET  /?action=stats                     -> метрики школы (ученики, выручка, доля, выплаты)
+POST /?action=request_payout  body: {requisites, amount_kopecks?, comment?}  -> заявка на вывод
 POST /?action=invite_student  body: {course_id, email}  -> выдать доступ вручную
 POST /?action=remove_student  body: {id}  -> убрать ученика
 
@@ -49,6 +50,24 @@ import boto3
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 YOOKASSA_API_URL = "https://api.yookassa.ru/v3/payments"
+
+
+def notify_max(text: str) -> None:
+    """Уведомление владельцу в MAX. Тихо игнорирует ошибки."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    ident = os.environ.get('MAX_ADMIN_CHAT_ID', '')
+    if not token or not ident:
+        return
+    for param in ('chat_id', 'user_id'):
+        try:
+            url = f"https://botapi.max.ru/messages?{param}={ident}"
+            data = json.dumps({'text': text}).encode('utf-8')
+            r = Request(url, data=data, method='POST',
+                        headers={'Content-Type': 'application/json', 'Authorization': token})
+            with urlopen(r, timeout=10):
+                return
+        except Exception:
+            continue
 
 
 def upload_logo(school_id: int, base64_data: str, content_type: str) -> str:
@@ -884,6 +903,78 @@ def handle_remove_domain(conn, uid: int) -> dict:
     return ok({'ok': True, 'school': school_dict(row)})
 
 
+def compute_pending_payout(cur, sid: int) -> int:
+    """Остаток к выплате: доход школы − выплачено − суммы уже открытых заявок."""
+    cur.execute(
+        "SELECT COALESCE(SUM(amount_kopecks - platform_fee_kopecks),0) "
+        "FROM " + t('school_course_purchases') + " WHERE school_id=%s AND status='paid'", (sid,))
+    school_share = int(cur.fetchone()[0])
+    cur.execute(
+        "SELECT COALESCE(SUM(amount_kopecks),0) FROM " + t('school_payouts') +
+        " WHERE school_id=%s", (sid,))
+    paid_out = int(cur.fetchone()[0])
+    cur.execute(
+        "SELECT COALESCE(SUM(amount_kopecks),0) FROM " + t('school_payout_requests') +
+        " WHERE school_id=%s AND status IN ('new','processing')", (sid,))
+    requested = int(cur.fetchone()[0])
+    return max(0, school_share - paid_out - requested)
+
+
+def handle_request_payout(conn, uid: int, body: dict) -> dict:
+    """Автор школы запрашивает вывод своей доли. Сумма не может превышать
+    доступный остаток. Уведомляет владельца платформы в MAX."""
+    requisites = (body.get('requisites') or '').strip()[:500]
+    comment = (body.get('comment') or '').strip()[:1000] or None
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, name FROM " + t('schools') +
+                    " WHERE owner_user_id=%s LIMIT 1", (uid,))
+        srow = cur.fetchone()
+        if not srow:
+            return err('Школа не найдена', 404)
+        sid, school_name = srow[0], srow[1]
+
+        available = compute_pending_payout(cur, sid)
+        if available <= 0:
+            return err('Пока нет средств к выплате', 400)
+
+        # Сумма: по умолчанию весь доступный остаток
+        raw_amount = body.get('amount_kopecks')
+        if raw_amount is None:
+            amount = available
+        else:
+            try:
+                amount = int(raw_amount)
+            except (TypeError, ValueError):
+                return err('Некорректная сумма', 400)
+            if amount <= 0:
+                return err('Сумма должна быть больше нуля', 400)
+            if amount > available:
+                return err('Сумма больше доступного остатка', 400)
+
+        if not requisites:
+            return err('Укажите реквизиты для перевода', 400)
+
+        cur.execute(
+            "INSERT INTO " + t('school_payout_requests') +
+            " (school_id, amount_kopecks, requisites, comment, status) "
+            "VALUES (%s,%s,%s,%s,'new') RETURNING id, created_at",
+            (sid, amount, requisites, comment))
+        r = cur.fetchone()
+        conn.commit()
+
+        notify_max(
+            f"💰 Заявка на выплату #{r[0]}\n\n"
+            f"🏫 Школа: {school_name}\n"
+            f"💳 Сумма: {amount / 100:.2f} ₽\n"
+            f"📄 Реквизиты: {requisites}\n"
+            + (f"✍️ Комментарий: {comment}\n" if comment else "")
+            + "\nОбработать: /admin/payouts"
+        )
+        return ok({'ok': True, 'id': r[0],
+                   'amount_kopecks': amount,
+                   'created_at': r[1].isoformat() if r[1] else None})
+
+
 def handle_school_stats(conn, uid: int) -> dict:
     """Метрики школы для её владельца: ученики, оплаты, выручка,
     доля школы за вычетом комиссии платформы, выплачено и остаток."""
@@ -939,6 +1030,21 @@ def handle_school_stats(conn, uid: int) -> dict:
             'course_title': r[5],
         } for r in cur.fetchall()]
 
+        # Открытая заявка на выплату (если есть) и доступный к запросу остаток
+        cur.execute(
+            "SELECT id, amount_kopecks, status, created_at FROM " + t('school_payout_requests') +
+            " WHERE school_id=%s AND status IN ('new','processing') "
+            "ORDER BY created_at DESC LIMIT 1", (sid,))
+        prow = cur.fetchone()
+        open_request = None
+        if prow:
+            open_request = {
+                'id': prow[0], 'amount_kopecks': int(prow[1]),
+                'status': prow[2],
+                'created_at': prow[3].isoformat() if prow[3] else None,
+            }
+        available = compute_pending_payout(cur, sid)
+
         return ok({'stats': {
             'fee_percent': fee_pct,
             'students_total': students_total,
@@ -951,6 +1057,8 @@ def handle_school_stats(conn, uid: int) -> dict:
             'school_share_kopecks': school_share,
             'paid_out_kopecks': paid_out,
             'pending_payout_kopecks': max(0, school_share - paid_out),
+            'available_kopecks': available,
+            'open_request': open_request,
             'recent': recent,
         }})
 
@@ -1016,6 +1124,8 @@ def handler(event: dict, context) -> dict:
                 return handle_students(conn, uid)
             if action == 'stats':
                 return handle_school_stats(conn, uid)
+            if action == 'request_payout' and method == 'POST':
+                return handle_request_payout(conn, uid, body)
             if action == 'invite_student' and method == 'POST':
                 return handle_invite_student(conn, uid, body)
             if action == 'remove_student' and method == 'POST':

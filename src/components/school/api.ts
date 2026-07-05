@@ -240,6 +240,13 @@ export interface SchoolStatsRecent {
   course_title: string | null;
 }
 
+export interface SchoolPayoutRequest {
+  id: number;
+  amount_kopecks: number;
+  status: string;
+  created_at: string | null;
+}
+
 export interface SchoolStats {
   fee_percent: number;
   students_total: number;
@@ -252,11 +259,20 @@ export interface SchoolStats {
   school_share_kopecks: number;
   paid_out_kopecks: number;
   pending_payout_kopecks: number;
+  available_kopecks: number;
+  open_request: SchoolPayoutRequest | null;
   recent: SchoolStatsRecent[];
 }
 
 export function fetchSchoolStats() {
   return req<{ stats: SchoolStats | null }>("stats");
+}
+
+export function requestPayout(requisites: string, comment?: string) {
+  return req<{ ok: boolean; id: number; amount_kopecks: number }>("request_payout", {
+    method: "POST",
+    body: { requisites, comment },
+  });
 }
 
 // ---------- Этап 5: свой домен ----------
