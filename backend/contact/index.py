@@ -17,6 +17,11 @@ POST /?action=lead_update      body: {id, status?, note?}
 POST /?action=invite_grant     body: {lead_id?|email}   -> выдать доступ в конструктор + ссылка
 GET  /?action=invites_list                              -> выданные приглашения
 POST /?action=invite_revoke    body: {id}               -> отозвать приглашение
+
+ВЫПЛАТЫ ШКОЛАМ (X-Admin-Pin):
+GET  /?action=payouts_summary                           -> реестр начислений по школам
+POST /?action=payout_create   body: {school_id, amount_kopecks, method?, note?}
+GET  /?action=payouts_history[&school_id=NN]            -> история выплат
 """
 import json
 import os
@@ -29,6 +34,12 @@ from datetime import datetime, timezone
 import psycopg2
 
 SITE_URL = "https://xn--h1agdcde2c.xn--p1ai"  # учисьпро.рф
+
+SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
+
+
+def tbl(name: str) -> str:
+    return f'{SCHEMA}.{name}'
 
 MAX_API_BASE = "https://botapi.max.ru"
 
@@ -453,6 +464,135 @@ def handle_partner_lead(token: str, body: dict) -> dict:
         conn.close()
 
 
+def handle_payouts_summary() -> dict:
+    """Реестр начислений по школам: продажи, доля платформы, доля школы,
+    сколько уже выплачено и сколько осталось выплатить."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT s.id, s.name, s.platform_fee_percent, "
+                "COALESCE(SUM(CASE WHEN p.status='paid' THEN p.amount_kopecks ELSE 0 END),0) AS gross, "
+                "COALESCE(SUM(CASE WHEN p.status='paid' THEN p.platform_fee_kopecks ELSE 0 END),0) AS fee, "
+                "COUNT(p.id) FILTER (WHERE p.status='paid') AS paid_count "
+                "FROM " + tbl('schools') + " s "
+                "LEFT JOIN " + tbl('school_course_purchases') + " p ON p.school_id = s.id "
+                "GROUP BY s.id, s.name, s.platform_fee_percent "
+                "ORDER BY gross DESC, s.id"
+            )
+            rows = cur.fetchall()
+
+            cur.execute(
+                "SELECT school_id, COALESCE(SUM(amount_kopecks),0) "
+                "FROM " + tbl('school_payouts') + " GROUP BY school_id"
+            )
+            paid_map = {r[0]: int(r[1]) for r in cur.fetchall()}
+
+            items = []
+            tot_gross = tot_fee = tot_school = tot_paid = 0
+            for r in rows:
+                sid = r[0]
+                gross = int(r[3])
+                fee = int(r[4])
+                school_share = gross - fee
+                paid_out = paid_map.get(sid, 0)
+                pending = max(0, school_share - paid_out)
+                items.append({
+                    'school_id': sid,
+                    'school_name': r[1],
+                    'fee_percent': float(r[2]),
+                    'gross_kopecks': gross,
+                    'platform_fee_kopecks': fee,
+                    'school_share_kopecks': school_share,
+                    'paid_out_kopecks': paid_out,
+                    'pending_kopecks': pending,
+                    'paid_count': int(r[5]),
+                })
+                tot_gross += gross
+                tot_fee += fee
+                tot_school += school_share
+                tot_paid += paid_out
+
+            return ok({
+                'items': items,
+                'totals': {
+                    'gross_kopecks': tot_gross,
+                    'platform_fee_kopecks': tot_fee,
+                    'school_share_kopecks': tot_school,
+                    'paid_out_kopecks': tot_paid,
+                    'pending_kopecks': max(0, tot_school - tot_paid),
+                },
+            })
+    finally:
+        conn.close()
+
+
+def handle_payout_create(body: dict) -> dict:
+    """Зафиксировать выплату школе (отметка, что деньги отправлены автору)."""
+    try:
+        school_id = int(body.get('school_id'))
+    except (TypeError, ValueError):
+        return err('Некорректный school_id', 400)
+    try:
+        amount_kopecks = int(body.get('amount_kopecks'))
+    except (TypeError, ValueError):
+        return err('Некорректная сумма', 400)
+    if amount_kopecks <= 0:
+        return err('Сумма должна быть больше нуля', 400)
+    method = (body.get('method') or '').strip()[:60] or None
+    note = (body.get('note') or '').strip()[:2000] or None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM " + tbl('schools') + " WHERE id=%s", (school_id,))
+            if not cur.fetchone():
+                return err('Школа не найдена', 404)
+
+            cur.execute(
+                "INSERT INTO " + tbl('school_payouts') +
+                " (school_id, amount_kopecks, method, note, created_by) "
+                "VALUES (%s,%s,%s,%s,'admin') RETURNING id, created_at",
+                (school_id, amount_kopecks, method, note)
+            )
+            r = cur.fetchone()
+            conn.commit()
+            return ok({'ok': True, 'id': r[0],
+                       'created_at': r[1].isoformat() if r[1] else None})
+    finally:
+        conn.close()
+
+
+def handle_payouts_history(qs: dict) -> dict:
+    """История выплат. Опционально фильтр по school_id."""
+    school_id = qs.get('school_id')
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            base = (
+                "SELECT pay.id, pay.school_id, s.name, pay.amount_kopecks, "
+                "pay.method, pay.note, pay.created_at "
+                "FROM " + tbl('school_payouts') + " pay "
+                "LEFT JOIN " + tbl('schools') + " s ON s.id = pay.school_id "
+            )
+            if school_id:
+                try:
+                    sid = int(school_id)
+                except (TypeError, ValueError):
+                    return err('Некорректный school_id', 400)
+                cur.execute(base + "WHERE pay.school_id=%s ORDER BY pay.created_at DESC LIMIT 300", (sid,))
+            else:
+                cur.execute(base + "ORDER BY pay.created_at DESC LIMIT 300")
+            items = [{
+                'id': r[0], 'school_id': r[1], 'school_name': r[2],
+                'amount_kopecks': int(r[3]), 'method': r[4], 'note': r[5],
+                'created_at': r[6].isoformat() if r[6] else None,
+            } for r in cur.fetchall()]
+            return ok({'items': items})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Отзывы, обратная связь и B2B-заявки на конструктор онлайн-школ."""
     method = event.get('httpMethod', 'GET')
@@ -478,7 +618,8 @@ def handler(event: dict, context) -> dict:
     if action == 'partner_lead' and method == 'POST':
         return handle_partner_lead(token, body)
 
-    if action in ('leads_list', 'lead_update', 'invite_grant', 'invites_list', 'invite_revoke'):
+    if action in ('leads_list', 'lead_update', 'invite_grant', 'invites_list', 'invite_revoke',
+                  'payouts_summary', 'payout_create', 'payouts_history'):
         if not check_admin(headers):
             return err('Доступ запрещён', 403)
         if action == 'leads_list':
@@ -491,5 +632,11 @@ def handler(event: dict, context) -> dict:
             return handle_invites_list()
         if action == 'invite_revoke' and method == 'POST':
             return handle_invite_revoke(body)
+        if action == 'payouts_summary':
+            return handle_payouts_summary()
+        if action == 'payout_create' and method == 'POST':
+            return handle_payout_create(body)
+        if action == 'payouts_history':
+            return handle_payouts_history(qs)
 
     return err('Неизвестное действие', 404)

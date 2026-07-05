@@ -12,6 +12,9 @@
     {"name": "lead_update without pin", "method": "POST", "path": "/?action=lead_update", "body": {"id":1,"status":"won"}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "invite_grant without pin", "method": "POST", "path": "/?action=invite_grant", "body": {"email":"a@b.ru"}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "invites_list without pin", "method": "GET", "path": "/?action=invites_list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "payouts_summary without pin", "method": "GET", "path": "/?action=payouts_summary", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "payout_create without pin", "method": "POST", "path": "/?action=payout_create", "body": {"school_id":1,"amount_kopecks":10000}, "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "payouts_history without pin", "method": "GET", "path": "/?action=payouts_history", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "unknown action", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }

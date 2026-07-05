@@ -91,6 +91,7 @@ const AdminHub = lazy(() => import("./pages/admin/AdminHub"));
 const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const Leads = lazy(() => import("./pages/admin/Leads"));
+const Payouts = lazy(() => import("./pages/admin/Payouts"));
 const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
@@ -226,6 +227,7 @@ const App = () => (
                     <Route path="/admin" element={<AdminHub />} />
                     <Route path="/admin/sales" element={<SalesDashboard />} />
                     <Route path="/admin/leads" element={<Leads />} />
+                    <Route path="/admin/payouts" element={<Payouts />} />
                     <Route path="/admin/grants" element={<GrantApplications />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />

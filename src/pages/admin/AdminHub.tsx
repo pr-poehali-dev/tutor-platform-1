@@ -25,6 +25,7 @@ const SECTIONS: Section[] = [
     group: "Отдел продаж",
     items: [
       { label: "Заявки для бизнеса", path: "/admin/leads", icon: "Inbox", description: "Заявки со страницы «Для бизнеса»: статусы, контакты и заметки менеджера" },
+      { label: "Выплаты школам", path: "/admin/payouts", icon: "Wallet", description: "Реестр начислений: продажи, комиссия платформы и доля школ к выплате" },
       { label: "Заявки на гранты", path: "/admin/grants", icon: "Target", description: "ИИ-помощник по грантам: все заявки, оплаты и выручка" },
       { label: "Дашборд продаж", path: "/admin/sales", icon: "BarChart3", description: "KPI, выручка, воронка, конверсия и динамика по дням" },
       { label: "База клиентов", path: "/admin/sales", icon: "Users", description: "Поиск по email/телефону, сегменты, LTV, история покупок" },
