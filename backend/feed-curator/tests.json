@@ -61,6 +61,14 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "seed_compare_article — 200 idempotent",
+      "method": "GET",
+      "path": "/?action=seed_compare_article",
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "unknown action — 404",
       "method": "GET",
       "path": "/?action=unknown",
