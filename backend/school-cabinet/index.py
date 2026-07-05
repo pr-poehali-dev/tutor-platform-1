@@ -23,6 +23,7 @@ GET  /?action=my_enrollments            -> курсы, купленные уче
 Бренд и ученики (Этапы 4 и 2):
 POST /?action=upload_logo     body: {image_base64, content_type}  -> логотип школы в S3
 GET  /?action=students                  -> ученики школы (кто купил/приглашён)
+GET  /?action=stats                     -> метрики школы (ученики, выручка, доля, выплаты)
 POST /?action=invite_student  body: {course_id, email}  -> выдать доступ вручную
 POST /?action=remove_student  body: {id}  -> убрать ученика
 
@@ -883,6 +884,77 @@ def handle_remove_domain(conn, uid: int) -> dict:
     return ok({'ok': True, 'school': school_dict(row)})
 
 
+def handle_school_stats(conn, uid: int) -> dict:
+    """Метрики школы для её владельца: ученики, оплаты, выручка,
+    доля школы за вычетом комиссии платформы, выплачено и остаток."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, platform_fee_percent FROM " + t('schools') +
+                    " WHERE owner_user_id=%s LIMIT 1", (uid,))
+        srow = cur.fetchone()
+        if not srow:
+            return ok({'stats': None})
+        sid, fee_pct = srow[0], float(srow[1])
+
+        # Ученики: всего и по источнику
+        cur.execute(
+            "SELECT COUNT(*), "
+            "COUNT(*) FILTER (WHERE source='purchase'), "
+            "COUNT(*) FILTER (WHERE source='invite') "
+            "FROM " + t('school_enrollments') + " WHERE school_id=%s", (sid,))
+        er = cur.fetchone()
+        students_total, students_paid_src, students_invited = er[0], er[1], er[2]
+
+        # Оплаты
+        cur.execute(
+            "SELECT "
+            "COUNT(*) FILTER (WHERE status='paid'), "
+            "COALESCE(SUM(amount_kopecks) FILTER (WHERE status='paid'),0), "
+            "COALESCE(SUM(platform_fee_kopecks) FILTER (WHERE status='paid'),0), "
+            "COUNT(*) FILTER (WHERE status='pending') "
+            "FROM " + t('school_course_purchases') + " WHERE school_id=%s", (sid,))
+        pr = cur.fetchone()
+        paid_count, gross, fee, pending_count = pr[0], int(pr[1]), int(pr[2]), pr[3]
+        school_share = gross - fee
+
+        # Уже выплачено автору
+        cur.execute(
+            "SELECT COALESCE(SUM(amount_kopecks),0) FROM " + t('school_payouts') +
+            " WHERE school_id=%s", (sid,))
+        paid_out = int(cur.fetchone()[0])
+
+        # Последние оплаты (для ленты)
+        cur.execute(
+            "SELECT p.amount_kopecks, p.platform_fee_kopecks, p.status, p.paid_at, "
+            "p.buyer_email, sc.title "
+            "FROM " + t('school_course_purchases') + " p "
+            "LEFT JOIN " + t('school_courses') + " sc ON sc.id = p.school_course_id "
+            "WHERE p.school_id=%s AND p.status='paid' "
+            "ORDER BY p.paid_at DESC NULLS LAST LIMIT 15", (sid,))
+        recent = [{
+            'amount_kopecks': int(r[0]),
+            'school_amount_kopecks': int(r[0]) - int(r[1]),
+            'status': r[2],
+            'paid_at': r[3].isoformat() if r[3] else None,
+            'buyer_email': r[4],
+            'course_title': r[5],
+        } for r in cur.fetchall()]
+
+        return ok({'stats': {
+            'fee_percent': fee_pct,
+            'students_total': students_total,
+            'students_from_purchase': students_paid_src,
+            'students_invited': students_invited,
+            'paid_count': paid_count,
+            'pending_count': pending_count,
+            'gross_kopecks': gross,
+            'platform_fee_kopecks': fee,
+            'school_share_kopecks': school_share,
+            'paid_out_kopecks': paid_out,
+            'pending_payout_kopecks': max(0, school_share - paid_out),
+            'recent': recent,
+        }})
+
+
 def handler(event: dict, context) -> dict:
     """Кабинет онлайн-школы: школа автора и её курсы."""
     method = event.get('httpMethod', 'GET')
@@ -942,6 +1014,8 @@ def handler(event: dict, context) -> dict:
                 return handle_upload_logo(conn, uid, body)
             if action == 'students':
                 return handle_students(conn, uid)
+            if action == 'stats':
+                return handle_school_stats(conn, uid)
             if action == 'invite_student' and method == 'POST':
                 return handle_invite_student(conn, uid, body)
             if action == 'remove_student' and method == 'POST':

@@ -229,6 +229,36 @@ export function removeStudent(id: number) {
   return req<{ ok: boolean }>("remove_student", { method: "POST", body: { id } });
 }
 
+// ---------- Метрики школы ----------
+
+export interface SchoolStatsRecent {
+  amount_kopecks: number;
+  school_amount_kopecks: number;
+  status: string;
+  paid_at: string | null;
+  buyer_email: string | null;
+  course_title: string | null;
+}
+
+export interface SchoolStats {
+  fee_percent: number;
+  students_total: number;
+  students_from_purchase: number;
+  students_invited: number;
+  paid_count: number;
+  pending_count: number;
+  gross_kopecks: number;
+  platform_fee_kopecks: number;
+  school_share_kopecks: number;
+  paid_out_kopecks: number;
+  pending_payout_kopecks: number;
+  recent: SchoolStatsRecent[];
+}
+
+export function fetchSchoolStats() {
+  return req<{ stats: SchoolStats | null }>("stats");
+}
+
 // ---------- Этап 5: свой домен ----------
 
 export function setSchoolDomain(domain: string) {

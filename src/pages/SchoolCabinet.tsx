@@ -15,6 +15,7 @@ import {
 import type { BuilderCourse } from "@/components/builder/api";
 import SchoolCourseCard from "@/components/school/SchoolCourseCard";
 import SchoolStudents from "@/components/school/SchoolStudents";
+import SchoolAnalytics from "@/components/school/SchoolAnalytics";
 import SchoolBrand from "@/components/school/SchoolBrand";
 import SchoolTeacher from "@/components/school/SchoolTeacher";
 import SchoolDomain from "@/components/school/SchoolDomain";
@@ -22,7 +23,7 @@ import NoAccessGate from "@/components/school/NoAccessGate";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
-type Tab = "courses" | "students" | "brand" | "ai" | "domain";
+type Tab = "courses" | "students" | "income" | "brand" | "ai" | "domain";
 
 export default function SchoolCabinet() {
   const { isAuthenticated, loading: authLoading, openLogin } = useAuth();
@@ -192,6 +193,7 @@ export default function SchoolCabinet() {
               {([
                 { id: "courses", label: "Курсы", icon: "BookOpen" },
                 { id: "students", label: "Ученики", icon: "Users" },
+                { id: "income", label: "Доходы", icon: "BarChart3" },
                 { id: "brand", label: "Бренд", icon: "Palette" },
                 { id: "ai", label: "ИИ-препод", icon: "Sparkles" },
                 { id: "domain", label: "Домен", icon: "Globe" },
@@ -232,6 +234,8 @@ export default function SchoolCabinet() {
             )}
 
             {tab === "students" && <SchoolStudents courses={courses} />}
+
+            {tab === "income" && <SchoolAnalytics />}
 
             {tab === "brand" && school && (
               <SchoolBrand school={school} onUpdated={(s) => setSchool(s)} />
