@@ -52,6 +52,15 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "publish_article without auth — 401",
+      "method": "POST",
+      "path": "/?action=publish_article",
+      "body": {"title": "Test", "content": "Test content", "category": "education"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "unknown action — 404",
       "method": "GET",
       "path": "/?action=unknown",

@@ -1157,6 +1157,52 @@ def handle_health(event: dict, headers: dict) -> dict:
         conn.close()
 
 
+def handle_publish_article(event: dict, headers: dict, body: dict) -> dict:
+    """Публикация готовой редакционной статьи от агента (без RSS/рерайта).
+    Авторизация как у cron: Bearer CRON_SECRET либо X-Admin-Key."""
+    if not is_cron_authorized(event, headers):
+        return err('Не авторизован', 401)
+
+    title = (body.get('title') or '').strip()[:400]
+    content = (body.get('content') or '').strip()[:30000]
+    summary = (body.get('summary') or '').strip()[:1000]
+    category = (body.get('category') or '').strip()
+    cover_url = (body.get('cover_url') or '').strip()[:800] or None
+    source_name = (body.get('source_name') or 'УЧИСЬПРО').strip()[:160]
+    source_url = (body.get('source_url') or '').strip()[:800] or None
+    tags = body.get('tags') or []
+    if not isinstance(tags, list):
+        tags = []
+    tags = [str(t)[:40] for t in tags][:8]
+
+    if not title or not content or category not in ALLOWED_CATEGORIES:
+        return err('Нужны title, content и валидная category', 400)
+
+    words = len(content.split())
+    reading_time = max(2, min(40, round(words / 200))) if words else 3
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            slug = unique_slug(cur, slugify(title))
+            cur.execute(
+                "INSERT INTO feed_articles "
+                "(slug, title, summary, content, category, cover_url, source_kind, "
+                "source_name, source_url, status, tags, reading_time_min, ai_processed, "
+                "ai_notes, source_language, source_country, published_at) "
+                "VALUES (%s,%s,%s,%s,%s,%s,'agent',%s,%s,'published',%s,%s,TRUE,%s,'ru','Россия',NOW()) "
+                "RETURNING id",
+                (slug, title, summary, content, category, cover_url,
+                 source_name, source_url, json.dumps(tags, ensure_ascii=False),
+                 reading_time, 'Редакционный материал УЧИСЬПРО.')
+            )
+            article_id = cur.fetchone()[0]
+            conn.commit()
+            return ok({'created': True, 'id': article_id, 'slug': slug})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """ИИ-агент: парсинг RSS и рерайт статей."""
     method = event.get('httpMethod', 'GET')
@@ -1195,5 +1241,8 @@ def handler(event: dict, context) -> dict:
     # Публичный health-check (метрики + алерты)
     if action == 'health':
         return handle_health(event, headers)
+    # Публикация готовой редакционной статьи (auth: Bearer CRON_SECRET / X-Admin-Key)
+    if action == 'publish_article' and method == 'POST':
+        return handle_publish_article(event, headers, body)
 
     return err('Неизвестное действие', 404)
