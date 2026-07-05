@@ -19,6 +19,8 @@ interface PayoutRow {
   paid_out_kopecks: number;
   pending_kopecks: number;
   paid_count: number;
+  agreement_accepted: boolean;
+  agreement_at: string | null;
 }
 
 interface Totals {
@@ -299,7 +301,18 @@ export default function Payouts() {
               <Card key={r.school_id} className="border border-white/10 bg-white/[0.03] p-4 md:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                   <div>
-                    <div className="font-montserrat font-bold text-base text-white">{r.school_name}</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-montserrat font-bold text-base text-white">{r.school_name}</span>
+                      {r.agreement_accepted ? (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 px-1.5 py-0.5 text-[11px] font-medium">
+                          <Icon name="ShieldCheck" size={11} /> Договор принят
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/15 text-rose-300 px-1.5 py-0.5 text-[11px] font-medium">
+                          <Icon name="ShieldAlert" size={11} /> Договор не принят
+                        </span>
+                      )}
+                    </div>
                     <div className="text-white/45 text-xs mt-0.5">
                       Комиссия платформы {r.fee_percent}% · продаж: {r.paid_count}
                     </div>

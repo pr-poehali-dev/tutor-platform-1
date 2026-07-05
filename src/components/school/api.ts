@@ -247,8 +247,16 @@ export interface SchoolPayoutRequest {
   created_at: string | null;
 }
 
+export interface SchoolAgreement {
+  doc_version: string;
+  accepted_at: string | null;
+}
+
 export interface SchoolStats {
   fee_percent: number;
+  agreement_accepted: boolean;
+  agreement: SchoolAgreement | null;
+  offer_version: string;
   students_total: number;
   students_from_purchase: number;
   students_invited: number;
@@ -272,6 +280,12 @@ export function requestPayout(requisites: string, comment?: string) {
   return req<{ ok: boolean; id: number; amount_kopecks: number }>("request_payout", {
     method: "POST",
     body: { requisites, comment },
+  });
+}
+
+export function acceptAgreement() {
+  return req<{ ok: boolean; agreement: SchoolAgreement | null }>("accept_agreement", {
+    method: "POST",
   });
 }
 

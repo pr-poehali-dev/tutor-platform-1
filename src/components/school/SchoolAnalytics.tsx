@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { fetchSchoolStats, requestPayout, type SchoolStats } from "@/components/school/api";
+import { fetchSchoolStats, requestPayout, acceptAgreement, type SchoolStats } from "@/components/school/api";
 
 function rub(kopecks: number): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(kopecks / 100) + " ₽";
@@ -24,6 +25,8 @@ export default function SchoolAnalytics() {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [agreeChecked, setAgreeChecked] = useState(false);
+  const [accepting, setAccepting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +56,18 @@ export default function SchoolAnalytics() {
       await load();
     } else {
       setError(res.error || "Не удалось отправить заявку");
+    }
+  };
+
+  const acceptOffer = async () => {
+    setAccepting(true);
+    setError(null);
+    const res = await acceptAgreement();
+    setAccepting(false);
+    if (res.ok) {
+      await load();
+    } else {
+      setError(res.error || "Не удалось принять договор");
     }
   };
 
@@ -125,6 +140,58 @@ export default function SchoolAnalytics() {
         </p>
       </div>
 
+      {/* Договор оказания услуг */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Icon name="FileText" size={17} className="text-violet-300" />
+          <h3 className="font-montserrat font-bold text-white">Договор с платформой</h3>
+        </div>
+
+        {stats.agreement_accepted ? (
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-3">
+            <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium">
+              <Icon name="ShieldCheck" size={16} />
+              Договор оказания услуг принят
+            </div>
+            <p className="text-white/55 text-xs mt-1">
+              Редакция {stats.agreement?.doc_version}
+              {stats.agreement?.accepted_at ? ` · принят ${fmtDate(stats.agreement.accepted_at)}` : ""}. Выплаты проводятся на его основании.
+            </p>
+            <Link to="/legal/school-offer" target="_blank" className="text-violet-300 hover:text-violet-200 text-xs inline-flex items-center gap-1 mt-2">
+              <Icon name="ExternalLink" size={12} /> Открыть текст договора
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-white/65 text-sm">
+              Чтобы получать выплаты, примите договор оказания услуг платформы. В нём закреплены порядок приёма оплат, комиссия и перечисление вашей доли.
+            </p>
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreeChecked}
+                onChange={(e) => setAgreeChecked(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-violet-500 flex-shrink-0"
+              />
+              <span className="text-white/75 text-sm">
+                Я прочитал(а) и принимаю условия{" "}
+                <Link to="/legal/school-offer" target="_blank" className="text-violet-300 hover:text-violet-200 underline">
+                  Договора оказания услуг платформы
+                </Link>
+              </span>
+            </label>
+            <button
+              onClick={acceptOffer}
+              disabled={!agreeChecked || accepting}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-5 py-2.5 rounded-xl hover:scale-[1.01] transition-transform disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <Icon name={accepting ? "Loader2" : "Check"} size={16} className={accepting ? "animate-spin" : ""} />
+              Принять договор
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Запрос выплаты */}
       <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -132,7 +199,11 @@ export default function SchoolAnalytics() {
           <h3 className="font-montserrat font-bold text-white">Вывод средств</h3>
         </div>
 
-        {stats.open_request ? (
+        {!stats.agreement_accepted ? (
+          <p className="text-white/55 text-sm">
+            Чтобы запросить выплату, сначала примите договор оказания услуг выше.
+          </p>
+        ) : stats.open_request ? (
           <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3">
             <div className="flex items-center gap-2 text-amber-300 text-sm font-medium mb-1">
               <Icon name="Clock" size={15} />

@@ -490,6 +490,12 @@ def handle_payouts_summary() -> dict:
             )
             paid_map = {r[0]: int(r[1]) for r in cur.fetchall()}
 
+            cur.execute(
+                "SELECT DISTINCT school_id, MIN(accepted_at) "
+                "FROM " + tbl('school_agreements') + " GROUP BY school_id"
+            )
+            agree_map = {r[0]: (r[1].isoformat() if r[1] else None) for r in cur.fetchall()}
+
             items = []
             tot_gross = tot_fee = tot_school = tot_paid = 0
             for r in rows:
@@ -509,6 +515,8 @@ def handle_payouts_summary() -> dict:
                     'paid_out_kopecks': paid_out,
                     'pending_kopecks': pending,
                     'paid_count': int(r[5]),
+                    'agreement_accepted': sid in agree_map,
+                    'agreement_at': agree_map.get(sid),
                 })
                 tot_gross += gross
                 tot_fee += fee
