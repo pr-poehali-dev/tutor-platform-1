@@ -128,18 +128,26 @@ export default function ForBusinessSavings() {
       {/* Итог экономии */}
       {save > 0 && (
         <div className="max-w-3xl mx-auto mt-4">
-          <div className="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-5 flex items-center justify-center gap-3 text-center flex-wrap">
-            <Icon name="TrendingUp" size={22} className="text-emerald-300" />
-            <p className="text-white/85 text-sm md:text-base">
-              С УЧИСЬПРО вы оставляете себе на{" "}
-              <span className="font-montserrat font-black text-emerald-300 text-lg">
-                +{money(save)}
-              </span>{" "}
-              больше каждый месяц
-              {savePct >= 5 && (
-                <span className="text-white/50"> · это +{Math.round(savePct)}% к прибыли</span>
-              )}
-            </p>
+          <div className="rounded-3xl border border-emerald-400/30 bg-emerald-500/10 p-5 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              <Icon name="TrendingUp" size={22} className="text-emerald-300" />
+              <p className="text-white/85 text-sm md:text-base">
+                С УЧИСЬПРО вы оставляете себе на{" "}
+                <span className="font-montserrat font-black text-emerald-300 text-lg">
+                  +{money(save)}
+                </span>{" "}
+                больше каждый месяц
+                {savePct >= 5 && (
+                  <span className="text-white/50"> · это +{Math.round(savePct)}% к прибыли</span>
+                )}
+              </p>
+            </div>
+            <a
+              href="#lead"
+              className="inline-flex items-center justify-center gap-2 flex-shrink-0 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold px-5 py-3 rounded-xl hover:scale-[1.02] transition-transform whitespace-nowrap"
+            >
+              <Icon name="Rocket" size={16} /> Оставить заявку
+            </a>
           </div>
         </div>
       )}
