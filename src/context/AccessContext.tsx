@@ -219,8 +219,29 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;
 }
 
+// Безопасное значение по умолчанию: если контекст временно недоступен
+// (например, рассинхрон Vite-кэша при hot-reload в dev), компонент не роняет
+// всё приложение, а получает нейтральное состояние «без доступа».
+const ACCESS_FALLBACK: AccessState = {
+  loading: false,
+  hasSubscription: false,
+  purchasedCourseIds: [],
+  canAccessCourse: () => false,
+  refreshAccess: async () => {},
+  buyCourse: async () => ({ ok: false, message: "Доступ недоступен" }),
+  buySubscription: async () => ({ ok: false, message: "Доступ недоступен" }),
+  validateCoupon: async () => ({ valid: false }),
+  syncPayment: async () => ({ synced: false }),
+  confirmDemoPurchase: async () => ({ ok: false }),
+};
+
 export function useAccess(): AccessState {
   const ctx = useContext(AccessContext);
-  if (!ctx) throw new Error("useAccess must be used within AccessProvider");
+  if (!ctx) {
+    if (import.meta.env.DEV) {
+      console.warn("useAccess: AccessProvider не найден — использую значение по умолчанию");
+    }
+    return ACCESS_FALLBACK;
+  }
   return ctx;
 }
