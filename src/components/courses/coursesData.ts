@@ -91,20 +91,16 @@ export interface Course {
   freeForever?: boolean;
 }
 
-/** Список курсов, бесплатных навсегда (доступ без оплаты и без подписки).
- *  Намеренно оставляем мало: бесплатное не ценится. 2 школьных «магнита» + 1 взрослый. */
-export const FREE_FOREVER_COURSE_IDS = [2, 37, 76];
-
-/** Хиты продаж — самые модные курсы для витрины каталога (на видном месте). */
-export const BESTSELLER_COURSE_IDS = [17, 57, 65];
-
-export function isCourseBestseller(courseId: number): boolean {
-  return BESTSELLER_COURSE_IDS.includes(courseId);
-}
-
-export function isCourseFreeForever(courseId: number): boolean {
-  return FREE_FOREVER_COURSE_IDS.includes(courseId);
-}
+// Флаги доступа вынесены в лёгкий модуль courseAccessFlags.ts, чтобы
+// глобальный AccessContext не тянул весь этот каталог в главный бандл.
+// Реэкспортируем для обратной совместимости существующих импортов.
+export {
+  FREE_FOREVER_COURSE_IDS,
+  BESTSELLER_COURSE_IDS,
+  isCourseBestseller,
+  isCourseFreeForever,
+} from "./courseAccessFlags";
+import { isCourseFreeForever } from "./courseAccessFlags";
 
 /** Точные науки, где 10–11 классы готовятся к ЕГЭ. */
 const EXACT_SCIENCE_SUBJECTS = ["math", "physics", "chemistry", "cs"];

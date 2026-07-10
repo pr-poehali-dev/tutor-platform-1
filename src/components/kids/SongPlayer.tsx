@@ -131,7 +131,8 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
       const data = await res.json();
       const audioData = data.audio || data.audio_base64;
       if (!audioData) return null;
-      const dataUrl = `data:audio/mp3;base64,${audioData}`;
+      const mime = data.mime || "audio/mpeg";
+      const dataUrl = `data:${mime};base64,${audioData}`;
       audioCacheRef.current.set(idx, dataUrl);
       return dataUrl;
     } catch {

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, ReactNode 
 import func2url from "../../backend/func2url.json";
 import { useAuth } from "@/context/AuthContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
-import { isCourseFreeForever } from "@/components/courses/coursesData";
+import { isCourseFreeForever } from "@/components/courses/courseAccessFlags";
 import { safeFetch } from "@/lib/safeFetch";
 
 const ACCESS_URL = (func2url as Record<string, string>).access;
