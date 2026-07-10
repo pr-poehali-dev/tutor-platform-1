@@ -7,10 +7,17 @@
       "expectedStatus": 200
     },
     {
-      "name": "GET not allowed",
+      "name": "GET without id returns 400",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 405
+      "expectedStatus": 400
+    },
+    {
+      "name": "Upload vocal without data returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"song_id": "test"},
+      "expectedStatus": 400
     }
   ]
 }

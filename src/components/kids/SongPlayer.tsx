@@ -36,6 +36,22 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
   const singSpeed = getSingSpeed(song);
   const melody = MELODY_TRACKS[melodyStyle];
 
+  // Есть ли у песни готовый аудиофайл с живым вокалом
+  const hasRealAudio = Boolean(song.audioUrl);
+  /** Таймкоды начала каждой строки в готовом треке (для караоке-подсветки).
+   *  Берём явные `at`, иначе распределяем равномерно по сумме seconds. */
+  const lineStarts = (() => {
+    if (!hasRealAudio) return [] as number[];
+    const explicit = song.lines.map((l) => l.at);
+    if (explicit.every((v) => typeof v === "number")) return explicit as number[];
+    let acc = 0;
+    return song.lines.map((l) => {
+      const start = acc;
+      acc += l.seconds || 3;
+      return start;
+    });
+  })();
+
   const stopAudio = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -235,7 +251,65 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
     }
   };
 
+  /** Воспроизведение готового трека с живым вокалом (audioUrl).
+   *  Один <audio> на всю песню + караоке-подсветка по таймкодам.
+   *  Фоновую мелодию НЕ запускаем — в студийном треке уже есть аккомпанемент. */
+  const playRealAudio = (fromStart: boolean) => {
+    if (!song.audioUrl) return;
+    let audio = audioRef.current;
+    if (!audio || fromStart) {
+      stopAudio();
+      audio = new Audio(song.audioUrl);
+      audio.preload = "auto";
+      audioRef.current = audio;
+
+      audio.ontimeupdate = () => {
+        if (!audio || cancelledRef.current) return;
+        const t = audio.currentTime;
+        const dur = audio.duration || total;
+        setProgress(Math.min(100, (t / dur) * 100));
+        // Караоке: активна последняя строка, чей таймкод уже наступил
+        let active = -1;
+        for (let i = 0; i < lineStarts.length; i++) {
+          if (t + 0.15 >= lineStarts[i]) active = i;
+          else break;
+        }
+        setCurrentLine(active);
+      };
+      audio.onended = () => {
+        if (cancelledRef.current) return;
+        setIsPlaying(false);
+        setCurrentLine(-1);
+        setProgress(100);
+        onFinish?.();
+      };
+      audio.onerror = () => {
+        // Если файл не загрузился — откатываемся на голос Лисы
+        stopAudio();
+        startMusic();
+        playLine(0);
+      };
+    }
+    setUsingFallback(false);
+    setLoading(true);
+    audio.play()
+      .then(() => setLoading(false))
+      .catch(() => {
+        setLoading(false);
+        setIsPlaying(false);
+      });
+    setIsPlaying(true);
+  };
+
   const play = () => {
+    // Режим 1: готовый студийный трек с живым вокалом
+    if (hasRealAudio) {
+      cancelledRef.current = false;
+      const resume = audioRef.current && currentLine !== -1 && progress < 100;
+      playRealAudio(!resume);
+      return;
+    }
+    // Режим 2: голос Няни Лисы (синтез) + фоновая мелодия
     startMusic();
     if (currentLine >= song.lines.length - 1 || currentLine === -1) {
       // Старт с начала
@@ -253,6 +327,12 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
   };
 
   const pause = () => {
+    if (hasRealAudio) {
+      // Живой трек: ставим на паузу без сброса позиции — можно продолжить
+      if (audioRef.current) audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
     cancelledRef.current = true;
     stopAudio();
     stopMusic();
@@ -268,6 +348,10 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
     setProgress(0);
     setCurrentLine(-1);
     setIsPlaying(true);
+    if (hasRealAudio) {
+      playRealAudio(true);
+      return;
+    }
     startMusic();
     playLine(0);
   };
@@ -283,31 +367,42 @@ export default function SongPlayer({ song, onClose, onFinish }: Props) {
           <div className="flex-1 min-w-0">
             <h2 className="font-montserrat font-black text-white text-xl truncate">{song.title}</h2>
             <p className="text-white/85 text-xs">{song.author}</p>
-            {/* Бейджи: голос Лисы + музыкальное сопровождение */}
+            {/* Бейджи: тип вокала + сопровождение */}
             <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                <span className="text-[10px]">🦊</span>
-                <span className="text-white text-[10px] font-bold">
-                  {usingFallback ? "Голос браузера" : "Лиса поёт"}
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                <span className="text-[10px]">🎵</span>
-                <span className="text-white text-[10px] font-bold">{melody.label}</span>
-              </div>
-              <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                <span className="text-white text-[10px] font-bold">×{singSpeed}</span>
-              </div>
+              {hasRealAudio ? (
+                <div className="inline-flex items-center gap-1 bg-white/25 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                  <span className="text-[10px]">🎤</span>
+                  <span className="text-white text-[10px] font-black">Живой вокал</span>
+                </div>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                    <span className="text-[10px]">🦊</span>
+                    <span className="text-white text-[10px] font-bold">
+                      {usingFallback ? "Голос браузера" : "Лиса поёт"}
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                    <span className="text-[10px]">🎵</span>
+                    <span className="text-white text-[10px] font-bold">{melody.label}</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                    <span className="text-white text-[10px] font-bold">×{singSpeed}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <button
-              onClick={() => setMusicEnabled((v) => !v)}
-              className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
-              title={musicEnabled ? "Выключить музыку" : "Включить музыку"}
-            >
-              <Icon name={musicEnabled ? "Music" : "VolumeX"} size={16} />
-            </button>
+            {!hasRealAudio && (
+              <button
+                onClick={() => setMusicEnabled((v) => !v)}
+                className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+                title={musicEnabled ? "Выключить музыку" : "Включить музыку"}
+              >
+                <Icon name={musicEnabled ? "Music" : "VolumeX"} size={16} />
+              </button>
+            )}
             <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center">
               <Icon name="X" size={18} />
             </button>

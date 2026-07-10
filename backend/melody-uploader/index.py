@@ -161,8 +161,80 @@ def encode_wav(samples):
     return buf.getvalue()
 
 
+def upload_vocal(body):
+    """Заливает готовый вокальный трек песни (base64) в S3 и возвращает CDN-URL.
+
+    body: {song_id, audio_base64, content_type?}
+    Ключ в S3: songs/vocal-<song_id>.<ext>. Этот URL кладётся в audioUrl песни.
+    """
+    import base64
+
+    song_id = str(body.get('song_id', '')).strip()
+    audio_b64 = body.get('audio_base64', '')
+    content_type = body.get('content_type', 'audio/mpeg')
+
+    # Разрешаем только безопасные символы в id
+    if not song_id or not all(c.isalnum() or c in '-_' for c in song_id):
+        return {
+            'statusCode': 400,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Некорректный song_id'}, ensure_ascii=False),
+        }
+
+    ext = 'wav' if 'wav' in content_type else 'mp3'
+    # data:audio/...;base64,XXXX → берём только часть после запятой
+    if ',' in audio_b64:
+        audio_b64 = audio_b64.split(',', 1)[1]
+    try:
+        audio_bytes = base64.b64decode(audio_b64)
+    except Exception:
+        return {
+            'statusCode': 400,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Битый base64'}, ensure_ascii=False),
+        }
+
+    access_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
+    secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    if not access_key or not secret_key:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'S3 credentials missing'}),
+        }
+
+    s3_key = f'songs/vocal-{song_id}.{ext}'
+    s3 = boto3.client(
+        's3',
+        endpoint_url='https://bucket.poehali.dev',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+    )
+    try:
+        s3.put_object(
+            Bucket='files',
+            Key=s3_key,
+            Body=audio_bytes,
+            ContentType=content_type,
+            CacheControl='public, max-age=31536000',
+        )
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': f'S3 upload failed: {e}'}, ensure_ascii=False),
+        }
+
+    cdn_url = f'https://cdn.poehali.dev/projects/{access_key}/bucket/{s3_key}'
+    return {
+        'statusCode': 200,
+        'headers': {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
+        'body': json.dumps({'ok': True, 'song_id': song_id, 'audioUrl': cdn_url}, ensure_ascii=False),
+    }
+
+
 def handler(event, context):
-    """Генерирует и заливает в S3 одну фоновую инструменталку (?id=folk|pop|lullaby|ethno|march)."""
+    """Генерирует инструменталку (?id=...) ИЛИ заливает вокальный трек песни (POST body с song_id+audio_base64)."""
     method = event.get('httpMethod', 'POST')
 
     if method == 'OPTIONS':
@@ -182,6 +254,17 @@ def handler(event, context):
             'headers': {'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({'error': 'Method not allowed'}),
         }
+
+    # ── Загрузка готового ВОКАЛЬНОГО трека песни (mp3/wav из Suno и т.п.) ──
+    # POST body: {"song_id": "korovka", "audio_base64": "...", "content_type": "audio/mpeg"}
+    body_raw = event.get('body') or ''
+    if method == 'POST' and body_raw:
+        try:
+            body = json.loads(body_raw)
+        except Exception:
+            body = {}
+        if body.get('song_id') and body.get('audio_base64'):
+            return upload_vocal(body)
 
     qs = event.get('queryStringParameters') or {}
     melody_id = (qs.get('id') or '').strip()

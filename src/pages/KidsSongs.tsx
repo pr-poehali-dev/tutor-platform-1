@@ -230,6 +230,12 @@ export default function KidsSongs() {
                         ✨ оригинал
                       </div>
                     )}
+                    {/* Бейдж «Живой вокал» — у песни есть готовый студийный трек */}
+                    {song.audioUrl && (
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white text-[10px] font-black shadow-sm shadow-pink-500/40 flex items-center gap-0.5">
+                        🎤 вокал
+                      </div>
+                    )}
                     {/* Длительность */}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold">
                       {minutes} мин
