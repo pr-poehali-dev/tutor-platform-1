@@ -99,6 +99,7 @@ const AppDownload = lazy(() => import("./pages/AppDownload"));
 const Psychology = lazy(() => import("./pages/Psychology"));
 const RemoteProfessions = lazy(() => import("./pages/RemoteProfessions"));
 const NlpMaster = lazy(() => import("./pages/NlpMaster"));
+const ClinicalPsychologist = lazy(() => import("./pages/ClinicalPsychologist"));
 const TechTrends = lazy(() => import("./pages/TechTrends"));
 const Intensive = lazy(() => import("./pages/Intensive"));
 const AiAssistant = lazy(() => import("./pages/AiAssistant"));
@@ -149,6 +150,7 @@ const App = () => (
                     <Route path="/super-courses" element={<SuperCourses />} />
                     <Route path="/remote-professions" element={<RemoteProfessions />} />
                     <Route path="/nlp-master" element={<NlpMaster />} />
+                    <Route path="/klinicheskiy-psiholog" element={<ClinicalPsychologist />} />
                     <Route path="/tech-trends" element={<TechTrends />} />
                     <Route path="/intensive" element={<Intensive />} />
                     <Route path="/ai-assistant" element={<AiAssistant />} />

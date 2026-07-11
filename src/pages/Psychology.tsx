@@ -215,24 +215,42 @@ export default function Psychology() {
         </div>
       </section>
 
-      {/* Мостик к профессии психолога-коуча */}
-      <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
-        <div className="bg-gradient-to-br from-indigo-500/12 via-fuchsia-500/8 to-purple-500/12 border border-fuchsia-500/25 rounded-3xl p-6 md:p-7 text-center">
-          <div className="text-3xl mb-2">🧠</div>
-          <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-2">
-            Хотите помогать людям профессионально?
-          </h2>
-          <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto mb-5 leading-relaxed">
-            Освойте помогающую профессию с нуля: НЛП, КПТ, эриксоновский гипноз, коучинг ICF и запуск
-            частной практики. С наставником, разбором кейсов и первым уроком бесплатно.
-          </p>
-          <Link
-            to="/nlp-master"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            <Icon name="GraduationCap" size={18} />
-            Узнать о курсе «НЛП-практик PRO»
-          </Link>
+      {/* Мостик к помогающим профессиям */}
+      <section className="max-w-4xl mx-auto px-5 md:px-8 pb-16">
+        <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-5 text-center">
+          Хотите помогать людям профессионально?
+        </h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-teal-500/12 via-emerald-500/8 to-cyan-500/12 border border-emerald-500/25 rounded-3xl p-6 flex flex-col">
+            <div className="text-3xl mb-2">🩺</div>
+            <p className="font-montserrat font-black text-white text-base mb-1.5">Клинический психолог-консультант</p>
+            <p className="text-white/65 text-sm leading-relaxed mb-4 flex-1">
+              Доказательная терапия с нуля: КПТ, ACT, DBT, диагностика, работа с тревогой, депрессией и
+              кризисом. Сертификат, портфолио случаев и супервизия.
+            </p>
+            <Link
+              to="/klinicheskiy-psiholog"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Icon name="GraduationCap" size={18} />
+              Узнать о курсе
+            </Link>
+          </div>
+          <div className="bg-gradient-to-br from-indigo-500/12 via-fuchsia-500/8 to-purple-500/12 border border-fuchsia-500/25 rounded-3xl p-6 flex flex-col">
+            <div className="text-3xl mb-2">🧠</div>
+            <p className="font-montserrat font-black text-white text-base mb-1.5">НЛП-практик PRO</p>
+            <p className="text-white/65 text-sm leading-relaxed mb-4 flex-1">
+              Интегративная система влияния и коучинга: НЛП, КПТ, эриксоновский гипноз, коучинг ICF и
+              запуск частной практики. С наставником и разбором кейсов.
+            </p>
+            <Link
+              to="/nlp-master"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-sm font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Icon name="GraduationCap" size={18} />
+              Узнать о курсе
+            </Link>
+          </div>
         </div>
       </section>
 
