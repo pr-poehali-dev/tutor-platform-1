@@ -7,7 +7,7 @@
 export const FREE_FOREVER_COURSE_IDS = [2, 37, 76];
 
 /** Хиты продаж — самые модные курсы для витрины каталога (на видном месте). */
-export const BESTSELLER_COURSE_IDS = [17, 57, 65];
+export const BESTSELLER_COURSE_IDS = [77, 17, 57, 65];
 
 export function isCourseBestseller(courseId: number): boolean {
   return BESTSELLER_COURSE_IDS.includes(courseId);

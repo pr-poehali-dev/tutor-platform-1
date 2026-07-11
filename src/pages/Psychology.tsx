@@ -215,6 +215,27 @@ export default function Psychology() {
         </div>
       </section>
 
+      {/* Мостик к профессии психолога-коуча */}
+      <section className="max-w-3xl mx-auto px-5 md:px-8 pb-16">
+        <div className="bg-gradient-to-br from-indigo-500/12 via-fuchsia-500/8 to-purple-500/12 border border-fuchsia-500/25 rounded-3xl p-6 md:p-7 text-center">
+          <div className="text-3xl mb-2">🧠</div>
+          <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-2">
+            Хотите помогать людям профессионально?
+          </h2>
+          <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto mb-5 leading-relaxed">
+            Освойте помогающую профессию с нуля: НЛП, КПТ, эриксоновский гипноз, коучинг ICF и запуск
+            частной практики. С наставником, разбором кейсов и первым уроком бесплатно.
+          </p>
+          <Link
+            to="/nlp-master"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            <Icon name="GraduationCap" size={18} />
+            Узнать о курсе «НЛП-практик PRO»
+          </Link>
+        </div>
+      </section>
+
       <SiteFooter />
     </div>
   );
