@@ -31,6 +31,13 @@
       "headers": {
         "Authorization": "Bearer ${CRON_SECRET}"
       }
+    },
+    {
+      "name": "kids-songs-generator-30m",
+      "description": "Каждые 30 минут: догенерирует недостающие детские песни (вокал+музыка) через polza.ai пачками и забирает готовые треки. Идемпотентно — как только каталог полон, ничего не делает. Устойчиво к временной недоступности Suno.",
+      "schedule": "*/30 * * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/9e916110-c3b2-47e3-8751-9351fcd8e01d?action=cron&batch=2"
     }
   ]
 }

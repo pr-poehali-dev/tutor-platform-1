@@ -17,8 +17,37 @@ import urllib.error
 import boto3
 import psycopg2
 
+from catalog import SONGS as CATALOG
+
 POLZA_MEDIA_URL = 'https://api.polza.ai/api/v1/media'
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
+
+
+def build_style(song):
+    """Музыкальный стиль для Suno по категории песни (как на фронте)."""
+    cat = song.get('category', 'song')
+    tags = song.get('tags', [])
+    base = ("russian children song, clear soft female vocal, simple catchy melody, "
+            "warm, kids nursery, no rap, no hip-hop")
+    if cat == 'lullaby':
+        return ("gentle russian lullaby, tender soft female vocal, slow calm melody, "
+                "soothing, music box, no rap")
+    if cat == 'potyashka':
+        return "cheerful russian folk nursery rhyme, playful female vocal, acoustic, bright, " + base
+    if cat == 'finger':
+        return "playful russian childrens folk, light acoustic, gentle female vocal, " + base
+    if 'транспорт' in tags:
+        return "upbeat cheerful childrens march, fun female vocal, drums, bright, " + base
+    return base
+
+
+def build_lyrics(song):
+    """Текст песни с разметкой куплет/припев (как на фронте)."""
+    lines = [l.strip() for l in song.get('lines', []) if l.strip()]
+    if len(lines) <= 4:
+        return '\n'.join(lines)
+    half = (len(lines) + 1) // 2
+    return '[Verse]\n' + '\n'.join(lines[:half]) + '\n[Chorus]\n' + '\n'.join(lines[half:])
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -293,6 +322,91 @@ def action_poll(qs):
     return _resp(200, {'ok': True, 'raw': data, 'audio_url': _extract_audio_url(data)})
 
 
+def action_raw(body):
+    """Диагностика: отправляет произвольный payload в polza /media и возвращает сырой ответ."""
+    payload = body.get('payload') or {}
+    if not isinstance(payload, dict) or not payload.get('model'):
+        return _resp(400, {'error': 'payload с model обязателен'})
+    data, code, err = _polza_post(payload)
+    return _resp(200, {'ok': data is not None, 'code': code, 'error': err, 'raw': data})
+
+
+def _db_status_map():
+    conn = _db()
+    try:
+        cur = conn.cursor()
+        cur.execute(f"SELECT song_id, status, audio_url FROM {SCHEMA}.kids_song_audio")
+        return {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+    finally:
+        conn.close()
+
+
+def action_cron(qs=None):
+    """Автономный цикл (для расписания / ручного запуска), укладывается в таймаут.
+    За вызов: 1) забирает готовые из очереди (finalize);
+    2) запускает генерацию небольшой ПАЧКИ недостающих песен (batch, по умолчанию 2).
+    Идемпотентен: готовые не трогает. Много вызовов подряд достроят весь каталог.
+    Suno-503 не мешает — заблокированные попробуем в следующий запуск."""
+    qs = qs or {}
+    try:
+        batch = max(1, min(4, int(qs.get('batch', 2))))
+    except Exception:
+        batch = 2
+
+    # 1) Забираем готовые
+    fin = json.loads(action_finalize()['body'])
+
+    # 2) Берём пачку недостающих
+    status = _db_status_map()
+    started, blocked = [], []
+    for song in CATALOG:
+        if len(started) + len(blocked) >= batch:
+            break
+        sid = song['id']
+        st = status.get(sid)
+        if st and st[0] == 'ready' and st[1]:
+            continue
+        if st and st[0] == 'pending':
+            continue
+        payload = {
+            'model': 'suno/generate',
+            'prompt': build_lyrics(song),
+            'version': 'V4_5',
+            'style': build_style(song),
+            'title': song['title'][:80],
+        }
+        data, code, _err = _polza_post(payload)  # без sleep — экономим время
+        if data is None:
+            blocked.append(sid)
+            continue
+        media_id = data.get('id')
+        audio_url = _extract_audio_url(data)
+        if audio_url:
+            try:
+                cdn_url, _ = _save_to_s3(sid, audio_url)
+                _db_upsert(sid, cdn_url, media_id)
+                started.append(sid + ':ready')
+                continue
+            except Exception:
+                pass
+        try:
+            _db_set_pending(sid, media_id)
+        except Exception:
+            pass
+        started.append(sid)
+
+    ready_cnt = sum(1 for v in status.values() if v[0] == 'ready')
+    return _resp(200, {
+        'ok': True,
+        'finalized': fin.get('finalized', []),
+        'started': started,
+        'blocked': blocked,
+        'total': len(CATALOG),
+        'ready': ready_cnt,
+        'remaining': len(CATALOG) - ready_cnt,
+    })
+
+
 def handler(event, context):
     """Генерация детских песен через polza.ai Suno: generate / finalize / list / poll."""
     method = event.get('httpMethod', 'POST')
@@ -318,4 +432,8 @@ def handler(event, context):
         return action_list()
     if action == 'poll':
         return action_poll(qs)
+    if action == 'raw':
+        return action_raw(body)
+    if action == 'cron':
+        return action_cron(qs)
     return _resp(400, {'error': 'Unknown action'})
