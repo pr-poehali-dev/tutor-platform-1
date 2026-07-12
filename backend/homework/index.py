@@ -29,6 +29,7 @@ SUBJECTS = {
     'russian': 'русский язык', 'english': 'английский язык', 'biology': 'биология',
     'history': 'история', 'geography': 'география', 'literature': 'литература',
     'society': 'обществознание', 'cs': 'информатика',
+    'psychology': 'психология и коучинг',
 }
 
 GRADES = {

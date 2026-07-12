@@ -83,7 +83,7 @@ const WHY = [
 
 export default function ClinicalPsychologist() {
   const course = COURSES.find((c) => c.id === COURSE_ID);
-  const price = course ? getCoursePrice(course) : 44900;
+  const price = course ? getCoursePrice(course) : 17900;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">

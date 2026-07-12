@@ -83,7 +83,7 @@ const WHY = [
 
 export default function NlpMaster() {
   const course = COURSES.find((c) => c.id === COURSE_ID);
-  const price = course ? getCoursePrice(course) : 34900;
+  const price = course ? getCoursePrice(course) : 14900;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
