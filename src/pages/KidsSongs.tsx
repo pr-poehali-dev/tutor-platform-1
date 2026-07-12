@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import func2url from "../../backend/func2url.json";
 import Icon from "@/components/ui/icon";
@@ -31,73 +31,63 @@ export default function KidsSongs() {
   const [activeSong, setActiveSong] = useState<Song | null>(null);
   // Карта готовых студийных треков {song_id: audioUrl}, сгенерированных через polza.ai
   const [readyAudio, setReadyAudio] = useState<Record<string, string>>({});
+  // id песен, которые сейчас готовятся (в очереди генерации)
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
+  const SONG_URL = (func2url as Record<string, string>)["song-generator"];
+
+  /** Полный цикл обслуживания песен: забрать готовые, обновить список,
+   *  запустить генерацию недостающих. Вызывается при заходе и по кнопке. */
+  const refresh = useCallback(async () => {
+    if (!SONG_URL) return;
+    setRefreshing(true);
+    try {
+      // 1) Забираем готовые из очереди
+      await fetch(`${SONG_URL}?action=finalize`).catch(() => {});
+      // 2) Актуальный список готовых + что в очереди
+      const listRes = await fetch(`${SONG_URL}?action=list`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const ready: Record<string, string> = (listRes && listRes.songs) || {};
+      const pending: string[] = (listRes && listRes.pending) || [];
+      setReadyAudio(ready);
+      setPendingIds(new Set(pending));
+
+      // 3) Запускаем генерацию одной недостающей (не готовой и не в очереди)
+      const missing = SONGS.filter((s) => !ready[s.id] && !pending.includes(s.id));
+      if (missing.length > 0) {
+        const song = missing[0];
+        setPendingIds((prev) => new Set(prev).add(song.id));
+        const gen = await fetch(`${SONG_URL}?action=generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            song_id: song.id,
+            title: song.title.slice(0, 80),
+            style: getSunoStyle(song),
+            version: "V4_5",
+            prompt: getSunoLyrics(song),
+          }),
+        }).then((r) => (r.ok || r.status === 202 ? r.json() : null)).catch(() => null);
+        if (gen && gen.audioUrl) {
+          setReadyAudio((prev) => ({ ...prev, [song.id]: gen.audioUrl }));
+          setPendingIds((prev) => { const n = new Set(prev); n.delete(song.id); return n; });
+        }
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [SONG_URL]);
+
+  // При заходе — обслуживаем каталог. Пока есть готовящиеся песни — тихо
+  // перепроверяем каждые 60 сек, чтобы забрать готовое без перезагрузки.
   useEffect(() => {
-    const url = (func2url as Record<string, string>)["song-generator"];
-    if (!url) return;
     let cancelled = false;
-
-    // Забирает уже готовые треки из pending-очереди
-    const finalize = () => {
-      fetch(`${url}?action=finalize`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then(() => {
-          if (cancelled) return;
-          // Обновляем список готовых песен
-          fetch(`${url}?action=list`)
-            .then((r) => (r.ok ? r.json() : null))
-            .then((d) => {
-              if (!cancelled && d && d.songs) setReadyAudio(d.songs);
-            })
-            .catch(() => {});
-        })
-        .catch(() => {});
-    };
-
-    const generateMissing = (ready: Record<string, string>) => {
-      // Достраиваем каталог по одной песне за заход. Бэкенд сам повторяет
-      // попытки при 503. Генерация ставится в очередь (pending), готовый
-      // трек забираем через finalize. Так раздел «самозаполняется».
-      const missing = SONGS.filter((s) => !ready[s.id]);
-      if (missing.length === 0) return;
-      const song = missing[0];
-      fetch(`${url}?action=generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          song_id: song.id,
-          title: song.title.slice(0, 80),
-          style: getSunoStyle(song),
-          version: "V4_5",
-          prompt: getSunoLyrics(song),
-        }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          if (cancelled || !d) return;
-          if (d.audioUrl) {
-            setReadyAudio((prev) => ({ ...prev, [song.id]: d.audioUrl }));
-          } else if (d.pending) {
-            // Готовый трек Suno появится через ~1-2 мин — заберём позже
-            setTimeout(finalize, 90000);
-          }
-        })
-        .catch(() => { /* попробуем при следующем заходе */ });
-    };
-
-    fetch(`${url}?action=list`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled) return;
-        const ready = (d && d.songs) || {};
-        setReadyAudio(ready);
-        finalize();           // вдруг что-то уже готово в очереди
-        generateMissing(ready);
-      })
-      .catch(() => { /* нет готовых треков — играем голосом Лисы */ });
-
-    return () => { cancelled = true; };
-  }, []);
+    refresh();
+    const timer = setInterval(() => {
+      if (!cancelled) refresh();
+    }, 60000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [refresh]);
 
   // Подмешиваем готовый вокал в песню, если он уже сгенерирован
   const withAudio = (s: Song): Song =>
@@ -274,6 +264,33 @@ export default function KidsSongs() {
         </div>
       </section>
 
+      {/* Статус живого вокала + ручное обновление */}
+      <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 mb-4">
+        <div className="flex items-center gap-3 flex-wrap bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-3">
+          <span className="text-lg">🎤</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-bold leading-tight">
+              Живой вокал: {Object.keys(readyAudio).length} из {SONGS.length} песен
+            </p>
+            <p className="text-white/50 text-[11px] leading-snug">
+              {pendingIds.size > 0
+                ? `Готовим ещё ${pendingIds.size} — песни допоются сами, загляни попозже`
+                : Object.keys(readyAudio).length < SONGS.length
+                ? "Остальные песни допоются автоматически при следующих заходах"
+                : "Все песни поются живым голосом под музыку"}
+            </p>
+          </div>
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-100 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors disabled:opacity-50"
+          >
+            <Icon name={refreshing ? "Loader" : "RefreshCw"} size={13} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Обновляю…" : "Обновить песни"}
+          </button>
+        </div>
+      </section>
+
       {/* Сетка песенок */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pb-16">
         {filtered.length === 0 ? (
@@ -308,11 +325,16 @@ export default function KidsSongs() {
                       </div>
                     )}
                     {/* Бейдж «Живой вокал» — у песни есть готовый студийный трек */}
-                    {song.audioUrl && (
+                    {song.audioUrl ? (
                       <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white text-[10px] font-black shadow-sm shadow-pink-500/40 flex items-center gap-0.5">
                         🎤 вокал
                       </div>
-                    )}
+                    ) : pendingIds.has(song.id) ? (
+                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-amber-200 text-[10px] font-bold flex items-center gap-1">
+                        <Icon name="Loader" size={9} className="animate-spin" />
+                        готовится
+                      </div>
+                    ) : null}
                     {/* Длительность */}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold">
                       {minutes} мин

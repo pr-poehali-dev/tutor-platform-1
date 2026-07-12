@@ -208,8 +208,24 @@ def action_generate(body):
     return _resp(202, {'ok': True, 'pending': True, 'song_id': song_id, 'media_id': media_id})
 
 
+def _db_mark_failed(song_id):
+    """Сбрасывает задачу, чтобы её можно было сгенерировать заново."""
+    conn = _db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE {SCHEMA}.kids_song_audio SET status = 'failed', updated_at = now() "
+            f"WHERE song_id = %s",
+            (song_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def action_finalize():
-    """Проверяет pending-задачи: готовые скачивает и сохраняет в S3+БД."""
+    """Проверяет pending-задачи: готовые сохраняет, провалившиеся у Suno помечает
+    как failed (их фронт пересоздаст). Долгие задачи оставляет в pending."""
     conn = _db()
     try:
         cur = conn.cursor()
@@ -221,10 +237,18 @@ def action_finalize():
     finally:
         conn.close()
 
-    done, still = [], []
+    done, still, failed = [], [], []
     for song_id, media_id in rows:
         pd, perr = _polza_get(media_id)
-        if perr or not isinstance(pd, dict) or pd.get('status') in ('failed', 'error'):
+        # Провал на стороне Suno — помечаем failed, чтобы пересоздать
+        if not perr and isinstance(pd, dict) and pd.get('status') in ('failed', 'error'):
+            try:
+                _db_mark_failed(song_id)
+            except Exception:
+                pass
+            failed.append(song_id)
+            continue
+        if perr or not isinstance(pd, dict):
             still.append(song_id)
             continue
         audio_url = _extract_audio_url(pd)
@@ -237,7 +261,7 @@ def action_finalize():
             done.append(song_id)
         except Exception:
             still.append(song_id)
-    return _resp(200, {'ok': True, 'finalized': done, 'pending': still})
+    return _resp(200, {'ok': True, 'finalized': done, 'pending': still, 'failed': failed})
 
 
 def action_list():
@@ -245,12 +269,18 @@ def action_list():
     try:
         cur = conn.cursor()
         cur.execute(
-            f"SELECT song_id, audio_url FROM {SCHEMA}.kids_song_audio WHERE status = 'ready'"
+            f"SELECT song_id, audio_url, status FROM {SCHEMA}.kids_song_audio"
         )
         rows = cur.fetchall()
     finally:
         conn.close()
-    return _resp(200, {'ok': True, 'songs': {r[0]: r[1] for r in rows}})
+    songs, pending = {}, []
+    for song_id, audio_url, status in rows:
+        if status == 'ready' and audio_url:
+            songs[song_id] = audio_url
+        elif status == 'pending':
+            pending.append(song_id)
+    return _resp(200, {'ok': True, 'songs': songs, 'pending': pending})
 
 
 def action_poll(qs):
@@ -264,7 +294,7 @@ def action_poll(qs):
 
 
 def handler(event, context):
-    """Генерация детских песен через polza.ai Suno с автоповтором: generate / list / poll."""
+    """Генерация детских песен через polza.ai Suno: generate / finalize / list / poll."""
     method = event.get('httpMethod', 'POST')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
