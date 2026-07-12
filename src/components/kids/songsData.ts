@@ -115,6 +115,29 @@ export function getSingSpeed(song: Song): number {
   return 0.88;
 }
 
+/** Музыкальный стиль (жанр) для генерации песни через Suno — по категории. */
+export function getSunoStyle(song: Song): string {
+  const base = "russian children song, clear soft female vocal, simple catchy melody, warm, kids nursery, no rap, no hip-hop";
+  if (song.category === "lullaby")
+    return "gentle russian lullaby, tender soft female vocal, slow calm melody, soothing, music box, no rap";
+  if (song.category === "potyashka")
+    return "cheerful russian folk nursery rhyme, playful female vocal, acoustic, bright, " + base;
+  if (song.category === "finger")
+    return "playful russian childrens folk, light acoustic, gentle female vocal, " + base;
+  if (song.tags.includes("транспорт"))
+    return "upbeat cheerful childrens march, fun female vocal, drums, bright, " + base;
+  return base;
+}
+
+/** Собирает текст песни для Suno с разметкой куплетов/припева. */
+export function getSunoLyrics(song: Song): string {
+  const lines = song.lines.map((l) => l.text.trim()).filter(Boolean);
+  if (lines.length <= 4) return lines.join("\n");
+  const head = lines.slice(0, Math.ceil(lines.length / 2));
+  const tail = lines.slice(Math.ceil(lines.length / 2));
+  return "[Verse]\n" + head.join("\n") + "\n[Chorus]\n" + tail.join("\n");
+}
+
 export const SONG_CATEGORIES: { id: SongCategory; label: string; emoji: string }[] = [
   { id: "potyashka", label: "Потешки", emoji: "👋" },
   { id: "finger", label: "Пальчиковые игры", emoji: "✋" },

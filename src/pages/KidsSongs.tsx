@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import func2url from "../../backend/func2url.json";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
@@ -13,6 +14,8 @@ import {
   Song,
   filterSongs,
   getTotalSongDuration,
+  getSunoStyle,
+  getSunoLyrics,
 } from "@/components/kids/songsData";
 import SongPlayer from "@/components/kids/SongPlayer";
 import NannyFox from "@/components/kids/NannyFox";
@@ -26,6 +29,79 @@ export default function KidsSongs() {
   const [age, setAge] = useState<SongAge | "all">("all");
   const [query, setQuery] = useState("");
   const [activeSong, setActiveSong] = useState<Song | null>(null);
+  // Карта готовых студийных треков {song_id: audioUrl}, сгенерированных через polza.ai
+  const [readyAudio, setReadyAudio] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const url = (func2url as Record<string, string>)["song-generator"];
+    if (!url) return;
+    let cancelled = false;
+
+    // Забирает уже готовые треки из pending-очереди
+    const finalize = () => {
+      fetch(`${url}?action=finalize`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then(() => {
+          if (cancelled) return;
+          // Обновляем список готовых песен
+          fetch(`${url}?action=list`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (!cancelled && d && d.songs) setReadyAudio(d.songs);
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
+    };
+
+    const generateMissing = (ready: Record<string, string>) => {
+      // Достраиваем каталог по одной песне за заход. Бэкенд сам повторяет
+      // попытки при 503. Генерация ставится в очередь (pending), готовый
+      // трек забираем через finalize. Так раздел «самозаполняется».
+      const missing = SONGS.filter((s) => !ready[s.id]);
+      if (missing.length === 0) return;
+      const song = missing[0];
+      fetch(`${url}?action=generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          song_id: song.id,
+          title: song.title.slice(0, 80),
+          style: getSunoStyle(song),
+          version: "V4_5",
+          prompt: getSunoLyrics(song),
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (cancelled || !d) return;
+          if (d.audioUrl) {
+            setReadyAudio((prev) => ({ ...prev, [song.id]: d.audioUrl }));
+          } else if (d.pending) {
+            // Готовый трек Suno появится через ~1-2 мин — заберём позже
+            setTimeout(finalize, 90000);
+          }
+        })
+        .catch(() => { /* попробуем при следующем заходе */ });
+    };
+
+    fetch(`${url}?action=list`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        const ready = (d && d.songs) || {};
+        setReadyAudio(ready);
+        finalize();           // вдруг что-то уже готово в очереди
+        generateMissing(ready);
+      })
+      .catch(() => { /* нет готовых треков — играем голосом Лисы */ });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Подмешиваем готовый вокал в песню, если он уже сгенерирован
+  const withAudio = (s: Song): Song =>
+    readyAudio[s.id] ? { ...s, audioUrl: readyAudio[s.id] } : s;
 
   const filtered = useMemo(() => {
     const base = filterSongs(category, age);
@@ -207,7 +283,8 @@ export default function KidsSongs() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {filtered.map((song) => {
+            {filtered.map((rawSong) => {
+              const song = withAudio(rawSong);
               const totalSec = getTotalSongDuration(song);
               const minutes = Math.max(1, Math.round(totalSec / 60));
               return (
