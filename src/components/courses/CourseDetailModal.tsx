@@ -23,6 +23,12 @@ interface Props {
   onStartWithAI: (course: Course) => void;
 }
 
+/** Курсы-профессии, у которых есть отдельная статья-лендинг с подробным описанием. */
+const COURSE_ARTICLE: Record<number, { path: string; label: string }> = {
+  77: { path: "/nlp-master", label: "Читать статью о профессии НЛП-практика" },
+  78: { path: "/klinicheskiy-psiholog", label: "Читать статью о профессии психолога" },
+};
+
 export default function CourseDetailModal({ course, onClose, onStartWithAI }: Props) {
   const [activeTab, setActiveTab] = useState<"program" | "reviews" | "about" | "materials">("about");
   const [expandedModule, setExpandedModule] = useState<number | null>(1);
@@ -108,6 +114,18 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
 
           {/* Header */}
           <CourseDetailHeader course={course} fmt={fmt} gradeLabel={gradeLabel} />
+
+          {/* Ссылка на статью о профессии (для курсов-профессий) */}
+          {COURSE_ARTICLE[course.id] && (
+            <Link
+              to={COURSE_ARTICLE[course.id].path}
+              className="mb-5 inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 px-4 py-2.5 text-sm font-bold text-cyan-200 transition-colors"
+            >
+              <Icon name="BookOpen" size={16} />
+              {COURSE_ARTICLE[course.id].label}
+              <Icon name="ArrowRight" size={14} />
+            </Link>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 mb-6 border-b border-white/8 overflow-x-auto -mx-1 px-1">

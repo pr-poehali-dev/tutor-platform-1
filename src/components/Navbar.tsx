@@ -25,6 +25,8 @@ const MORE_LINKS = [
   { label: "Автоматизация", icon: "Workflow",  path: "/intensive" },
   { label: "Тренды IT",    icon: "Cpu",       path: "/tech-trends" },
   { label: "Удалённые профессии", icon: "Briefcase", path: "/remote-professions" },
+  { label: "Профессия психолога", icon: "Brain", path: "/klinicheskiy-psiholog" },
+  { label: "Курс НЛП-практик", icon: "Sparkles", path: "/nlp-master" },
   { label: "Домашка",      icon: "Camera",   path: "/homework" },
   { label: "Олимпиада",    icon: "Trophy",   path: "/olympiad" },
   { label: "Малыш 1+",     icon: "Baby",     path: "/kids" },

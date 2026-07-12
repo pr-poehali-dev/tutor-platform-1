@@ -47,6 +47,8 @@ export default function SiteFooter() {
               <li><Link to="/graduate" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Выпускник: подбор вуза и программа</Link></li>
               <li><Link to="/mgu-track" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">👑 МГУ-трек: поступление в МГУ</Link></li>
               <li><Link to="/writing-craft" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">✍️ Мастерская сочинений и журналистики</Link></li>
+              <li><Link to="/klinicheskiy-psiholog" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">🩺 Профессия психолога: КПТ, ACT, DBT</Link></li>
+              <li><Link to="/nlp-master" className="text-fuchsia-200 hover:text-fuchsia-100 transition-colors font-bold">🧠 Курс НЛП-практик: влияние и коучинг</Link></li>
             </ul>
           </nav>
 

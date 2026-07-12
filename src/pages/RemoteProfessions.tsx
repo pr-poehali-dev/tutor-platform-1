@@ -10,9 +10,9 @@ const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
 // Подборка: топ востребованных удалённых профессий (HH.ru / SuperJob 2026).
 // id курсов из каталога + рыночная справка по доходу.
-const PICKS: { id: number; salary: string; demand: string }[] = [
-  { id: 78, salary: "2 500–7 000 ₽ за сессию", demand: "Доказательная психотерапия: растущий спрос на психологов" },
-  { id: 77, salary: "2 000–6 000 ₽ за сессию", demand: "Помогающая профессия: психолог-коуч, частная практика" },
+const PICKS: { id: number; salary: string; demand: string; article?: string }[] = [
+  { id: 78, salary: "2 500–7 000 ₽ за сессию", demand: "Доказательная психотерапия: растущий спрос на психологов", article: "/klinicheskiy-psiholog" },
+  { id: 77, salary: "2 000–6 000 ₽ за сессию", demand: "Помогающая профессия: психолог-коуч, частная практика", article: "/nlp-master" },
   { id: 71, salary: "от 60 000 ₽ + %", demand: "Самая массовая удалёнка — ~17% всех вакансий" },
   { id: 69, salary: "40 000–130 000 ₽", demand: "Стабильный спрос на госзакупках" },
   { id: 70, salary: "130 000–208 000 ₽", demand: "Дефицит кадров, высокий доход" },
@@ -83,16 +83,15 @@ export default function RemoteProfessions() {
         </div>
 
         {/* Рейтинг профессий */}
-        <h2 className="font-montserrat font-black text-2xl mb-5 text-center">Топ-5 удалённых профессий</h2>
+        <h2 className="font-montserrat font-black text-2xl mb-5 text-center">Топ востребованных удалённых профессий</h2>
         <div className="space-y-4 mb-12">
           {picks.map((p, idx) => {
             const c = p.course!;
             const price = getCoursePrice(c);
             return (
-              <Link
+              <div
                 key={c.id}
-                to={`/course-checkout/${c.id}`}
-                className="block rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all overflow-hidden"
+                className="rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all overflow-hidden"
               >
                 <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-5">
                   {/* Номер + эмодзи */}
@@ -120,6 +119,14 @@ export default function RemoteProfessions() {
                       ))}
                       <span className="text-[11px] text-white/45 bg-white/5 px-2 py-0.5 rounded-lg">{c.lessons} уроков</span>
                     </div>
+                    {p.article && (
+                      <Link
+                        to={p.article}
+                        className="inline-flex items-center gap-1 mt-2.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-colors"
+                      >
+                        <Icon name="BookOpen" size={13} /> Подробнее о профессии
+                      </Link>
+                    )}
                   </div>
 
                   {/* Цена + CTA */}
@@ -128,12 +135,15 @@ export default function RemoteProfessions() {
                       <div className="font-montserrat font-black text-xl text-white">{getCoursePriceLabel(c)}</div>
                       {price > 0 && <div className="text-white/35 text-[11px]">за весь курс</div>}
                     </div>
-                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-violet-500 to-cyan-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
+                    <Link
+                      to={`/course-checkout/${c.id}`}
+                      className="inline-flex items-center gap-1.5 bg-gradient-to-r from-violet-500 to-cyan-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                    >
                       Открыть <Icon name="ChevronRight" size={14} />
-                    </span>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

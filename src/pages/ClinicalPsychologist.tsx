@@ -128,7 +128,7 @@ export default function ClinicalPsychologist() {
           {course && (
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link
-                to={`/course/${COURSE_ID}`}
+                to={`/course-checkout/${COURSE_ID}`}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
               >
                 <Icon name="GraduationCap" size={18} />
@@ -235,7 +235,7 @@ export default function ClinicalPsychologist() {
               Первый урок открыт бесплатно. Пройдите его, чтобы почувствовать формат, а затем откройте все 80 уроков с личным ИИ-наставником, разбором клинических кейсов и супервизией.
             </p>
             <Link
-              to={`/course/${COURSE_ID}`}
+              to={`/course-checkout/${COURSE_ID}`}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold px-7 py-3.5 rounded-xl hover:opacity-90 transition-opacity"
             >
               <Icon name="GraduationCap" size={18} />
