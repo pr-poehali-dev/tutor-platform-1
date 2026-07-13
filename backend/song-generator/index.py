@@ -177,16 +177,16 @@ def _save_to_s3(song_id, audio_url):
     return f'https://cdn.poehali.dev/projects/{access_key}/bucket/{s3_key}', len(audio_bytes)
 
 
-def _db_upsert(song_id, cdn_url, media_id):
+def _db_upsert(song_id, cdn_url, media_id, source='suno'):
     conn = _db()
     try:
         cur = conn.cursor()
         cur.execute(
-            f"INSERT INTO {SCHEMA}.kids_song_audio (song_id, audio_url, status, media_id, updated_at) "
-            f"VALUES (%s, %s, 'ready', %s, now()) "
+            f"INSERT INTO {SCHEMA}.kids_song_audio (song_id, audio_url, status, media_id, source, updated_at) "
+            f"VALUES (%s, %s, 'ready', %s, %s, now()) "
             f"ON CONFLICT (song_id) DO UPDATE SET audio_url = EXCLUDED.audio_url, "
-            f"status = 'ready', media_id = EXCLUDED.media_id, updated_at = now()",
-            (song_id, cdn_url, media_id),
+            f"status = 'ready', media_id = EXCLUDED.media_id, source = EXCLUDED.source, updated_at = now()",
+            (song_id, cdn_url, media_id, source),
         )
         conn.commit()
     finally:
@@ -327,18 +327,19 @@ def action_list():
     try:
         cur = conn.cursor()
         cur.execute(
-            f"SELECT song_id, audio_url, status FROM {SCHEMA}.kids_song_audio"
+            f"SELECT song_id, audio_url, status, source FROM {SCHEMA}.kids_song_audio"
         )
         rows = cur.fetchall()
     finally:
         conn.close()
-    songs, pending = {}, []
-    for song_id, audio_url, status in rows:
+    songs, pending, sources = {}, [], {}
+    for song_id, audio_url, status, source in rows:
         if status == 'ready' and audio_url:
             songs[song_id] = audio_url
+            sources[song_id] = source
         elif status == 'pending':
             pending.append(song_id)
-    return _resp(200, {'ok': True, 'songs': songs, 'pending': pending})
+    return _resp(200, {'ok': True, 'songs': songs, 'pending': pending, 'sources': sources})
 
 
 def action_poll(qs):
@@ -560,7 +561,7 @@ def action_voice(body, qs):
     for song in catalog:
         try:
             cdn_url = _voice_one(song)
-            _db_upsert(song['id'], cdn_url, None)
+            _db_upsert(song['id'], cdn_url, None, source='voice')
             done.append(song['id'])
         except Exception as e:
             failed.append({song['id']: str(e)[:150]})
@@ -574,8 +575,8 @@ def _db_status_map():
     conn = _db()
     try:
         cur = conn.cursor()
-        cur.execute(f"SELECT song_id, status, audio_url FROM {SCHEMA}.kids_song_audio")
-        return {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+        cur.execute(f"SELECT song_id, status, audio_url, source FROM {SCHEMA}.kids_song_audio")
+        return {r[0]: (r[1], r[2], r[3]) for r in cur.fetchall()}
     finally:
         conn.close()
 
@@ -583,28 +584,30 @@ def _db_status_map():
 def action_cron(qs=None):
     """Автономный цикл (для расписания / ручного запуска), укладывается в таймаут.
     За вызов: 1) забирает готовые из очереди (finalize);
-    2) запускает генерацию небольшой ПАЧКИ недостающих песен (batch, по умолчанию 2).
-    Идемпотентен: готовые не трогает. Много вызовов подряд достроят весь каталог.
-    Suno-503 не мешает — заблокированные попробуем в следующий запуск."""
+    2) запускает Suno-генерацию небольшой ПАЧКИ песен, у которых ещё НЕТ студийного
+       вокала polza.ai (source != 'suno'). Озвучки Няни Лисы апгрейдит на Suno.
+    Идемпотентен: суно-готовые не трогает. Suno-503 не мешает — попробуем позже."""
     qs = qs or {}
     try:
         batch = max(1, min(4, int(qs.get('batch', 2))))
     except Exception:
         batch = 2
 
-    # 1) Забираем готовые
+    # 1) Забираем готовые из очереди
     fin = json.loads(action_finalize()['body'])
 
-    # 2) Берём пачку недостающих
+    # 2) Берём пачку песен без студийного вокала Suno
     status = _db_status_map()
     started, blocked = [], []
     for song in CATALOG:
         if len(started) + len(blocked) >= batch:
             break
         sid = song['id']
-        st = status.get(sid)
-        if st and st[0] == 'ready' and st[1]:
+        st = status.get(sid)  # (status, audio_url, source) или None
+        # Уже есть готовый Suno-трек — не трогаем
+        if st and st[0] == 'ready' and st[1] and st[2] == 'suno':
             continue
+        # Suno-задача уже в очереди — заберём в finalize
         if st and st[0] == 'pending':
             continue
         payload = {
@@ -623,7 +626,7 @@ def action_cron(qs=None):
         if audio_url:
             try:
                 cdn_url, _ = _save_to_s3(sid, audio_url)
-                _db_upsert(sid, cdn_url, media_id)
+                _db_upsert(sid, cdn_url, media_id, source='suno')
                 started.append(sid + ':ready')
                 continue
             except Exception:
@@ -634,15 +637,16 @@ def action_cron(qs=None):
             pass
         started.append(sid)
 
-    ready_cnt = sum(1 for v in status.values() if v[0] == 'ready')
+    # ready = сколько песен уже со студийным вокалом Suno
+    suno_ready = sum(1 for v in status.values() if v[0] == 'ready' and v[1] and v[2] == 'suno')
     return _resp(200, {
         'ok': True,
         'finalized': fin.get('finalized', []),
         'started': started,
         'blocked': blocked,
         'total': len(CATALOG),
-        'ready': ready_cnt,
-        'remaining': len(CATALOG) - ready_cnt,
+        'ready': suno_ready,
+        'remaining': len(CATALOG) - suno_ready,
     })
 
 
