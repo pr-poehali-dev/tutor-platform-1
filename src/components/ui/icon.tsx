@@ -7,6 +7,32 @@ interface IconProps extends LucideProps {
   fallback?: string;
 }
 
+/** Пустой компонент-заглушка — на случай, если чанк иконки не загрузился
+ *  (сбой сети / устаревший кэш Vite). Возвращаем его вместо падения страницы. */
+const EmptyIcon: React.ComponentType<LucideProps> = () => null;
+
+/** Оборачивает загрузчик чанка иконки: при ошибке импорта (Failed to fetch
+ *  dynamically imported module) отдаём пустую иконку, а не роняем всё дерево. */
+function safeLoader(loader: IconLoader): IconLoader {
+  return () => loader().catch(() => ({ default: EmptyIcon }));
+}
+
+/** Error boundary вокруг ленивой иконки — ловит ошибки рендера/загрузки чанка,
+ *  чтобы одна не подгрузившаяся иконка не обрушивала всю страницу. */
+class IconErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
 /** PascalCase / camelCase → kebab-case (имена файлов иконок lucide).
  *  Пример: "CircleAlert" → "circle-alert", "ArrowUpDown" → "arrow-up-down". */
 function toKebab(name: string): string {
@@ -26,7 +52,7 @@ function getLazyIcon(name: string): React.LazyExoticComponent<React.ComponentTyp
   const key = toKebab(name);
   const loader = imports[key];
   if (!loader) return null;
-  if (!cache.has(key)) cache.set(key, lazy(loader));
+  if (!cache.has(key)) cache.set(key, lazy(safeLoader(loader)));
   return cache.get(key)!;
 }
 
@@ -49,9 +75,11 @@ const Icon: React.FC<IconProps> = ({ name, fallback = 'CircleAlert', ...props })
 
   const AnyIcon = LazyIcon as unknown as React.ComponentType<LucideProps>;
   return (
-    <Suspense fallback={placeholder}>
-      <AnyIcon {...props} />
-    </Suspense>
+    <IconErrorBoundary fallback={placeholder}>
+      <Suspense fallback={placeholder}>
+        <AnyIcon {...props} />
+      </Suspense>
+    </IconErrorBoundary>
   );
 };
 
