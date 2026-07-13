@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { fetchArticle, fetchFeed } from "@/components/feed/api";
 import { FeedArticle as FeedArticleType, CATEGORY_META } from "@/components/feed/types";
@@ -148,6 +149,16 @@ export default function FeedArticlePage() {
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-16">
+
+        <Breadcrumbs
+          className="mb-4"
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Лента", href: "/feed" },
+            { label: `${meta.emoji} ${meta.label}`, href: "/feed" },
+            { label: article.title },
+          ]}
+        />
 
         <FeedArticleHeader article={article} meta={meta} isDocCover={isDocCover} />
 
