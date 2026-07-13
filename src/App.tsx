@@ -100,6 +100,7 @@ const Psychology = lazy(() => import("./pages/Psychology"));
 const RemoteProfessions = lazy(() => import("./pages/RemoteProfessions"));
 const NlpMaster = lazy(() => import("./pages/NlpMaster"));
 const PersonalBrand = lazy(() => import("./pages/PersonalBrand"));
+const ExpertContent = lazy(() => import("./pages/ExpertContent"));
 const ClinicalPsychologist = lazy(() => import("./pages/ClinicalPsychologist"));
 const TechTrends = lazy(() => import("./pages/TechTrends"));
 const Intensive = lazy(() => import("./pages/Intensive"));
@@ -152,6 +153,7 @@ const App = () => (
                     <Route path="/remote-professions" element={<RemoteProfessions />} />
                     <Route path="/nlp-master" element={<NlpMaster />} />
                     <Route path="/personal-brand" element={<PersonalBrand />} />
+                    <Route path="/expert-content" element={<ExpertContent />} />
                     <Route path="/klinicheskiy-psiholog" element={<ClinicalPsychologist />} />
                     <Route path="/tech-trends" element={<TechTrends />} />
                     <Route path="/intensive" element={<Intensive />} />
