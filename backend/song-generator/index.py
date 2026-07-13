@@ -22,6 +22,35 @@ from catalog import SONGS as CATALOG
 POLZA_MEDIA_URL = 'https://api.polza.ai/api/v1/media'
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 'public')
 
+# Озвучка песен голосом Няни Лисы (Yandex SpeechKit) — не зависит от polza.ai
+TTS_URL = 'https://functions.poehali.dev/fa3b03da-815c-4f28-baf2-1a88e36fca8d'
+CDN_BASE = 'https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/bucket/songs'
+# Фоновые инструменталки по стилю: (url, громкость 0..1)
+MELODY = {
+    'folk': (f'{CDN_BASE}/melody-folk.wav', 0.22),
+    'pop': (f'{CDN_BASE}/melody-pop.wav', 0.18),
+    'lullaby': (f'{CDN_BASE}/melody-lullaby.wav', 0.25),
+    'ethno': (f'{CDN_BASE}/melody-ethno.wav', 0.22),
+    'march': (f'{CDN_BASE}/melody-march.wav', 0.20),
+}
+
+
+def melody_style(song):
+    """Стиль фоновой мелодии по категории песни (как getMelodyStyle на фронте)."""
+    cat = song.get('category', 'song')
+    tags = song.get('tags', [])
+    if cat == 'lullaby':
+        return 'lullaby'
+    if cat == 'potyashka':
+        return 'ethno'
+    if cat == 'finger':
+        return 'folk'
+    if cat == 'poem':
+        return 'pop'
+    if 'транспорт' in tags:
+        return 'march'
+    return 'folk'
+
 
 def build_style(song):
     """Музыкальный стиль для Suno по категории песни (как на фронте)."""
@@ -331,6 +360,216 @@ def action_raw(body):
     return _resp(200, {'ok': data is not None, 'code': code, 'error': err, 'raw': data})
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Озвучка песен голосом Няни Лисы (без polza.ai): TTS всей песни + фоновая музыка
+# ─────────────────────────────────────────────────────────────────────────────
+def _clean_for_tts(text):
+    """Готовит текст к синтезу: убирает символы, ломающие Yandex TTS.
+    Кавычки-ёлочки и повторяющиеся звукоподражания через дефис («Тр-тр-тр»)
+    вызывают 502, поэтому упрощаем их до произносимой формы."""
+    import re
+    t = text
+    # Кавычки-ёлочки и прочие → обычные
+    for ch in ['«', '»', '“', '”', '„', '"']:
+        t = t.replace(ch, '')
+    # Звукоподражания вида «тр-тр-тр» / «би-би-би» — оставляем один слог, повтор словами
+    def collapse(m):
+        parts = m.group(0).split('-')
+        return parts[0] if len(set(parts)) == 1 else m.group(0)
+    t = re.sub(r'[А-Яа-яЁё]{1,4}(?:-[А-Яа-яЁё]{1,4}){2,}', collapse, t)
+    # Тире между словами → запятая (плавная пауза вместо провала)
+    t = re.sub(r'\s[—–]\s', ', ', t)
+    return t
+
+
+def _tts_song(song):
+    """Озвучивает всю песню целиком распевным голосом Лисы. Возвращает WAV-байты."""
+    import base64
+    teacher = 'fox_lullaby' if song.get('category') == 'lullaby' else 'fox_song'
+    raw_text = '\n'.join(l.strip() for l in song.get('lines', []) if l.strip())
+    text = _clean_for_tts(raw_text)
+
+    def _call(txt):
+        payload = json.dumps({'text': txt, 'teacher_id': teacher, 'sing': True}).encode()
+        req = urllib.request.Request(
+            TTS_URL, data=payload,
+            headers={'Content-Type': 'application/json'}, method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=120) as r:
+            data = json.loads(r.read().decode('utf-8'))
+        b64 = data.get('audio_base64') or data.get('audio')
+        if not b64:
+            raise RuntimeError('TTS не вернул аудио')
+        if ',' in b64:
+            b64 = b64.split(',', 1)[1]
+        return base64.b64decode(b64)
+
+    # Пытаемся целиком; при сбое — строим WAV построчно и склеиваем
+    try:
+        return _call(text)
+    except Exception:
+        parts = []
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                parts.append(_read_wav(_call(line)))
+            except Exception:
+                continue
+        if not parts:
+            raise RuntimeError('TTS не смог озвучить песню')
+        return _concat_wavs(parts)
+
+
+def _concat_wavs(parts):
+    """Склеивает список (samples, sr) в один WAV 48кГц с паузами между строками."""
+    import wave, io, struct
+    target = 48000
+    out = []
+    gap = [0] * int(target * 0.45)  # распевная пауза между строчками
+    for samples, sr in parts:
+        out.extend(_resample(samples, sr, target))
+        out.extend(gap)
+    buf = io.BytesIO()
+    wf = wave.open(buf, 'wb')
+    wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(target)
+    wf.writeframes(struct.pack('<%dh' % len(out), *out))
+    wf.close()
+    return buf.getvalue()
+
+
+def _read_wav(raw):
+    """Читает WAV → (samples[int16 list], sample_rate). Приводит к моно."""
+    import wave, io, struct, audioop
+    w = wave.open(io.BytesIO(raw))
+    ch, sr, width, n = w.getnchannels(), w.getframerate(), w.getsampwidth(), w.getnframes()
+    frames = w.readframes(n)
+    w.close()
+    if width != 2:
+        frames = audioop.lin2lin(frames, width, 2)
+    if ch == 2:
+        frames = audioop.tomono(frames, 2, 0.5, 0.5)
+    count = len(frames) // 2
+    samples = list(struct.unpack('<%dh' % count, frames[:count * 2]))
+    return samples, sr
+
+
+def _resample(samples, src_sr, dst_sr):
+    """Простой линейный ресемплинг."""
+    import audioop
+    if src_sr == dst_sr:
+        return samples
+    import struct
+    raw = struct.pack('<%dh' % len(samples), *samples)
+    converted, _ = audioop.ratecv(raw, 2, 1, src_sr, dst_sr, None)
+    cnt = len(converted) // 2
+    return list(struct.unpack('<%dh' % cnt, converted[:cnt * 2]))
+
+
+def _mix_song_wav(voice_wav, melody_wav, melody_vol):
+    """Микширует голос (полный) и зацикленную фоновую мелодию → WAV-байты 48кГц."""
+    import wave, io, struct
+    voice, vsr = _read_wav(voice_wav)
+    mel, msr = _read_wav(melody_wav)
+    target = 48000
+    voice = _resample(voice, vsr, target)
+    mel = _resample(mel, msr, target)
+
+    # лёгкий fade-in/out голоса (40 мс), чтобы не щёлкало
+    fade = int(target * 0.04)
+    for i in range(min(fade, len(voice))):
+        voice[i] = int(voice[i] * i / fade)
+        voice[-1 - i] = int(voice[-1 - i] * i / fade)
+
+    out = []
+    mlen = len(mel) if mel else 1
+    for i, v in enumerate(voice):
+        m = int(mel[i % mlen] * melody_vol) if mel else 0
+        s = v + m
+        if s > 32767: s = 32767
+        elif s < -32768: s = -32768
+        out.append(s)
+    # музыкальный «хвост» 1.5 сек после голоса
+    tail = int(target * 1.5)
+    base = len(voice)
+    for j in range(tail):
+        m = int(mel[(base + j) % mlen] * melody_vol) if mel else 0
+        # плавное затухание хвоста
+        m = int(m * (1 - j / tail))
+        out.append(m)
+
+    buf = io.BytesIO()
+    wf = wave.open(buf, 'wb')
+    wf.setnchannels(1)
+    wf.setsampwidth(2)
+    wf.setframerate(target)
+    wf.writeframes(struct.pack('<%dh' % len(out), *out))
+    wf.close()
+    return buf.getvalue()
+
+
+def _save_wav_to_s3(song_id, wav_bytes):
+    access_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
+    secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    s3 = boto3.client(
+        's3', endpoint_url='https://bucket.poehali.dev',
+        aws_access_key_id=access_key, aws_secret_access_key=secret_key,
+    )
+    key = f'songs/voice-{song_id}.wav'
+    s3.put_object(
+        Bucket='files', Key=key, Body=wav_bytes,
+        ContentType='audio/wav', CacheControl='public, max-age=31536000',
+    )
+    return f'https://cdn.poehali.dev/projects/{access_key}/bucket/{key}'
+
+
+def _voice_one(song):
+    """Собирает и сохраняет цельную озвучку одной песни. Возвращает CDN-URL."""
+    voice_wav = _tts_song(song)
+    url, vol = MELODY[melody_style(song)]
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'UchispriBot/1.0'})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            melody_wav = r.read()
+    except Exception:
+        melody_wav = None
+    if melody_wav:
+        mixed = _mix_song_wav(voice_wav, melody_wav, vol)
+    else:
+        mixed = voice_wav
+    return _save_wav_to_s3(song['id'], mixed)
+
+
+def action_voice(body, qs):
+    """Озвучивает песни голосом Лисы под фоновую музыку и сохраняет как готовые
+    треки (без polza.ai). ?song_id=<id> — одна песня; иначе пачка недостающих."""
+    single = (qs.get('song_id') or (body.get('song_id') if body else '') or '').strip()
+    try:
+        batch = max(1, min(4, int(qs.get('batch', 3))))
+    except Exception:
+        batch = 3
+
+    catalog = [s for s in CATALOG if s['id'] == single] if single else None
+    if catalog is None:
+        status = _db_status_map()
+        catalog = [s for s in CATALOG
+                   if not (status.get(s['id']) and status[s['id']][0] == 'ready' and status[s['id']][1])][:batch]
+
+    done, failed = [], []
+    for song in catalog:
+        try:
+            cdn_url = _voice_one(song)
+            _db_upsert(song['id'], cdn_url, None)
+            done.append(song['id'])
+        except Exception as e:
+            failed.append({song['id']: str(e)[:150]})
+    status = _db_status_map()
+    ready_cnt = sum(1 for v in status.values() if v[0] == 'ready')
+    return _resp(200, {'ok': True, 'voiced': done, 'failed': failed,
+                       'ready': ready_cnt, 'total': len(CATALOG)})
+
+
 def _db_status_map():
     conn = _db()
     try:
@@ -436,4 +675,6 @@ def handler(event, context):
         return action_raw(body)
     if action == 'cron':
         return action_cron(qs)
+    if action == 'voice':
+        return action_voice(body, qs)
     return _resp(400, {'error': 'Unknown action'})
