@@ -53,26 +53,37 @@ export default function KidsSongs() {
       setReadyAudio(ready);
       setPendingIds(new Set(pending));
 
-      // 3) Запускаем генерацию одной недостающей (не готовой и не в очереди)
+      // 3) Запускаем генерацию недостающих (не готовых и не в очереди).
+      //    До 3 песен за заход — чтобы каталог «допелся» живым вокалом быстрее,
+      //    как только провайдер станет доступен. Если провайдер лежит (503),
+      //    запросы просто вернут ошибку и песни останутся ждать следующего цикла.
       const missing = SONGS.filter((s) => !ready[s.id] && !pending.includes(s.id));
-      if (missing.length > 0) {
-        const song = missing[0];
-        setPendingIds((prev) => new Set(prev).add(song.id));
-        const gen = await fetch(`${SONG_URL}?action=generate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            song_id: song.id,
-            title: song.title.slice(0, 80),
-            style: getSunoStyle(song),
-            version: "V4_5",
-            prompt: getSunoLyrics(song),
+      const batch = missing.slice(0, 3);
+      if (batch.length > 0) {
+        setPendingIds((prev) => {
+          const n = new Set(prev);
+          batch.forEach((s) => n.add(s.id));
+          return n;
+        });
+        await Promise.all(
+          batch.map(async (song) => {
+            const gen = await fetch(`${SONG_URL}?action=generate`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                song_id: song.id,
+                title: song.title.slice(0, 80),
+                style: getSunoStyle(song),
+                version: "V4_5",
+                prompt: getSunoLyrics(song),
+              }),
+            }).then((r) => (r.ok || r.status === 202 ? r.json() : null)).catch(() => null);
+            if (gen && gen.audioUrl) {
+              setReadyAudio((prev) => ({ ...prev, [song.id]: gen.audioUrl }));
+              setPendingIds((prev) => { const n = new Set(prev); n.delete(song.id); return n; });
+            }
           }),
-        }).then((r) => (r.ok || r.status === 202 ? r.json() : null)).catch(() => null);
-        if (gen && gen.audioUrl) {
-          setReadyAudio((prev) => ({ ...prev, [song.id]: gen.audioUrl }));
-          setPendingIds((prev) => { const n = new Set(prev); n.delete(song.id); return n; });
-        }
+        );
       }
     } finally {
       setRefreshing(false);
