@@ -16,6 +16,7 @@ import {
   getTotalSongDuration,
   getSunoStyle,
   getSunoLyrics,
+  getSongAvatar,
 } from "@/components/kids/songsData";
 import SongPlayer from "@/components/kids/SongPlayer";
 import NannyFox from "@/components/kids/NannyFox";
@@ -310,8 +311,13 @@ export default function KidsSongs() {
                   onClick={() => setActiveSong(song)}
                   className="group text-left bg-card border border-white/10 rounded-2xl overflow-hidden hover:border-white/25 hover:scale-[1.02] transition-all"
                 >
-                  <div className={`relative aspect-square bg-gradient-to-br ${song.color} flex items-center justify-center text-6xl md:text-7xl`}>
-                    {song.emoji}
+                  <div className={`relative aspect-square bg-gradient-to-br ${song.color} flex items-center justify-center text-6xl md:text-7xl overflow-hidden`}>
+                    <img
+                      src={getSongAvatar(song)}
+                      alt={song.title}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                     {/* Кнопка «Играть» по hover */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-white/90 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all">

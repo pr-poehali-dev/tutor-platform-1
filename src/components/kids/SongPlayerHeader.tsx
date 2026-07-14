@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { Song, MELODY_TRACKS } from "./songsData";
+import { Song, MELODY_TRACKS, getSongAvatar } from "./songsData";
 
 interface Props {
   song: Song;
@@ -30,8 +30,8 @@ export default function SongPlayerHeader({
     <>
       {/* Header */}
       <div className={`bg-gradient-to-r ${song.color} p-5 flex items-center gap-4 relative`}>
-        <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center text-4xl">
-          {song.emoji}
+        <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-sm overflow-hidden flex items-center justify-center text-4xl shrink-0">
+          <img src={getSongAvatar(song)} alt={song.title} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-montserrat font-black text-white text-xl truncate">{song.title}</h2>
