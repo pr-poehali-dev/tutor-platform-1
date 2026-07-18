@@ -7,6 +7,7 @@ import { useAccess } from "@/context/AccessContext";
 import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
 import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget";
 import ConsultationRequest from "@/components/cabinet/ConsultationRequest";
+import MyPlanWidget from "@/components/cabinet/MyPlanWidget";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -129,6 +130,9 @@ export default function Cabinet() {
             </Link>
           </div>
         </div>
+
+        {/* Мой план обучения — наставник ведёт по персональной программе */}
+        <MyPlanWidget />
 
         {/* Чек-лист «До ЕГЭ» */}
         <ExamChecklistWidget />
