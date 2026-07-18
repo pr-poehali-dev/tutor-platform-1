@@ -8,7 +8,7 @@ interface Props {
   bigText?: boolean;
 }
 
-type Tab = "theory" | "examples" | "practice";
+type Tab = "theory" | "examples" | "practice" | "explore";
 
 /**
  * Выверенный конспект урока: теория, формулы, разобранные примеры и задачи.
@@ -21,10 +21,19 @@ export default function LessonNotesPanel({ notes, accent, bigText }: Props) {
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const textSize = bigText ? "text-base" : "text-sm";
 
+  const hasExplore =
+    !!notes.explore &&
+    ((notes.explore.facts?.length ?? 0) +
+      (notes.explore.realLife?.length ?? 0) +
+      (notes.explore.recommendations?.length ?? 0) +
+      (notes.explore.thinkAbout?.length ?? 0) >
+      0);
+
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: "theory", label: "Теория", icon: "BookOpen" },
     { id: "examples", label: "Примеры", icon: "PencilRuler" },
     { id: "practice", label: "Практика", icon: "Target" },
+    ...(hasExplore ? [{ id: "explore" as Tab, label: "Кругозор", icon: "Compass" }] : []),
   ];
 
   return (
