@@ -4,6 +4,7 @@ import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
 import HowItWorks from "@/components/home/HowItWorks";
+import TutorPromo from "@/components/home/TutorPromo";
 import StudentResults from "@/components/home/StudentResults";
 import TrustGuarantee from "@/components/home/TrustGuarantee";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +23,7 @@ export default function HomeSections() {
     return (
       <main id="main-content">
         <HeroSection />
+        <TutorPromo />
         <section className="max-w-6xl mx-auto px-4 py-6">
           <Suspense fallback={<SectionSkeleton />}>
             <MentorCompanion />
@@ -52,6 +54,9 @@ export default function HomeSections() {
 
       {/* 2.5. Как это работает — путь ученика в 4 шага */}
       <HowItWorks />
+
+      {/* 2.7. Флагман — личный репетитор с ИИ */}
+      <TutorPromo />
 
       {/* 3. Главный продукт — демо ИИ-учителя */}
       <Suspense fallback={<SectionSkeleton />}>

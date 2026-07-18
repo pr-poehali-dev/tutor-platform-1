@@ -11,10 +11,10 @@ const NAV_ITEMS = [
 
 // Главные разделы — всегда в строке
 const NAV_LINKS = [
+  { label: "Репетитор",    short: "Репет",   icon: "GraduationCap",  path: "/tutor" },
   { label: "Курсы",        short: "Курсы",   icon: "Library",        path: "/courses" },
-  { label: "Супер-курсы",  short: "Супер",   icon: "Sparkles",       path: "/super-courses" },
   { label: "Лента",        short: "Лента",   icon: "Newspaper",      path: "/feed" },
-  { label: "ОГЭ и ЕГЭ",    short: "ЕГЭ",     icon: "GraduationCap",  path: "/exam-bank" },
+  { label: "ОГЭ и ЕГЭ",    short: "ЕГЭ",     icon: "BookMarked",     path: "/exam-bank" },
   { label: "Психологу",    short: "Психо",   icon: "HeartHandshake", path: "/psychology" },
 ];
 
