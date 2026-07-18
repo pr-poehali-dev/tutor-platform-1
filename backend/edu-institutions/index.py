@@ -189,8 +189,69 @@ def handle_export() -> dict:
         conn.close()
 
 
+KIND_ALIASES = {
+    'онлайн-школа': 'online_school', 'онлайн школа': 'online_school', 'школа': 'online_school',
+    'online_school': 'online_school', 'online': 'online_school',
+    'колледж': 'college', 'college': 'college',
+    'техникум': 'technical_school', 'technical_school': 'technical_school', 'тех': 'technical_school',
+    'другое': 'other', 'other': 'other',
+}
+
+
+def _norm_kind(v: str) -> str:
+    return KIND_ALIASES.get(str(v or '').strip().lower(), 'online_school')
+
+
+def handle_import(body: dict) -> dict:
+    """Массовый импорт: body.rows — список объектов с полями учреждений."""
+    rows = body.get('rows')
+    if not isinstance(rows, list) or not rows:
+        return err('Нет данных для импорта', 400)
+    if len(rows) > 5000:
+        return err('За один раз можно импортировать не более 5000 строк', 400)
+
+    conn = get_db()
+    inserted = 0
+    skipped = 0
+    try:
+        with conn.cursor() as cur:
+            for raw in rows:
+                if not isinstance(raw, dict):
+                    skipped += 1
+                    continue
+                d = _clean(raw)
+                d['kind'] = _norm_kind(raw.get('kind'))
+                if not d['org_name'] and not d['contact_name'] and not d['phone'] and not d['email']:
+                    skipped += 1
+                    continue
+                # Дедупликация: по email или по паре название+город
+                if d['email']:
+                    cur.execute(f'SELECT 1 FROM {TABLE} WHERE lower(email)=lower(%s) LIMIT 1', (d['email'],))
+                elif d['org_name']:
+                    cur.execute(
+                        f'SELECT 1 FROM {TABLE} WHERE lower(org_name)=lower(%s) AND lower(city)=lower(%s) LIMIT 1',
+                        (d['org_name'], d['city']),
+                    )
+                else:
+                    cur.execute(f'SELECT 1 FROM {TABLE} WHERE phone=%s LIMIT 1', (d['phone'],))
+                if cur.fetchone():
+                    skipped += 1
+                    continue
+                cur.execute(
+                    f'INSERT INTO {TABLE} (org_name, kind, contact_name, phone, email, city, website, status, note) '
+                    f'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                    (d['org_name'], d['kind'], d['contact_name'], d['phone'], d['email'],
+                     d['city'], d['website'], d['status'], d['note']),
+                )
+                inserted += 1
+            conn.commit()
+            return ok({'inserted': inserted, 'skipped': skipped, 'total': len(rows)})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
-    """Кабинет администратора: база учебных заведений (CRUD + экспорт)."""
+    """Кабинет администратора: база учебных заведений (CRUD + импорт + экспорт)."""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': cors(), 'body': ''}
@@ -211,6 +272,8 @@ def handler(event: dict, context) -> dict:
         return handle_list(qs)
     if action == 'export':
         return handle_export()
+    if action == 'import':
+        return handle_import(body)
     if action == 'create':
         return handle_create(body)
     if action == 'update':

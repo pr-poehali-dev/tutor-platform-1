@@ -108,3 +108,21 @@ export function deleteInstitution(id: number) {
 export function exportCsv() {
   return req<{ csv: string }>("export");
 }
+
+export interface ImportRow {
+  org_name?: string;
+  kind?: string;
+  contact_name?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  website?: string;
+  note?: string;
+}
+
+export function importInstitutions(rows: ImportRow[]) {
+  return req<{ inserted: number; skipped: number; total: number }>("import", {
+    method: "POST",
+    body: { rows },
+  });
+}

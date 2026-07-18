@@ -16,6 +16,7 @@ import {
   exportCsv,
 } from "@/components/admin/eduInstitutions/api";
 import EduFormModal from "@/components/admin/eduInstitutions/EduFormModal";
+import EduImportModal from "@/components/admin/eduInstitutions/EduImportModal";
 
 const PIN_KEY = "uchispro_admin_pin_v1";
 
@@ -33,6 +34,7 @@ export default function EduInstitutions() {
   const [status, setStatus] = useState<string>("");
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<EduInstitution | null>(null);
 
   const load = useCallback(async () => {
@@ -99,9 +101,17 @@ export default function EduInstitutions() {
             <h1 className="font-montserrat font-black text-2xl">База учебных заведений</h1>
             <p className="text-white/55 text-sm">Онлайн-школы, колледжи и техникумы для предложений о сотрудничестве</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Link to="/admin/edu-outreach">
+              <Button variant="outline">
+                <Icon name="Mail" size={16} className="mr-1.5" /> Письмо о сотрудничестве
+              </Button>
+            </Link>
             <Button variant="outline" onClick={doExport}>
               <Icon name="Download" size={16} className="mr-1.5" /> Экспорт CSV
+            </Button>
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Icon name="Radar" size={16} className="mr-1.5" /> Радар (импорт)
             </Button>
             <Button onClick={() => { setEditing(null); setModalOpen(true); }}>
               <Icon name="Plus" size={16} className="mr-1.5" /> Добавить
@@ -201,6 +211,13 @@ export default function EduInstitutions() {
           editing={editing}
           onClose={() => setModalOpen(false)}
           onSaved={() => { setModalOpen(false); load(); }}
+        />
+      )}
+
+      {importOpen && (
+        <EduImportModal
+          onClose={() => setImportOpen(false)}
+          onImported={() => { setImportOpen(false); load(); }}
         />
       )}
     </div>

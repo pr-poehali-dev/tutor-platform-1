@@ -93,6 +93,8 @@ const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const Leads = lazy(() => import("./pages/admin/Leads"));
 const Payouts = lazy(() => import("./pages/admin/Payouts"));
 const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
+const EduInstitutions = lazy(() => import("./pages/admin/EduInstitutions"));
+const EduOutreach = lazy(() => import("./pages/admin/EduOutreach"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
@@ -106,6 +108,7 @@ const TechTrends = lazy(() => import("./pages/TechTrends"));
 const Intensive = lazy(() => import("./pages/Intensive"));
 const AiAssistant = lazy(() => import("./pages/AiAssistant"));
 const ForBusiness = lazy(() => import("./pages/ForBusiness"));
+const ForSchools = lazy(() => import("./pages/ForSchools"));
 const SchoolBuilder = lazy(() => import("./pages/SchoolBuilder"));
 const SchoolCabinet = lazy(() => import("./pages/SchoolCabinet"));
 const SchoolCoursePublic = lazy(() => import("./pages/SchoolCoursePublic"));
@@ -161,6 +164,7 @@ const App = () => (
                     <Route path="/intensive" element={<Intensive />} />
                     <Route path="/ai-assistant" element={<AiAssistant />} />
                     <Route path="/for-business" element={<ForBusiness />} />
+                    <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/school-builder" element={<SchoolBuilder />} />
                     <Route path="/school" element={<SchoolCabinet />} />
                     <Route path="/school/invite/:token" element={<SchoolInvite />} />
@@ -239,6 +243,8 @@ const App = () => (
                     <Route path="/admin/leads" element={<Leads />} />
                     <Route path="/admin/payouts" element={<Payouts />} />
                     <Route path="/admin/grants" element={<GrantApplications />} />
+                    <Route path="/admin/edu-institutions" element={<EduInstitutions />} />
+                    <Route path="/admin/edu-outreach" element={<EduOutreach />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />
                     <Route path="/app" element={<AppDownload />} />

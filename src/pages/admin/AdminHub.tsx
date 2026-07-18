@@ -29,6 +29,7 @@ const SECTIONS: Section[] = [
       { label: "Заявки на гранты", path: "/admin/grants", icon: "Target", description: "ИИ-помощник по грантам: все заявки, оплаты и выручка" },
       { label: "Дашборд продаж", path: "/admin/sales", icon: "BarChart3", description: "KPI, выручка, воронка, конверсия и динамика по дням" },
       { label: "База клиентов", path: "/admin/sales", icon: "Users", description: "Поиск по email/телефону, сегменты, LTV, история покупок" },
+      { label: "База учебных заведений", path: "/admin/edu-institutions", icon: "Building2", description: "Онлайн-школы, колледжи и техникумы: контакты, радар-импорт и письмо о сотрудничестве" },
     ],
   },
   {
