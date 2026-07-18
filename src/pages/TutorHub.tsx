@@ -1,12 +1,16 @@
+import { lazy, Suspense } from "react";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import TutorTopBar from "@/components/tutor/TutorTopBar";
 import TutorHero from "@/components/tutor/TutorHero";
+import TutorMentorIntro from "@/components/tutor/TutorMentorIntro";
 import TutorFeatures from "@/components/tutor/TutorFeatures";
 import TutorSubjects from "@/components/tutor/TutorSubjects";
 import TutorHowItWorks from "@/components/tutor/TutorHowItWorks";
 import TutorPricing from "@/components/tutor/TutorPricing";
 import TutorCTA from "@/components/tutor/TutorCTA";
+
+const LearningJourney = lazy(() => import("@/components/LearningJourney"));
 
 const SITE_URL = "https://учисьпро.рф";
 const CANONICAL = `${SITE_URL}/tutor`;
@@ -46,6 +50,13 @@ export default function TutorHub() {
 
       <TutorTopBar />
       <TutorHero />
+
+      {/* Ядро раздела: наставник тестирует и строит персональный план */}
+      <TutorMentorIntro />
+      <Suspense fallback={<div className="py-16 text-center text-white/40 text-sm">Готовлю наставника…</div>}>
+        <LearningJourney />
+      </Suspense>
+
       <TutorFeatures />
       <TutorSubjects />
       <TutorHowItWorks />

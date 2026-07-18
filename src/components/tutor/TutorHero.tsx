@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import { HERO_FEATURE } from "./tutorHubData";
 
 export default function TutorHero() {
   return (
@@ -21,14 +20,14 @@ export default function TutorHero() {
       </p>
 
       <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <Link
-          to={HERO_FEATURE.href}
+        <a
+          href="#journey"
           className="group inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-base px-7 py-3.5 rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-purple-500/25"
         >
-          <Icon name="Play" size={18} />
-          Начать урок бесплатно
+          <Icon name="ClipboardCheck" size={18} />
+          Пройти тест и получить план
           <Icon name="ArrowRight" size={18} className="group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        </a>
         <Link
           to="/homework"
           className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-white font-semibold text-base px-6 py-3.5 rounded-2xl hover:bg-white/10 transition-all"
