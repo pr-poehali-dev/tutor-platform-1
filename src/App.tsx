@@ -113,6 +113,7 @@ const SchoolLearning = lazy(() => import("./pages/SchoolLearning"));
 const SchoolInvite = lazy(() => import("./pages/SchoolInvite"));
 const GrantAssistant = lazy(() => import("./pages/GrantAssistant"));
 const GrantMy = lazy(() => import("./pages/GrantMy"));
+const TutorHub = lazy(() => import("./pages/TutorHub"));
 const Silent = lazy(() => import("./pages/Silent"));
 const SilentLesson = lazy(() => import("./pages/SilentLesson"));
 
@@ -149,6 +150,7 @@ const App = () => (
                     <Route path="/legal/privacy" element={<Privacy />} />
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/tutor" element={<TutorHub />} />
                     <Route path="/super-courses" element={<SuperCourses />} />
                     <Route path="/remote-professions" element={<RemoteProfessions />} />
                     <Route path="/nlp-master" element={<NlpMaster />} />
