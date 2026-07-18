@@ -9,6 +9,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import type { SuperCourse } from "@/components/teacher/superCourses";
+import { COURSE_PACKAGES, hasSubjectAccess, accessUntilLabel, packageSubjectNames, type CoursePackage } from "@/components/teacher/coursePackages";
+
+// Единый объект для окна оплаты: и предмет, и пакет.
+interface BuyTarget {
+  courseId: number;
+  title: string;
+  subtitle: string;
+  emoji: string;
+  accent: string;
+  price: number;
+  oldPrice: number;
+  isPackage: boolean;
+}
 
 const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/super-courses";
 
@@ -36,9 +49,9 @@ const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 export default function SuperCourses() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated, openLogin, user } = useAuth();
-  const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, syncPayment } = useAccess();
+  const { purchasedCourseIds, buyCourse, confirmDemoPurchase, syncPayment } = useAccess();
 
-  const [buyTarget, setBuyTarget] = useState<SuperCourse | null>(null);
+  const [buyTarget, setBuyTarget] = useState<BuyTarget | null>(null);
   const [email, setEmail] = useState<string>(user?.email ?? "");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,20 +78,56 @@ export default function SuperCourses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returned]);
 
-  // Доступ к супер-курсу: акция, подписка или покупка конкретного курса.
+  // Доступ к предмету: акция ИЛИ куплен сам предмет ИЛИ куплен пакет с этим предметом.
+  // Никакого общего безлимитного доступа — только конкретные покупки.
   const hasCourseAccess = (courseId: number) =>
-    promoOn || hasSubscription || canAccessCourse(courseId);
+    promoOn || hasSubjectAccess(courseId, purchasedCourseIds);
 
+  // Открыть окно оплаты предмета.
   const openBuy = (course: SuperCourse) => {
     setError(null);
     setDemoPurchaseId(null);
-    if (promoOn || hasSubscription) return; // доступ уже есть
+    if (promoOn) return; // во время акции доступ бесплатный
     if (!isAuthenticated) {
       openLogin();
       return;
     }
-    setBuyTarget(course);
+    setBuyTarget({
+      courseId: course.courseId,
+      title: `Предмет: ${course.subject}`,
+      subtitle: course.level,
+      emoji: course.emoji,
+      accent: course.accent,
+      price: course.price,
+      oldPrice: course.oldPrice,
+      isPackage: false,
+    });
   };
+
+  // Открыть окно оплаты пакета.
+  const openBuyPackage = (pkg: CoursePackage) => {
+    setError(null);
+    setDemoPurchaseId(null);
+    if (promoOn) return;
+    if (!isAuthenticated) {
+      openLogin();
+      return;
+    }
+    setBuyTarget({
+      courseId: pkg.courseId,
+      title: pkg.title,
+      subtitle: packageSubjectNames(pkg).join(" · "),
+      emoji: pkg.emoji,
+      accent: pkg.accent,
+      price: pkg.price,
+      oldPrice: pkg.oldPrice,
+      isPackage: true,
+    });
+  };
+
+  // Куплен ли пакет.
+  const hasPackage = (pkg: CoursePackage) =>
+    promoOn || purchasedCourseIds.includes(pkg.courseId);
 
   const handlePay = async () => {
     if (!buyTarget) return;
@@ -92,7 +141,7 @@ export default function SuperCourses() {
     const res = await buyCourse(
       buyTarget.courseId,
       "ege",
-      `Супер-курс: ${buyTarget.subject}`,
+      buyTarget.title,
       returnUrl,
       email.trim(),
     );
@@ -132,10 +181,10 @@ export default function SuperCourses() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Супер-курсы УЧИСЬПРО — физика, математика, информатика с ИИ-наставником"
-        description="Супер-курсы уровня репетитора: вся школьная программа + профильный ЕГЭ и ДВИ. Уроки с ИИ-наставником и голосом по физике, математике и информатике. Первый урок бесплатно."
+        title="Супер-курсы УЧИСЬПРО — 7 предметов с ИИ-наставником для ЕГЭ"
+        description="Курсы уровня репетитора по физике, математике, информатике, химии, биологии, русскому и истории. Полная школьная программа + профильный ЕГЭ. Уроки с ИИ-наставником и голосом. Первый урок бесплатно, выгодные пакеты по профилям."
         canonical={CANONICAL}
-        keywords="супер-курсы, репетитор по физике, подготовка к егэ физика, математика профиль, информатика егэ, ии наставник, курсы с голосом"
+        keywords="репетитор егэ, курсы по химии, биология егэ, русский язык егэ, история егэ, физика математика информатика, ии наставник, подготовка к егэ"
         jsonLd={JSON_LD}
       />
 
@@ -173,8 +222,73 @@ export default function SuperCourses() {
         </p>
         <div className="mt-5 inline-flex items-center gap-2 text-white/55 text-sm bg-white/5 border border-white/10 rounded-xl px-4 py-2">
           <Icon name="ShieldCheck" size={15} className="text-green-400" />
-          Покупаешь один предмет — открываются все его уроки навсегда
+          Покупаешь предмет — все его уроки открыты {accessUntilLabel()}
         </div>
+      </section>
+
+      {/* Пакеты предметов */}
+      <section className="max-w-6xl mx-auto px-4 pt-10 pb-2">
+        <div className="text-center mb-6">
+          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white">
+            Выгодные <span className="gradient-text-purple">пакеты</span> по профилям
+          </h2>
+          <p className="text-white/60 text-sm mt-2 max-w-2xl mx-auto">
+            Соберите комплект под свой профиль поступления и экономьте. Доступ ко всем предметам пакета — {accessUntilLabel()}.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {COURSE_PACKAGES.map((pkg) => {
+            const owned = hasPackage(pkg);
+            const save = pkg.oldPrice - pkg.price;
+            return (
+              <div
+                key={pkg.id}
+                className="relative rounded-3xl border bg-card/60 p-5 flex flex-col"
+                style={{ borderColor: `${pkg.accent}30`, boxShadow: pkg.highlight ? `0 0 40px ${pkg.accent}22` : undefined }}
+              >
+                {pkg.highlight && (
+                  <span
+                    className="absolute -top-2.5 left-5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full text-white"
+                    style={{ background: pkg.accent }}
+                  >
+                    Хит выбора
+                  </span>
+                )}
+                <div className="text-3xl mb-2">{pkg.emoji}</div>
+                <h3 className="font-montserrat font-black text-white text-lg leading-tight">{pkg.title}</h3>
+                <p className="text-white/55 text-xs mt-1.5 flex-1">{pkg.tagline}</p>
+                <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
+                  {packageSubjectNames(pkg).map((name) => (
+                    <span key={name} className="text-[11px] font-bold px-2 py-0.5 rounded-full text-white/80" style={{ background: `${pkg.accent}22` }}>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="font-montserrat font-black text-2xl text-white">{pkg.price.toLocaleString("ru-RU")} ₽</span>
+                  <span className="text-white/40 text-xs line-through">{pkg.oldPrice.toLocaleString("ru-RU")} ₽</span>
+                </div>
+                <p className="text-green-400 text-xs font-bold mb-3">Экономия {save.toLocaleString("ru-RU")} ₽</p>
+                {owned ? (
+                  <div className="w-full py-2.5 rounded-2xl font-bold text-center text-green-300 bg-green-500/15 border border-green-500/30 text-sm">
+                    Доступ открыт
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => openBuyPackage(pkg)}
+                    className="w-full py-2.5 rounded-2xl font-bold text-white transition-all text-sm"
+                    style={{ background: `linear-gradient(135deg, ${pkg.accent}, ${pkg.accent}aa)` }}
+                  >
+                    Купить пакет
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-center text-white/40 text-xs mt-4">
+          Можно купить и один предмет отдельно — выбирайте ниже. Доступ действует {accessUntilLabel()}.
+        </p>
       </section>
 
       {/* Super courses + наставник */}
@@ -194,8 +308,8 @@ export default function SuperCourses() {
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">{buyTarget.emoji}</span>
               <div className="flex-1">
-                <h3 className="font-montserrat font-black text-lg text-white">Супер-курс: {buyTarget.subject}</h3>
-                <p className="text-white/50 text-xs">{buyTarget.level}</p>
+                <h3 className="font-montserrat font-black text-lg text-white">{buyTarget.title}</h3>
+                <p className="text-white/50 text-xs">{buyTarget.subtitle}</p>
               </div>
               <button onClick={() => !processing && setBuyTarget(null)} className="text-white/40 hover:text-white">
                 <Icon name="X" size={20} />
@@ -205,7 +319,7 @@ export default function SuperCourses() {
             <div className="flex items-baseline gap-2 mb-4 flex-wrap">
               <span className="font-montserrat font-black text-3xl text-white">{buyTarget.price.toLocaleString("ru-RU")} ₽</span>
               <span className="text-white/40 text-sm line-through">{buyTarget.oldPrice.toLocaleString("ru-RU")} ₽</span>
-              <span className="text-xs text-white/45">· разовая оплата, доступ навсегда</span>
+              <span className="text-xs text-white/45">· разовая оплата, доступ {accessUntilLabel()}</span>
             </div>
 
             {!demoPurchaseId ? (
