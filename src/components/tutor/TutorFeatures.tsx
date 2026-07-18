@@ -18,8 +18,8 @@ export default function TutorFeatures() {
         {TUTOR_FEATURES.map((f) => (
           <Link
             key={f.id}
-            to={f.href}
-            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-card/60 p-6 md:p-7 hover:border-white/20 transition-all"
+            to="/checkout/tutor?period=month&from=/tutor"
+            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-card/60 p-6 md:p-7 hover:border-purple-400/40 transition-all"
             style={{ boxShadow: `0 0 0 rgba(0,0,0,0)` }}
           >
             <div
@@ -27,6 +27,10 @@ export default function TutorFeatures() {
               style={{ background: f.accent }}
               aria-hidden="true"
             />
+            {/* Замок — функция открывается после оплаты модуля */}
+            <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/8 border border-white/12 flex items-center justify-center text-white/45 group-hover:text-purple-300 group-hover:border-purple-400/40 transition-colors">
+              <Icon name="Lock" size={14} />
+            </div>
             <div className="relative flex items-start gap-4">
               <div
                 className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border"
@@ -34,7 +38,7 @@ export default function TutorFeatures() {
               >
                 {f.emoji}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-8">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-montserrat font-black text-lg text-white">{f.title}</h3>
                   {f.badge && (
@@ -48,12 +52,9 @@ export default function TutorFeatures() {
                 </div>
                 <p className="text-white/45 text-xs font-semibold mt-0.5">{f.subtitle}</p>
                 <p className="text-white/65 text-sm mt-2.5 leading-relaxed">{f.description}</p>
-                <span
-                  className="inline-flex items-center gap-1.5 mt-4 text-sm font-bold group-hover:gap-2.5 transition-all"
-                  style={{ color: f.accent }}
-                >
-                  <Icon name={f.icon} size={16} />
-                  {f.cta}
+                <span className="inline-flex items-center gap-1.5 mt-4 text-sm font-bold text-purple-300 group-hover:gap-2.5 transition-all">
+                  <Icon name="Unlock" size={16} />
+                  Открыть по подписке
                   <Icon name="ArrowRight" size={15} />
                 </span>
               </div>
