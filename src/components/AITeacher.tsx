@@ -268,6 +268,8 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
                 progress={superProgress}
                 hasCourseAccess={hasCourseAccess}
                 onBuy={onBuySuper}
+                grade={grade}
+                setGrade={setGradePersist}
               />
             )}
           </>

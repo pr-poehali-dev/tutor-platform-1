@@ -4,11 +4,13 @@ import type { LessonNotes } from "../lessonTypes";
 import { PHYSICS_NOTES } from "./physics";
 import { MATH_NOTES } from "./math";
 import { INFORMATICS_NOTES } from "./informatics";
+import { CHEMISTRY_NOTES } from "./chemistry";
 
 export const LESSON_NOTES: Record<string, LessonNotes> = {
   ...PHYSICS_NOTES,
   ...MATH_NOTES,
   ...INFORMATICS_NOTES,
+  ...CHEMISTRY_NOTES,
 };
 
 /**

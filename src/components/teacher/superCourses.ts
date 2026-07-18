@@ -20,6 +20,23 @@ export interface CourseModule {
   title: string;
   emoji: string;
   lessons: CourseLesson[];
+  /** Целевой класс раздела: "7"…"11" или "ege". Для индивидуальной программы по уровню. */
+  grade?: GradeLevel;
+}
+
+export type GradeLevel = "7" | "8" | "9" | "10" | "11" | "ege";
+
+/** Порядок уровней для фильтрации «мой класс и ниже». */
+export const GRADE_ORDER: GradeLevel[] = ["7", "8", "9", "10", "11", "ege"];
+
+/** Показывать ли раздел ученику выбранного класса: его уровень и всё, что проходят раньше. */
+export function moduleMatchesGrade(moduleGrade: GradeLevel | undefined, studentGrade: string): boolean {
+  if (!studentGrade || !moduleGrade) return true; // класс не выбран или у раздела нет метки — показываем всё
+  const si = GRADE_ORDER.indexOf(studentGrade as GradeLevel);
+  const mi = GRADE_ORDER.indexOf(moduleGrade);
+  if (si < 0 || mi < 0) return true;
+  // Ученик видит темы своего уровня и всех предыдущих; выпускник (ege) видит всё.
+  return mi <= si;
 }
 
 export interface SuperCourse {
@@ -57,6 +74,7 @@ const physics: SuperCourse = {
   modules: [
     {
       id: "ph-kin",
+      grade: "7",
       title: "Кинематика",
       emoji: "🏃",
       lessons: [
@@ -69,6 +87,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-dyn",
+      grade: "9",
       title: "Динамика и силы",
       emoji: "🚀",
       lessons: [
@@ -80,6 +99,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-stat",
+      grade: "7",
       title: "Статика и гидростатика",
       emoji: "⚖️",
       lessons: [
@@ -90,6 +110,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-cons",
+      grade: "9",
       title: "Законы сохранения",
       emoji: "🔄",
       lessons: [
@@ -101,6 +122,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-osc",
+      grade: "9",
       title: "Колебания и волны",
       emoji: "〰️",
       lessons: [
@@ -111,6 +133,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-mkt",
+      grade: "10",
       title: "Молекулярная физика и термодинамика",
       emoji: "🔥",
       lessons: [
@@ -123,6 +146,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-estat",
+      grade: "8",
       title: "Электростатика",
       emoji: "⚡",
       lessons: [
@@ -133,6 +157,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-curr",
+      grade: "8",
       title: "Постоянный ток",
       emoji: "💡",
       lessons: [
@@ -144,6 +169,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-mag",
+      grade: "9",
       title: "Магнетизм и электромагнетизм",
       emoji: "🧲",
       lessons: [
@@ -155,6 +181,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-ac",
+      grade: "11",
       title: "Переменный ток и электромагнитные волны",
       emoji: "📡",
       lessons: [
@@ -165,6 +192,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-opt",
+      grade: "11",
       title: "Оптика",
       emoji: "🔬",
       lessons: [
@@ -175,6 +203,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-quant",
+      grade: "11",
       title: "Квантовая, атомная и ядерная физика",
       emoji: "⚛️",
       lessons: [
@@ -186,6 +215,7 @@ const physics: SuperCourse = {
     },
     {
       id: "ph-ege",
+      grade: "ege",
       title: "Подготовка к ЕГЭ и ДВИ Бауманки",
       emoji: "🎯",
       lessons: [
@@ -214,6 +244,7 @@ const math: SuperCourse = {
   modules: [
     {
       id: "m-base",
+      grade: "7",
       title: "Числа и вычисления",
       emoji: "🔢",
       lessons: [
@@ -225,6 +256,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-algebra",
+      grade: "8",
       title: "Алгебра и уравнения",
       emoji: "🧮",
       lessons: [
@@ -236,6 +268,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-func",
+      grade: "9",
       title: "Функции и графики",
       emoji: "📈",
       lessons: [
@@ -245,6 +278,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-trig",
+      grade: "10",
       title: "Тригонометрия",
       emoji: "📐",
       lessons: [
@@ -255,6 +289,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-log",
+      grade: "11",
       title: "Логарифмы и показательные функции",
       emoji: "📊",
       lessons: [
@@ -265,6 +300,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-calc",
+      grade: "11",
       title: "Начала анализа",
       emoji: "♾️",
       lessons: [
@@ -277,6 +313,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-planim",
+      grade: "8",
       title: "Планиметрия",
       emoji: "📏",
       lessons: [
@@ -287,6 +324,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-stereo",
+      grade: "10",
       title: "Стереометрия и векторы",
       emoji: "🧊",
       lessons: [
@@ -298,6 +336,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-prob",
+      grade: "9",
       title: "Комбинаторика и вероятность",
       emoji: "🎲",
       lessons: [
@@ -307,6 +346,7 @@ const math: SuperCourse = {
     },
     {
       id: "m-ege",
+      grade: "ege",
       title: "Параметры и подготовка к ЕГЭ/ДВИ",
       emoji: "🎯",
       lessons: [
@@ -335,6 +375,7 @@ const cs: SuperCourse = {
   modules: [
     {
       id: "cs-base",
+      grade: "8",
       title: "Информация и кодирование",
       emoji: "🖥️",
       lessons: [
@@ -345,6 +386,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-logic",
+      grade: "8",
       title: "Математическая логика",
       emoji: "🔣",
       lessons: [
@@ -355,6 +397,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-algo",
+      grade: "9",
       title: "Алгоритмы",
       emoji: "🧩",
       lessons: [
@@ -365,6 +408,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-python",
+      grade: "9",
       title: "Программирование на Python",
       emoji: "🐍",
       lessons: [
@@ -377,6 +421,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-adv",
+      grade: "11",
       title: "Алгоритмы и структуры данных",
       emoji: "🔗",
       lessons: [
@@ -388,6 +433,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-data",
+      grade: "10",
       title: "Данные и обработка информации",
       emoji: "🗄️",
       lessons: [
@@ -398,6 +444,7 @@ const cs: SuperCourse = {
     },
     {
       id: "cs-ege",
+      grade: "ege",
       title: "Подготовка к ЕГЭ (задания 17-27)",
       emoji: "🎯",
       lessons: [
@@ -427,6 +474,7 @@ const chemistry: SuperCourse = {
   modules: [
     {
       id: "chem-atom",
+      grade: "8",
       title: "Строение атома и вещества",
       emoji: "⚛️",
       lessons: [
@@ -437,6 +485,7 @@ const chemistry: SuperCourse = {
     },
     {
       id: "chem-react",
+      grade: "8",
       title: "Химические реакции",
       emoji: "🔥",
       lessons: [
@@ -447,6 +496,7 @@ const chemistry: SuperCourse = {
     },
     {
       id: "chem-solutions",
+      grade: "9",
       title: "Растворы и электролиты",
       emoji: "💧",
       lessons: [
@@ -457,6 +507,7 @@ const chemistry: SuperCourse = {
     },
     {
       id: "chem-inorg",
+      grade: "9",
       title: "Неорганическая химия",
       emoji: "🧪",
       lessons: [
@@ -467,6 +518,7 @@ const chemistry: SuperCourse = {
     },
     {
       id: "chem-org",
+      grade: "10",
       title: "Органическая химия",
       emoji: "🧬",
       lessons: [
@@ -478,6 +530,7 @@ const chemistry: SuperCourse = {
     },
     {
       id: "chem-ege",
+      grade: "ege",
       title: "Подготовка к ЕГЭ и олимпиадам",
       emoji: "🎯",
       lessons: [
@@ -503,6 +556,7 @@ const biology: SuperCourse = {
   modules: [
     {
       id: "bio-cell",
+      grade: "9",
       title: "Цитология — наука о клетке",
       emoji: "🔬",
       lessons: [
@@ -513,6 +567,7 @@ const biology: SuperCourse = {
     },
     {
       id: "bio-genetics",
+      grade: "10",
       title: "Размножение и генетика",
       emoji: "🧬",
       lessons: [
@@ -523,6 +578,7 @@ const biology: SuperCourse = {
     },
     {
       id: "bio-organism",
+      grade: "8",
       title: "Организм человека",
       emoji: "🫀",
       lessons: [
@@ -533,6 +589,7 @@ const biology: SuperCourse = {
     },
     {
       id: "bio-evolution",
+      grade: "11",
       title: "Эволюция и экология",
       emoji: "🌍",
       lessons: [
@@ -542,6 +599,7 @@ const biology: SuperCourse = {
     },
     {
       id: "bio-ege",
+      grade: "ege",
       title: "Подготовка к ЕГЭ и медвузу",
       emoji: "🎯",
       lessons: [
@@ -567,6 +625,7 @@ const russian: SuperCourse = {
   modules: [
     {
       id: "rus-ortho",
+      grade: "7",
       title: "Орфография",
       emoji: "🔤",
       lessons: [
@@ -577,6 +636,7 @@ const russian: SuperCourse = {
     },
     {
       id: "rus-punct",
+      grade: "8",
       title: "Пунктуация",
       emoji: "❓",
       lessons: [
@@ -587,6 +647,7 @@ const russian: SuperCourse = {
     },
     {
       id: "rus-speech",
+      grade: "9",
       title: "Культура речи и текст",
       emoji: "📖",
       lessons: [
@@ -597,6 +658,7 @@ const russian: SuperCourse = {
     },
     {
       id: "rus-ege",
+      grade: "ege",
       title: "Сочинение и подготовка к ЕГЭ",
       emoji: "🎯",
       lessons: [
@@ -622,6 +684,7 @@ const history: SuperCourse = {
   modules: [
     {
       id: "hist-rus",
+      grade: "7",
       title: "Древняя и средневековая Русь",
       emoji: "🏰",
       lessons: [
@@ -632,6 +695,7 @@ const history: SuperCourse = {
     },
     {
       id: "hist-empire",
+      grade: "8",
       title: "Российское государство XVI–XVIII вв.",
       emoji: "👑",
       lessons: [
@@ -643,6 +707,7 @@ const history: SuperCourse = {
     },
     {
       id: "hist-19",
+      grade: "9",
       title: "Российская империя в XIX веке",
       emoji: "⚔️",
       lessons: [
@@ -652,6 +717,7 @@ const history: SuperCourse = {
     },
     {
       id: "hist-20",
+      grade: "10",
       title: "Россия и СССР в XX веке",
       emoji: "🚩",
       lessons: [
@@ -663,6 +729,7 @@ const history: SuperCourse = {
     },
     {
       id: "hist-ege",
+      grade: "ege",
       title: "Подготовка к ЕГЭ",
       emoji: "🎯",
       lessons: [

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { SUPER_COURSES, SuperCourse, CourseLesson, isLessonFree } from "./superCourses";
+import { SUPER_COURSES, SuperCourse, CourseLesson, isLessonFree, moduleMatchesGrade, GRADE_ORDER, GradeLevel } from "./superCourses";
 import DiagnosticModal from "./DiagnosticModal";
 
 interface ProgressApi {
@@ -15,14 +15,25 @@ interface Props {
   hasCourseAccess?: (courseId: number) => boolean;
   /** Купить конкретный супер-курс. */
   onBuy?: (course: SuperCourse) => void;
+  /** Класс ученика — для индивидуальной программы по уровню. */
+  grade?: string;
+  setGrade?: (g: string) => void;
 }
 
-export default function SuperCoursePicker({ startLesson, progress, hasCourseAccess, onBuy }: Props) {
+const GRADE_LABEL: Record<GradeLevel, string> = {
+  "7": "7 класс", "8": "8 класс", "9": "9 класс",
+  "10": "10 класс", "11": "11 класс", "ege": "ЕГЭ",
+};
+
+export default function SuperCoursePicker({ startLesson, progress, hasCourseAccess, onBuy, grade = "", setGrade }: Props) {
   const [activeCourse, setActiveCourse] = useState<string>(SUPER_COURSES[0].id);
   const [diagOpen, setDiagOpen] = useState(false);
   const course = SUPER_COURSES.find(c => c.id === activeCourse) || SUPER_COURSES[0];
 
   const hasAccess = hasCourseAccess ? hasCourseAccess(course.courseId) : false;
+
+  // Индивидуальная программа: если класс выбран — показываем разделы своего уровня и ниже.
+  const visibleModules = course.modules.filter(m => moduleMatchesGrade(m.grade, grade));
 
   const allLessonIds = course.modules.flatMap(m => m.lessons.map(l => l.id));
   const totalLessons = allLessonIds.length;
@@ -189,8 +200,43 @@ export default function SuperCoursePicker({ startLesson, progress, hasCourseAcce
           <Icon name="ArrowRight" size={18} className="text-white/40 flex-shrink-0" />
         </button>
 
+        {/* Индивидуальная программа по классу — не одна программа для всех */}
+        {setGrade && (
+          <div className="mb-5 rounded-2xl border border-white/8 bg-card/40 p-4">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Icon name="GraduationCap" size={16} style={{ color: course.accent }} />
+              <span className="text-white font-bold text-sm">Твой класс — покажем программу под твой уровень</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {GRADE_ORDER.map(g => {
+                const active = grade === g;
+                return (
+                  <button
+                    key={g}
+                    onClick={() => setGrade(active ? "" : g)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-colors ${active ? "text-white" : "text-white/55 hover:text-white bg-white/5"}`}
+                    style={active ? { background: course.accent } : undefined}
+                  >
+                    {GRADE_LABEL[g]}
+                  </button>
+                );
+              })}
+              {grade && (
+                <button onClick={() => setGrade("")} className="text-xs font-bold px-3 py-1.5 rounded-xl text-white/45 hover:text-white bg-white/5">
+                  Показать всё
+                </button>
+              )}
+            </div>
+            <p className="text-white/40 text-[11px] mt-2.5">
+              {grade
+                ? `Показаны темы для уровня «${GRADE_LABEL[grade as GradeLevel] ?? grade}» и предыдущих классов. Наставник объяснит по твоему уровню.`
+                : "Выбери класс — покажем только нужные темы и уберём лишнее."}
+            </p>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-5">
-          {course.modules.map(mod => {
+          {visibleModules.map(mod => {
             const modIds = mod.lessons.map(l => l.id);
             const modDone = progress.countDone(modIds);
             const modPct = modIds.length ? Math.round((modDone / modIds.length) * 100) : 0;
@@ -199,6 +245,11 @@ export default function SuperCoursePicker({ startLesson, progress, hasCourseAcce
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">{mod.emoji}</span>
                   <span className="font-bold text-white text-sm flex-1">{mod.title}</span>
+                  {mod.grade && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: `${course.accent}22`, color: course.accent }}>
+                      {GRADE_LABEL[mod.grade]}
+                    </span>
+                  )}
                   <span className="text-[11px] text-white/40 font-bold">{modDone}/{modIds.length}</span>
                 </div>
                 {/* Module progress bar */}
