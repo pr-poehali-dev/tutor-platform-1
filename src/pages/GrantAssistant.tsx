@@ -15,6 +15,7 @@ import {
 import GrantResult from "@/components/grants/GrantResult";
 import GrantHeader from "@/components/grants/page/GrantHeader";
 import GrantHero from "@/components/grants/page/GrantHero";
+import GrantAiBanner from "@/components/grants/page/GrantAiBanner";
 import GrantForm, { LOADING_STEPS } from "@/components/grants/page/GrantForm";
 import GrantBenefits from "@/components/grants/page/GrantBenefits";
 
@@ -175,6 +176,7 @@ export default function GrantAssistant() {
               <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Помощник по грантам" }]} />
             </div>
             <GrantHero priceRub={priceRub} />
+            <GrantAiBanner />
             <GrantForm
               loading={loading}
               step={step}
