@@ -7,6 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { fetchArticle, fetchFeed } from "@/components/feed/api";
 import { FeedArticle as FeedArticleType, CATEGORY_META } from "@/components/feed/types";
 import { articleUrl } from "@/components/feed/shareTargets";
+import ShareMenuButton from "@/components/feed/ShareMenuButton";
 import { LoadingState, LimitedState, NotFoundState } from "@/components/feed/article/FeedArticleStates";
 import FeedArticleHeader from "@/components/feed/article/FeedArticleHeader";
 import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
@@ -138,13 +139,16 @@ export default function FeedArticlePage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500 flex items-center justify-center text-lg">📡</div>
             <span className="font-montserrat font-black text-base gradient-text-purple group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
-          <Link
-            to="/feed"
-            className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-          >
-            <Icon name="ArrowLeft" size={12} />
-            В ленту
-          </Link>
+          <div className="flex items-center gap-2">
+            <ShareMenuButton url={articleUrl(article.slug)} title={article.title} summary={article.summary} />
+            <Link
+              to="/feed"
+              className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+            >
+              <Icon name="ArrowLeft" size={12} />
+              В ленту
+            </Link>
+          </div>
         </div>
       </div>
 
