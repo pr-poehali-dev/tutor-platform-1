@@ -6,8 +6,12 @@ export default function TutorFeatures() {
   return (
     <section className="max-w-6xl mx-auto px-4 py-10">
       <div className="text-center mb-8">
-        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white">Всё для учёбы в одном месте</h2>
-        <p className="text-white/55 text-sm md:text-base mt-2">Выбери, с чего начать сегодня</p>
+        <div className="inline-flex items-center gap-1.5 bg-purple-500/15 border border-purple-500/30 rounded-full px-4 py-1.5 mb-3">
+          <Icon name="Package" size={14} className="text-purple-300" />
+          <span className="text-xs text-purple-200 font-bold uppercase tracking-wider">Единый модуль · всё включено</span>
+        </div>
+        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white">Что входит в «Репетитор»</h2>
+        <p className="text-white/55 text-sm md:text-base mt-2">Одна подписка открывает сразу все инструменты обучения</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4 md:gap-5">

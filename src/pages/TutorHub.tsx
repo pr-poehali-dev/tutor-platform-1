@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import TutorTopBar from "@/components/tutor/TutorTopBar";
@@ -9,8 +10,10 @@ import TutorSubjects from "@/components/tutor/TutorSubjects";
 import TutorHowItWorks from "@/components/tutor/TutorHowItWorks";
 import TutorPricing from "@/components/tutor/TutorPricing";
 import TutorCTA from "@/components/tutor/TutorCTA";
+import { useTutorAccess } from "@/components/tutor/useTutorAccess";
 
 const LearningJourney = lazy(() => import("@/components/LearningJourney"));
+const TutorWorkspace = lazy(() => import("@/components/tutor/TutorWorkspace"));
 
 const SITE_URL = "https://учисьпро.рф";
 const CANONICAL = `${SITE_URL}/tutor`;
@@ -38,6 +41,8 @@ const JSON_LD = [
 ];
 
 export default function TutorHub() {
+  const { hasAccess, loading } = useTutorAccess();
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
@@ -49,19 +54,32 @@ export default function TutorHub() {
       />
 
       <TutorTopBar />
-      <TutorHero />
 
-      {/* Ядро раздела: наставник тестирует и строит персональный план */}
-      <TutorMentorIntro />
-      <Suspense fallback={<div className="py-16 text-center text-white/40 text-sm">Готовлю наставника…</div>}>
-        <LearningJourney />
-      </Suspense>
+      {loading ? (
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Icon name="Loader2" size={32} className="animate-spin text-purple-400" />
+        </div>
+      ) : hasAccess ? (
+        // ── Доступ оплачен: рабочее пространство модуля ──
+        <Suspense fallback={<div className="py-24 text-center text-white/40 text-sm">Открываю модуль…</div>}>
+          <TutorWorkspace />
+        </Suspense>
+      ) : (
+        // ── Лендинг модуля: промо, бесплатный тест-крючок и цены ──
+        <>
+          <TutorHero />
+          <TutorMentorIntro />
+          <Suspense fallback={<div className="py-16 text-center text-white/40 text-sm">Готовлю наставника…</div>}>
+            <LearningJourney />
+          </Suspense>
+          <TutorFeatures />
+          <TutorSubjects />
+          <TutorHowItWorks />
+          <TutorPricing />
+          <TutorCTA />
+        </>
+      )}
 
-      <TutorFeatures />
-      <TutorSubjects />
-      <TutorHowItWorks />
-      <TutorPricing />
-      <TutorCTA />
       <SiteFooter />
     </div>
   );
