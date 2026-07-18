@@ -7,6 +7,7 @@ import { useAccessibility } from "./teacher/useAccessibility";
 import { useSuperProgress } from "./teacher/useSuperProgress";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
 import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
+import { notesToPromptText } from "./teacher/lessonNotes";
 
 interface AITeacherProps {
   showSuperCourses?: boolean;
@@ -93,6 +94,9 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
           course_title: activeLesson
             ? `${activeLesson.course.title} · урок «${activeLesson.lesson.title}»`
             : "",
+          lesson_notes: activeLesson?.lesson.notes
+            ? notesToPromptText(activeLesson.lesson.notes)
+            : "",
         }),
       });
       const data = await res.json();
@@ -155,6 +159,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
           voice_mode: settings.autoSpeak,
           subject: course.subject,
           course_title: `${course.title} · урок «${lesson.title}»`,
+          lesson_notes: lesson.notes ? notesToPromptText(lesson.notes) : "",
         }),
       });
       const data = await res.json();
@@ -282,6 +287,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
             updateA11y={update}
             repeatVoice={repeatVoice}
             lessonTitle={activeLesson?.lesson.title}
+            lessonNotes={activeLesson?.lesson.notes}
           />
         )}
 

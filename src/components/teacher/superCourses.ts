@@ -2,12 +2,17 @@
 // Программа покрывает всю школьную программу РФ (7-11 класс) + продвинутые темы
 // для профильного ЕГЭ (85+), ДВИ и поступления в технический вуз уровня МГТУ им. Баумана.
 // Каждый урок открывает чат с наставником (с голосом) по конкретной теме.
+import { LESSON_NOTES } from "./lessonNotes";
+import type { LessonNotes } from "./lessonTypes";
+
+export type { WorkedExample, PracticeTask, LessonNotes } from "./lessonTypes";
 
 export interface CourseLesson {
   id: string;
   title: string;
   goal: string; // чему научится ученик
   starter: string; // первый вопрос/запрос наставнику при старте урока
+  notes?: LessonNotes; // выверенный учебный конспект по теме
 }
 
 export interface CourseModule {
@@ -407,7 +412,20 @@ const cs: SuperCourse = {
   ],
 };
 
-export const SUPER_COURSES: SuperCourse[] = [physics, math, cs];
+/** Подмешивает выверенные конспекты (notes) в уроки по их id. */
+function withNotes(course: SuperCourse): SuperCourse {
+  return {
+    ...course,
+    modules: course.modules.map((m) => ({
+      ...m,
+      lessons: m.lessons.map((l) =>
+        LESSON_NOTES[l.id] ? { ...l, notes: LESSON_NOTES[l.id] } : l
+      ),
+    })),
+  };
+}
+
+export const SUPER_COURSES: SuperCourse[] = [physics, math, cs].map(withNotes);
 
 export function getSuperCourse(id: string): SuperCourse | undefined {
   return SUPER_COURSES.find(c => c.id === id);

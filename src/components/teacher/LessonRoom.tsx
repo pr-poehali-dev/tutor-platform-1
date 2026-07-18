@@ -4,6 +4,8 @@ import AvatarDisplay from "./AvatarDisplay";
 import MicPermissionHelp from "./MicPermissionHelp";
 import { Teacher, LessonMessage, Emotion } from "./teachersData";
 import type { AccessibilitySettings } from "./useAccessibility";
+import type { LessonNotes } from "./lessonTypes";
+import LessonNotesPanel from "./LessonNotesPanel";
 
 interface LessonRoomProps {
   selectedTeacher: Teacher;
@@ -30,6 +32,7 @@ interface LessonRoomProps {
   updateA11y: (patch: Partial<AccessibilitySettings>) => void;
   repeatVoice: (text: string) => void;
   lessonTitle?: string;
+  lessonNotes?: LessonNotes;
 }
 
 export default function LessonRoom({
@@ -57,6 +60,7 @@ export default function LessonRoom({
   updateA11y,
   repeatVoice,
   lessonTitle,
+  lessonNotes,
 }: LessonRoomProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const isMicError = !!voiceError && /микрофон|microphone|доступ|denied|permission/i.test(voiceError);
@@ -216,6 +220,11 @@ export default function LessonRoom({
             </button>
           </div>
         </div>
+
+        {/* Конспект урока — реальная теория, примеры и задачи по теме */}
+        {lessonNotes && (
+          <LessonNotesPanel notes={lessonNotes} accent={selectedTeacher.accent} bigText={a11y.bigText} />
+        )}
 
         {/* Messages */}
         <div
