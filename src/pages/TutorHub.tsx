@@ -5,6 +5,7 @@ import TutorHero from "@/components/tutor/TutorHero";
 import TutorFeatures from "@/components/tutor/TutorFeatures";
 import TutorSubjects from "@/components/tutor/TutorSubjects";
 import TutorHowItWorks from "@/components/tutor/TutorHowItWorks";
+import TutorPricing from "@/components/tutor/TutorPricing";
 import TutorCTA from "@/components/tutor/TutorCTA";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -48,6 +49,7 @@ export default function TutorHub() {
       <TutorFeatures />
       <TutorSubjects />
       <TutorHowItWorks />
+      <TutorPricing />
       <TutorCTA />
       <SiteFooter />
     </div>

@@ -88,6 +88,8 @@ SUBSCRIPTION_PLANS = {
     "family": {"name": "Семейный", "price_kopecks": 999000, "period_days": 30},
     # Абонемент «Малыш»: 399 ₽/мес. Первый платёж по акции — 1 ₽ за 3 месяца.
     "kids":   {"name": "Малыш",    "price_kopecks":  39900, "period_days": 30},
+    # Подписка «Репетитор»: 1490 ₽/мес — безлимит уроков, все предметы, домашка.
+    "tutor":  {"name": "Репетитор", "price_kopecks": 149000, "period_days": 30, "year_price_kopecks": 999000},
 }
 
 # Акция для абонемента «Малыш»: первые 3 месяца за 1 ₽ (один раз на пользователя).
@@ -183,7 +185,7 @@ def resolve_plan(plan_id: str, period: str):
     if not base_plan:
         return None, None
     if period == 'year':
-        year_price = int(round(base_plan['price_kopecks'] * 12 * (1 - YEAR_DISCOUNT)))
+        year_price = base_plan.get('year_price_kopecks') or int(round(base_plan['price_kopecks'] * 12 * (1 - YEAR_DISCOUNT)))
         return plan_id, {
             'name': f"{base_plan['name']} (год)",
             'price_kopecks': year_price,

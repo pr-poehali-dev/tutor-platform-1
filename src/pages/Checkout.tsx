@@ -36,7 +36,7 @@ export default function Checkout() {
   const displayPrice = isKids
     ? KIDS_INTRO_PRICE
     : isYear && plan
-    ? yearPrice(plan.price)
+    ? yearPrice(plan.price, plan)
     : plan?.price ?? 0;
   const displayPeriod = isKids ? "3 месяца" : isYear ? "год" : plan?.period ?? "";
 
