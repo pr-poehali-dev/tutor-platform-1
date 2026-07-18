@@ -27,6 +27,14 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState<{ course: SuperCourse; lesson: CourseLesson } | null>(null);
+  // Класс ученика — чтобы наставник объяснял по уровню, не перегружая младших.
+  const [grade, setGrade] = useState<string>(() => {
+    try { return localStorage.getItem("uchispro_student_grade") || ""; } catch { return ""; }
+  });
+  const setGradePersist = (g: string) => {
+    setGrade(g);
+    try { localStorage.setItem("uchispro_student_grade", g); } catch { /* ignore */ }
+  };
   const { settings, update } = useAccessibility();
   const superProgress = useSuperProgress();
   const chatRef = useRef<HTMLDivElement>(null);
@@ -97,6 +105,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
           lesson_notes: activeLesson?.lesson.notes
             ? notesToPromptText(activeLesson.lesson.notes)
             : "",
+          grade,
         }),
       });
       const data = await res.json();
@@ -160,6 +169,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
           subject: course.subject,
           course_title: `${course.title} · урок «${lesson.title}»`,
           lesson_notes: lesson.notes ? notesToPromptText(lesson.notes) : "",
+          grade,
         }),
       });
       const data = await res.json();
@@ -288,6 +298,8 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
             repeatVoice={repeatVoice}
             lessonTitle={activeLesson?.lesson.title}
             lessonNotes={activeLesson?.lesson.notes}
+            grade={grade}
+            setGrade={setGradePersist}
           />
         )}
 

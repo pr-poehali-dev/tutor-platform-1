@@ -33,6 +33,8 @@ interface LessonRoomProps {
   repeatVoice: (text: string) => void;
   lessonTitle?: string;
   lessonNotes?: LessonNotes;
+  grade?: string;
+  setGrade?: (g: string) => void;
 }
 
 export default function LessonRoom({
@@ -61,6 +63,8 @@ export default function LessonRoom({
   repeatVoice,
   lessonTitle,
   lessonNotes,
+  grade,
+  setGrade,
 }: LessonRoomProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const isMicError = !!voiceError && /микрофон|microphone|доступ|denied|permission/i.test(voiceError);
@@ -220,6 +224,35 @@ export default function LessonRoom({
             </button>
           </div>
         </div>
+
+        {/* Класс ученика — наставник объясняет по уровню, не перегружая младших */}
+        {setGrade && (
+          <div className="flex items-center gap-2 mb-3 flex-wrap bg-card/40 border border-white/8 rounded-2xl px-3 py-2.5">
+            <span className="text-white/60 text-xs font-medium flex items-center gap-1.5">
+              <Icon name="GraduationCap" size={14} />
+              Твой класс:
+            </span>
+            {["7", "8", "9", "10", "11", "ЕГЭ"].map((g) => {
+              const val = g === "ЕГЭ" ? "ege" : g;
+              const active = grade === val;
+              return (
+                <button
+                  key={g}
+                  onClick={() => setGrade(active ? "" : val)}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                    active ? "text-white" : "text-white/50 hover:text-white bg-white/5"
+                  }`}
+                  style={active ? { background: selectedTeacher.accent } : undefined}
+                >
+                  {g}
+                </button>
+              );
+            })}
+            {!grade && (
+              <span className="text-white/35 text-[11px]">— выбери, чтобы объяснять по уровню</span>
+            )}
+          </div>
+        )}
 
         {/* Конспект урока — реальная теория, примеры и задачи по теме */}
         {lessonNotes && (
