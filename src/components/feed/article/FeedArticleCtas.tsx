@@ -17,12 +17,45 @@ export default function FeedArticleCtas({ article }: Props) {
     !isForecast &&
     (tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
       /shkol/i.test(article.slug));
+  // Статьи про отдельный сервис grant-ai.ru — ведём на внешний сайт, а не на /grants.
+  const isGrantAi =
+    tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||
+    /grant-ai/i.test(article.slug);
   const isGrants =
-    tags.some((t) => ["гранты", "заявка на грант", "конкурсы"].includes(t)) ||
-    /grant/i.test(article.slug);
+    !isGrantAi &&
+    (tags.some((t) => ["гранты", "заявка на грант", "конкурсы"].includes(t)) ||
+      /grant/i.test(article.slug));
 
   return (
     <>
+      {/* CTA grant-ai.ru — переход на отдельный сервис по грантам */}
+      {isGrantAi && (
+        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">🚀</div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Попробуйте новые возможности на grant-ai.ru
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
+              Сопровождение выполнения условий, помощь с отчётностью и библиотека идей с готовыми промптами для победы.
+              Черновик заявки и оценка шансов — бесплатно.
+            </p>
+            <a
+              href="https://grant-ai.ru"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackGoal("article_grant_ai_cta_click", { slug: article.slug })}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
+            >
+              <Icon name="ExternalLink" size={18} />
+              Перейти на grant-ai.ru
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* CTA прогноз EduFlow AI — прямой переход к калькулятору прибыли школы */}
       {isForecast && (
         <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/40 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
