@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -8,7 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { useZnaika } from "@/context/ZnaikaContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
-import CourseDetailModal from "@/components/courses/CourseDetailModal";
+// Модалка с подробностями курса тянет большой файл данных — грузим её только при открытии.
+const CourseDetailModal = lazy(() => import("@/components/courses/CourseDetailModal"));
 import useReadyCourses from "@/hooks/useReadyCourses";
 import CourseNotReadyNotice from "@/components/courses/checkout/CourseNotReadyNotice";
 import CourseAccessGranted from "@/components/courses/checkout/CourseAccessGranted";
@@ -324,11 +325,13 @@ export default function CourseCheckout() {
       </div>
 
       {showCourse && (
-        <CourseDetailModal
-          course={course}
-          onClose={() => setShowCourse(false)}
-          onStartWithAI={() => setShowCourse(false)}
-        />
+        <Suspense fallback={null}>
+          <CourseDetailModal
+            course={course}
+            onClose={() => setShowCourse(false)}
+            onStartWithAI={() => setShowCourse(false)}
+          />
+        </Suspense>
       )}
     </main>
   );

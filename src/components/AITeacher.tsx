@@ -7,7 +7,8 @@ import { useAccessibility } from "./teacher/useAccessibility";
 import { useSuperProgress } from "./teacher/useSuperProgress";
 import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from "./teacher/teachersData";
 import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
-import { notesToPromptText } from "./teacher/lessonNotes";
+import { notesToPromptText } from "./teacher/notesToPromptText";
+import { loadLessonNotes } from "./teacher/loadLessonNotes";
 
 interface AITeacherProps {
   showSuperCourses?: boolean;
@@ -146,11 +147,14 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
     document.getElementById("ai-teacher")?.scrollIntoView({ behavior: "smooth" });
     const teacher = TEACHERS.find(t => t.id === course.teacherId) || TEACHERS[0];
     setSelectedTeacher(teacher);
-    setActiveLesson({ course, lesson });
     setDemoActive(true);
     setUserXP(0);
     setError(null);
     setEmotion("thinking");
+    // Конспект темы подгружаем лениво (по предмету), чтобы не тянуть все конспекты сразу.
+    const notes = lesson.notes ?? (await loadLessonNotes(lesson.id));
+    const lessonWithNotes: CourseLesson = notes ? { ...lesson, notes } : lesson;
+    setActiveLesson({ course, lesson: lessonWithNotes });
     const intro = `${course.emoji} Урок «${lesson.title}». ${lesson.goal}. Поехали!`;
     setVisibleMessages([
       { id: 0, from: "teacher", text: intro, type: "task" },
@@ -168,7 +172,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
           voice_mode: settings.autoSpeak,
           subject: course.subject,
           course_title: `${course.title} · урок «${lesson.title}»`,
-          lesson_notes: lesson.notes ? notesToPromptText(lesson.notes) : "",
+          lesson_notes: notes ? notesToPromptText(notes) : "",
           grade,
         }),
       });
