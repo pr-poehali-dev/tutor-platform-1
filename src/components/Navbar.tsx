@@ -21,6 +21,7 @@ const NAV_LINKS = [
 // Остальные разделы — в выпадающем меню «Ещё»
 const MORE_LINKS = [
   { label: "Для бизнеса", icon: "Building2", path: "/for-business" },
+  { label: "Партнёрам", icon: "Handshake", path: "/partners" },
   { label: "Помощник по грантам", icon: "Target", path: "/grants" },
   { label: "Автоматизация", icon: "Workflow",  path: "/intensive" },
   { label: "Тренды IT",    icon: "Cpu",       path: "/tech-trends" },
@@ -132,7 +133,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
               </button>
 
               {moreOpen && (
-                <div className="absolute right-0 mt-2 w-52 backdrop-blur-xl bg-[#1a1530]/95 border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in z-50">
+                <div className="absolute right-0 mt-2 w-52 max-h-[70vh] overflow-y-auto overscroll-contain backdrop-blur-xl bg-[#1a1530]/95 border border-white/10 rounded-2xl p-2 shadow-2xl animate-fade-in z-50">
                   {MORE_LINKS.map((link) => (
                     <Link
                       key={link.path}
@@ -213,7 +214,7 @@ export default function Navbar({ activeSection, mobileMenuOpen, onScrollTo, onTo
         {mobileMenuOpen && (
           <div
             id="mobile-nav"
-            className="mt-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 animate-fade-in"
+            className="mt-2 max-h-[80vh] overflow-y-auto overscroll-contain backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 animate-fade-in"
           >
             {NAV_ITEMS.map((item) => (
               <button
