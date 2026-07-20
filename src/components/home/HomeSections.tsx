@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import HeroSection from "@/components/HeroSection";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
