@@ -123,6 +123,32 @@ export default function Partners() {
         {/* Сравнение рынка */}
         <CompetitorsTable />
 
+        {/* Ссылка на статью с аналитикой */}
+        <Link
+          to="/feed/analiz-rynka-onlayn-shkol-2026"
+          className="group block mb-16 rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-900/30 via-purple-900/20 to-cyan-900/25 p-6 md:p-7 hover:border-violet-400/50 transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 items-center justify-center text-2xl flex-shrink-0">
+              📊
+            </div>
+            <div className="min-w-0">
+              <span className="text-violet-200 text-xs font-bold uppercase tracking-wider">Аналитика рынка</span>
+              <h3 className="font-montserrat font-black text-white text-lg md:text-xl mt-1 mb-1.5">
+                Рынок онлайн-школ 2026: кто лидирует и почему будущее — за обучением с ИИ
+              </h3>
+              <p className="text-white/70 text-sm leading-relaxed mb-3">
+                Разбираем открытые рейтинги, тренды EdTech и объясняем, что даёт школам конкурентное
+                преимущество уже сегодня.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-violet-200 group-hover:text-violet-100 text-sm font-bold transition-colors">
+                Читать статью в ленте
+                <Icon name="ArrowRight" size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </div>
+        </Link>
+
         {/* Как начать */}
         <section className="mb-16" aria-label="Как начать сотрудничество">
           <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-8">
