@@ -137,11 +137,15 @@ export default function useLessonNarrator(): UseLessonNarratorResult {
 
     if (!audioUrl) {
       setStatus("loading");
+      // Таймаут, чтобы озвучка не «висела» вечно при плохой сети.
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000);
       try {
         const res = await fetch(TTS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: clean.slice(0, 4500), teacher_id: voiceId }),
+          signal: ctrl.signal,
         });
         const data = await res.json();
         if (reqId !== reqIdRef.current) return;
@@ -156,10 +160,15 @@ export default function useLessonNarrator(): UseLessonNarratorResult {
         }
       } catch (e) {
         if (reqId !== reqIdRef.current) return;
-        const msg = e instanceof Error ? e.message : "Ошибка озвучки";
+        const aborted = e instanceof DOMException && e.name === "AbortError";
+        const msg = aborted
+          ? "Озвучка не ответила вовремя, попробуйте ещё раз"
+          : e instanceof Error ? e.message : "Ошибка озвучки";
         setError(msg);
         setStatus("error");
         return;
+      } finally {
+        clearTimeout(timer);
       }
     }
 

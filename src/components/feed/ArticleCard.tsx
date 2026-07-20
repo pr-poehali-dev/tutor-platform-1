@@ -69,7 +69,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
             {article.cover_url ? (
               <img
                 src={article.cover_url}
-                alt=""
+                alt={article.title}
                 loading="lazy"
                 className={`w-full h-full transition-transform duration-500 ${coverFit}`}
               />
@@ -149,7 +149,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
       >
         <div className="w-16 h-16 rounded-xl bg-white/[0.04] overflow-hidden flex-shrink-0">
           {article.cover_url ? (
-            <img src={article.cover_url} alt="" loading="lazy" className={`w-full h-full ${isDocCover ? "object-contain bg-[#7c4dff]/15" : "object-cover"}`} />
+            <img src={article.cover_url} alt={article.title} loading="lazy" className={`w-full h-full ${isDocCover ? "object-contain bg-[#7c4dff]/15" : "object-cover"}`} />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-2xl opacity-50">{CATEGORY_META[article.category].emoji}</div>
           )}
@@ -183,7 +183,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
         {article.cover_url ? (
           <img
             src={article.cover_url}
-            alt=""
+            alt={article.title}
             loading="lazy"
             className={`w-full h-full transition-transform duration-500 ${coverFit}`}
           />

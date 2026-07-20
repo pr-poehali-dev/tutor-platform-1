@@ -25,12 +25,15 @@ export default function FeedArticlePage() {
 
   useEffect(() => {
     if (!slug) return;
+    // Защита от гонки при быстрой смене статей: не обновляем состояние после размонтирования/смены slug.
+    let cancelled = false;
     setLoading(true);
     setNotFound(false);
     setLimited(null);
     setArticle(null);
     window.scrollTo(0, 0);
     fetchArticle(slug).then((data) => {
+      if (cancelled) return;
       if (data.limited) {
         setLimited({ limit: data.limit, message: data.message });
         setLoading(false);
@@ -46,15 +49,18 @@ export default function FeedArticlePage() {
       // Подгружаем 3 связанных по той же категории (сбой не критичен).
       fetchFeed(item.category, 1)
         .then((res) => {
+          if (cancelled) return;
           setRelated((res.items || []).filter((a) => a.id !== item.id).slice(0, 3));
         })
         .catch(() => { /* связанные статьи необязательны */ });
       setLoading(false);
     }).catch(() => {
+      if (cancelled) return;
       // Сбой загрузки статьи не должен оставлять вечный спиннер.
       setNotFound(true);
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [slug]);
 
   if (loading) {

@@ -17,6 +17,7 @@ export function useActiveSection() {
     const section = params.get("section");
     if (!section) return;
     // Даём странице отрисоваться (lazy-секции), затем скроллим.
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const tryScroll = (attempt = 0) => {
       const el = document.getElementById(section);
       if (el) {
@@ -25,10 +26,11 @@ export function useActiveSection() {
         // Чистим URL, чтобы не скроллило при последующих переходах.
         window.history.replaceState(null, "", "/");
       } else if (attempt < 10) {
-        setTimeout(() => tryScroll(attempt + 1), 300);
+        timer = setTimeout(() => tryScroll(attempt + 1), 300);
       }
     };
     tryScroll();
+    return () => { if (timer) clearTimeout(timer); };
   }, []);
 
   // Автообновление activeSection при скролле
