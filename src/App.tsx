@@ -109,6 +109,7 @@ const Intensive = lazy(() => import("./pages/Intensive"));
 const AiAssistant = lazy(() => import("./pages/AiAssistant"));
 const ForBusiness = lazy(() => import("./pages/ForBusiness"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
+const Partners = lazy(() => import("./pages/Partners"));
 const SchoolBuilder = lazy(() => import("./pages/SchoolBuilder"));
 const SchoolCabinet = lazy(() => import("./pages/SchoolCabinet"));
 const SchoolCoursePublic = lazy(() => import("./pages/SchoolCoursePublic"));
@@ -165,6 +166,7 @@ const App = () => (
                     <Route path="/ai-assistant" element={<AiAssistant />} />
                     <Route path="/for-business" element={<ForBusiness />} />
                     <Route path="/for-schools" element={<ForSchools />} />
+                    <Route path="/partners" element={<Partners />} />
                     <Route path="/school-builder" element={<SchoolBuilder />} />
                     <Route path="/school" element={<SchoolCabinet />} />
                     <Route path="/school/invite/:token" element={<SchoolInvite />} />
