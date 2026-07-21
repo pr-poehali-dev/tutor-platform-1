@@ -118,6 +118,12 @@ export default function GrantMy() {
                     <p className="text-white/50 text-xs">
                       {a.grant_name} · {fmtDate(a.created_at)}
                     </p>
+                    {a.deadline && (
+                      <p className="text-amber-200/80 text-xs mt-1 inline-flex items-center gap-1">
+                        <Icon name="CalendarClock" size={12} />
+                        Срок подачи: {a.deadline}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {a.preview?.expert_score != null && (

@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Список грантов возвращается",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"today": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Один грант по slug",
+      "method": "GET",
+      "path": "/?slug=prezidentskie-granty-3-potok-2026",
+      "expectedStatus": 200,
+      "expectedBody": {"today": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Несуществующий slug -> 404",
+      "method": "GET",
+      "path": "/?slug=no-such-grant-xyz",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

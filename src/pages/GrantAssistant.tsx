@@ -18,6 +18,7 @@ import GrantHero from "@/components/grants/page/GrantHero";
 import GrantAiBanner from "@/components/grants/page/GrantAiBanner";
 import GrantForm, { LOADING_STEPS } from "@/components/grants/page/GrantForm";
 import GrantBenefits from "@/components/grants/page/GrantBenefits";
+import GrantsRegistry from "@/components/grants/GrantsRegistry";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -200,6 +201,7 @@ export default function GrantAssistant() {
               priceRub={priceRub}
               submit={submit}
             />
+            <GrantsRegistry />
             <GrantBenefits />
           </>
         )}

@@ -64,6 +64,11 @@ export default function GrantResult({ app, onRestart }: Props) {
             <Icon name="Check" size={12} /> Заявка подготовлена
           </span>
           <span className="text-white/45 text-xs">{app.grant_name}</span>
+          {app.deadline && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-200 bg-amber-500/15 border border-amber-500/30 rounded-full px-2.5 py-1">
+              <Icon name="CalendarClock" size={12} /> Срок подачи: {app.deadline}
+            </span>
+          )}
         </div>
         <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-3">
           {p.project_title || app.project_title || "Ваш проект"}
