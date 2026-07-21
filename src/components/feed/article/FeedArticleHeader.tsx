@@ -10,7 +10,19 @@ interface Props {
   isDocCover: boolean;
 }
 
+/**
+ * Статьи, у которых обложка (сертификат/баннер) должна вести не на саму
+ * картинку, а на внешнюю партнёрскую ссылку. Ключ — slug статьи.
+ */
+const COVER_EXTERNAL_LINKS: Record<string, string> = {
+  "grant-ai-ru-partnyorstvo-tochka-bank-marketplace":
+    "https://partner.tochka.com?referer1=6312223437",
+};
+
 export default function FeedArticleHeader({ article, meta, isDocCover }: Props) {
+  const coverLink = COVER_EXTERNAL_LINKS[article.slug];
+  const coverHref = coverLink || article.cover_url || "";
+  const isPartnerLink = Boolean(coverLink);
   return (
     <>
       {/* Хлебные крошки (видны всегда + BreadcrumbList JSON-LD) */}
@@ -85,10 +97,10 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
         isDocCover ? (
           // Вертикальный документ (сертификат): показываем целиком, без обрезки
           <a
-            href={article.cover_url}
+            href={coverHref}
             target="_blank"
             rel="noopener noreferrer"
-            title="Открыть сертификат в полном размере"
+            title={isPartnerLink ? "Перейти на сайт партнёра" : "Открыть сертификат в полном размере"}
             className="group block rounded-3xl overflow-hidden mb-6 border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-4 md:p-6"
           >
             <img
@@ -98,8 +110,10 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
               className="mx-auto w-auto max-w-full max-h-[80vh] rounded-xl shadow-2xl shadow-black/40 group-hover:scale-[1.01] transition-transform"
             />
             <span className="mt-3 flex items-center justify-center gap-1.5 text-white/55 group-hover:text-white/80 text-xs transition-colors">
-              <Icon name="ZoomIn" size={13} />
-              Нажмите, чтобы открыть сертификат в полном размере
+              <Icon name={isPartnerLink ? "ExternalLink" : "ZoomIn"} size={13} />
+              {isPartnerLink
+                ? "Нажмите на сертификат, чтобы перейти к партнёру"
+                : "Нажмите, чтобы открыть сертификат в полном размере"}
             </span>
           </a>
         ) : (

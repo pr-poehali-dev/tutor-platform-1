@@ -83,7 +83,7 @@ export default function FeedArticlePage() {
   // Обложка-документ (вертикальный сертификат) — показываем целиком, без обрезки 16:9.
   const isDocCover =
     !!article.cover_url &&
-    (/sertifikat|certificate|partnyorskie|partner/i.test(article.slug) ||
+    (/sertifikat|certificate|partnyorskie|partnyorstv|partner|tochka/i.test(article.slug) ||
       (article.tags || []).some((t) => /сертификат|партнёрств|партнерств/i.test(t)));
 
   const jsonLd = [
