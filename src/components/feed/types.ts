@@ -28,6 +28,7 @@ export interface FeedArticle {
   source_country?: string | null;
   audio_url?: string | null;
   video_url?: string | null;
+  is_pinned?: boolean;
 }
 
 export interface FeedListResponse {

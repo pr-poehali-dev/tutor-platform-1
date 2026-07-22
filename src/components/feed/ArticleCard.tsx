@@ -28,6 +28,9 @@ function isFresh(iso: string | null): boolean {
 const NEW_BADGE =
   "inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white shadow-lg shadow-fuchsia-500/30 animate-pulse";
 
+const PIN_BADGE =
+  "inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30";
+
 export default function ArticleCard({ article, variant = "default" }: Props) {
   const meta = CATEGORY_META[article.category];
   const isNew = isFresh(article.published_at);
@@ -79,6 +82,12 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
               </div>
             )}
             <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+              {article.is_pinned && (
+                <span className={PIN_BADGE}>
+                  <Icon name="Pin" size={10} />
+                  Новинка · закреплено
+                </span>
+              )}
               {isNew && (
                 <span className={NEW_BADGE}>
                   <Icon name="Sparkles" size={10} />
@@ -193,6 +202,12 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
           </div>
         )}
         <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+          {article.is_pinned && (
+            <span className={PIN_BADGE}>
+              <Icon name="Pin" size={10} />
+              Новинка · закреплено
+            </span>
+          )}
           {isNew && (
             <span className={NEW_BADGE}>
               <Icon name="Sparkles" size={10} />
