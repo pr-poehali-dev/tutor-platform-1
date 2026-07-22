@@ -92,8 +92,26 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
         )}
       </div>
 
-      {/* Обложка */}
-      {article.cover_url && (
+      {/* Видео к статье (рекламный/пояснительный ролик) */}
+      {article.video_url && (
+        <div className="rounded-3xl overflow-hidden mb-6 border border-white/10 bg-black">
+          <video
+            src={article.video_url}
+            poster={article.cover_url || undefined}
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="w-full aspect-video object-cover"
+            aria-label={`Видео к статье «${article.title}»`}
+          />
+        </div>
+      )}
+
+      {/* Обложка (если нет видео) */}
+      {!article.video_url && article.cover_url && (
         isDocCover ? (
           // Вертикальный документ (сертификат): показываем целиком, без обрезки
           <a

@@ -4,6 +4,7 @@ import { Course, GRADES, FORMAT_CONFIG, getCoursePrice, getAgeRating } from "./c
 import { getCourseReview } from "./courseReview";
 import { isCertificateEligible } from "@/lib/certificateEligibility";
 import CourseVoiceDialog from "./CourseVoiceDialog";
+import TutorVideoBubble from "./detail/TutorVideoBubble";
 import { useUser } from "@/context/UserDataContext";
 
 interface CourseCardProps {
@@ -187,9 +188,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
           className="group flex items-center gap-2.5 mb-4 p-3 bg-gradient-to-r from-purple-500/15 to-cyan-500/15 hover:from-purple-500/25 hover:to-cyan-500/25 rounded-xl border border-purple-500/25 hover:border-purple-400/50 transition-all text-left w-full"
         >
           <div className="relative flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-base">
-              🤖
-            </div>
+            <TutorVideoBubble seed={course.id} size={36} />
             {/* Микрофон-индикатор */}
             <div
               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-lg ring-2 ring-card/95"
@@ -199,7 +198,7 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-bold">Поговорить голосом</p>
+            <p className="text-white text-xs font-bold">Живой ведущий · поговорить голосом</p>
             <p className="text-purple-300 text-xs">Спроси что угодно — отвечу сразу</p>
           </div>
           <Icon

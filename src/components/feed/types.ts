@@ -27,6 +27,7 @@ export interface FeedArticle {
   source_language?: string | null;
   source_country?: string | null;
   audio_url?: string | null;
+  video_url?: string | null;
 }
 
 export interface FeedListResponse {
