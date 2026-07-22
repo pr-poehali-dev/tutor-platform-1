@@ -135,6 +135,18 @@ export default {
 					'25%': { transform: 'translateY(-2px) rotate(0.8deg)' },
 					'50%': { transform: 'translateY(0) rotate(0deg)' },
 					'75%': { transform: 'translateY(-1.5px) rotate(-0.8deg)' }
+				},
+				'tutor-breathe': {
+					'0%, 100%': { transform: 'scale(1) translateY(0)' },
+					'50%': { transform: 'scale(1.035) translateY(-1px)' }
+				},
+				'tutor-glow': {
+					'0%, 100%': { opacity: '0.45' },
+					'50%': { opacity: '0.85' }
+				},
+				'tutor-pulse': {
+					'0%, 100%': { transform: 'scale(1)', opacity: '1' },
+					'50%': { transform: 'scale(1.25)', opacity: '0.7' }
 				}
 			},
 			animation: {
@@ -150,6 +162,9 @@ export default {
 				'ksusha-idea': 'ksusha-idea 0.6s ease-in-out',
 				'ksusha-sad': 'ksusha-sad 1.5s ease-in-out infinite',
 				'ksusha-talk': 'ksusha-talk 1.6s ease-in-out infinite',
+				'tutor-breathe': 'tutor-breathe 4s ease-in-out infinite',
+				'tutor-glow': 'tutor-glow 3.2s ease-in-out infinite',
+				'tutor-pulse': 'tutor-pulse 2s ease-in-out infinite',
 			}
 		}
 	},

@@ -4,6 +4,7 @@ import { CourseDetail } from "@/components/courses/courseDetailsData";
 import CourseDetailValue from "./CourseDetailValue";
 import CourseDetailResult from "./CourseDetailResult";
 import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
+import AnimatedTutorAvatar from "./AnimatedTutorAvatar";
 
 interface Props {
   course: Course;
@@ -112,14 +113,20 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
         </div>
       </div>
 
-      {/* AI teacher badge */}
-      <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/25 rounded-2xl p-4 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-2xl flex-shrink-0">
-          🤖
-        </div>
+      {/* Ведущий курса — живой анимированный аватар + ИИ-методист */}
+      <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/25 rounded-2xl p-4 flex items-center gap-4">
+        <AnimatedTutorAvatar
+          seed={course.id}
+          size={56}
+          alt={`Ведущий курса «${course.title}»`}
+        />
         <div>
-          <p className="font-montserrat font-bold text-white text-sm">Преподаёт ИИ-методист</p>
-          <p className="text-white/55 text-xs">{course.tutorBadge} · доступен круглосуточно · подстраивается под твой уровень</p>
+          <p className="font-montserrat font-bold text-white text-sm">
+            Ведущий курса и ИИ-методист
+          </p>
+          <p className="text-white/55 text-xs">
+            {course.tutorBadge} · живой куратор ведёт поток, а ИИ-методист доступен круглосуточно и подстраивается под твой уровень
+          </p>
         </div>
       </div>
 
