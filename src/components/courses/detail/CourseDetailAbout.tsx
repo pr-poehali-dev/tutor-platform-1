@@ -5,6 +5,7 @@ import CourseDetailValue from "./CourseDetailValue";
 import CourseDetailResult from "./CourseDetailResult";
 import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 import AnimatedTutorAvatar from "./AnimatedTutorAvatar";
+import TutorIntroVideo from "./TutorIntroVideo";
 
 interface Props {
   course: Course;
@@ -129,6 +130,9 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
           </p>
         </div>
       </div>
+
+      {/* Знакомство с ведущим — говорящее видео */}
+      <TutorIntroVideo seed={course.id} courseTitle={course.title} />
 
       {/* Юридическая информация и соблюдение законов РФ */}
       <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-3">
