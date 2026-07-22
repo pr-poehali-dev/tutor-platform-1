@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET список школ с воронкой",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "update без id -> 400",
+      "method": "POST",
+      "path": "/",
+      "body": { "action": "update", "note": "тест" },
+      "expectedStatus": 400
+    },
+    {
+      "name": "upsert без name -> 400",
+      "method": "POST",
+      "path": "/",
+      "body": { "action": "upsert" },
+      "expectedStatus": 400
+    }
+  ]
+}
