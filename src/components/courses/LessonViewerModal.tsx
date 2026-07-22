@@ -18,6 +18,7 @@ interface Props {
   grade: string;              // 5-9 / 10-11 / ege / oge / 1-4
   lessonTitle: string;        // название урока из программы курса
   accent?: string;
+  courseId?: number;          // id курса — для выбора видео-ведущего
   // Вызывается один раз при завершении урока (фаза done) — для сохранения прогресса
   onComplete?: (correct: number, total: number) => void;
 }
@@ -46,7 +47,7 @@ const mapGrade = (g: string): string => {
 
 type Phase = "theory" | "examples" | "tasks" | "done";
 
-export default function LessonViewerModal({ open, onClose, subjectId, topic, grade, lessonTitle, accent = "#a855f7", onComplete }: Props) {
+export default function LessonViewerModal({ open, onClose, subjectId, topic, grade, lessonTitle, accent = "#a855f7", courseId = 0, onComplete }: Props) {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -412,6 +413,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           onPause={narrator.pause}
           onResume={narrator.resume}
           onStop={narrator.stop}
+          avatarSeed={courseId}
           onReplay={() => {
             const t = buildNarrationText();
             if (t) narrator.speak(t);

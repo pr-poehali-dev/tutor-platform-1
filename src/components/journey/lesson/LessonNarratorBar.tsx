@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { NARRATOR_VOICES } from "@/hooks/useLessonNarrator";
+import SpeakingTutorAvatar from "@/components/courses/detail/SpeakingTutorAvatar";
 
 interface Props {
   status: "idle" | "loading" | "playing" | "paused" | "error";
@@ -17,6 +18,8 @@ interface Props {
   onStop: () => void;
   onReplay: () => void;
   accent?: string;
+  /** Число для выбора видео-ведущего (обычно id курса). */
+  avatarSeed?: number;
 }
 
 type ViewMode = "mini" | "full";
@@ -40,11 +43,13 @@ export default function LessonNarratorBar({
   onStop,
   onReplay,
   accent = "#a855f7",
+  avatarSeed = 0,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<ViewMode>("mini"); // по умолчанию компактный режим
 
   const isActive = status === "playing" || status === "paused" || status === "loading";
+  const speaking = status === "playing";
   const voice = NARRATOR_VOICES.find((v) => v.id === voiceId) || NARRATOR_VOICES[0];
 
   // Свернутая «таблетка» если выключено — маленькая
@@ -72,8 +77,11 @@ export default function LessonNarratorBar({
         aria-label="Голосовой преподаватель (свёрнут)"
       >
         <div
-          className="flex items-center gap-1 bg-card/85 backdrop-blur-xl border border-white/15 rounded-full shadow-xl p-1 hover:bg-card/95 transition-colors"
+          className="flex items-center gap-1.5 bg-card/85 backdrop-blur-xl border border-white/15 rounded-full shadow-xl p-1 pl-1.5 hover:bg-card/95 transition-colors"
         >
+          {/* Говорящий видео-аватар ведущего — оживает во время речи */}
+          <SpeakingTutorAvatar speaking={speaking} seed={avatarSeed} size={40} round />
+
           {/* Главная кнопка play/pause */}
           {status === "playing" ? (
             <button
@@ -143,24 +151,9 @@ export default function LessonNarratorBar({
           className="px-3 py-2 flex items-center gap-2 border-b border-white/10"
           style={{ background: `linear-gradient(135deg, ${accent}25, transparent)` }}
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 relative"
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
-          >
-            <Icon
-              name={status === "playing" ? "Volume2" : status === "loading" ? "Loader2" : "Mic"}
-              size={16}
-              className={`text-white ${status === "loading" ? "animate-spin" : ""}`}
-            />
-            {status === "playing" && (
-              <span
-                className="absolute -inset-0.5 rounded-xl border-2 animate-ping"
-                style={{ borderColor: accent }}
-              />
-            )}
-          </div>
+          <SpeakingTutorAvatar speaking={speaking} seed={avatarSeed} size={40} />
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-xs leading-tight truncate">Преп. {voice.name}</p>
+            <p className="text-white font-bold text-xs leading-tight truncate">Ведущий · {voice.name}</p>
             <p className="text-white/55 text-[10px] leading-tight mt-0.5 truncate">
               {status === "playing" && "говорит…"}
               {status === "paused" && "пауза"}

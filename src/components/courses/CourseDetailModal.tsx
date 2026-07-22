@@ -222,6 +222,7 @@ export default function CourseDetailModal({ course, onClose, onStartWithAI }: Pr
           grade={course.grade}
           lessonTitle={openLesson.title}
           accent={subjectAccent}
+          courseId={course.id}
           onComplete={(correct, total) => {
             progress.completeLesson({
               courseId: course.id,

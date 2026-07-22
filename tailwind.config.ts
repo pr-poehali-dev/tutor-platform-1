@@ -147,6 +147,10 @@ export default {
 				'tutor-pulse': {
 					'0%, 100%': { transform: 'scale(1)', opacity: '1' },
 					'50%': { transform: 'scale(1.25)', opacity: '0.7' }
+				},
+				'sound-bar': {
+					'0%, 100%': { transform: 'scaleY(0.4)' },
+					'50%': { transform: 'scaleY(1)' }
 				}
 			},
 			animation: {
@@ -165,6 +169,7 @@ export default {
 				'tutor-breathe': 'tutor-breathe 4s ease-in-out infinite',
 				'tutor-glow': 'tutor-glow 3.2s ease-in-out infinite',
 				'tutor-pulse': 'tutor-pulse 2s ease-in-out infinite',
+				'sound-bar': 'sound-bar 0.6s ease-in-out infinite',
 			}
 		}
 	},
