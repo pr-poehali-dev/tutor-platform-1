@@ -5,6 +5,8 @@
 
 GET  /?action=directions   — публичный рейтинг направлений (для дашборда сайта)
 GET  /?action=dashboard    — расширенная сводка (метрики + последние сигналы)
+GET  /?action=sources_status — состояние источников (включён/ошибки/последний сбор)
+GET  /?action=resync       — публичный резервный сбор (реанимация + collect, rate-limit 30 мин)
 GET  /?action=cron         (Bearer CRON_SECRET) — полный цикл: collect + aggregate + статья
 POST /?action=collect      (X-Admin-Key) — собрать сигналы из источников
 POST /?action=aggregate    (X-Admin-Key) — пересчитать рейтинг и ИИ-инсайты
@@ -465,14 +467,33 @@ def list_max_channels(cur) -> list:
              'topic': r[4], 'emoji': r[5]} for r in cur.fetchall()]
 
 
+def revive_stale_sources(cur) -> int:
+    """Возвращает в строй источники, отключённые из-за временных ошибок.
+    RSS-ленты периодически падают (5xx/таймаут) и накапливают ошибки до авто-отключения.
+    Раз в прогон даём им второй шанс: сбрасываем счётчик ошибок и включаем снова,
+    если с последней ошибки прошло больше суток. Возвращает число реанимированных."""
+    cur.execute(
+        "UPDATE it_trend_sources SET enabled = TRUE, consecutive_errors = 0 "
+        "WHERE enabled = FALSE AND kind = 'rss' "
+        "AND (last_fetched_at IS NULL OR last_fetched_at < NOW() - INTERVAL '1 day')")
+    return cur.rowcount
+
+
 def handle_cron(cur) -> dict:
-    """Эталонный конвейер. Порядок фаз оптимизирован под таймаут функции:
-    сначала статья (приоритет, пока есть свежие данные с прошлого прогона),
-    затем сбор и быстрая агрегация без тяжёлых ИИ-инсайтов."""
+    """Эталонный конвейер. Сбор сигналов выполняется ВСЕГДА (он быстрый — RSS),
+    затем быстрая агрегация, и только потом — статья в Ленту по остаточному принципу
+    и своему лимиту (не чаще раза в 2 дня). Так рейтинг всегда обновляется свежими данными."""
     cur.execute("INSERT INTO it_trend_runs (kind, status) VALUES ('cron','running') RETURNING id")
     run_id = cur.fetchone()[0]
 
-    # ── Фаза 1. Статья в Ленту (приоритет) — не чаще раза в 2 дня ──
+    # ── Фаза 0. Реанимация источников, отключённых из-за временных сбоев ──
+    revived = revive_stale_sources(cur)
+
+    # ── Фаза 1. Сбор сигналов + быстрая агрегация (всегда) ──
+    collected = collect_signals(cur)
+    aggregate_directions(cur, with_ai=False)
+
+    # ── Фаза 2. Статья в Ленту — не чаще раза в 2 дня, после сбора ──
     article_created = 0
     article_info = None
     skip_reason = None
@@ -482,27 +503,22 @@ def handle_cron(cur) -> dict:
     need_article = cur.fetchone() is None
 
     if need_article:
-        # Статья требует всего времени функции под ответ ИИ — сбор пропускаем,
-        # данные актуальны с прошлого прогона. Сбор пройдёт на следующем тике.
         res = generate_trend_article(cur)
         if res.get('created'):
             article_created = 1
             article_info = res
         else:
             skip_reason = res.get('reason')
-        collected = 0
     else:
         skip_reason = 'свежая статья уже есть (лимит 2 дня)'
-        # ── Фаза 2. Сбор сигналов + быстрая агрегация ──
-        collected = collect_signals(cur)
-        aggregate_directions(cur, with_ai=False)
 
     cur.execute(
         "UPDATE it_trend_runs SET status='ok', signals_collected=%s, articles_created=%s, "
         "error_message=%s, finished_at=NOW() WHERE id=%s",
         (collected, article_created, (skip_reason or '')[:500], run_id))
-    return {'ok': True, 'signals_collected': collected, 'articles_created': article_created,
-            'article': article_info, 'skip_reason': skip_reason}
+    return {'ok': True, 'signals_collected': collected, 'sources_revived': revived,
+            'articles_created': article_created, 'article': article_info,
+            'skip_reason': skip_reason}
 
 
 def handle_tick(cur) -> dict:
@@ -594,10 +610,40 @@ def handler(event: dict, context) -> dict:
                        'last_signal_at': last_signal, 'recent_signals': recent,
                        'last_run': last_run})
 
+        if action == 'sources_status':
+            cur.execute(
+                "SELECT code, name, kind, enabled, consecutive_errors, last_fetch_count, "
+                "last_fetched_at, last_error FROM it_trend_sources ORDER BY enabled DESC, code")
+            srcs = [{'code': r[0], 'name': r[1], 'kind': r[2], 'enabled': r[3],
+                     'consecutive_errors': r[4], 'last_fetch_count': r[5],
+                     'last_fetched_at': r[6], 'last_error': r[7]} for r in cur.fetchall()]
+            conn.commit()
+            return ok({'sources': srcs, 'count': len(srcs)})
+
         if action == 'seed_if_empty':
             res = handle_seed_if_empty(cur)
             conn.commit()
             return ok(res)
+
+        if action == 'resync':
+            # Публичный резервный сбор: реанимируем источники, собираем сигналы
+            # и пересчитываем рейтинг. Rate-limit — не чаще раза в 30 минут.
+            cur.execute(
+                "SELECT 1 FROM it_trend_runs WHERE kind='resync' "
+                "AND started_at >= NOW() - INTERVAL '30 minutes' LIMIT 1")
+            if cur.fetchone():
+                conn.commit()
+                return ok({'ok': True, 'skipped': True, 'reason': 'недавно уже синхронизировали'})
+            cur.execute("INSERT INTO it_trend_runs (kind, status) VALUES ('resync','running') RETURNING id")
+            run_id = cur.fetchone()[0]
+            revived = revive_stale_sources(cur)
+            collected = collect_signals(cur)
+            aggregate_directions(cur, with_ai=False)
+            cur.execute(
+                "UPDATE it_trend_runs SET status='ok', signals_collected=%s, finished_at=NOW() WHERE id=%s",
+                (collected, run_id))
+            conn.commit()
+            return ok({'ok': True, 'sources_revived': revived, 'signals_collected': collected})
 
         if action == 'tick':
             res = handle_tick(cur)

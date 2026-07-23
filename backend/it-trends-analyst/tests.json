@@ -27,6 +27,12 @@
       "expectedStatus": 200
     },
     {
+      "name": "Sources status",
+      "method": "GET",
+      "path": "/?action=sources_status",
+      "expectedStatus": 200
+    },
+    {
       "name": "Cron requires auth",
       "method": "GET",
       "path": "/?action=cron",
