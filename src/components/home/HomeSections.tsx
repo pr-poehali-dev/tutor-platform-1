@@ -4,6 +4,7 @@ import HeroSection from "@/components/HeroSection";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
+import CareerProPromo from "@/components/home/CareerProPromo";
 import HowItWorks from "@/components/home/HowItWorks";
 import TutorPromo from "@/components/home/TutorPromo";
 import StudentResults from "@/components/home/StudentResults";
@@ -25,6 +26,7 @@ export default function HomeSections() {
       <main id="main-content">
         <HeroSection />
         <TutorPromo />
+        <CareerProPromo />
         <section className="max-w-6xl mx-auto px-4 py-6">
           <Suspense fallback={<SectionSkeleton />}>
             <MentorCompanion />
@@ -52,6 +54,9 @@ export default function HomeSections() {
 
       {/* 2. Точка входа — бесплатные курсы */}
       <FreeCoursesBlock />
+
+      {/* 2.3. Флагманская фишка — индивидуальный ИИ-курс под человека */}
+      <CareerProPromo />
 
       {/* 2.5. Как это работает — путь ученика в 4 шага */}
       <HowItWorks />
