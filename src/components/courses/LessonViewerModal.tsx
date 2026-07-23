@@ -34,6 +34,8 @@ const SUPPORTED_SUBJECTS = [
 
 const mapSubject = (s: string): string => {
   if (SUPPORTED_SUBJECTS.includes(s)) return s;
+  // Близкие соответствия для предметов без собственного набора тем.
+  if (s === "prompteng" || s === "neuroincome") return "ai";
   return "math";
 };
 
