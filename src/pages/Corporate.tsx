@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import Icon from "@/components/ui/icon";
 import CorporateLeadForm from "@/components/business/CorporateLeadForm";
@@ -89,9 +90,10 @@ export default function Corporate() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Корпоративное обучение сотрудников на ИИ · Продуктовая линейка для продаж — УЧИСЬПРО"
-        description="Обучаем отделы продаж и новых сотрудников вашей продуктовой линейке. ИИ-тренер, практика на реальных кейсах, автоматизация КП и работа с возражениями. Онбординг за 4 недели, масштабируется на всю команду."
+        title="Корпоративное обучение на ИИ — продуктовая линейка для продаж"
+        description="Обучаем отделы продаж и новичков вашей продуктовой линейке: ИИ-тренер, практика на кейсах, автоматизация КП, работа с возражениями. Онбординг за 4 недели."
         canonical={`${SITE_URL}/corporate`}
+        keywords="корпоративное обучение, обучение отдела продаж, обучение сотрудников продуктовой линейке, онбординг менеджеров, тренинг по продажам B2B, обучение на ИИ"
         image={HERO_IMG}
         jsonLd={[
           {
@@ -109,6 +111,11 @@ export default function Corporate() {
       <Header />
 
       <main className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-8 pb-16">
+        <Breadcrumbs
+          className="mb-6"
+          items={[{ label: "Главная", href: "/" }, { label: "Корпоративное обучение" }]}
+        />
+
         {/* HERO */}
         <section className="grid md:grid-cols-2 gap-8 items-center mb-20">
           <div>

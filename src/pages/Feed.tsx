@@ -8,7 +8,7 @@ import ArticleCard from "@/components/feed/ArticleCard";
 import { fetchFeed, seedIfEmpty, keepAlive, tickMaxChannel } from "@/components/feed/api";
 import { CATEGORY_META, FeedArticle, FeedCategory } from "@/components/feed/types";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type CatFilter = FeedCategory | "all";
 
@@ -122,7 +122,7 @@ export default function Feed() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Лента — наука, культура, ИИ и роботы | УЧИСЬПРО"
-        description="Свежие новости и статьи для школьников: научные открытия, культура, образование, нейросети и робототехника. Как в журнале «Хочу всё знать», только онлайн и с возможностью публиковать свои статьи."
+        description="Свежие новости и статьи для школьников: научные открытия, культура, образование, нейросети и роботы. Как журнал «Хочу всё знать», только онлайн."
         canonical={`${SITE_URL}/feed`}
         keywords="лента новостей для школьников, новости науки, новости культуры, минпросвещения, новости ии, новости роботов, хочу всё знать"
         jsonLd={jsonLd}

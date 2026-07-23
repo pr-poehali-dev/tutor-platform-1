@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import BestsellersBlock from "@/components/courses/BestsellersBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
@@ -95,10 +96,10 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Каталог курсов УЧИСЬПРО — школьная программа 1–11 классов, ОГЭ и ЕГЭ"
-        description="Полный каталог онлайн-курсов УЧИСЬПРО: математика, физика, русский, английский и другие предметы для 1–11 классов, подготовка к ОГЭ и ЕГЭ. Поиск, фильтры по классам и предметам."
-        canonical="https://xn--h1agdcde2c.xn--p1ai/courses"
-        keywords="каталог курсов, онлайн курсы школьникам, курсы 1-11 классы, подготовка к егэ курсы, подготовка к огэ курсы, математика онлайн, физика онлайн, английский онлайн"
+        title="Каталог курсов УЧИСЬПРО — школа, ЕГЭ/ОГЭ и обучение взрослых"
+        description="Каталог онлайн-курсов УЧИСЬПРО: школьные предметы 1–11 классов и подготовка к ОГЭ/ЕГЭ, а также курсы для взрослых — ИИ, продажи, бизнес. Поиск и фильтры."
+        canonical="https://учисьпро.рф/courses"
+        keywords="каталог курсов, онлайн курсы, курсы 1-11 классы, подготовка к егэ, подготовка к огэ, курсы для взрослых, курсы по ии, курсы по продажам"
         jsonLd={COURSES_JSON_LD}
       />
 
@@ -121,6 +122,10 @@ export default function CoursesPage() {
       <CoursesHeader />
 
       <main>
+        <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5">
+          <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Каталог курсов" }]} />
+        </div>
+
         {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
         {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
           <BestsellersBlock />
