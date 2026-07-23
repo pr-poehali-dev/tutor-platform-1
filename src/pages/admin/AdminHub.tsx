@@ -24,9 +24,9 @@ const SECTIONS: Section[] = [
   {
     group: "Отдел продаж",
     items: [
-      { label: "Заявки для бизнеса", path: "/admin/leads", icon: "Inbox", description: "Заявки со страницы «Для бизнеса»: статусы, контакты и заметки менеджера" },
+      { label: "Заявки для бизнеса", path: "/admin/leads", icon: "Inbox", description: "Заявки со страниц «Для бизнеса» и «Корпоративное обучение»: статусы, контакты и заметки менеджера" },
+      { label: "CRM: школы-клиенты", path: "/edtech-jobs", icon: "Building2", description: "База школ-партнёров и клиентов: контакты, статусы и работа отдела продаж" },
       { label: "Выплаты школам", path: "/admin/payouts", icon: "Wallet", description: "Заявки на вывод, реестр начислений и доля школ к выплате" },
-      { label: "Заявки на гранты", path: "/admin/grants", icon: "Target", description: "ИИ-помощник по грантам: все заявки, оплаты и выручка" },
       { label: "Дашборд продаж", path: "/admin/sales", icon: "BarChart3", description: "KPI, выручка, воронка, конверсия и динамика по дням" },
       { label: "База клиентов", path: "/admin/sales", icon: "Users", description: "Поиск по email/телефону, сегменты, LTV, история покупок" },
       { label: "База учебных заведений", path: "/admin/edu-institutions", icon: "Building2", description: "Онлайн-школы, колледжи и техникумы: контакты, радар-импорт и письмо о сотрудничестве" },

@@ -14,12 +14,6 @@ export default function ForBusinessHeader() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              to="/grants"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-violet-400/50 px-4 py-2 rounded-xl transition-colors"
-            >
-              <Icon name="Target" size={15} className="text-violet-300" /> Гранты
-            </Link>
-            <Link
               to="/school-builder"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-violet-400/50 px-4 py-2 rounded-xl transition-colors"
             >

@@ -42,7 +42,7 @@ export default function SiteFooter() {
               <li><Link to="/feed/partnyorskie-programmy-s-bankom-tochka" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрство с Точка Банк</Link></li>
               <li><Link to="/for-business" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🚀 Для бизнеса: своя онлайн-школа</Link></li>
               <li><Link to="/partners" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрам: сотрудничество для школ</Link></li>
-              <li><Link to="/grants" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🎯 ИИ-помощник по грантам</Link></li>
+              <li><Link to="/corporate" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🏭 Корпоративное обучение для компаний</Link></li>
               <li><Link to="/exam-checklist" className="text-rose-200 hover:text-rose-100 transition-colors font-bold">⏰ До ЕГЭ: чек-лист выпускника</Link></li>
               <li><Link to="/know-yourself" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">🪞 Познай себя: профориентация</Link></li>
               <li><Link to="/graduate" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Выпускник: подбор вуза и программа</Link></li>

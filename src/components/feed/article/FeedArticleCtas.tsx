@@ -21,11 +21,6 @@ export default function FeedArticleCtas({ article }: Props) {
   const isGrantAi =
     tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||
     /grant-ai/i.test(article.slug);
-  const isGrants =
-    !isGrantAi &&
-    (tags.some((t) => ["гранты", "заявка на грант", "конкурсы"].includes(t)) ||
-      /grant/i.test(article.slug));
-
   return (
     <>
       {/* CTA grant-ai.ru — переход на отдельный сервис по грантам */}
@@ -85,31 +80,6 @@ export default function FeedArticleCtas({ article }: Props) {
             >
               <Icon name="Calculator" size={18} />
               Открыть калькулятор прогноза
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA помощник по грантам — прямой переход к подготовке заявки */}
-      {isGrants && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🎯</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Подготовьте заявку на грант с ИИ
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              Опишите грант и проект — ИИ-эксперт соберёт готовый пакет: текст, смету, календарный план и оценку шансов.
-              Черновик бесплатно, полный пакет — дешевле рынка в десятки раз.
-            </p>
-            <Link
-              to="/grants"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-6 py-3 rounded-xl hover:scale-[1.02] transition-transform shadow-lg shadow-violet-500/20"
-            >
-              <Icon name="Wand2" size={18} />
-              Подготовить заявку
             </Link>
           </div>
         </div>
