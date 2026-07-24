@@ -1,0 +1,78 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Submit без имени возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=submit",
+      "body": {"contact_email": "test@example.com"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Submit без контактов возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=submit",
+      "body": {"contact_name": "Иван"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Список заявок без пина запрещён",
+      "method": "GET",
+      "path": "/?action=leads_list",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "get_plan без токена требует вход",
+      "method": "GET",
+      "path": "/?action=get_plan",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "coach_access без токена требует вход",
+      "method": "GET",
+      "path": "/?action=coach_access",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "journal_post без токена требует вход",
+      "method": "POST",
+      "path": "/?action=journal_post",
+      "body": {"content": "нет продаж, застрял в операционке"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "save_plan без токена требует вход",
+      "method": "POST",
+      "path": "/?action=save_plan",
+      "body": {"plan": {"course_title": "test"}},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

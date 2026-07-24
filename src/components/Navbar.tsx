@@ -46,6 +46,7 @@ const MENU_GROUPS: MenuGroup[] = [
     icon: "Rocket",
     items: [
       { label: "Профориентация PRO",  icon: "Fingerprint", path: "/career-pro",       desc: "Индивидуальный курс под вас · ИИ" },
+      { label: "Бизнес-тренер и коуч", icon: "TrendingUp", path: "/business-coach",   desc: "Стратегия роста бизнеса · ИИ" },
       { label: "Бизнес и MBA",        icon: "Briefcase", path: "/courses/business", desc: "Запуск продукта и онлайн-школы" },
       { label: "Продажи B2B",         icon: "Handshake", path: "/courses/sales",    desc: "Обучение отделов продаж" },
       { label: "Промпт-инженер",      icon: "Sparkles",  path: "/courses/prompteng", desc: "Профессия будущего с нуля" },

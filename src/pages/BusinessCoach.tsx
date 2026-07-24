@@ -1,0 +1,446 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import SiteFooter from "@/components/SiteFooter";
+import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
+import { visibleSteps, ChecklistStep } from "@/components/businessCoach/checklist";
+import { generatePlan, savePlan, getPlan, CareerPlan, Answers, Progress } from "@/components/businessCoach/api";
+import PlanView from "@/components/businessCoach/PlanView";
+import LeadForm from "@/components/businessCoach/LeadForm";
+import StoriesBlock from "@/components/businessCoach/StoriesBlock";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
+
+const SITE_URL = "https://учисьпро.рф";
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Чем эта программа отличается от обычного бизнес-курса?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Обычный курс одинаков для всех. Здесь вы проходите чек-лист, а ИИ-тренер собирает программу лично под вашу стадию бизнеса, цель, узкие места и нужные компетенции — стратегию, которая нужна именно вам.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Сколько стоит индивидуальная программа?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Индивидуальная программа от 10 000 ₽. Точная стоимость зависит от объёма и рассчитывается после прохождения чек-листа. Программу и 5-летнюю стратегию вы видите бесплатно.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Кому подходит бизнес-тренер и коуч?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Предпринимателям, самозанятым, экспертам и руководителям — от тех, кто только запускает дело, до владельцев действующего бизнеса, которые застряли в росте, тонут в операционке или хотят выйти на новый уровень дохода.",
+      },
+    },
+  ],
+};
+
+type Stage = "intro" | "checklist" | "loading" | "plan";
+
+export default function BusinessCoach() {
+  const { isAuthenticated } = useAuth();
+  const [stage, setStage] = useState<Stage>("intro");
+  const [stepIdx, setStepIdx] = useState(0);
+  const [answers, setAnswers] = useState<Answers>({});
+  const [plan, setPlan] = useState<CareerPlan | null>(null);
+  const [price, setPrice] = useState(10000);
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedProgress, setSavedProgress] = useState<Progress | undefined>(undefined);
+  const [planSaved, setPlanSaved] = useState(false);
+
+  // Авторизованный пользователь возвращается — подгружаем сохранённую стратегию и прогресс.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    getPlan().then((res) => {
+      if (cancelled || !res.ok || !res.has_plan || !res.plan) return;
+      setPlan(res.plan);
+      setSavedProgress(res.progress);
+      setPlanSaved(true);
+      setStage("plan");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const steps = visibleSteps(answers);
+  const safeIdx = Math.min(stepIdx, steps.length - 1);
+  const step = steps[safeIdx];
+  const total = steps.length;
+  const progress = Math.round(((safeIdx + (stage === "plan" ? 1 : 0)) / total) * 100);
+
+  const start = () => {
+    trackGoal("business_coach_start");
+    setStage("checklist");
+    setStepIdx(0);
+  };
+
+  const setAnswer = (key: string, value: string | string[]) =>
+    setAnswers((a) => ({ ...a, [key]: value }));
+
+  const canNext = (s: ChecklistStep): boolean => {
+    if (s.optional) return true;
+    const v = answers[s.key];
+    if (s.type === "multi") return Array.isArray(v) && v.length > 0;
+    return typeof v === "string" && v.trim().length > 0;
+  };
+
+  const next = async () => {
+    if (safeIdx < total - 1) {
+      setStepIdx(safeIdx + 1);
+      return;
+    }
+    setStage("loading");
+    setError(null);
+    const goal = (answers.goal as string) || "";
+    const res = await generatePlan(goal, answers);
+    if (!res.ok || !res.plan) {
+      setError(res.message || "Не удалось собрать программу, попробуйте ещё раз");
+      setStage("checklist");
+      return;
+    }
+    setPlan(res.plan);
+    setPrice(res.price || res.min_price || 10000);
+    trackGoal("business_coach_plan_ready");
+    setStage("plan");
+    // Авторизованному сразу сохраняем стратегию в кабинет — чтобы вернуться и отмечать прогресс.
+    if (isAuthenticated) {
+      savePlan(goal, res.plan).then((r) => {
+        if (r.ok) setPlanSaved(true);
+      });
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const back = () => {
+    if (safeIdx > 0) setStepIdx(safeIdx - 1);
+    else setStage("intro");
+  };
+
+  const restart = () => {
+    setAnswers({});
+    setPlan(null);
+    setShowForm(false);
+    setStepIdx(0);
+    setStage("intro");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <div className="min-h-screen bg-mesh font-golos text-white">
+      <Seo
+        title="Бизнес-тренер и коуч — индивидуальная стратегия роста с помощью ИИ"
+        description="Пройдите чек-лист — и ИИ-тренер соберёт индивидуальную программу развития и 5-летнюю стратегию роста вашего бизнеса, а живой наставник-коуч поможет не бросить. Для предпринимателей и руководителей от 10 000 ₽. Программа — бесплатно."
+        canonical={`${SITE_URL}/business-coach`}
+        keywords="бизнес-тренер, бизнес-коуч, наставник для предпринимателя, стратегия роста бизнеса, коуч по бизнесу, вырасти в доходе, выйти из операционки, масштабирование бизнеса, ии для бизнеса"
+        jsonLd={[FAQ_JSON_LD]}
+      />
+
+      <Header />
+
+      <main className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 pt-6 pb-16">
+        <Breadcrumbs
+          className="mb-6"
+          items={[{ label: "Главная", href: "/" }, { label: "Бизнес-тренер и коуч" }]}
+        />
+
+        {stage === "intro" && <Intro onStart={start} />}
+
+        {stage === "checklist" && (
+          <ChecklistStepView
+            step={step}
+            stepIdx={safeIdx}
+            total={total}
+            progress={progress}
+            answers={answers}
+            error={error}
+            onSet={setAnswer}
+            onNext={next}
+            onBack={back}
+            canNext={canNext(step)}
+            isLast={safeIdx === total - 1}
+          />
+        )}
+
+        {stage === "loading" && <LoadingView />}
+
+        {stage === "plan" && plan && (
+          <>
+            {showForm ? (
+              <LeadForm
+                goal={(answers.goal as string) || ""}
+                answers={answers}
+                plan={plan}
+                price={price}
+                onClose={() => setShowForm(false)}
+              />
+            ) : (
+              <PlanView
+                plan={plan}
+                price={price}
+                savedProgress={savedProgress}
+                planSaved={planSaved}
+                onApply={() => {
+                  trackGoal("business_coach_apply_click");
+                  setShowForm(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                onRestart={restart}
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+function Header() {
+  return (
+    <div className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
+      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">💼</div>
+          <span className="font-montserrat font-black text-base gradient-text-purple group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
+        </Link>
+        <Link
+          to="/courses"
+          className="hidden sm:inline-flex items-center gap-1.5 text-sm font-bold text-white border border-white/15 hover:border-purple-400/50 px-4 py-2 rounded-xl transition-colors"
+        >
+          <Icon name="Library" size={15} className="text-purple-300" /> Каталог курсов
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function Intro({ onStart }: { onStart: () => void }) {
+  const steps = [
+    { icon: "ClipboardList", title: "Пройдите чек-лист", text: "Вопросы о вашем деле, целях и узких местах. 2 минуты." },
+    { icon: "TrendingUp", title: "Получите стратегию на 5 лет", text: "ИИ определит направление роста и построит план с контрольными точками." },
+    { icon: "Compass", title: "Наставник поведёт вас", text: "Живой бизнес-коуч поможет не бросить и разберёт, почему бизнес не растёт." },
+  ];
+  return (
+    <div>
+      <div className="text-center mb-8">
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-purple-200 bg-purple-500/15 border border-purple-500/25 rounded-lg px-3 py-1 mb-4">
+          <Icon name="Briefcase" size={14} /> Бизнес-тренер и коуч
+        </span>
+        <h1 className="font-montserrat font-black text-3xl md:text-5xl leading-[1.05] mb-4">
+          Стратегия роста, <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">созданная под ваш бизнес</span>
+        </h1>
+        <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
+          Застряли в росте, тонете в операционке или не знаете, куда развивать дело? Пройдите чек-лист —
+          и ИИ-тренер подберёт направление, соберёт индивидуальную программу и 5-летнюю стратегию роста с
+          контрольными точками. А живой бизнес-наставник поможет не бросить.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3 mb-8">
+        {steps.map((s, i) => (
+          <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center mb-3">
+              <Icon name={s.icon} size={20} className="text-purple-300" />
+            </div>
+            <h3 className="font-bold text-white mb-1">{s.title}</h3>
+            <p className="text-white/55 text-sm">{s.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <StoriesBlock />
+
+      <div className="rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-600/15 to-cyan-500/10 p-6 md:p-8 text-center">
+        <p className="text-white/80 mb-1">Индивидуальная программа под ваш бизнес</p>
+        <div className="font-montserrat font-black text-3xl text-white mb-1">от 10 000 ₽</div>
+        <p className="text-white/45 text-xs mb-5">Персональную программу и стратегию вы увидите бесплатно — оплата только если решите работать.</p>
+        <button
+          onClick={onStart}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-xl hover:scale-[1.02] transition-transform glow-purple"
+        >
+          <Icon name="Rocket" size={18} /> Собрать мою стратегию
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LoadingView() {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center min-h-[300px] flex flex-col items-center justify-center">
+      <div className="w-16 h-16 rounded-2xl bg-purple-500/15 flex items-center justify-center mb-5">
+        <Icon name="Loader2" size={32} className="text-purple-300 animate-spin" />
+      </div>
+      <h3 className="font-montserrat font-black text-xl text-white mb-2">ИИ собирает вашу стратегию…</h3>
+      <p className="text-white/55 text-sm max-w-sm">
+        Анализируем ваши ответы и подбираем программу, точки роста и 5-летнюю стратегию — лично под ваш бизнес. Это займёт несколько секунд.
+      </p>
+    </div>
+  );
+}
+
+function ChecklistStepView({
+  step, stepIdx, total, progress, answers, error, onSet, onNext, onBack, canNext, isLast,
+}: {
+  step: ChecklistStep;
+  stepIdx: number;
+  total: number;
+  progress: number;
+  answers: Answers;
+  error: string | null;
+  onSet: (key: string, value: string | string[]) => void;
+  onNext: () => void;
+  onBack: () => void;
+  canNext: boolean;
+  isLast: boolean;
+}) {
+  const value = answers[step.key];
+
+  const toggleMulti = (v: string) => {
+    const arr = Array.isArray(value) ? value : [];
+    if (arr.includes(v)) {
+      onSet(step.key, arr.filter((x) => x !== v));
+    } else {
+      if (step.maxSelect && arr.length >= step.maxSelect) return;
+      onSet(step.key, [...arr, v]);
+    }
+  };
+  const multiLimitReached =
+    step.maxSelect != null && Array.isArray(value) && value.length >= step.maxSelect;
+
+  return (
+    <div>
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-xs text-white/45 mb-2">
+          <span>Шаг {stepIdx + 1} из {total}</span>
+          <span>{progress}%</span>
+        </div>
+        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full transition-all duration-300"
+            style={{ width: `${Math.max(8, (stepIdx / total) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
+        <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1">{step.question}</h2>
+        {step.hint && <p className="text-white/50 text-sm mb-5">{step.hint}</p>}
+        {!step.hint && <div className="mb-5" />}
+
+        {step.type === "text" && (
+          <textarea
+            value={typeof value === "string" ? value : ""}
+            onChange={(e) => onSet(step.key, e.target.value)}
+            placeholder={step.placeholder}
+            rows={3}
+            autoFocus
+            className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 resize-y"
+          />
+        )}
+
+        {step.type === "single" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {step.options!.map((o) => (
+              <button
+                key={o.value}
+                onClick={() => onSet(step.key, o.value)}
+                className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm text-left transition-all ${
+                  value === o.value
+                    ? "border-purple-400/60 bg-purple-500/15 text-white"
+                    : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25"
+                }`}
+              >
+                {o.emoji && <span className="text-lg">{o.emoji}</span>}
+                <span>{o.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {step.type === "multi" && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {step.options!.map((o) => {
+                const active = Array.isArray(value) && value.includes(o.value);
+                const disabled = !active && multiLimitReached;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => toggleMulti(o.value)}
+                    disabled={disabled}
+                    className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm text-left transition-all ${
+                      active
+                        ? "border-purple-400/60 bg-purple-500/15 text-white"
+                        : disabled
+                        ? "border-white/5 bg-white/[0.02] text-white/30 cursor-not-allowed"
+                        : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25"
+                    }`}
+                  >
+                    <span
+                      className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${
+                        active ? "bg-purple-500 border-purple-500" : "border-white/25"
+                      }`}
+                    >
+                      {active && <Icon name="Check" size={13} className="text-white" />}
+                    </span>
+                    {o.emoji && <span>{o.emoji}</span>}
+                    <span>{o.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {step.maxSelect && (
+              <p className="text-white/40 text-xs mt-2">
+                Выбрано {Array.isArray(value) ? value.length : 0} из {step.maxSelect}
+              </p>
+            )}
+          </>
+        )}
+
+        {error && <div className="mt-4 text-rose-300 text-sm">{error}</div>}
+
+        <div className="flex items-center gap-3 mt-6">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 text-white/60 hover:text-white text-sm px-4 py-3 rounded-xl border border-white/10 transition-colors"
+          >
+            <Icon name="ChevronLeft" size={16} /> Назад
+          </button>
+          <button
+            onClick={onNext}
+            disabled={!canNext}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.01] transition-transform"
+          >
+            {isLast ? (
+              <>
+                <Icon name="Sparkles" size={18} /> Собрать мою стратегию
+              </>
+            ) : (
+              <>
+                Далее <Icon name="ChevronRight" size={18} />
+              </>
+            )}
+          </button>
+        </div>
+        {step.optional && (
+          <p className="text-white/35 text-xs text-center mt-3">Этот вопрос можно пропустить</p>
+        )}
+      </div>
+    </div>
+  );
+}
