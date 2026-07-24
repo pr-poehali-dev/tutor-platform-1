@@ -178,9 +178,25 @@ export default function FeedArticlePage() {
 
         {/* Контент */}
         <article className="prose-feed text-white/85 text-base md:text-lg leading-relaxed space-y-4 mb-8">
-          {paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
+          {paragraphs.map((p, i) => {
+            const h2 = /^##\s+/.test(p);
+            const h3 = /^###\s+/.test(p);
+            if (h3) {
+              return (
+                <h3 key={i} className="font-montserrat font-bold text-white text-lg md:text-xl mt-6 mb-1">
+                  {p.replace(/^###\s+/, "")}
+                </h3>
+              );
+            }
+            if (h2) {
+              return (
+                <h2 key={i} className="font-montserrat font-black text-white text-xl md:text-2xl mt-8 mb-2">
+                  {p.replace(/^##\s+/, "")}
+                </h2>
+              );
+            }
+            return <p key={i}>{p}</p>;
+          })}
         </article>
 
         <FeedArticleCtas article={article} />
