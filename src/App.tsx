@@ -112,6 +112,7 @@ const ForBusiness = lazy(() => import("./pages/ForBusiness"));
 const Corporate = lazy(() => import("./pages/Corporate"));
 const CareerPro = lazy(() => import("./pages/CareerPro"));
 const BusinessCoach = lazy(() => import("./pages/BusinessCoach"));
+const FinAdvisor = lazy(() => import("./pages/FinAdvisor"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
 const Partners = lazy(() => import("./pages/Partners"));
 const EdTechJobs = lazy(() => import("./pages/EdTechJobs"));
@@ -173,6 +174,7 @@ const App = () => (
                     <Route path="/corporate" element={<Corporate />} />
                     <Route path="/career-pro" element={<CareerPro />} />
                     <Route path="/business-coach" element={<BusinessCoach />} />
+                    <Route path="/fin-advisor" element={<FinAdvisor />} />
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/partners" element={<Partners />} />
                     <Route path="/edtech-jobs" element={<EdTechJobs />} />

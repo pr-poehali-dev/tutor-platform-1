@@ -56,6 +56,17 @@ export default function FinAdvisor() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Прямая ссылка на форму анализа: /fin-advisor?start=1
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("start") === "1") {
+        setStage("form");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Авторизованный пользователь возвращается — подгружаем сохранённый анализ.
   useEffect(() => {
     if (!isAuthenticated) return;
