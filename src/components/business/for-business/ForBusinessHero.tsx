@@ -39,6 +39,24 @@ export default function ForBusinessHero() {
             <Icon name="Sparkles" size={18} className="text-violet-300" /> Собрать курс бесплатно
           </Link>
         </div>
+
+        {/* Плашки-гарантии */}
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
+          {[
+            { icon: "Video", text: "Демо за 25 минут" },
+            { icon: "Truck", text: "Бесплатный переезд" },
+            { icon: "Gift", text: "14 дней бесплатно" },
+            { icon: "ShieldCheck", text: "Без абонплаты" },
+          ].map((c) => (
+            <span
+              key={c.text}
+              className="inline-flex items-center gap-1.5 text-xs md:text-sm text-white/80 bg-white/[0.05] border border-white/10 rounded-full px-3.5 py-1.5"
+            >
+              <Icon name={c.icon} size={14} className="text-cyan-300" />
+              {c.text}
+            </span>
+          ))}
+        </div>
       </section>
 
     </>

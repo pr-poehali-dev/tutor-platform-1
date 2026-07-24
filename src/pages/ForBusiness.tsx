@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import ForBusinessHeader from "@/components/business/for-business/ForBusinessHeader";
 import ForBusinessHero from "@/components/business/for-business/ForBusinessHero";
+import ForBusinessGuarantees from "@/components/business/for-business/ForBusinessGuarantees";
 import ForBusinessExpertise from "@/components/business/for-business/ForBusinessExpertise";
 import ForBusinessValue from "@/components/business/for-business/ForBusinessValue";
 import ForBusinessEcosystem from "@/components/business/for-business/ForBusinessEcosystem";
@@ -32,10 +33,10 @@ export default function ForBusiness() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Конструктор онлайн-школ на ИИ — запустите школу за вечер"
-        description="White-label платформа для онлайн-школ и бизнеса: ИИ собирает курс за час, работает преподавателем 24/7, приём оплат из коробки. Свой бренд и домен."
+        title="Платформа для онлайн-школ на ИИ — запуск за вечер, без абонплаты"
+        description="Своя онлайн-школа под ключ: ИИ собирает курс за час и работает преподавателем 24/7, приём оплат из коробки, свой бренд и домен. Демо за 25 минут, бесплатный переезд, 14 дней бесплатно. Платите только процент с продаж."
         canonical={`${SITE_URL}/for-business`}
-        keywords="конструктор онлайн-школ, платформа для онлайн-школы, white label lms, своя онлайн-школа, создать онлайн-курс, аналог getcourse"
+        keywords="платформа для онлайн-школ, конструктор онлайн-школ, создать онлайн-школу под ключ, white label lms, своя онлайн-школа, создать онлайн-курс, аналог getcourse, аналог skillspace, платформа для онлайн обучения"
         jsonLd={[FOR_BUSINESS_FAQ_JSON_LD]}
       />
 
@@ -43,6 +44,7 @@ export default function ForBusiness() {
 
       <main className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-8 pb-16">
         <ForBusinessHero />
+        <ForBusinessGuarantees />
         <ForBusinessExpertise />
         <ForBusinessValue />
         <ForBusinessEcosystem />

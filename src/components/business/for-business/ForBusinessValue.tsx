@@ -54,6 +54,8 @@ const COMPARE: { feature: string; us: boolean; others: string }[] = [
   { feature: "Автопроверка домашних заданий", us: true, others: "Вручную" },
   { feature: "White-label: свой бренд и домен", us: true, others: "Часто на верхних тарифах" },
   { feature: "Приём оплат и выплаты из коробки", us: true, others: "Интеграции и доплаты" },
+  { feature: "0 ₽ абонплаты — только % с продаж", us: true, others: "3 000–10 000 ₽/мес всегда" },
+  { feature: "Бесплатный переезд со старой платформы", us: true, others: "Своими силами или платно" },
   { feature: "Запуск школы за один вечер", us: true, others: "Недели настройки" },
 ];
 
@@ -153,7 +155,10 @@ export default function ForBusinessValue() {
 
       {/* Сравнение */}
       <section className="mb-16">
-        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-8">Почему это эталон</h2>
+        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-2">Почему это выгоднее обычных платформ</h2>
+        <p className="text-white/55 text-center text-sm max-w-xl mx-auto mb-8">
+          GetCourse, Skillspace и другие дают только «место» за абонплату. Мы даём ИИ, который делает работу целой команды.
+        </p>
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden">
           <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-4 py-3 border-b border-white/10 text-xs font-bold text-white/50">
             <div>Возможность</div>
