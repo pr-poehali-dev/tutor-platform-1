@@ -6,8 +6,8 @@ const HERO_IMG =
 
 const STEPS = [
   { icon: "ClipboardList", text: "Отвечаете на чек-лист" },
-  { icon: "Sparkles", text: "ИИ собирает курс под вас" },
-  { icon: "GraduationCap", text: "Учитесь по своей программе" },
+  { icon: "Compass", text: "Наставник подбирает путь" },
+  { icon: "Rocket", text: "Получаете план действий" },
 ];
 
 export default function CareerProPromo() {
@@ -30,8 +30,9 @@ export default function CareerProPromo() {
               </span>
             </h2>
             <p className="text-white/70 text-sm md:text-base leading-snug mb-5 max-w-lg">
-              У каждого своя идеальная картина знаний. Пройдите чек-лист — и ИИ соберёт индивидуальный
-              курс под вашу цель, уровень и нужные навыки. Персональная программа — бесплатно.
+              Не можете определиться, чем заниматься? ИИ-наставник подберёт направление, соберёт
+              индивидуальный курс под вас и даст план действий с мотивирующим «пинком». Даже если
+              вам 30, 40 или 50+. Персональный план — бесплатно.
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 mb-6">

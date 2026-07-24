@@ -12,6 +12,20 @@ export default function PlanView({ plan, price, onApply, onRestart }: Props) {
   const priceFmt = price.toLocaleString("ru-RU");
   return (
     <div className="space-y-6">
+      {plan.recommended_direction && (
+        <div className="rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/12 to-purple-500/10 p-6 md:p-7">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-200 bg-cyan-500/15 border border-cyan-400/30 rounded-lg px-3 py-1 mb-3">
+            <Icon name="Compass" size={13} /> Наставник рекомендует
+          </div>
+          <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-2">
+            {plan.recommended_direction}
+          </h3>
+          {plan.direction_reason && (
+            <p className="text-white/70 text-sm md:text-base">{plan.direction_reason}</p>
+          )}
+        </div>
+      )}
+
       <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-600/15 to-cyan-500/10 p-6 md:p-8">
         <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-200 bg-purple-500/20 border border-purple-500/30 rounded-lg px-3 py-1 mb-4">
           <Icon name="Sparkles" size={13} /> Ваш индивидуальный курс
@@ -89,6 +103,47 @@ export default function PlanView({ plan, price, onApply, onRestart }: Props) {
             ))}
           </ul>
         </Section>
+      )}
+
+      {plan.action_plan && plan.action_plan.length > 0 && (
+        <Section icon="Footprints" title="Ваш план действий">
+          <div className="relative pl-6">
+            <span className="absolute left-[7px] top-1 bottom-1 w-px bg-gradient-to-b from-purple-500/60 to-cyan-500/40" aria-hidden="true" />
+            <div className="space-y-4">
+              {plan.action_plan.map((s, i) => (
+                <div key={i} className="relative">
+                  <span className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 border-2 border-[#140f28]" aria-hidden="true" />
+                  {s.when && (
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-300 mb-0.5">{s.when}</div>
+                  )}
+                  <div className="text-white font-semibold text-sm">{s.action}</div>
+                  {s.result && (
+                    <div className="text-white/50 text-xs mt-0.5 flex items-start gap-1.5">
+                      <Icon name="ArrowRight" size={13} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                      {s.result}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {plan.pep_talk && (
+        <div className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-500/12 to-rose-500/8 p-6 md:p-7">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-rose-400 flex items-center justify-center text-xl">
+              💪
+            </div>
+            <div>
+              <div className="font-montserrat font-black text-white text-lg mb-1.5">
+                Слово от вашего наставника
+              </div>
+              <p className="text-white/80 text-sm md:text-base leading-relaxed">{plan.pep_talk}</p>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="rounded-3xl border border-purple-500/30 bg-white/[0.03] p-6 md:p-8 text-center">

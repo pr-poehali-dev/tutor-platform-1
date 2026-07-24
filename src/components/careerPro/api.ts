@@ -8,7 +8,15 @@ export interface CareerModule {
   lessons: string[];
 }
 
+export interface ActionStep {
+  when: string;
+  action: string;
+  result: string;
+}
+
 export interface CareerPlan {
+  recommended_direction?: string;
+  direction_reason?: string;
   course_title: string;
   summary: string;
   target_role: string;
@@ -19,6 +27,8 @@ export interface CareerPlan {
   modules: CareerModule[];
   final_project: string;
   why_personal: string[];
+  action_plan?: ActionStep[];
+  pep_talk?: string;
   is_fallback?: boolean;
 }
 

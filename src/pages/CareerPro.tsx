@@ -4,7 +4,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import Icon from "@/components/ui/icon";
-import { CHECKLIST, ChecklistStep } from "@/components/careerPro/checklist";
+import { visibleSteps, ChecklistStep } from "@/components/careerPro/checklist";
 import { generatePlan, CareerPlan, Answers } from "@/components/careerPro/api";
 import PlanView from "@/components/careerPro/PlanView";
 import LeadForm from "@/components/careerPro/LeadForm";
@@ -54,9 +54,11 @@ export default function CareerPro() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const step = CHECKLIST[stepIdx];
-  const total = CHECKLIST.length;
-  const progress = Math.round(((stepIdx + (stage === "plan" ? 1 : 0)) / total) * 100);
+  const steps = visibleSteps(answers);
+  const safeIdx = Math.min(stepIdx, steps.length - 1);
+  const step = steps[safeIdx];
+  const total = steps.length;
+  const progress = Math.round(((safeIdx + (stage === "plan" ? 1 : 0)) / total) * 100);
 
   const start = () => {
     trackGoal("career_pro_start");
@@ -75,8 +77,8 @@ export default function CareerPro() {
   };
 
   const next = async () => {
-    if (stepIdx < total - 1) {
-      setStepIdx((i) => i + 1);
+    if (safeIdx < total - 1) {
+      setStepIdx(safeIdx + 1);
       return;
     }
     setStage("loading");
@@ -96,7 +98,7 @@ export default function CareerPro() {
   };
 
   const back = () => {
-    if (stepIdx > 0) setStepIdx((i) => i - 1);
+    if (safeIdx > 0) setStepIdx(safeIdx - 1);
     else setStage("intro");
   };
 
@@ -132,7 +134,7 @@ export default function CareerPro() {
         {stage === "checklist" && (
           <ChecklistStepView
             step={step}
-            stepIdx={stepIdx}
+            stepIdx={safeIdx}
             total={total}
             progress={progress}
             answers={answers}
@@ -141,7 +143,7 @@ export default function CareerPro() {
             onNext={next}
             onBack={back}
             canNext={canNext(step)}
-            isLast={stepIdx === total - 1}
+            isLast={safeIdx === total - 1}
           />
         )}
 
@@ -199,9 +201,9 @@ function Header() {
 
 function Intro({ onStart }: { onStart: () => void }) {
   const steps = [
-    { icon: "ClipboardList", title: "Пройдите чек-лист", text: "7 коротких вопросов о вашей цели, уровне и нужных навыках." },
-    { icon: "Sparkles", title: "ИИ соберёт курс", text: "За минуту получите персональную программу — только под вас." },
-    { icon: "GraduationCap", title: "Начните учиться", text: "Согласуем детали и запустим ваш индивидуальный курс." },
+    { icon: "ClipboardList", title: "Пройдите чек-лист", text: "Вопросы о ваших интересах, сильных сторонах и целях. 2 минуты." },
+    { icon: "Compass", title: "Наставник подберёт путь", text: "ИИ определит направление, соберёт курс и даст план действий." },
+    { icon: "Rocket", title: "Сделайте первый шаг", text: "Получите «волшебный пинок» и понятные шаги — начните сегодня." },
   ];
   return (
     <div>
@@ -213,8 +215,9 @@ function Intro({ onStart }: { onStart: () => void }) {
           Курс, который создан <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">только для вас</span>
         </h1>
         <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
-          У каждого своя идеальная картина знаний и навыков. Пройдите чек-лист — и ИИ соберёт индивидуальный
-          курс под вашу цель, уровень и время. Такого нет больше нигде.
+          Не можете определиться, чем заниматься? Пройдите чек-лист — и ИИ-наставник подберёт
+          направление, соберёт индивидуальный курс под вашу цель и даст пошаговый план действий.
+          Работает даже если вам 30, 40 или 50+. Такого нет больше нигде.
         </p>
       </div>
 
@@ -278,8 +281,15 @@ function ChecklistStepView({
 
   const toggleMulti = (v: string) => {
     const arr = Array.isArray(value) ? value : [];
-    onSet(step.key, arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+    if (arr.includes(v)) {
+      onSet(step.key, arr.filter((x) => x !== v));
+    } else {
+      if (step.maxSelect && arr.length >= step.maxSelect) return;
+      onSet(step.key, [...arr, v]);
+    }
   };
+  const multiLimitReached =
+    step.maxSelect != null && Array.isArray(value) && value.length >= step.maxSelect;
 
   return (
     <div>
@@ -332,32 +342,43 @@ function ChecklistStepView({
         )}
 
         {step.type === "multi" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {step.options!.map((o) => {
-              const active = Array.isArray(value) && value.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => toggleMulti(o.value)}
-                  className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm text-left transition-all ${
-                    active
-                      ? "border-purple-400/60 bg-purple-500/15 text-white"
-                      : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25"
-                  }`}
-                >
-                  <span
-                    className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${
-                      active ? "bg-purple-500 border-purple-500" : "border-white/25"
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {step.options!.map((o) => {
+                const active = Array.isArray(value) && value.includes(o.value);
+                const disabled = !active && multiLimitReached;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => toggleMulti(o.value)}
+                    disabled={disabled}
+                    className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm text-left transition-all ${
+                      active
+                        ? "border-purple-400/60 bg-purple-500/15 text-white"
+                        : disabled
+                        ? "border-white/5 bg-white/[0.02] text-white/30 cursor-not-allowed"
+                        : "border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25"
                     }`}
                   >
-                    {active && <Icon name="Check" size={13} className="text-white" />}
-                  </span>
-                  {o.emoji && <span>{o.emoji}</span>}
-                  <span>{o.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                    <span
+                      className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center ${
+                        active ? "bg-purple-500 border-purple-500" : "border-white/25"
+                      }`}
+                    >
+                      {active && <Icon name="Check" size={13} className="text-white" />}
+                    </span>
+                    {o.emoji && <span>{o.emoji}</span>}
+                    <span>{o.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {step.maxSelect && (
+              <p className="text-white/40 text-xs mt-2">
+                Выбрано {Array.isArray(value) ? value.length : 0} из {step.maxSelect}
+              </p>
+            )}
+          </>
         )}
 
         {error && <div className="mt-4 text-rose-300 text-sm">{error}</div>}
