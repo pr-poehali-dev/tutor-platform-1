@@ -246,6 +246,8 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
               <img
                 src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/596ca9cf-4e07-4206-bb13-0a8dbfc7c39d.jpg"
                 alt="Ученик занимается с ИИ-преподавателем на ноутбуке"
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-[4/3] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"></div>

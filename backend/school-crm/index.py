@@ -69,16 +69,12 @@ def fetch_all(cur) -> list:
 
 
 def fetch_one(cur, item_id: int):
-    cur.execute(f"SELECT {COLS} FROM {TABLE} WHERE id = {int(item_id)} LIMIT 1")
+    cur.execute(f"SELECT {COLS} FROM {TABLE} WHERE id = %s LIMIT 1", (int(item_id),))
     row = cur.fetchone()
     if not row:
         return None
     names = [c[0] for c in cur.description]
     return row_to_item(dict(zip(names, row)))
-
-
-def esc(v) -> str:
-    return str(v).replace("'", "''")
 
 
 def handle_get(cur) -> dict:
@@ -94,20 +90,24 @@ def handle_update(cur, conn, body) -> dict:
     if not item_id:
         return ok({'error': 'id required'}, 400)
     sets = []
+    vals = []
     if 'status' in body:
         st = body['status']
         if st not in STATUSES:
             return ok({'error': 'bad status'}, 400)
-        sets.append(f"status = '{esc(st)}'")
+        sets.append("status = %s")
+        vals.append(st)
     if 'note' in body:
-        sets.append(f"note = '{esc(body['note'])}'")
+        sets.append("note = %s")
+        vals.append(str(body['note'])[:5000])
     if 'services_offered' in body:
-        arr = json.dumps(body['services_offered'], ensure_ascii=False)
-        sets.append(f"services_offered = '{esc(arr)}'::jsonb")
+        sets.append("services_offered = %s::jsonb")
+        vals.append(json.dumps(body['services_offered'], ensure_ascii=False))
     if not sets:
         return ok({'error': 'nothing to update'}, 400)
     sets.append("updated_at = NOW()")
-    cur.execute(f"UPDATE {TABLE} SET {', '.join(sets)} WHERE id = {int(item_id)}")
+    vals.append(int(item_id))
+    cur.execute(f"UPDATE {TABLE} SET {', '.join(sets)} WHERE id = %s", tuple(vals))
     conn.commit()
     item = fetch_one(cur, item_id)
     if not item:
@@ -124,22 +124,25 @@ def handle_upsert(cur, conn, body) -> dict:
     item_id = body.get('id')
     if item_id:
         cur.execute(
-            f"UPDATE {TABLE} SET name='{esc(name)}', segment='{esc(body.get('segment','other'))}', "
-            f"subjects='{esc(subjects)}'::jsonb, city='{esc(body.get('city',''))}', "
-            f"contact_hint='{esc(body.get('contact_hint',''))}', site='{esc(body.get('site',''))}', "
-            f"fit_reason='{esc(body.get('fit_reason',''))}', services_offered='{esc(services)}'::jsonb, "
-            f"updated_at=NOW() WHERE id={int(item_id)}"
+            f"UPDATE {TABLE} SET name=%s, segment=%s, subjects=%s::jsonb, city=%s, "
+            f"contact_hint=%s, site=%s, fit_reason=%s, services_offered=%s::jsonb, "
+            f"updated_at=NOW() WHERE id=%s",
+            (name[:300], str(body.get('segment', 'other'))[:50], subjects,
+             str(body.get('city', ''))[:120], str(body.get('contact_hint', ''))[:300],
+             str(body.get('site', ''))[:300], str(body.get('fit_reason', ''))[:2000],
+             services, int(item_id)),
         )
         conn.commit()
         return ok({'item': fetch_one(cur, item_id)})
     cur.execute(
         f"INSERT INTO {TABLE} (name, segment, subjects, city, contact_hint, site, "
         f"fit_reason, services_offered, status, emoji, color) VALUES "
-        f"('{esc(name)}', '{esc(body.get('segment','other'))}', '{esc(subjects)}'::jsonb, "
-        f"'{esc(body.get('city',''))}', '{esc(body.get('contact_hint',''))}', "
-        f"'{esc(body.get('site',''))}', '{esc(body.get('fit_reason',''))}', "
-        f"'{esc(services)}'::jsonb, 'new', '{esc(body.get('emoji','🏫'))}', "
-        f"'{esc(body.get('color','from-purple-500 to-cyan-500'))}') RETURNING id"
+        f"(%s, %s, %s::jsonb, %s, %s, %s, %s, %s::jsonb, 'new', %s, %s) RETURNING id",
+        (name[:300], str(body.get('segment', 'other'))[:50], subjects,
+         str(body.get('city', ''))[:120], str(body.get('contact_hint', ''))[:300],
+         str(body.get('site', ''))[:300], str(body.get('fit_reason', ''))[:2000],
+         services, str(body.get('emoji', '🏫'))[:8],
+         str(body.get('color', 'from-purple-500 to-cyan-500'))[:120]),
     )
     new_id = cur.fetchone()[0]
     conn.commit()
@@ -150,7 +153,7 @@ def handle_delete(cur, conn, body) -> dict:
     item_id = body.get('id')
     if not item_id:
         return ok({'error': 'id required'}, 400)
-    cur.execute(f"DELETE FROM {TABLE} WHERE id={int(item_id)}")
+    cur.execute(f"DELETE FROM {TABLE} WHERE id=%s", (int(item_id),))
     conn.commit()
     return ok({'ok': True})
 

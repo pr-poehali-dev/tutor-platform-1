@@ -267,6 +267,8 @@ export default function LearningJourney() {
                 <img
                   src="https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/7bf89b3e-5e97-48ee-aaee-92f99b11c09d.jpg"
                   alt="Школьники занимаются вместе"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full aspect-[4/3] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"></div>

@@ -101,6 +101,35 @@ def _max_post(token, param, ident, text):
         return False
 
 
+def rate_limited(bucket_key, limit, window_sec):
+    """Простой rate-limiting по ключу (IP). True — лимит превышен.
+    Не роняет запрос при ошибке БД (fail-open)."""
+    conn = get_db()
+    if conn is None:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM ai_rate_limit WHERE ts < now() - (%s || ' seconds')::interval",
+                (str(window_sec),))
+            cur.execute(
+                "SELECT count(*) FROM ai_rate_limit WHERE bucket_key = %s "
+                "AND ts > now() - (%s || ' seconds')::interval",
+                (bucket_key[:120], str(window_sec)))
+            cnt = cur.fetchone()[0]
+            if cnt >= limit:
+                conn.commit()
+                return True
+            cur.execute("INSERT INTO ai_rate_limit (bucket_key) VALUES (%s)", (bucket_key[:120],))
+            conn.commit()
+            return False
+    except Exception as e:
+        print(f"[fin-advisor] rate_limit error: {type(e).__name__}")
+        return False
+    finally:
+        conn.close()
+
+
 def notify_max(text):
     token = os.environ.get('MAX_BOT_TOKEN', '')
     ident = os.environ.get('MAX_ADMIN_CHAT_ID', '')
@@ -428,11 +457,15 @@ def suggest_price(plan):
     return int(round(price / 500) * 500)
 
 
-def handle_generate(body):
+def handle_generate(body, client_ip=''):
     answers = body.get('answers') if isinstance(body.get('answers'), dict) else {}
     goal = (body.get('goal') or answers.get('goal') or '').strip()[:500]
     if not answers:
         return err('Заполните финансовые показатели', 400)
+
+    # Защита от абуза: не более 8 анализов за 10 минут с одного IP.
+    if client_ip and rate_limited(f'fin-advisor:generate:{client_ip}', 8, 600):
+        return err('Слишком много запросов. Попробуйте через несколько минут.', 429)
 
     metrics = compute_metrics(answers)
     messages = [
@@ -793,9 +826,10 @@ def handler(event: dict, context) -> dict:
     except Exception:
         body = {}
     action = (params.get('action') or body.get('action') or '').strip()
+    client_ip = ((event.get('requestContext') or {}).get('identity') or {}).get('sourceIp', '')
 
     if action == 'generate_plan' and method == 'POST':
-        return handle_generate(body)
+        return handle_generate(body, client_ip)
     if action == 'submit' and method == 'POST':
         return handle_submit(body)
     if action == 'leads_list' and method == 'GET':

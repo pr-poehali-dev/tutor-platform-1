@@ -40,10 +40,6 @@ def get_conn():
     return psycopg2.connect(dsn)
 
 
-def esc(s):
-    return str(s).replace("'", "''")
-
-
 def hash_pin(pin: str) -> str:
     """Хеш PIN-кода + соль = SHA256."""
     salt = 'uchispro_kids_v1'
@@ -71,7 +67,8 @@ def get_progress(uid: str) -> dict:
             cur.execute(
                 f"SELECT stars, completed_activities, streak_days, last_activity_date, "
                 f"total_answers, correct_answers FROM {SCHEMA}.kids_progress "
-                f"WHERE user_uid = '{esc(uid)}'"
+                f"WHERE user_uid = %s",
+                (uid,),
             )
             row = cur.fetchone()
             if not row:
@@ -104,24 +101,22 @@ def save_progress(uid: str, data: dict) -> dict:
     total = int(data.get('totalAnswers') or 0)
     correct = int(data.get('correctAnswers') or 0)
     completed_json = json.dumps(completed)
-    last_date_sql = "NULL" if not last_date else "'" + esc(last_date) + "'"
 
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            sql = (
-                "INSERT INTO " + SCHEMA + ".kids_progress "
+            cur.execute(
+                f"INSERT INTO {SCHEMA}.kids_progress "
                 "(user_uid, stars, completed_activities, streak_days, last_activity_date, "
-                "total_answers, correct_answers, updated_at) VALUES ("
-                "'" + esc(uid) + "', " + str(stars) + ", '" + esc(completed_json) + "'::jsonb, "
-                + str(streak) + ", " + last_date_sql + ", " + str(total) + ", " + str(correct) + ", NOW()) "
+                "total_answers, correct_answers, updated_at) VALUES "
+                "(%s, %s, %s::jsonb, %s, %s, %s, %s, NOW()) "
                 "ON CONFLICT (user_uid) DO UPDATE SET "
                 "stars = EXCLUDED.stars, completed_activities = EXCLUDED.completed_activities, "
                 "streak_days = EXCLUDED.streak_days, last_activity_date = EXCLUDED.last_activity_date, "
                 "total_answers = EXCLUDED.total_answers, correct_answers = EXCLUDED.correct_answers, "
-                "updated_at = NOW()"
+                "updated_at = NOW()",
+                (uid, stars, completed_json, streak, last_date or None, total, correct),
             )
-            cur.execute(sql)
             conn.commit()
         return {'saved': True}
     finally:
@@ -139,7 +134,8 @@ def get_parent_controls(uid: str) -> dict:
                 f"SELECT pin_hash, consent_436fz, consent_date, child_age_band, "
                 f"daily_limit_minutes, bedtime_lock_enabled, bedtime_from, bedtime_to, "
                 f"block_purchases FROM {SCHEMA}.kids_parent_controls "
-                f"WHERE user_uid = '{esc(uid)}'"
+                f"WHERE user_uid = %s",
+                (uid,),
             )
             row = cur.fetchone()
             if not row:
@@ -187,11 +183,11 @@ def set_parent_controls(uid: str, data: dict, pin: str = None) -> dict:
     bedtime_to = (data.get('bedtimeTo') or '07:00')[:5]
     block_purchases = bool(data.get('blockPurchases', True))
 
-    set_pin_sql = ''
+    pin_hash_val = None
     if pin:
         if not (pin.isdigit() and 4 <= len(pin) <= 6):
             return {'error': 'PIN должен быть 4-6 цифр'}
-        set_pin_sql = f", pin_hash = '{hash_pin(pin)}'"
+        pin_hash_val = hash_pin(pin)
 
     consent_date_sql = 'NOW()' if consent else 'NULL'
 
@@ -199,31 +195,41 @@ def set_parent_controls(uid: str, data: dict, pin: str = None) -> dict:
     try:
         with conn.cursor() as cur:
             # Проверяем существование
-            cur.execute(f"SELECT 1 FROM {SCHEMA}.kids_parent_controls WHERE user_uid = '{esc(uid)}'")
+            cur.execute(f"SELECT 1 FROM {SCHEMA}.kids_parent_controls WHERE user_uid = %s", (uid,))
             exists = cur.fetchone()
             if exists:
+                set_pin_sql = ", pin_hash = %s" if pin_hash_val else ""
+                params = [consent, age_band, daily_limit, bedtime_lock,
+                          bedtime_from, bedtime_to, block_purchases]
+                if pin_hash_val:
+                    params.append(pin_hash_val)
+                params.append(uid)
                 cur.execute(
                     f"UPDATE {SCHEMA}.kids_parent_controls SET "
-                    f"consent_436fz = {consent}, consent_date = {consent_date_sql}, "
-                    f"child_age_band = '{esc(age_band)}', daily_limit_minutes = {daily_limit}, "
-                    f"bedtime_lock_enabled = {bedtime_lock}, "
-                    f"bedtime_from = '{esc(bedtime_from)}', bedtime_to = '{esc(bedtime_to)}', "
-                    f"block_purchases = {block_purchases}, updated_at = NOW() "
+                    f"consent_436fz = %s, consent_date = {consent_date_sql}, "
+                    f"child_age_band = %s, daily_limit_minutes = %s, "
+                    f"bedtime_lock_enabled = %s, "
+                    f"bedtime_from = %s, bedtime_to = %s, "
+                    f"block_purchases = %s, updated_at = NOW()"
                     f"{set_pin_sql} "
-                    f"WHERE user_uid = '{esc(uid)}'"
+                    f"WHERE user_uid = %s",
+                    tuple(params),
                 )
             else:
                 # Для нового родителя PIN не обязателен, но если передан — сохраняем
-                pin_col = 'pin_hash, ' if pin else ''
-                pin_val = f"'{hash_pin(pin)}', " if pin else ''
+                pin_col = 'pin_hash, ' if pin_hash_val else ''
+                pin_ph = '%s, ' if pin_hash_val else ''
+                params_final = ([uid] + ([pin_hash_val] if pin_hash_val else []) +
+                                [consent, age_band, daily_limit, bedtime_lock,
+                                 bedtime_from, bedtime_to, block_purchases])
                 cur.execute(
                     f"INSERT INTO {SCHEMA}.kids_parent_controls "
                     f"(user_uid, {pin_col}consent_436fz, consent_date, child_age_band, "
                     f"daily_limit_minutes, bedtime_lock_enabled, bedtime_from, bedtime_to, "
                     f"block_purchases) VALUES ("
-                    f"'{esc(uid)}', {pin_val}{consent}, {consent_date_sql}, '{esc(age_band)}', "
-                    f"{daily_limit}, {bedtime_lock}, '{esc(bedtime_from)}', '{esc(bedtime_to)}', "
-                    f"{block_purchases})"
+                    f"%s, {pin_ph}%s, {consent_date_sql}, %s, "
+                    f"%s, %s, %s, %s, %s)",
+                    tuple(params_final),
                 )
             conn.commit()
         return {'saved': True}
@@ -240,7 +246,8 @@ def verify_pin(uid: str, pin: str) -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT pin_hash FROM {SCHEMA}.kids_parent_controls "
-                f"WHERE user_uid = '{esc(uid)}'"
+                f"WHERE user_uid = %s",
+                (uid,),
             )
             row = cur.fetchone()
             if not row or not row[0]:
@@ -261,7 +268,8 @@ def get_screen_time(uid: str) -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT minutes_used FROM {SCHEMA}.kids_screen_time "
-                f"WHERE user_uid = '{esc(uid)}' AND day = '{today}'"
+                f"WHERE user_uid = %s AND day = %s",
+                (uid, today),
             )
             row = cur.fetchone()
             used = row[0] if row else 0
@@ -270,7 +278,8 @@ def get_screen_time(uid: str) -> dict:
             cur.execute(
                 f"SELECT child_age_band, daily_limit_minutes, bedtime_lock_enabled, "
                 f"bedtime_from, bedtime_to FROM {SCHEMA}.kids_parent_controls "
-                f"WHERE user_uid = '{esc(uid)}'"
+                f"WHERE user_uid = %s",
+                (uid,),
             )
             ctl = cur.fetchone()
             if ctl:
@@ -316,10 +325,11 @@ def add_screen_time(uid: str, minutes: int) -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 f"INSERT INTO {SCHEMA}.kids_screen_time (user_uid, day, minutes_used, last_session_at) "
-                f"VALUES ('{esc(uid)}', '{today}', {minutes}, NOW()) "
+                f"VALUES (%s, %s, %s, NOW()) "
                 f"ON CONFLICT (user_uid, day) DO UPDATE SET "
-                f"minutes_used = {SCHEMA}.kids_screen_time.minutes_used + {minutes}, "
-                f"last_session_at = NOW()"
+                f"minutes_used = {SCHEMA}.kids_screen_time.minutes_used + %s, "
+                f"last_session_at = NOW()",
+                (uid, today, minutes, minutes),
             )
             conn.commit()
         return get_screen_time(uid)
