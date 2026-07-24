@@ -1,14 +1,18 @@
 import Icon from "@/components/ui/icon";
-import { CareerPlan } from "./api";
+import { CareerPlan, Progress } from "./api";
+import FiveYearPlanView from "./FiveYearPlanView";
+import CoachJournal from "./CoachJournal";
 
 interface Props {
   plan: CareerPlan;
   price: number;
   onApply: () => void;
   onRestart: () => void;
+  savedProgress?: Progress;
+  planSaved?: boolean;
 }
 
-export default function PlanView({ plan, price, onApply, onRestart }: Props) {
+export default function PlanView({ plan, price, onApply, onRestart, savedProgress, planSaved }: Props) {
   const priceFmt = price.toLocaleString("ru-RU");
   return (
     <div className="space-y-6">
@@ -145,6 +149,21 @@ export default function PlanView({ plan, price, onApply, onRestart }: Props) {
           </div>
         </div>
       )}
+
+      {plan.five_year_plan && plan.five_year_plan.years?.length > 0 && (
+        <FiveYearPlanView
+          fiveYear={plan.five_year_plan}
+          initialProgress={savedProgress}
+          canSaveProgress={planSaved}
+        />
+      )}
+
+      <div>
+        <h3 className="flex items-center gap-2 font-montserrat font-black text-lg text-white mb-3">
+          <Icon name="Compass" size={18} className="text-amber-300" /> Личный наставник-коуч
+        </h3>
+        <CoachJournal />
+      </div>
 
       <div className="rounded-3xl border border-purple-500/30 bg-white/[0.03] p-6 md:p-8 text-center">
         <p className="text-white/60 text-sm mb-1">Стоимость вашего индивидуального курса</p>

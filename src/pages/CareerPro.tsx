@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import Icon from "@/components/ui/icon";
+import { useAuth } from "@/context/AuthContext";
 import { visibleSteps, ChecklistStep } from "@/components/careerPro/checklist";
-import { generatePlan, CareerPlan, Answers } from "@/components/careerPro/api";
+import { generatePlan, savePlan, getPlan, CareerPlan, Answers, Progress } from "@/components/careerPro/api";
 import PlanView from "@/components/careerPro/PlanView";
 import LeadForm from "@/components/careerPro/LeadForm";
 import StoriesBlock from "@/components/careerPro/StoriesBlock";
@@ -47,6 +48,7 @@ const FAQ_JSON_LD = {
 type Stage = "intro" | "checklist" | "loading" | "plan";
 
 export default function CareerPro() {
+  const { isAuthenticated } = useAuth();
   const [stage, setStage] = useState<Stage>("intro");
   const [stepIdx, setStepIdx] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
@@ -54,6 +56,24 @@ export default function CareerPro() {
   const [price, setPrice] = useState(10000);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedProgress, setSavedProgress] = useState<Progress | undefined>(undefined);
+  const [planSaved, setPlanSaved] = useState(false);
+
+  // Авторизованный пользователь возвращается — подгружаем сохранённый план и прогресс.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    getPlan().then((res) => {
+      if (cancelled || !res.ok || !res.has_plan || !res.plan) return;
+      setPlan(res.plan);
+      setSavedProgress(res.progress);
+      setPlanSaved(true);
+      setStage("plan");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   const steps = visibleSteps(answers);
   const safeIdx = Math.min(stepIdx, steps.length - 1);
@@ -95,6 +115,12 @@ export default function CareerPro() {
     setPrice(res.price || res.min_price || 10000);
     trackGoal("career_pro_plan_ready");
     setStage("plan");
+    // Авторизованному сразу сохраняем план в кабинет — чтобы вернуться и отмечать прогресс.
+    if (isAuthenticated) {
+      savePlan(goal, res.plan).then((r) => {
+        if (r.ok) setPlanSaved(true);
+      });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -164,6 +190,8 @@ export default function CareerPro() {
               <PlanView
                 plan={plan}
                 price={price}
+                savedProgress={savedProgress}
+                planSaved={planSaved}
                 onApply={() => {
                   trackGoal("career_pro_apply_click");
                   setShowForm(true);
@@ -203,8 +231,8 @@ function Header() {
 function Intro({ onStart }: { onStart: () => void }) {
   const steps = [
     { icon: "ClipboardList", title: "Пройдите чек-лист", text: "Вопросы о ваших интересах, сильных сторонах и целях. 2 минуты." },
-    { icon: "Compass", title: "Наставник подберёт путь", text: "ИИ определит направление, соберёт курс и даст план действий." },
-    { icon: "Rocket", title: "Сделайте первый шаг", text: "Получите «волшебный пинок» и понятные шаги — начните сегодня." },
+    { icon: "Milestone", title: "Получите план на 5 лет", text: "ИИ определит направление и построит план успеха с контрольными точками." },
+    { icon: "Compass", title: "Наставник поведёт вас", text: "Живой коуч-психолог поможет не бросить и разберёт, почему не получается." },
   ];
   return (
     <div>
@@ -217,8 +245,8 @@ function Intro({ onStart }: { onStart: () => void }) {
         </h1>
         <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
           Не можете определиться, чем заниматься? Пройдите чек-лист — и ИИ-наставник подберёт
-          направление, соберёт индивидуальный курс под вашу цель и даст пошаговый план действий.
-          Для всех от 17 до 45 лет — школьников-выпускников, студентов и взрослых. Такого нет больше нигде.
+          направление, соберёт индивидуальный курс и личный план успеха на 5 лет с контрольными
+          точками. А живой наставник-коуч поможет не бросить. Для всех от 17 до 45 лет.
         </p>
       </div>
 
