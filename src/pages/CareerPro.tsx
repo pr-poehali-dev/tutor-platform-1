@@ -8,6 +8,7 @@ import { visibleSteps, ChecklistStep } from "@/components/careerPro/checklist";
 import { generatePlan, CareerPlan, Answers } from "@/components/careerPro/api";
 import PlanView from "@/components/careerPro/PlanView";
 import LeadForm from "@/components/careerPro/LeadForm";
+import StoriesBlock from "@/components/careerPro/StoriesBlock";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -217,7 +218,7 @@ function Intro({ onStart }: { onStart: () => void }) {
         <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto">
           Не можете определиться, чем заниматься? Пройдите чек-лист — и ИИ-наставник подберёт
           направление, соберёт индивидуальный курс под вашу цель и даст пошаговый план действий.
-          Работает даже если вам 30, 40 или 50+. Такого нет больше нигде.
+          Для всех от 17 до 45 лет — школьников-выпускников, студентов и взрослых. Такого нет больше нигде.
         </p>
       </div>
 
@@ -232,6 +233,8 @@ function Intro({ onStart }: { onStart: () => void }) {
           </div>
         ))}
       </div>
+
+      <StoriesBlock />
 
       <div className="rounded-3xl border border-purple-500/25 bg-gradient-to-br from-purple-600/15 to-cyan-500/10 p-6 md:p-8 text-center">
         <p className="text-white/80 mb-1">Индивидуальный курс под вашу цель</p>
