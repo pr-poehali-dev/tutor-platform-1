@@ -4,11 +4,12 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import Icon from "@/components/ui/icon";
-import { generateTrack, Track } from "@/components/orchestrator/api";
+import { generateTrack, Track, ResourceItem } from "@/components/orchestrator/api";
 import TrackView from "@/components/orchestrator/TrackView";
 import LeadForm from "@/components/orchestrator/LeadForm";
 import StoriesBlock from "@/components/orchestrator/StoriesBlock";
 import Dashboard from "@/components/orchestrator/Dashboard";
+import ResourcePlanner from "@/components/orchestrator/ResourcePlanner";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -44,7 +45,7 @@ const FAQ_JSON_LD = {
   ],
 };
 
-type Stage = "intro" | "form" | "loading" | "track" | "dashboard";
+type Stage = "intro" | "form" | "loading" | "track" | "dashboard" | "resources";
 
 export default function Orchestrator() {
   const [stage, setStage] = useState<Stage>("intro");
@@ -52,7 +53,20 @@ export default function Orchestrator() {
   const [brief, setBrief] = useState("");
   const [track, setTrack] = useState<Track | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [hireNote, setHireNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // Открыть заявку с предзаполненной задачей под подбор внешнего исполнителя
+  const openHire = (item: ResourceItem) => {
+    trackGoal("orchestrator_hire_click");
+    const note = `Нужен подбор внешнего исполнителя под задачу: «${item.task}».` +
+      (item.hiring?.profile ? `\nПрофиль: ${item.hiring.profile}` : "") +
+      (item.hiring?.budget ? `\nБюджет: ${item.hiring.budget}` : "");
+    setHireNote(note);
+    setShowForm(true);
+    setStage("track");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Возврат после оплаты → сразу дашборд
   useEffect(() => {
@@ -111,7 +125,13 @@ export default function Orchestrator() {
       <main className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 pt-6 pb-16">
         <Breadcrumbs className="mb-6" items={[{ label: "Главная", href: "/" }, { label: "Оркестратор" }]} />
 
-        {stage === "intro" && <Intro onStart={start} onDashboard={() => setStage("dashboard")} />}
+        {stage === "intro" && (
+          <Intro
+            onStart={start}
+            onDashboard={() => setStage("dashboard")}
+            onResources={() => { trackGoal("orchestrator_resources_open"); setStage("resources"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          />
+        )}
 
         {stage === "form" && (
           <FormView role={role} brief={brief} error={error} setRole={setRole} setBrief={setBrief} onGenerate={generate} onDashboard={() => setStage("dashboard")} />
@@ -122,16 +142,27 @@ export default function Orchestrator() {
         {stage === "track" && track && (
           <>
             {showForm ? (
-              <LeadForm roleTitle={role} brief={brief} track={track} onClose={() => setShowForm(false)} />
+              <LeadForm roleTitle={role} brief={brief} track={track} initialMessage={hireNote} onClose={() => { setShowForm(false); setHireNote(""); }} />
             ) : (
               <TrackView
                 track={track}
                 onApply={() => { trackGoal("orchestrator_apply_click"); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 onRestart={restart}
                 onOpenDashboard={() => { setStage("dashboard"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onPlanResources={() => { trackGoal("orchestrator_resources_open"); setStage("resources"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
             )}
           </>
+        )}
+
+        {stage === "resources" && (
+          <ResourcePlanner
+            roleTitle={role}
+            brief={brief}
+            track={track}
+            onBack={() => { setStage(track ? "track" : "intro"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onHire={openHire}
+          />
         )}
 
         {stage === "dashboard" && (
@@ -165,7 +196,7 @@ function Header() {
   );
 }
 
-function Intro({ onStart, onDashboard }: { onStart: () => void; onDashboard: () => void }) {
+function Intro({ onStart, onDashboard, onResources }: { onStart: () => void; onDashboard: () => void; onResources: () => void }) {
   const steps = [
     { icon: "SlidersHorizontal", title: "Опишите роль и проект", text: "Фронтендер, копирайтер, менеджер продаж — и специфику задачи." },
     { icon: "Wand2", title: "ИИ соберёт трек адаптации", text: "Навыки, входной контроль, онбординг по дням, задачи с критериями." },
@@ -197,6 +228,28 @@ function Intro({ onStart, onDashboard }: { onStart: () => void; onDashboard: () 
             <p className="text-white/55 text-sm">{s.text}</p>
           </div>
         ))}
+      </div>
+
+      {/* Планировщик ресурсов: сами / ИИ / внешний */}
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-7 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex-1">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-200 bg-violet-500/15 border border-violet-400/25 rounded-lg px-3 py-1 mb-2">
+              <Icon name="Split" size={13} /> Планировщик ресурсов
+            </span>
+            <h3 className="font-montserrat font-black text-white text-xl mb-1">Что сделать самим, а кого нанять</h3>
+            <p className="text-white/60 text-sm">
+              Перечислите задачи проекта — ИИ честно разложит их на «своими силами», «силами ИИ» и «нужен внешний
+              спец», а для внешних соберёт готовую вакансию с профилем, бюджетом и вопросами на собес.
+            </p>
+          </div>
+          <button
+            onClick={onResources}
+            className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-white/[0.06] border border-violet-400/30 text-white font-bold px-6 py-3.5 rounded-xl hover:bg-violet-500/15 transition-colors"
+          >
+            <Icon name="Split" size={18} className="text-violet-300" /> Распределить задачи
+          </button>
+        </div>
       </div>
 
       <StoriesBlock />

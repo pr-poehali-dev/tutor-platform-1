@@ -298,6 +298,130 @@ def handle_generate(body, client_ip=''):
     return ok({'track': track})
 
 
+# ═══════════════════ ПЛАНИРОВЩИК РЕСУРСОВ (сами / ИИ / внешний) ═══════════════════
+
+RESOURCE_PROMPT = (
+    "Ты — операционный директор и ресурс-менеджер на платформе УЧИСЬПРО. Тебе дают список задач проекта. "
+    "Твоя задача — честно распределить каждую задачу по способу выполнения, чтобы закрыть проект быстрее, "
+    "дешевле и надёжнее. Реши по каждой задаче ОДИН из вариантов:\n"
+    "- «self» — команда справится своими силами / силами младшего сотрудника (простая рутина, внутренние операции);\n"
+    "- «ai» — реально автоматизировать нейросетью/скриптом (черновики текстов, типовой контент, рутина, разбор данных);\n"
+    "- «external» — нужен живой внешний специалист с опытом и экспертизой, которого не заменить своими силами или ИИ.\n"
+    "Решай по факторам: может ли это качественно сделать ИИ; это ли рутина для своих; нужна ли редкая экспертиза; "
+    "что дешевле и быстрее — сделать самим или отдать. Не отправляй на внешний подряд то, что закрывается ИИ или своими силами. "
+    "Для КАЖДОЙ задачи с вердиктом «external» дай полный пакет для подбора исполнителя.\n"
+    "Пиши по-русски, конкретно, реалистично под рынок РФ. Соблюдай законы РФ, не гарантируй конкретную цену — давай вилку.\n"
+    "Верни СТРОГО JSON: {"
+    "\"summary\": строка (2-3 предложения: сколько задач закроем сами/ИИ, для скольких нужен внешний спец, и главный вывод по экономии), "
+    "\"self_count\": число, \"ai_count\": число, \"external_count\": число, "
+    "\"items\": [{"
+    "\"task\": строка (формулировка задачи), "
+    "\"mode\": строка (одно из: «self», «ai», «external»), "
+    "\"reason\": строка (1-2 предложения почему именно так — с опорой на факторы), "
+    "\"ai_hint\": строка (если mode=ai: чем конкретно и как автоматизировать; иначе пустая строка), "
+    "\"hiring\": (ТОЛЬКО если mode=external, иначе null) {"
+    "\"profile\": строка (профиль исполнителя: навыки, уровень, опыт — что должен уметь), "
+    "\"vacancy\": строка (готовый текст мини-вакансии/брифа для размещения и ТЗ фрилансеру), "
+    "\"budget\": строка (реалистичная вилка цены под РФ), \"eta\": строка (ориентировочный срок), "
+    "\"where\": [строки — 2-4 площадки, где искать такого исполнителя], "
+    "\"interview\": [строки — 2-4 проверочных вопроса или мини-тест для отбора]}"
+    "} — по одному объекту на каждую задачу]"
+    "}"
+)
+
+
+def build_resource_message(role_title, brief, tasks):
+    parts = []
+    if role_title:
+        parts.append(f"Роль/направление: {role_title}")
+    if brief:
+        parts.append(f"Специфика проекта: {brief}")
+    parts.append("Задачи проекта:")
+    for i, t in enumerate(tasks, 1):
+        parts.append(f"{i}. {t}")
+    parts.append("Распредели каждую задачу (self/ai/external) и для внешних дай пакет подбора. Верни строго JSON.")
+    return '\n'.join(parts)
+
+
+def clean_resource_plan(p, tasks):
+    if not isinstance(p, dict):
+        return None
+    try:
+        items = []
+        for it in (p.get('items') or [])[:20]:
+            if not isinstance(it, dict):
+                continue
+            mode = it.get('mode') if it.get('mode') in ('self', 'ai', 'external') else 'self'
+            obj = {
+                'task': _clip(it.get('task'), 400),
+                'mode': mode,
+                'reason': _clip(it.get('reason'), 400),
+                'ai_hint': _clip(it.get('ai_hint'), 400) if mode == 'ai' else '',
+                'hiring': None,
+            }
+            if mode == 'external' and isinstance(it.get('hiring'), dict):
+                h = it['hiring']
+                obj['hiring'] = {
+                    'profile': _clip(h.get('profile'), 600),
+                    'vacancy': _clip(h.get('vacancy'), 1500),
+                    'budget': _clip(h.get('budget'), 120),
+                    'eta': _clip(h.get('eta'), 120),
+                    'where': [_clip(w, 120) for w in (h.get('where') or [])][:5],
+                    'interview': [_clip(q, 300) for q in (h.get('interview') or [])][:5],
+                }
+            if obj['task']:
+                items.append(obj)
+        if not items:
+            return None
+        counts = {'self': 0, 'ai': 0, 'external': 0}
+        for it in items:
+            counts[it['mode']] += 1
+        return {
+            'summary': _clip(p.get('summary'), 700),
+            'self_count': counts['self'],
+            'ai_count': counts['ai'],
+            'external_count': counts['external'],
+            'items': items,
+        }
+    except Exception:
+        return None
+
+
+def handle_resource_plan(body, client_ip=''):
+    role_title = (body.get('role_title') or '').strip()[:200]
+    brief = (body.get('brief') or body.get('project_brief') or '').strip()[:1000]
+    raw_tasks = body.get('tasks')
+    tasks = []
+    if isinstance(raw_tasks, list):
+        for t in raw_tasks[:20]:
+            s = str(t).strip()[:400]
+            if s:
+                tasks.append(s)
+    if not tasks:
+        return err('Добавьте хотя бы одну задачу', 400)
+    if client_ip and rate_limited(f'orchestrator:resource:{client_ip}', 8, 600):
+        return err('Слишком много запросов. Попробуйте через несколько минут.', 429)
+
+    messages = [
+        {'role': 'system', 'content': RESOURCE_PROMPT},
+        {'role': 'user', 'content': build_resource_message(role_title, brief, tasks)},
+    ]
+    raw, error = call_polza(messages)
+    plan = clean_resource_plan(raw, tasks) if raw is not None else None
+    if plan is None:
+        print(f"[orchestrator] resource_plan fallback: {error}")
+        # Безопасный дефолт: помечаем всё как «решить вручную» через self
+        plan = {
+            'summary': 'Не удалось собрать раскладку автоматически. Пройдитесь по задачам вручную: '
+                       'что закроете сами, что — с помощью ИИ, а для чего нужен внешний специалист.',
+            'self_count': len(tasks), 'ai_count': 0, 'external_count': 0,
+            'items': [{'task': t, 'mode': 'self', 'reason': 'Требует ручной оценки.',
+                       'ai_hint': '', 'hiring': None} for t in tasks],
+            'is_fallback': True,
+        }
+    return ok({'plan': plan})
+
+
 def handle_submit(body):
     name = (body.get('contact_name') or '').strip()[:160]
     email = (body.get('contact_email') or '').strip().lower()[:200]
@@ -768,6 +892,8 @@ def handler(event: dict, context) -> dict:
     # Публичные
     if action == 'generate_track' and method == 'POST':
         return handle_generate(body, client_ip)
+    if action == 'resource_plan' and method == 'POST':
+        return handle_resource_plan(body, client_ip)
     if action == 'submit' and method == 'POST':
         return handle_submit(body)
     if action == 'leads_list' and method == 'GET':

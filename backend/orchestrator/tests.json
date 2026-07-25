@@ -3,6 +3,7 @@
     {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
     {"name": "Неизвестное действие", "method": "GET", "path": "/", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "generate_track без роли → ошибка", "method": "POST", "path": "/?action=generate_track", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "resource_plan без задач → ошибка", "method": "POST", "path": "/?action=resource_plan", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "submit без имени → ошибка", "method": "POST", "path": "/?action=submit", "body": {"contact_email": "a@b.ru"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "submit без контактов → ошибка", "method": "POST", "path": "/?action=submit", "body": {"contact_name": "Иван"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "leads_list без пина → 403", "method": "GET", "path": "/?action=leads_list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},

@@ -54,6 +54,50 @@ export interface Track {
   is_fallback?: boolean;
 }
 
+// ─── Планировщик ресурсов (сами / ИИ / внешний) ───
+export interface HiringPack {
+  profile: string;
+  vacancy: string;
+  budget: string;
+  eta: string;
+  where: string[];
+  interview: string[];
+}
+export interface ResourceItem {
+  task: string;
+  mode: "self" | "ai" | "external";
+  reason: string;
+  ai_hint: string;
+  hiring: HiringPack | null;
+}
+export interface ResourcePlan {
+  summary: string;
+  self_count: number;
+  ai_count: number;
+  external_count: number;
+  items: ResourceItem[];
+  is_fallback?: boolean;
+}
+
+export async function resourcePlan(
+  role_title: string,
+  brief: string,
+  tasks: string[],
+): Promise<{ ok: boolean; plan?: ResourcePlan; message?: string }> {
+  try {
+    const res = await fetch(`${URL}?action=resource_plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role_title, brief, tasks }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error || "Не удалось собрать раскладку" };
+    return { ok: true, plan: data.plan };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
 export async function generateTrack(
   role_title: string,
   brief: string,

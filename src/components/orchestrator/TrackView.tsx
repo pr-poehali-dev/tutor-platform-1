@@ -6,6 +6,7 @@ interface Props {
   onApply: () => void;
   onRestart: () => void;
   onOpenDashboard: () => void;
+  onPlanResources: () => void;
 }
 
 const levelColor: Record<string, string> = {
@@ -14,7 +15,7 @@ const levelColor: Record<string, string> = {
   эксперт: "text-violet-200 bg-violet-500/15 border-violet-400/30",
 };
 
-export default function TrackView({ track, onApply, onRestart, onOpenDashboard }: Props) {
+export default function TrackView({ track, onApply, onRestart, onOpenDashboard, onPlanResources }: Props) {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -185,6 +186,23 @@ export default function TrackView({ track, onApply, onRestart, onOpenDashboard }
           </div>
         )}
       </div>
+
+      {/* Планировщик ресурсов: сами / ИИ / внешний */}
+      <button
+        onClick={onPlanResources}
+        className="w-full text-left rounded-3xl border border-violet-400/30 bg-white/[0.03] hover:bg-violet-500/[0.08] transition-colors p-5 md:p-6 flex items-center gap-4"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+          <Icon name="Split" size={22} className="text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-montserrat font-black text-white text-lg">Что делать самим, а кого нанять?</div>
+          <p className="text-white/60 text-sm">
+            ИИ разложит задачи на «своими силами», «силами ИИ» и «нужен внешний спец» — и соберёт вакансию под подбор.
+          </p>
+        </div>
+        <Icon name="ChevronRight" size={20} className="text-violet-300 flex-shrink-0" />
+      </button>
 
       {/* CTA: запустить в дашборде (PRO) или заявка */}
       <div className="rounded-3xl border border-violet-500/30 bg-gradient-to-br from-violet-600/15 to-cyan-500/10 p-6 md:p-8 text-center">

@@ -7,14 +7,15 @@ interface Props {
   roleTitle: string;
   brief: string;
   track: Track | null;
+  initialMessage?: string;
   onClose: () => void;
 }
 
-export default function LeadForm({ roleTitle, brief, track, onClose }: Props) {
+export default function LeadForm({ roleTitle, brief, track, initialMessage = "", onClose }: Props) {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [contact, setContact] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
