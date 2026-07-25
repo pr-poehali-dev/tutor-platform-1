@@ -1,4 +1,5 @@
 {
+  "orchestrator": "https://functions.poehali.dev/be0f8d4b-6d75-47a9-9277-d346cfc7f020",
   "fin-advisor": "https://functions.poehali.dev/e8bbd22b-f535-4ce5-9689-0e60c05a152f",
   "business-coach": "https://functions.poehali.dev/fe399b30-ed20-4353-ac53-feea373ab7ce",
   "career-pro": "https://functions.poehali.dev/08087b96-1557-435e-9a12-12a7695f2c03",

@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Неизвестное действие", "method": "GET", "path": "/", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "generate_track без роли → ошибка", "method": "POST", "path": "/?action=generate_track", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "submit без имени → ошибка", "method": "POST", "path": "/?action=submit", "body": {"contact_email": "a@b.ru"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "submit без контактов → ошибка", "method": "POST", "path": "/?action=submit", "body": {"contact_name": "Иван"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "leads_list без пина → 403", "method": "GET", "path": "/?action=leads_list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "pro_access без токена → 401", "method": "GET", "path": "/?action=pro_access", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "projects_list без токена → 401", "method": "GET", "path": "/?action=projects_list", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "project_create без токена → 401", "method": "POST", "path": "/?action=project_create", "body": {"name": "Проект"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "dashboard без токена → 401", "method": "GET", "path": "/?action=dashboard&project_id=1", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "feedback_add без токена → 401", "method": "POST", "path": "/?action=feedback_add", "body": {"performer_id": 1, "quality": 5}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+  ]
+}
