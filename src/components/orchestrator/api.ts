@@ -14,6 +14,68 @@ function authHeaders(): Record<string, string> {
   return h;
 }
 
+// ─── ИИ-ассистенты ───
+export interface Assistant {
+  id: string;
+  name: string;
+  role: string;
+  icon: string;
+  tagline: string;
+  examples: string[];
+}
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function assistantsList(): Promise<{
+  assistants: Assistant[];
+  free_limit: number;
+  used: number;
+  pro_access: boolean;
+}> {
+  try {
+    const res = await fetch(`${URL}?action=assistants_list`, { headers: authHeaders() });
+    const data = await res.json();
+    return {
+      assistants: data.assistants || [],
+      free_limit: data.free_limit ?? 3,
+      used: data.used ?? 0,
+      pro_access: !!data.pro_access,
+    };
+  } catch {
+    return { assistants: [], free_limit: 3, used: 0, pro_access: false };
+  }
+}
+
+export async function assistantChat(
+  assistant: string,
+  messages: ChatMessage[],
+): Promise<{
+  ok: boolean;
+  reply?: string;
+  remaining?: number | null;
+  pro?: boolean;
+  limitReached?: boolean;
+  message?: string;
+}> {
+  try {
+    const res = await fetch(`${URL}?action=assistant_chat`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ assistant, messages }),
+    });
+    const data = await res.json();
+    if (res.status === 402 || data.limit_reached) {
+      return { ok: false, limitReached: true, message: data.message };
+    }
+    if (!res.ok) return { ok: false, message: data.error || "Ассистент недоступен" };
+    return { ok: true, reply: data.reply, remaining: data.remaining, pro: data.pro };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
 // ─── Типы трека ───
 export interface SkillItem {
   skill: string;

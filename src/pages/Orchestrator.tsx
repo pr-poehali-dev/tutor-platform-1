@@ -10,6 +10,7 @@ import LeadForm from "@/components/orchestrator/LeadForm";
 import StoriesBlock from "@/components/orchestrator/StoriesBlock";
 import Dashboard from "@/components/orchestrator/Dashboard";
 import ResourcePlanner from "@/components/orchestrator/ResourcePlanner";
+import Assistants from "@/components/orchestrator/Assistants";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -45,7 +46,7 @@ const FAQ_JSON_LD = {
   ],
 };
 
-type Stage = "intro" | "form" | "loading" | "track" | "dashboard" | "resources";
+type Stage = "intro" | "form" | "loading" | "track" | "dashboard" | "resources" | "assistants";
 
 export default function Orchestrator() {
   const [stage, setStage] = useState<Stage>("intro");
@@ -130,6 +131,7 @@ export default function Orchestrator() {
             onStart={start}
             onDashboard={() => setStage("dashboard")}
             onResources={() => { trackGoal("orchestrator_resources_open"); setStage("resources"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onAssistants={() => { trackGoal("orchestrator_assistants_open"); setStage("assistants"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           />
         )}
 
@@ -165,6 +167,10 @@ export default function Orchestrator() {
           />
         )}
 
+        {stage === "assistants" && (
+          <Assistants onBack={() => { setStage(track ? "track" : "intro"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+        )}
+
         {stage === "dashboard" && (
           <div className="space-y-4">
             <button onClick={() => setStage(track ? "track" : "intro")} className="text-white/50 hover:text-white text-sm inline-flex items-center gap-1">
@@ -196,11 +202,21 @@ function Header() {
   );
 }
 
-function Intro({ onStart, onDashboard, onResources }: { onStart: () => void; onDashboard: () => void; onResources: () => void }) {
+function Intro({ onStart, onDashboard, onResources, onAssistants }: { onStart: () => void; onDashboard: () => void; onResources: () => void; onAssistants: () => void }) {
   const steps = [
     { icon: "SlidersHorizontal", title: "Опишите роль и проект", text: "Фронтендер, копирайтер, менеджер продаж — и специфику задачи." },
     { icon: "Wand2", title: "ИИ соберёт трек адаптации", text: "Навыки, входной контроль, онбординг по дням, задачи с критериями." },
     { icon: "LayoutDashboard", title: "Ведите в дашборде", text: "Задачи по статусам, оценки качества, риски по каждому исполнителю." },
+  ];
+  const assistants = [
+    { icon: "Code2", label: "Программист" },
+    { icon: "Megaphone", label: "Маркетолог" },
+    { icon: "Instagram", label: "SMM" },
+    { icon: "PenLine", label: "Копирайтер" },
+    { icon: "Palette", label: "Дизайнер" },
+    { icon: "UserSearch", label: "HR" },
+    { icon: "ChartNoAxesCombined", label: "Аналитик" },
+    { icon: "Handshake", label: "Продажник" },
   ];
   return (
     <div>
@@ -228,6 +244,31 @@ function Intro({ onStart, onDashboard, onResources }: { onStart: () => void; onD
             <p className="text-white/55 text-sm">{s.text}</p>
           </div>
         ))}
+      </div>
+
+      {/* ИИ-ассистенты: готовые специалисты в чате */}
+      <div className="rounded-3xl border border-violet-400/30 bg-gradient-to-br from-violet-600/12 to-cyan-500/8 p-6 md:p-7 mb-4">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-violet-200 bg-violet-500/15 border border-violet-400/25 rounded-lg px-3 py-1 mb-3">
+          <Icon name="Sparkles" size={13} /> ИИ-ассистенты
+        </span>
+        <h3 className="font-montserrat font-black text-white text-xl mb-1">Готовые специалисты — прямо в чате</h3>
+        <p className="text-white/60 text-sm mb-4">
+          Не все задачи нужно кому-то отдавать. Программист, маркетолог, SMM-щик, копирайтер и другие ИИ-специалисты
+          выполнят работу здесь и сейчас: код, тексты, контент-планы, вакансии, скрипты продаж.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-5">
+          {assistants.map((a) => (
+            <span key={a.label} className="inline-flex items-center gap-1.5 text-xs text-white/80 bg-white/[0.05] border border-white/10 rounded-lg px-2.5 py-1.5">
+              <Icon name={a.icon} size={13} className="text-violet-300" /> {a.label}
+            </span>
+          ))}
+        </div>
+        <button
+          onClick={onAssistants}
+          className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-bold px-6 py-3.5 rounded-xl hover:scale-[1.02] transition-transform"
+        >
+          <Icon name="MessageSquare" size={18} /> Поставить задачу ассистенту
+        </button>
       </div>
 
       {/* Планировщик ресурсов: сами / ИИ / внешний */}

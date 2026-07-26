@@ -9,6 +9,8 @@ PRO-доступ (course_id 9203) открывает рабочий дашбор
 Действия (query ?action= или body.action):
 Публичные:
 - generate_track (POST): по роли+проекту генерирует трек онбординга (ИИ), rate-limit по IP
+- assistants_list (GET): список готовых ИИ-ассистентов (программист, маркетолог, SMM и др.) + лимит бесплатных сообщений
+- assistant_chat (POST): чат с выбранным ассистентом (ИИ), 3 бесплатных сообщения, дальше PRO
 - submit (POST): заявка на пилот + трек в БД, уведомление в MAX
 - leads_list (GET, X-Admin-Pin): заявки для менеджера
 PRO (X-Auth-Token + оплата 9203):
@@ -160,6 +162,207 @@ def call_polza(messages, deadline=26):
             return json.loads(raw), None
     except Exception as e:
         return None, f'{type(e).__name__}: {str(e)[:100]}'
+
+
+def call_polza_text(messages, deadline=26):
+    """Обычный текстовый ответ модели (без JSON-режима) — для чата с ассистентами."""
+    api_key = os.environ.get('POLZA_API_KEY', '')
+    if not api_key:
+        return None, 'POLZA_API_KEY не настроен'
+    try:
+        payload = json.dumps({
+            'model': 'openai/gpt-4o-mini',
+            'messages': messages,
+            'temperature': 0.6,
+            'max_tokens': 2200,
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.polza.ai/api/v1/chat/completions', data=payload,
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            method='POST')
+        with urllib.request.urlopen(req, timeout=deadline) as r:
+            data = json.loads(r.read().decode('utf-8'))
+            return data['choices'][0]['message']['content'].strip(), None
+    except Exception as e:
+        return None, f'{type(e).__name__}: {str(e)[:100]}'
+
+
+# ═══════════════════════════ ИИ-АССИСТЕНТЫ ПО РОЛЯМ ═══════════════════════════
+
+FREE_ASSISTANT_MESSAGES = 3  # бесплатных сообщений (суммарно), дальше — PRO
+
+ASSISTANTS = {
+    'programmer': {
+        'name': 'Артём',
+        'role': 'Программист',
+        'icon': 'Code2',
+        'tagline': 'Код, ревью, архитектура, разбор багов',
+        'examples': ['Напиши функцию на Python для…', 'Сделай ревью этого кода', 'Почему падает эта ошибка?'],
+        'system': 'Ты — Артём, senior fullstack-разработчик. Пишешь чистый рабочий код, объясняешь решения, '
+                  'делаешь ревью, находишь баги, предлагаешь архитектуру. Код оформляй в markdown-блоках с указанием языка. '
+                  'Отвечай практично и по делу, без воды.',
+    },
+    'marketer': {
+        'name': 'Марина',
+        'role': 'Маркетолог',
+        'icon': 'Megaphone',
+        'tagline': 'Стратегия, воронки, офферы, реклама',
+        'examples': ['Собери воронку для онлайн-курса', 'Придумай 5 офферов для…', 'Как продвигать B2B-услугу?'],
+        'system': 'Ты — Марина, перформанс-маркетолог с опытом в B2B и B2C. Помогаешь со стратегией, воронками, '
+                  'позиционированием, офферами, рекламными каналами и бюджетами. Даёшь конкретные шаги и примеры под рынок РФ.',
+    },
+    'smm': {
+        'name': 'Соня',
+        'role': 'SMM-специалист',
+        'icon': 'Instagram',
+        'tagline': 'Контент-план, посты, Reels, сторис',
+        'examples': ['Контент-план на неделю для кофейни', 'Напиши 3 поста для Telegram', 'Идеи Reels для бренда одежды'],
+        'system': 'Ты — Соня, SMM-специалист. Делаешь контент-планы, пишешь посты, сценарии Reels и сторис, подбираешь '
+                  'рубрики и форматы под площадку (Telegram, VK, Instagram*). Тексты живые, с призывами к действию.',
+    },
+    'copywriter': {
+        'name': 'Кира',
+        'role': 'Копирайтер',
+        'icon': 'PenLine',
+        'tagline': 'Лендинги, рассылки, статьи, тексты',
+        'examples': ['Текст для первого экрана лендинга', 'Письмо для рассылки о скидке', 'Заголовки для рекламы'],
+        'system': 'Ты — Кира, копирайтер. Пишешь продающие и информационные тексты: лендинги, рассылки, статьи, '
+                  'рекламные объявления. Умеешь держать tone of voice, писать по структуре и без клише. Предлагай варианты.',
+    },
+    'designer': {
+        'name': 'Даша',
+        'role': 'Дизайнер',
+        'icon': 'Palette',
+        'tagline': 'UX-советы, брифы, композиция, референсы',
+        'examples': ['Собери бриф для логотипа', 'Как улучшить экран оплаты?', 'Подбери палитру для финтех-приложения'],
+        'system': 'Ты — Даша, продуктовый дизайнер (UX/UI). Помогаешь с логикой интерфейсов, композицией, типографикой, '
+                  'палитрами, брифами на дизайн и подбором референсов. Даёшь конкретные рекомендации, а не общие слова. '
+                  'Ты не рисуешь картинки, но детально описываешь решение.',
+    },
+    'recruiter': {
+        'name': 'Оля',
+        'role': 'HR / рекрутер',
+        'icon': 'UserSearch',
+        'tagline': 'Вакансии, воронка найма, собеседования',
+        'examples': ['Вакансия для React-разработчика', 'Вопросы на собес для маркетолога', 'Как оценить тестовое?'],
+        'system': 'Ты — Оля, HR и IT-рекрутер. Пишешь вакансии, собираешь профиль кандидата, составляешь вопросы для '
+                  'собеседования и критерии оценки тестовых, помогаешь выстроить воронку найма. Практично, под рынок РФ.',
+    },
+    'analyst': {
+        'name': 'Игорь',
+        'role': 'Аналитик',
+        'icon': 'ChartNoAxesCombined',
+        'tagline': 'Данные, метрики, гипотезы, отчёты',
+        'examples': ['Какие метрики отслеживать в SaaS?', 'Собери структуру дашборда продаж', 'Как посчитать LTV?'],
+        'system': 'Ты — Игорь, продуктовый и бизнес-аналитик. Помогаешь выбрать метрики, посчитать unit-экономику, '
+                  'сформулировать гипотезы, спроектировать отчёты и дашборды, разобрать данные. Объясняешь формулы простым языком.',
+    },
+    'sales': {
+        'name': 'Павел',
+        'role': 'Продажник',
+        'icon': 'Handshake',
+        'tagline': 'Скрипты, КП, работа с возражениями',
+        'examples': ['Скрипт холодного звонка для…', 'Составь коммерческое предложение', 'Как закрыть возражение «дорого»?'],
+        'system': 'Ты — Павел, руководитель отдела продаж B2B. Пишешь скрипты звонков и переписки, коммерческие предложения, '
+                  'отрабатываешь возражения, помогаешь вести сделку по этапам. Конкретно, с примерами формулировок.',
+    },
+}
+
+
+def assistant_public_list():
+    return [{
+        'id': aid,
+        'name': a['name'],
+        'role': a['role'],
+        'icon': a['icon'],
+        'tagline': a['tagline'],
+        'examples': a['examples'],
+    } for aid, a in ASSISTANTS.items()]
+
+
+def count_assistant_usage(cur, ident):
+    cur.execute("SELECT count(*) FROM orch_assistant_usage WHERE ident = %s", (ident[:120],))
+    return cur.fetchone()[0]
+
+
+def handle_assistants_list(headers):
+    conn = get_db()
+    used = 0
+    pro = False
+    if conn is not None:
+        try:
+            with conn.cursor() as cur:
+                user_id = resolve_user(cur, get_token(headers))
+                if user_id:
+                    pro = has_pro_access(cur, user_id)
+                    used = count_assistant_usage(cur, f'user:{user_id}')
+        finally:
+            conn.close()
+    return ok({
+        'assistants': assistant_public_list(),
+        'free_limit': FREE_ASSISTANT_MESSAGES,
+        'used': used,
+        'pro_access': pro,
+    })
+
+
+def handle_assistant_chat(body, headers, client_ip=''):
+    aid = (body.get('assistant') or '').strip()
+    assistant = ASSISTANTS.get(aid)
+    if not assistant:
+        return err('Ассистент не найден', 404)
+
+    raw_history = body.get('messages')
+    history = []
+    if isinstance(raw_history, list):
+        for m in raw_history[-12:]:
+            if not isinstance(m, dict):
+                continue
+            role = 'assistant' if m.get('role') == 'assistant' else 'user'
+            content = str(m.get('content') or '').strip()[:4000]
+            if content:
+                history.append({'role': role, 'content': content})
+    if not history or history[-1]['role'] != 'user':
+        return err('Пустое сообщение', 400)
+
+    conn = get_db()
+    if conn is None:
+        return err('База данных недоступна', 500)
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, get_token(headers))
+            pro = has_pro_access(cur, user_id) if user_id else False
+            ident = f'user:{user_id}' if user_id else f'ip:{client_ip}'
+            if not pro:
+                used = count_assistant_usage(cur, ident)
+                if used >= FREE_ASSISTANT_MESSAGES:
+                    return ok({
+                        'limit_reached': True,
+                        'free_limit': FREE_ASSISTANT_MESSAGES,
+                        'message': 'Бесплатные сообщения закончились. Оформите Оркестратор PRO, чтобы общаться с ассистентами без ограничений.',
+                    }, 402)
+
+            messages = [{'role': 'system', 'content': assistant['system'] +
+                         '\nОтвечай по-русски, структурно, используй markdown (заголовки ##, списки, **жирный**, блоки кода). '
+                         'Соблюдай законы РФ.'}]
+            messages += history
+            reply, error = call_polza_text(messages)
+            if reply is None:
+                print(f"[orchestrator] assistant_chat error: {error}")
+                return err('Ассистент сейчас недоступен, попробуйте ещё раз', 503)
+
+            # Фиксируем расход только для не-PRO
+            if not pro:
+                cur.execute("INSERT INTO orch_assistant_usage (ident, assistant) VALUES (%s, %s)", (ident[:120], aid[:40]))
+                conn.commit()
+                used_after = count_assistant_usage(cur, ident)
+                remaining = max(0, FREE_ASSISTANT_MESSAGES - used_after)
+            else:
+                remaining = None
+
+            return ok({'reply': reply, 'pro': pro, 'remaining': remaining, 'free_limit': FREE_ASSISTANT_MESSAGES})
+    finally:
+        conn.close()
 
 
 # ═══════════════════════════ ИИ-ГЕНЕРАТОР ТРЕКА ═══════════════════════════
@@ -894,6 +1097,10 @@ def handler(event: dict, context) -> dict:
         return handle_generate(body, client_ip)
     if action == 'resource_plan' and method == 'POST':
         return handle_resource_plan(body, client_ip)
+    if action == 'assistants_list' and method == 'GET':
+        return handle_assistants_list(headers)
+    if action == 'assistant_chat' and method == 'POST':
+        return handle_assistant_chat(body, headers, client_ip)
     if action == 'submit' and method == 'POST':
         return handle_submit(body)
     if action == 'leads_list' and method == 'GET':
