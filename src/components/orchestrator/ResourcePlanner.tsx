@@ -9,6 +9,7 @@ interface Props {
   track?: Track | null;
   onBack: () => void;
   onHire: (item: ResourceItem) => void;
+  onAskAI: (item: ResourceItem) => void;
 }
 
 const MODE_META: Record<string, { label: string; icon: string; cls: string; badge: string }> = {
@@ -17,7 +18,7 @@ const MODE_META: Record<string, { label: string; icon: string; cls: string; badg
   external: { label: "Нужен внешний спец", icon: "UserSearch", cls: "border-violet-400/30 bg-violet-500/[0.06]", badge: "bg-violet-500/15 text-violet-200 border-violet-400/30" },
 };
 
-export default function ResourcePlanner({ roleTitle = "", brief = "", track, onBack, onHire }: Props) {
+export default function ResourcePlanner({ roleTitle = "", brief = "", track, onBack, onHire, onAskAI }: Props) {
   // Предзаполняем задачи из трека, если есть
   const initial =
     track?.tasks?.map((t) => t.title).filter(Boolean).join("\n") || "";
@@ -58,7 +59,7 @@ export default function ResourcePlanner({ roleTitle = "", brief = "", track, onB
   }
 
   if (plan) {
-    return <PlanResult plan={plan} onHire={onHire} onRedo={() => setPlan(null)} onBack={onBack} />;
+    return <PlanResult plan={plan} onHire={onHire} onAskAI={onAskAI} onRedo={() => setPlan(null)} onBack={onBack} />;
   }
 
   return (
@@ -104,10 +105,11 @@ export default function ResourcePlanner({ roleTitle = "", brief = "", track, onB
 }
 
 function PlanResult({
-  plan, onHire, onRedo, onBack,
+  plan, onHire, onAskAI, onRedo, onBack,
 }: {
   plan: ResourcePlan;
   onHire: (item: ResourceItem) => void;
+  onAskAI: (item: ResourceItem) => void;
   onRedo: () => void;
   onBack: () => void;
 }) {
@@ -131,7 +133,7 @@ function PlanResult({
       {/* Задачи */}
       <div className="space-y-3">
         {plan.items.map((it, i) => (
-          <TaskCard key={i} item={it} onHire={onHire} />
+          <TaskCard key={i} item={it} onHire={onHire} onAskAI={onAskAI} />
         ))}
       </div>
 
@@ -160,7 +162,7 @@ function Stat({ icon, label, value, color }: { icon: string; label: string; valu
   );
 }
 
-function TaskCard({ item, onHire }: { item: ResourceItem; onHire: (item: ResourceItem) => void }) {
+function TaskCard({ item, onHire, onAskAI }: { item: ResourceItem; onHire: (item: ResourceItem) => void; onAskAI: (item: ResourceItem) => void }) {
   const [open, setOpen] = useState(false);
   const m = MODE_META[item.mode] || MODE_META.self;
 
@@ -176,10 +178,20 @@ function TaskCard({ item, onHire }: { item: ResourceItem; onHire: (item: Resourc
         </span>
       </div>
 
-      {item.mode === "ai" && item.ai_hint && (
-        <div className="mt-2 flex items-start gap-2 text-sm text-cyan-100/85 bg-cyan-500/[0.06] border border-cyan-400/15 rounded-lg px-3 py-2">
-          <Icon name="Wand2" size={14} className="text-cyan-400 flex-shrink-0 mt-0.5" />
-          <span>{item.ai_hint}</span>
+      {item.mode === "ai" && (
+        <div className="mt-2">
+          {item.ai_hint && (
+            <div className="flex items-start gap-2 text-sm text-cyan-100/85 bg-cyan-500/[0.06] border border-cyan-400/15 rounded-lg px-3 py-2 mb-2">
+              <Icon name="Wand2" size={14} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+              <span>{item.ai_hint}</span>
+            </div>
+          )}
+          <button
+            onClick={() => onAskAI(item)}
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold text-cyan-100 bg-cyan-500/15 border border-cyan-400/30 rounded-lg px-3 py-1.5 hover:bg-cyan-500/25 transition-colors"
+          >
+            <Icon name="Sparkles" size={13} /> Спросить ИИ-специалиста
+          </button>
         </div>
       )}
 

@@ -8,13 +8,22 @@ import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const PRO_PRICE = 15000;
 
-export default function Assistants({ onBack }: { onBack: () => void }) {
+export default function Assistants({
+  onBack,
+  initialAssistantId,
+  initialPrompt,
+}: {
+  onBack: () => void;
+  initialAssistantId?: string;
+  initialPrompt?: string;
+}) {
   const [list, setList] = useState<Assistant[]>([]);
   const [freeLimit, setFreeLimit] = useState(3);
   const [used, setUsed] = useState(0);
   const [pro, setPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Assistant | null>(null);
+  const [presetPrompt, setPresetPrompt] = useState<string | undefined>(initialPrompt);
 
   const load = async () => {
     const res = await assistantsList();
@@ -23,10 +32,15 @@ export default function Assistants({ onBack }: { onBack: () => void }) {
     setUsed(res.used);
     setPro(res.pro_access);
     setLoading(false);
+    if (initialAssistantId) {
+      const found = res.assistants.find((a) => a.id === initialAssistantId);
+      if (found) setActive(found);
+    }
   };
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -43,7 +57,8 @@ export default function Assistants({ onBack }: { onBack: () => void }) {
         assistant={active}
         pro={pro}
         freeLimit={freeLimit}
-        onBack={() => { setActive(null); load(); }}
+        presetPrompt={presetPrompt}
+        onBack={() => { setActive(null); setPresetPrompt(undefined); load(); }}
       />
     );
   }
@@ -101,17 +116,18 @@ export default function Assistants({ onBack }: { onBack: () => void }) {
 }
 
 function ChatPanel({
-  assistant, pro, freeLimit, onBack,
+  assistant, pro, freeLimit, presetPrompt, onBack,
 }: {
   assistant: Assistant;
   pro: boolean;
   freeLimit: number;
+  presetPrompt?: string;
   onBack: () => void;
 }) {
   const { isAuthenticated, openLogin } = useAuth();
   const { buyCourse } = useAccess();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(presetPrompt || "");
   const [sending, setSending] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(pro ? null : freeLimit);
   const [limitReached, setLimitReached] = useState(false);

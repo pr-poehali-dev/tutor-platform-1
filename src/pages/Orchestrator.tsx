@@ -48,6 +48,25 @@ const FAQ_JSON_LD = {
 
 type Stage = "intro" | "form" | "loading" | "track" | "dashboard" | "resources" | "assistants";
 
+// Подбор подходящего ИИ-ассистента по тексту задачи (эвристика по ключевым словам)
+function pickAssistant(task: string): string {
+  const t = task.toLowerCase();
+  const rules: [string, string[]][] = [
+    ["programmer", ["код", "программ", "разработ", "верст", "react", "api", "бэкенд", "фронт", "баг", "скрипт", "python", "sql", "интеграц"]],
+    ["designer", ["дизайн", "макет", "логотип", "ui", "ux", "интерфейс", "баннер", "иллюстрац", "палитр"]],
+    ["smm", ["smm", "reels", "сторис", "инстаграм", "instagram", "telegram", "телеграм", "соцсет", "контент-план", "пост"]],
+    ["marketer", ["маркет", "реклам", "воронк", "трафик", "продвиж", "директ", "таргет", "оффер", "seo", "стратег"]],
+    ["copywriter", ["текст", "копирайт", "лендинг", "статья", "рассылк", "письмо", "заголов", "описание", "слоган"]],
+    ["recruiter", ["ваканс", "найм", "рекрут", "собесед", "hr", "кандидат", "резюме"]],
+    ["analyst", ["аналит", "метрик", "данны", "отчёт", "отчет", "дашборд", "выгрузк", "статистик", "ltv", "экономик"]],
+    ["sales", ["продаж", "звонок", "скрипт продаж", "кп", "коммерческ", "возражени", "сделк", "клиент"]],
+  ];
+  for (const [id, kws] of rules) {
+    if (kws.some((k) => t.includes(k))) return id;
+  }
+  return "copywriter";
+}
+
 export default function Orchestrator() {
   const [stage, setStage] = useState<Stage>("intro");
   const [role, setRole] = useState("");
@@ -55,6 +74,7 @@ export default function Orchestrator() {
   const [track, setTrack] = useState<Track | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [hireNote, setHireNote] = useState("");
+  const [asstInit, setAsstInit] = useState<{ id?: string; prompt?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Открыть заявку с предзаполненной задачей под подбор внешнего исполнителя
@@ -66,6 +86,14 @@ export default function Orchestrator() {
     setHireNote(note);
     setShowForm(true);
     setStage("track");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Открыть чат с ИИ-ассистентом под конкретную задачу (из раскладки «силами ИИ»)
+  const openAskAI = (item: ResourceItem) => {
+    trackGoal("orchestrator_ask_ai_click");
+    setAsstInit({ id: pickAssistant(item.task), prompt: item.task });
+    setStage("assistants");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -131,7 +159,7 @@ export default function Orchestrator() {
             onStart={start}
             onDashboard={() => setStage("dashboard")}
             onResources={() => { trackGoal("orchestrator_resources_open"); setStage("resources"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            onAssistants={() => { trackGoal("orchestrator_assistants_open"); setStage("assistants"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onAssistants={() => { trackGoal("orchestrator_assistants_open"); setAsstInit(null); setStage("assistants"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           />
         )}
 
@@ -164,11 +192,16 @@ export default function Orchestrator() {
             track={track}
             onBack={() => { setStage(track ? "track" : "intro"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             onHire={openHire}
+            onAskAI={openAskAI}
           />
         )}
 
         {stage === "assistants" && (
-          <Assistants onBack={() => { setStage(track ? "track" : "intro"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+          <Assistants
+            initialAssistantId={asstInit?.id}
+            initialPrompt={asstInit?.prompt}
+            onBack={() => { setAsstInit(null); setStage(track ? "track" : "intro"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          />
         )}
 
         {stage === "dashboard" && (
