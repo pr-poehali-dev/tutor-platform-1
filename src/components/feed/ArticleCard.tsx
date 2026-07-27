@@ -32,7 +32,7 @@ const PIN_BADGE =
   "inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30";
 
 export default function ArticleCard({ article, variant = "default" }: Props) {
-  const meta = CATEGORY_META[article.category];
+  const meta = CATEGORY_META[article.category] ?? CATEGORY_META.education;
   const isNew = isFresh(article.published_at);
   const sourceKindLabel = article.source_kind === "user"
     ? "Статья читателя"
@@ -160,7 +160,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
           {article.cover_url ? (
             <img src={article.cover_url} alt={article.title} loading="lazy" className={`w-full h-full ${isDocCover ? "object-contain bg-[#7c4dff]/15" : "object-cover"}`} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-2xl opacity-50">{CATEGORY_META[article.category].emoji}</div>
+            <div className="w-full h-full flex items-center justify-center text-2xl opacity-50">{meta.emoji}</div>
           )}
         </div>
         <div className="min-w-0 flex-1">
