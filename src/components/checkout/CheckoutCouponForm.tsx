@@ -56,7 +56,7 @@ export default function CheckoutCouponForm({
             value={coupon}
             onChange={(e) => { setCoupon(e.target.value); setCouponError(null); }}
             onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
-            placeholder="Например, ДОБРО"
+            placeholder="Введите промокод"
             className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white font-mono tracking-wider placeholder:text-white/25 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:border-amber-400/60 focus:bg-white/8 transition-colors uppercase"
           />
           <button
