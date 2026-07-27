@@ -35,7 +35,7 @@ interface AccessState {
   purchasedCourseIds: number[];
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
-  buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string) => Promise<BuyCourseResult>;
+  buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string, promoCode?: string) => Promise<BuyCourseResult>;
   buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year", couponCode?: string) => Promise<BuySubscriptionResult>;
   validateCoupon: (couponCode: string, amountRub: number) => Promise<{ valid: boolean; percent?: number; discountRub?: number; finalRub?: number; message?: string }>;
   syncPayment: () => Promise<{ synced: boolean; activated?: Array<{ kind: string; id: number; course_id?: number }> }>;
@@ -93,14 +93,14 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     [hasSubscription, purchasedCourseIds]
   );
 
-  const buyCourse = useCallback(async (courseId: number, grade: string, title: string, returnUrl: string, email?: string): Promise<BuyCourseResult> => {
+  const buyCourse = useCallback(async (courseId: number, grade: string, title: string, returnUrl: string, email?: string, promoCode?: string): Promise<BuyCourseResult> => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Сначала войди в аккаунт" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=buy_course`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
-        body: JSON.stringify({ course_id: courseId, grade, title, return_url: returnUrl, email }),
+        body: JSON.stringify({ course_id: courseId, grade, title, return_url: returnUrl, email, promo_code: promoCode }),
       });
       const data = await res.json();
       if (!res.ok) return { ok: false, message: data.error || "Не получилось оформить покупку" };
@@ -146,11 +146,10 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 
   const validateCoupon = useCallback(async (couponCode: string, amountRub: number) => {
     const authToken = token || readToken();
-    if (!authToken) return { valid: false, message: "Сначала войди в аккаунт" };
     try {
       const res = await fetch(`${ACCESS_URL}?action=validate_coupon`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        headers: { "Content-Type": "application/json", ...(authToken ? { "X-Auth-Token": authToken } : {}) },
         body: JSON.stringify({ coupon_code: couponCode, amount_rub: amountRub }),
       });
       const data = await res.json();

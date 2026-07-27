@@ -15,6 +15,7 @@ import CourseNotReadyNotice from "@/components/courses/checkout/CourseNotReadyNo
 import CourseAccessGranted from "@/components/courses/checkout/CourseAccessGranted";
 import CoursePaymentReturnNotice from "@/components/courses/checkout/CoursePaymentReturnNotice";
 import CoursePurchaseForm from "@/components/courses/checkout/CoursePurchaseForm";
+import CheckoutCouponForm from "@/components/checkout/CheckoutCouponForm";
 import CourseEmailPay from "@/components/courses/checkout/CourseEmailPay";
 import AccessBanner from "@/components/intensive/AccessBanner";
 
@@ -23,7 +24,7 @@ export default function CourseCheckout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
-  const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess, syncPayment } = useAccess();
+  const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess, syncPayment, validateCoupon } = useAccess();
   const { earn: earnZnaika } = useZnaika();
   const { isReady, loaded: readyLoaded } = useReadyCourses();
 
@@ -45,6 +46,12 @@ export default function CourseCheckout() {
   const [checkingReturn, setCheckingReturn] = useState(false);
   const [email, setEmail] = useState<string>(user?.email ?? "");
   const [showCourse, setShowCourse] = useState(false);
+
+  // Промокод
+  const [coupon, setCoupon] = useState("");
+  const [couponApplied, setCouponApplied] = useState<{ code: string; percent: number; finalRub: number } | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.email && !email) setEmail(user.email);
@@ -137,6 +144,26 @@ export default function CourseCheckout() {
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
+  const handleApplyCoupon = async () => {
+    const code = coupon.trim();
+    if (!code) return;
+    setCouponChecking(true);
+    setCouponError(null);
+    const res = await validateCoupon(code, price);
+    setCouponChecking(false);
+    if (!res.valid) {
+      setCouponError(res.message || "Промокод не найден или недействителен");
+      return;
+    }
+    setCouponApplied({ code: code.toUpperCase(), percent: res.percent ?? 0, finalRub: res.finalRub ?? price });
+  };
+
+  const removeCoupon = () => {
+    setCouponApplied(null);
+    setCoupon("");
+    setCouponError(null);
+  };
+
   const handlePay = async () => {
     setError(null);
     if (courseNotReady) {
@@ -149,7 +176,7 @@ export default function CourseCheckout() {
     }
     setProcessing(true);
     const returnUrl = `${window.location.origin}/course-checkout/${course.id}?paid=1`;
-    const res = await buyCourse(course.id, course.grade, course.title, returnUrl, email.trim());
+    const res = await buyCourse(course.id, course.grade, course.title, returnUrl, email.trim(), couponApplied?.code);
     setProcessing(false);
     if (!res.ok) {
       setError(res.message || "Не получилось оформить покупку");
@@ -304,21 +331,35 @@ export default function CourseCheckout() {
                 onRestart={() => { setPurchaseId(null); navigate(`/course-checkout/${course.id}`); }}
               />
             ) : (
-              <CoursePurchaseForm
-                course={course}
-                price={price}
-                amount={amount}
-                isAuthenticated={isAuthenticated}
-                email={email}
-                setEmail={setEmail}
-                error={error}
-                processing={processing}
-                demoMode={demoMode}
-                purchaseId={purchaseId}
-                openLogin={openLogin}
-                onPay={handlePay}
-                onDemoConfirm={handleDemoConfirm}
-              />
+              <>
+                {!demoMode && (
+                  <CheckoutCouponForm
+                    coupon={coupon}
+                    setCoupon={setCoupon}
+                    couponApplied={couponApplied}
+                    couponChecking={couponChecking}
+                    couponError={couponError}
+                    setCouponError={setCouponError}
+                    handleApplyCoupon={handleApplyCoupon}
+                    removeCoupon={removeCoupon}
+                  />
+                )}
+                <CoursePurchaseForm
+                  course={course}
+                  price={price}
+                  amount={couponApplied ? couponApplied.finalRub : amount}
+                  isAuthenticated={isAuthenticated}
+                  email={email}
+                  setEmail={setEmail}
+                  error={error}
+                  processing={processing}
+                  demoMode={demoMode}
+                  purchaseId={purchaseId}
+                  openLogin={openLogin}
+                  onPay={handlePay}
+                  onDemoConfirm={handleDemoConfirm}
+                />
+              </>
             )}
           </div>
         </div>

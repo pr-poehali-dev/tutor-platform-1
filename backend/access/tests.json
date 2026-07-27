@@ -42,12 +42,21 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "validate_coupon без токена - 401",
+      "name": "validate_coupon: промокод ДОБРО даёт 30% без токена",
       "method": "POST",
       "path": "/?action=validate_coupon",
-      "body": {"coupon_code": "ZN-TEST-CODE", "amount_rub": 1290},
-      "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "body": {"coupon_code": "ДОБРО", "amount_rub": 1000},
+      "expectedStatus": 200,
+      "expectedBody": {"valid": true, "percent": 30, "final_rub": 700},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "validate_coupon: неизвестный промокод - невалиден",
+      "method": "POST",
+      "path": "/?action=validate_coupon",
+      "body": {"coupon_code": "НЕТ-ТАКОГО-КОДА", "amount_rub": 1290},
+      "expectedStatus": 200,
+      "expectedBody": {"valid": false},
       "bodyMatcher": "partial"
     },
     {

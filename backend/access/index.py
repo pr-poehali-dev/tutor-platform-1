@@ -464,6 +464,7 @@ def handle_buy_course(token: str, body: dict) -> dict:
     title = (body.get('title') or 'Курс').strip()[:200]
     return_url = (body.get('return_url') or '').strip()
     customer_email_override = (body.get('email') or '').strip()
+    promo_code = (body.get('promo_code') or '').strip()
 
     try:
         course_id = int(course_id)
@@ -494,6 +495,11 @@ def handle_buy_course(token: str, body: dict) -> dict:
                 amount_kopecks = ADULT_SUBJECT_PRICE_KOPECKS.get(subject, ADULT_DEFAULT_KOPECKS)
             else:
                 amount_kopecks = GRADE_PRICE_KOPECKS.get(grade, GRADE_PRICE_KOPECKS['all'])
+
+            # Промокод-скидка (считается на сервере, клиент не влияет на итог).
+            promo_id, promo_percent = lookup_promo(cur, promo_code)
+            if promo_id:
+                amount_kopecks = apply_promo_kopecks(amount_kopecks, promo_percent)
             amount_rub = amount_kopecks / 100
 
             cur.execute(
@@ -577,6 +583,8 @@ def handle_buy_course(token: str, body: dict) -> dict:
                 "UPDATE course_purchases SET payment_id = %s, updated_at = NOW() WHERE id = %s",
                 (payment_id, purchase_id)
             )
+            if promo_id:
+                cur.execute("UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
             conn.commit()
 
             return ok({
@@ -589,6 +597,45 @@ def handle_buy_course(token: str, body: dict) -> dict:
             })
     finally:
         conn.close()
+
+
+def lookup_promo(cur, promo_code: str):
+    """Возвращает (promo_id, percent) действующего промокода-скидки или (None, 0).
+
+    Промокоды хранятся в таблице promo_codes и вводятся вручную при оплате.
+    Проверяются: активность, срок действия и лимит использований.
+    """
+    code = (promo_code or '').strip()
+    if not code:
+        return None, 0
+    cur.execute(
+        "SELECT id, percent FROM promo_codes "
+        "WHERE UPPER(code) = UPPER(%s) AND active = TRUE "
+        "AND (starts_at IS NULL OR starts_at <= NOW()) "
+        "AND (expires_at IS NULL OR expires_at >= NOW()) "
+        "AND (max_uses IS NULL OR used_count < max_uses) "
+        "LIMIT 1",
+        (code,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return None, 0
+    promo_id, percent = row
+    try:
+        percent = int(percent)
+    except (TypeError, ValueError):
+        return None, 0
+    if percent <= 0 or percent > 100:
+        return None, 0
+    return promo_id, percent
+
+
+def apply_promo_kopecks(base_kopecks: int, percent: int) -> int:
+    """Применяет скидку в процентах, не опускаясь ниже минимума 100 коп (1 ₽)."""
+    if percent <= 0:
+        return base_kopecks
+    result = base_kopecks - (base_kopecks * percent // 100)
+    return max(result, 100)
 
 
 def lookup_coupon(cur, user_id: int, coupon_code: str):
@@ -616,25 +663,38 @@ def lookup_coupon(cur, user_id: int, coupon_code: str):
 
 
 def handle_validate_coupon(token: str, body: dict) -> dict:
-    """Предпросмотр скидки по промокоду для фронта (без списания)."""
-    coupon_code = (body.get('coupon_code') or '').strip()
+    """Предпросмотр скидки по промокоду для фронта (без списания).
+
+    Сначала ищем общий промокод (таблица promo_codes, напр. «ДОБРО»),
+    затем — персональный купон-скидку из магазина ЗНАЕК.
+    """
+    coupon_code = (body.get('coupon_code') or body.get('promo_code') or '').strip()
     base_amount_rub = body.get('amount_rub')
     conn = get_db()
     try:
         with conn.cursor() as cur:
             user_id = resolve_user(cur, token)
-            if not user_id:
-                return err('Требуется вход', 401)
-            rid, percent = lookup_coupon(cur, user_id, coupon_code)
-            if not rid:
-                return ok({'valid': False, 'message': 'Промокод не найден или уже использован'})
+
+            promo_id, percent = lookup_promo(cur, coupon_code)
+            if not promo_id:
+                # Персональный купон требует авторизации
+                if not user_id:
+                    return ok({'valid': False, 'message': 'Промокод не найден или недействителен'})
+                rid, percent = lookup_coupon(cur, user_id, coupon_code)
+                if not rid:
+                    return ok({'valid': False, 'message': 'Промокод не найден или недействителен'})
+
             result = {'valid': True, 'percent': percent}
             try:
                 amount = int(base_amount_rub)
                 if amount > 0:
                     discount = amount * percent // 100
+                    final = amount - discount
+                    if final < 1:
+                        final = 1
+                        discount = amount - 1
                     result['discount_rub'] = discount
-                    result['final_rub'] = amount - discount
+                    result['final_rub'] = final
             except (TypeError, ValueError):
                 pass
             return ok(result)
@@ -687,14 +747,20 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     base_kopecks = KIDS_INTRO_KOPECKS
                     period_days = KIDS_INTRO_PERIOD_DAYS
 
-            # Применяем промокод-скидку из магазина ЗНАЕК (если есть и валиден).
-            # На интро-акцию «Малыш» купоны не распространяются (цена уже 1 ₽).
-            coupon_rid, coupon_percent = (None, 0) if kids_intro else lookup_coupon(cur, user_id, coupon_code)
+            # Скидки не распространяются на интро-акцию «Малыш» (цена уже 1 ₽).
             amount_kopecks = base_kopecks
-            if coupon_rid:
-                amount_kopecks = base_kopecks - (base_kopecks * coupon_percent // 100)
-                if amount_kopecks < 100:  # минимум 1 ₽ для платежа
-                    amount_kopecks = 100
+            promo_id = None
+            coupon_rid = None
+            if not kids_intro:
+                # 1) Промокод из общей таблицы promo_codes (например «ДОБРО»).
+                promo_id, promo_percent = lookup_promo(cur, coupon_code)
+                if promo_id:
+                    amount_kopecks = apply_promo_kopecks(base_kopecks, promo_percent)
+                else:
+                    # 2) Иначе — купон-скидка из магазина ЗНАЕК.
+                    coupon_rid, coupon_percent = lookup_coupon(cur, user_id, coupon_code)
+                    if coupon_rid:
+                        amount_kopecks = apply_promo_kopecks(base_kopecks, coupon_percent)
             amount_rub = amount_kopecks / 100
 
             # Если уже есть активная — сообщаем
@@ -737,6 +803,8 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     "payload = payload || %s WHERE id = %s AND status = 'active'",
                     (json.dumps({'reserved_subscription_id': subscription_id}), coupon_rid)
                 )
+            if promo_id:
+                cur.execute("UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
             conn.commit()
 
             if not shop_id or not secret_key:
