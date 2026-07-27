@@ -127,6 +127,8 @@ const GrantMy = lazy(() => import("./pages/GrantMy"));
 const TutorHub = lazy(() => import("./pages/TutorHub"));
 const Silent = lazy(() => import("./pages/Silent"));
 const SilentLesson = lazy(() => import("./pages/SilentLesson"));
+const SignDictionary = lazy(() => import("./pages/SignDictionary"));
+const SignDictionaryItem = lazy(() => import("./pages/SignDictionaryItem"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -212,6 +214,8 @@ const App = () => (
                     <Route path="/silent" element={<Silent />} />
                     <Route path="/silent/lesson" element={<SilentLesson />} />
                     <Route path="/silent/lesson/:slug" element={<SilentLesson />} />
+                    <Route path="/dictionary" element={<SignDictionary />} />
+                    <Route path="/dictionary/:key" element={<SignDictionaryItem />} />
                     <Route path="/exam-checklist" element={<ExamChecklist />} />
                     <Route path="/feed" element={<Feed />} />
                     <Route path="/feed/submit" element={<FeedSubmit />} />

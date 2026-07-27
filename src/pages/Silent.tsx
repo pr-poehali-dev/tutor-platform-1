@@ -54,13 +54,21 @@ export default function Silent() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">🤟</div>
             <span className="font-montserrat font-black text-base gradient-text-purple">УЧИСЬПРО</span>
           </Link>
-          <Link
-            to="/silent/lesson"
-            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:scale-105 transition-transform"
-          >
-            Открыть урок
-            <Icon name="ArrowRight" size={12} />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/dictionary"
+              className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg hover:border-cyan-400/40 transition-colors"
+            >
+              <Icon name="BookA" size={13} /> Словарь жестов
+            </Link>
+            <Link
+              to="/silent/lesson"
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:scale-105 transition-transform"
+            >
+              Открыть урок
+              <Icon name="ArrowRight" size={12} />
+            </Link>
+          </div>
         </div>
       </div>
 

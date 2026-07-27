@@ -377,3 +377,78 @@ export function signKey(caption: string): string {
 export function findSign(caption: string): SignEntry | null {
   return SIGN_LIBRARY[signKey(caption)] || null;
 }
+
+/* ─────────────────────────  СЛОВАРЬ ЖЕСТОВ  ─────────────────────────
+ * Тематические категории для витрины словаря РЖЯ (страница /dictionary).
+ * Одна запись библиотеки может попадать ровно в одну тему.
+ */
+
+export interface SignCategory {
+  id: string;
+  title: string;
+  emoji: string;
+}
+
+export const SIGN_CATEGORIES: SignCategory[] = [
+  { id: "greetings", title: "Приветствие и общение", emoji: "👋" },
+  { id: "colors", title: "Цвета", emoji: "🎨" },
+  { id: "family", title: "Семья", emoji: "👨‍👩‍👧" },
+  { id: "numbers", title: "Цифры", emoji: "🔢" },
+  { id: "animals", title: "Животные", emoji: "🐾" },
+  { id: "food", title: "Еда и напитки", emoji: "🍎" },
+  { id: "emotions", title: "Чувства и эмоции", emoji: "😊" },
+  { id: "polite", title: "Вежливые слова", emoji: "🤝" },
+  { id: "alphabet", title: "Дактиль (азбука)", emoji: "🔤" },
+];
+
+/** К какой теме относится каждый ключ библиотеки. */
+const SIGN_TO_CATEGORY: Record<string, string> = {
+  привет: "greetings", меня_зовут: "greetings", спасибо: "greetings",
+  как_тебя_зовут: "greetings", до_свидания: "greetings",
+  красный: "colors", жёлтый: "colors", зелёный: "colors", синий: "colors",
+  семья: "family", мама: "family", папа: "family", бабушка: "family", дедушка: "family",
+  один: "numbers", два: "numbers", три: "numbers", четыре: "numbers", пять: "numbers",
+  кошка: "animals", собака: "animals", птица: "animals", рыба: "animals", медведь: "animals",
+  еда: "food", вода: "food", хлеб: "food", молоко: "food", яблоко: "food",
+  радость: "emotions", грусть: "emotions", страх: "emotions", любовь: "emotions", злость: "emotions",
+  пожалуйста: "polite", извини: "polite", да: "polite", нет: "polite", помоги: "polite",
+  дактиль: "alphabet", буква_а: "alphabet", буква_б: "alphabet", буква_в: "alphabet", моё_имя: "alphabet",
+};
+
+export interface DictSign extends SignEntry {
+  /** Ключ записи в библиотеке (для ссылки /dictionary/:id). */
+  key: string;
+  /** Тема жеста. */
+  category: string;
+}
+
+/** Все жесты словаря списком (с ключом и темой). */
+export function allSigns(): DictSign[] {
+  return Object.entries(SIGN_LIBRARY).map(([key, entry]) => ({
+    ...entry,
+    key,
+    category: SIGN_TO_CATEGORY[key] || "greetings",
+  }));
+}
+
+/** Жест словаря по ключу (для страницы карточки). */
+export function getSignByKey(key: string): DictSign | null {
+  const entry = SIGN_LIBRARY[key];
+  if (!entry) return null;
+  return { ...entry, key, category: SIGN_TO_CATEGORY[key] || "greetings" };
+}
+
+/** Поиск + фильтр по теме. Пустой запрос и "all" возвращают всё. */
+export function searchSigns(query: string, category: string): DictSign[] {
+  const q = query.trim().toLowerCase();
+  return allSigns().filter((s) => {
+    const okCat = category === "all" || s.category === category;
+    const okQ = !q || s.word.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
+    return okCat && okQ;
+  });
+}
+
+/** Название темы по id. */
+export function categoryTitle(id: string): string {
+  return SIGN_CATEGORIES.find((c) => c.id === id)?.title || "Жесты";
+}
