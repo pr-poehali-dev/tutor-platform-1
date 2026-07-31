@@ -46,6 +46,7 @@ const ChemistryProblems = lazy(() => import("./pages/ChemistryProblems"));
 const Graduate = lazy(() => import("./pages/Graduate"));
 const GraduatePrep = lazy(() => import("./pages/GraduatePrep"));
 const Graduates = lazy(() => import("./pages/Graduates"));
+const FreeCourses = lazy(() => import("./pages/FreeCourses"));
 const KnowYourself = lazy(() => import("./pages/KnowYourself"));
 const KnowYourselfResult = lazy(() => import("./pages/KnowYourselfResult"));
 const ExamChecklist = lazy(() => import("./pages/ExamChecklist"));
@@ -209,6 +210,7 @@ const App = () => (
                     <Route path="/draw/:id" element={<DrawLesson />} />
                     <Route path="/graduate" element={<Graduate />} />
                     <Route path="/graduates" element={<Graduates />} />
+                    <Route path="/free-courses" element={<FreeCourses />} />
                     <Route path="/graduate/prep/:subject/:universityId/:facultyId" element={<GraduatePrep />} />
                     <Route path="/know-yourself" element={<KnowYourself />} />
                     <Route path="/know-yourself/result" element={<KnowYourselfResult />} />
