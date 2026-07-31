@@ -247,11 +247,19 @@ def build_fallback_curriculum(course_info):
     except (TypeError, ValueError):
         course_id = None
 
-    # Ключ плана = subject + grade_band (5-9 / 10-11)
-    plan_key = f'{subject}_{grade}'
+    # Ключ плана = subject + grade_band (5-9 / 10-11).
+    # Экзаменационные классы приводим к нужному диапазону, чтобы не уходить в generic:
+    # ЕГЭ и 10-11 — старшая школа, ОГЭ — 5-9.
+    grade_band = grade
+    if grade in ('ege', '10-11', '11'):
+        grade_band = '10-11'
+    elif grade in ('oge', '5-9', '9', '1-4'):
+        grade_band = '5-9'
+    plan_key = f'{subject}_{grade_band}'
     plan = (
         (CURRICULUM_PLANS_BY_ID.get(course_id) if course_id is not None else None)
         or CURRICULUM_PLANS.get(plan_key)
+        or CURRICULUM_PLANS.get(f'{subject}_{grade}')
         or CURRICULUM_PLANS.get(subject)
         or build_generic_plan(subject, grade)
     )
@@ -1786,6 +1794,32 @@ def action_regenerate(conn, body):
     return ok({'regenerated': True, 'curriculum': curr, 'lessons': lessons})
 
 
+def action_rebuild_fallback(conn, body):
+    """Пересобрать программу курса из детального fallback-плана (БЕЗ ИИ).
+    Нужно для починки курсов, у которых в БД оказалась программа чужого предмета.
+    Строит корректную программу по subject/grade из course_info и перезаписывает кэш."""
+    course_id = body.get('course_id')
+    course_info = body.get('course_info')
+    if not course_id or not course_info:
+        return err('course_id и course_info обязательны')
+    try:
+        course_id = int(course_id)
+    except Exception:
+        return err('course_id должен быть числом')
+
+    course_info.setdefault('id', course_id)
+    plan = apply_compliance(build_fallback_curriculum(course_info), course_info)
+    plan['_ai_error'] = 'rebuilt from fallback plan'
+    save_curriculum(conn, course_id, course_info, plan)
+    curr, lessons = fetch_existing(conn, course_id)
+    return ok({
+        'rebuilt': True,
+        'curriculum': curr,
+        'lessons': lessons,
+        'total_lessons': len(lessons),
+    })
+
+
 def action_status_all(conn, body):
     """Возвращает по каждому course_id из списка: есть ли программа в кэше и метрики."""
     ids = body.get('course_ids') or []
@@ -2101,6 +2135,8 @@ def handler(event, context):
             return action_get(conn, body, qs)
         if action == 'regenerate':
             return action_regenerate(conn, body)
+        if action == 'rebuild_fallback':
+            return action_rebuild_fallback(conn, body)
         if action == 'status_all':
             return action_status_all(conn, body)
         if action == 'batch_generate':
