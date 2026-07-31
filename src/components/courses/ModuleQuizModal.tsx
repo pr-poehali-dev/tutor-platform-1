@@ -23,7 +23,12 @@ const SUPPORTED_SUBJECTS = [
   "logic", "skills", "career", "literature", "marketing", "robotics", "smartmach",
   "psychology", "personalbrand",
 ];
-const mapSubject = (s: string) => (SUPPORTED_SUBJECTS.includes(s) ? s : "math");
+const mapSubject = (s: string) => {
+  if (SUPPORTED_SUBJECTS.includes(s)) return s;
+  if (s === "prompteng" || s === "neuroincome") return "ai";
+  if (s === "accounting" || s === "autocad") return "business";
+  return "math";
+};
 const mapGrade = (g: string) => {
   if (["5-9", "10-11", "ege"].includes(g)) return g;
   if (g === "oge") return "5-9";
