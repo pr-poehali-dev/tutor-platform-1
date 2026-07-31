@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 const RESULTS = [
@@ -109,6 +110,18 @@ export default function StudentResults() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Ссылка на полную галерею выпускников */}
+      <div className="mt-8 flex justify-center">
+        <Link
+          to="/graduates"
+          className="group inline-flex items-center gap-2 bg-white/[0.04] border border-white/12 hover:border-purple-400/40 hover:bg-white/[0.07] text-white text-sm font-bold px-6 py-3 rounded-2xl transition-all"
+        >
+          <Icon name="GraduationCap" size={16} className="text-purple-300" />
+          Смотреть истории выпускников
+          <Icon name="ChevronRight" size={16} className="text-white/40 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
       </div>
 
       <p className="text-white/35 text-[11px] text-center mt-6">
