@@ -33,6 +33,32 @@ export interface CourseDetail {
 }
 
 // Универсальный шаблон для всех курсов (генерируется на основе предмета)
+// Исправление рассинхрона программ: часть блоков в CUSTOM_COURSE_DETAILS исторически
+// «съехала» на чужие курсы. Эта карта восстанавливает верную привязку:
+// курс с id (ключ) берёт программу из блока с id (значение).
+// Курсы, которых здесь нет и чья родная программа занята — используют
+// стабильную предметную генерацию из тегов (см. ниже FORCE_GENERATED_IDS).
+const COURSE_PROGRAM_SOURCE: Record<number, number> = {
+  13: 14, // Python с нуля
+  14: 16, // ЕГЭ информатика
+  16: 17, // Игры на Scratch
+  17: 19, // Английский с нуля (база)
+  19: 18, // ЕГЭ английский
+  30: 33, // ЕГЭ биология
+  31: 32, // Биология 6–9
+  33: 30, // ЕГЭ обществознание
+  35: 34, // География России
+  48: 47, // MBA для предпринимателей
+  50: 48, // Китайский с нуля
+  51: 50, // Корейский с нуля
+  53: 52, // Product Manager
+  68: 51, // Аналитик данных
+};
+
+// Курсы, чья родная программа была отдана другому курсу и теперь недоступна —
+// для них строим корректную статичную программу из их тегов.
+const FORCE_GENERATED_IDS = new Set<number>([15, 18, 32, 34, 47, 52]);
+
 export function getCourseDetail(course: {
   id: number;
   subject: string;
@@ -41,10 +67,13 @@ export function getCourseDetail(course: {
   lessons: number;
   tags: string[];
 }): CourseDetail {
-  // Сначала проверяем — есть ли у курса кастомная программа.
-  // Это нужно для авторских углублённых курсов, где автогенерация слишком общая.
-  const custom = CUSTOM_COURSE_DETAILS[course.id];
-  if (custom) return custom;
+  // Курсы, для которых родная программа недоступна — стабильная генерация из тегов.
+  if (!FORCE_GENERATED_IDS.has(course.id)) {
+    // Если для курса задан правильный источник программы — берём его.
+    const sourceId = COURSE_PROGRAM_SOURCE[course.id];
+    const custom = CUSTOM_COURSE_DETAILS[sourceId ?? course.id];
+    if (custom) return custom;
+  }
 
   // Базовые модули — делим уроки на 4 логических блока
   const lessonsPerModule = Math.ceil(course.lessons / 4);
