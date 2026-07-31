@@ -133,9 +133,9 @@ export default function HeroSection() {
                 loading="lazy"
                 className="w-full rounded-xl border border-white/20 shadow-xl shadow-purple-900/30"
               />
-              <span className="mt-1.5 flex items-center justify-center gap-1 whitespace-nowrap text-[10px] font-semibold text-white/70 group-hover:text-white transition-colors">
-                <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#7c4dff] text-white text-[8px] font-black leading-none" aria-hidden="true">т</span>
-                Партнёр Точка Банк
+              <span className="mt-1.5 flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-center leading-tight text-[10px] font-semibold text-white/70 group-hover:text-white transition-colors">
+                <span className="flex items-center justify-center w-3.5 h-3.5 shrink-0 rounded-full bg-[#7c4dff] text-white text-[8px] font-black leading-none" aria-hidden="true">т</span>
+                <span>Партнёр Точка&nbsp;Банк</span>
               </span>
 
               {/* Крупное превью сертификата при наведении (десктоп) */}

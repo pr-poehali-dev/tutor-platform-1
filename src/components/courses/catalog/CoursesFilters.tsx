@@ -155,22 +155,22 @@ export default function CoursesFilters({
             </button>
           )}
         </p>
-        <div className="flex items-center gap-2">
-          <label className="text-white/45 text-xs">Формат:</label>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <label className="text-white/45 text-xs shrink-0">Формат:</label>
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
+            className="min-w-0 flex-1 sm:flex-none bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
           >
             {FORMAT.map((f) => (
               <option key={f.id} value={f.id} className="bg-background">{f.label}</option>
             ))}
           </select>
-          <label className="text-white/45 text-xs ml-2">Сортировка:</label>
+          <label className="text-white/45 text-xs shrink-0 sm:ml-2">Сортировка:</label>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
+            className="min-w-0 flex-1 sm:flex-none bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/85 focus:outline-none focus:border-purple-500/40"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.id} value={o.id} className="bg-background">{o.label}</option>
