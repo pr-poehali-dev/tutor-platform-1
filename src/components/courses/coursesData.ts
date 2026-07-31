@@ -35,6 +35,8 @@ export const SUBJECTS = [
   { id: "sales", label: "Продажи B2B", emoji: "🤝" },
   { id: "psychology", label: "Психология и коучинг", emoji: "🧠" },
   { id: "personalbrand", label: "Личный бренд и влияние", emoji: "🎯" },
+  { id: "accounting", label: "Бухгалтерия и 1С", emoji: "🧮" },
+  { id: "autocad", label: "AutoCAD и черчение", emoji: "📐" },
 ];
 
 export const GRADES = [
