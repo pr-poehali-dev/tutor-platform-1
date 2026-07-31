@@ -26,7 +26,7 @@ const SUPPORTED_SUBJECTS = [
 const mapSubject = (s: string) => {
   if (SUPPORTED_SUBJECTS.includes(s)) return s;
   if (s === "prompteng" || s === "neuroincome") return "ai";
-  if (s === "accounting" || s === "autocad") return "business";
+  if (s === "accounting" || s === "autocad" || s === "trading") return "business";
   return "math";
 };
 const mapGrade = (g: string) => {
