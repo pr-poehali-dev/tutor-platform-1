@@ -11,6 +11,7 @@ import psycopg2
 
 SITE = 'https://учисьпро.рф'
 SCHEMA = 't_p78828167_tutor_platform_1'
+# Динамический sitemap статей ленты для поисковиков (обновляется из БД автоматически).
 
 
 def _xml_escape(s: str) -> str:

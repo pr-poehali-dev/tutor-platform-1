@@ -51,3 +51,4 @@ Allow: /
 
 Host: https://учисьпро.рф
 Sitemap: https://учисьпро.рф/sitemap.xml
+Sitemap: https://functions.poehali.dev/a18bd705-89a8-4264-b242-3c1469eb464e
