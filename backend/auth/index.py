@@ -92,6 +92,43 @@ def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
 
+ATTEMPTS_SCHEMA = 't_p78828167_tutor_platform_1'
+RL_WINDOW_MIN = 15          # окно наблюдения, минут
+RL_MAX_FAILS_PER_IP = 10    # макс. неудачных попыток с одного IP за окно
+RL_MAX_FAILS_PER_EMAIL = 5  # макс. неудачных попыток по одному email за окно
+
+
+def check_rate_limit(cur, ip: str, email: str) -> bool:
+    """True — если лимит НЕ превышен и можно продолжать. False — заблокировать."""
+    cur.execute(
+        f"SELECT COUNT(*) FROM {ATTEMPTS_SCHEMA}.auth_login_attempts "
+        f"WHERE success = FALSE AND created_at > NOW() - INTERVAL '{RL_WINDOW_MIN} minutes' "
+        f"AND ip = %s",
+        (ip or '',)
+    )
+    if (cur.fetchone()[0] or 0) >= RL_MAX_FAILS_PER_IP:
+        return False
+    if email:
+        cur.execute(
+            f"SELECT COUNT(*) FROM {ATTEMPTS_SCHEMA}.auth_login_attempts "
+            f"WHERE success = FALSE AND created_at > NOW() - INTERVAL '{RL_WINDOW_MIN} minutes' "
+            f"AND email = %s",
+            (email,)
+        )
+        if (cur.fetchone()[0] or 0) >= RL_MAX_FAILS_PER_EMAIL:
+            return False
+    return True
+
+
+def record_attempt(cur, ip: str, email: str, action: str, success: bool) -> None:
+    """Записывает попытку входа/регистрации для контроля перебора."""
+    cur.execute(
+        f"INSERT INTO {ATTEMPTS_SCHEMA}.auth_login_attempts (ip, email, action, success) "
+        f"VALUES (%s, %s, %s, %s)",
+        ((ip or '')[:64], (email or '')[:320], action[:32], bool(success))
+    )
+
+
 def create_session(cur, user_id: int, user_agent: str, ip: str) -> str:
     token = secrets.token_urlsafe(48)
     session_expires = datetime.now(timezone.utc) + timedelta(days=SESSION_TTL_DAYS)
@@ -120,8 +157,14 @@ def handle_register(body: dict, user_agent: str, ip: str) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            if not check_rate_limit(cur, ip, email):
+                conn.commit()
+                return err('Слишком много попыток. Подожди 15 минут и попробуй снова.', 429)
+
             cur.execute("SELECT id FROM auth_users WHERE LOWER(email) = %s LIMIT 1", (email,))
             if cur.fetchone():
+                record_attempt(cur, ip, email, 'register', False)
+                conn.commit()
                 return err('Этот email уже зарегистрирован. Войди в свой аккаунт.', 409)
 
             try:
@@ -162,17 +205,26 @@ def handle_login(body: dict, user_agent: str, ip: str) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            if not check_rate_limit(cur, ip, email):
+                conn.commit()
+                return err('Слишком много попыток входа. Подожди 15 минут и попробуй снова.', 429)
+
             cur.execute(
                 "SELECT id, name, password_hash, phone FROM auth_users WHERE LOWER(email) = %s LIMIT 1",
                 (email,)
             )
             row = cur.fetchone()
             if not row:
+                record_attempt(cur, ip, email, 'login', False)
+                conn.commit()
                 return err('Неверный email или пароль', 401)
             user_id, name, pwd_hash, phone = row
             if not pwd_hash or not verify_password(password, pwd_hash):
+                record_attempt(cur, ip, email, 'login', False)
+                conn.commit()
                 return err('Неверный email или пароль', 401)
 
+            record_attempt(cur, ip, email, 'login', True)
             cur.execute("UPDATE auth_users SET last_login_at = NOW() WHERE id = %s", (user_id,))
             token = create_session(cur, user_id, user_agent, ip)
             conn.commit()
