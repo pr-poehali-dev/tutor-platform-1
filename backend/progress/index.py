@@ -27,36 +27,31 @@ def get_conn():
     return psycopg2.connect(dsn)
 
 
-def escape_str(value):
-    """Экранирование строки для SQL (Simple Query Protocol)"""
+def to_json(value):
+    """Сериализация значения в JSON-строку для параметра ::jsonb"""
     if value is None:
-        return 'NULL'
-    return "'" + str(value).replace("'", "''") + "'"
-
-
-def escape_json(value):
-    """JSON в SQL"""
-    if value is None:
-        return 'NULL'
-    return "'" + json.dumps(value, ensure_ascii=False).replace("'", "''") + "'::jsonb"
+        return None
+    return json.dumps(value, ensure_ascii=False)
 
 
 def login_or_register(nickname, display_name=None, avatar='🦁'):
     nickname = nickname.strip().lower()
     if not nickname or len(nickname) > 64:
         raise Exception('Ник должен быть от 1 до 64 символов')
+    avatar = str(avatar or '🦁')[:16]
 
     conn = get_conn()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE nickname = {escape_str(nickname)}")
+            cur.execute(f"SELECT * FROM {SCHEMA}.users WHERE nickname = %s", (nickname,))
             user = cur.fetchone()
 
             if not user:
-                dn = display_name or nickname
+                dn = str(display_name or nickname)[:128]
                 cur.execute(
                     f"INSERT INTO {SCHEMA}.users (nickname, display_name, avatar_emoji, last_active_date) "
-                    f"VALUES ({escape_str(nickname)}, {escape_str(dn)}, {escape_str(avatar)}, CURRENT_DATE) RETURNING *"
+                    f"VALUES (%s, %s, %s, CURRENT_DATE) RETURNING *",
+                    (nickname, dn, avatar)
                 )
                 user = cur.fetchone()
                 conn.commit()
@@ -73,8 +68,9 @@ def login_or_register(nickname, display_name=None, avatar='🦁'):
                 else:
                     new_streak = 1
                 cur.execute(
-                    f"UPDATE {SCHEMA}.users SET streak_days = {new_streak}, last_active_date = CURRENT_DATE "
-                    f"WHERE id = {user['id']} RETURNING *"
+                    f"UPDATE {SCHEMA}.users SET streak_days = %s, last_active_date = CURRENT_DATE "
+                    f"WHERE id = %s RETURNING *",
+                    (int(new_streak), int(user['id']))
                 )
                 user = cur.fetchone()
                 conn.commit()
@@ -133,10 +129,11 @@ def save_journey(user_id, subject, grade, level_assessment, score_percent,
                 f"INSERT INTO {SCHEMA}.journeys "
                 f"(user_id, subject, grade, level_assessment, initial_score_percent, "
                 f"program_data, weak_topics, strong_topics) VALUES ("
-                f"{int(user_id)}, {escape_str(subject)}, {escape_str(grade)}, "
-                f"{escape_str(level_assessment)}, {int(score_percent)}, "
-                f"{escape_json(program_data)}, {escape_json(weak_topics)}, {escape_json(strong_topics)}"
-                f") RETURNING id"
+                f"%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb"
+                f") RETURNING id",
+                (int(user_id), str(subject), str(grade), str(level_assessment),
+                 int(score_percent), to_json(program_data), to_json(weak_topics),
+                 to_json(strong_topics))
             )
             journey_id = cur.fetchone()['id']
             conn.commit()
@@ -166,10 +163,11 @@ def complete_module(user_id, journey_id, module_id, repeat_after_days, topic):
 
             completed_at_sql = 'NOW()' if is_complete else 'NULL'
             cur.execute(
-                f"UPDATE {SCHEMA}.journeys SET completed_module_ids = {escape_json(completed)}, "
-                f"is_complete = {is_complete}, updated_at = NOW(), "
+                f"UPDATE {SCHEMA}.journeys SET completed_module_ids = %s::jsonb, "
+                f"is_complete = %s, updated_at = NOW(), "
                 f"completed_at = {completed_at_sql} "
-                f"WHERE id = {int(journey_id)}"
+                f"WHERE id = %s",
+                (to_json(completed), bool(is_complete), int(journey_id))
             )
 
             for days in (repeat_after_days or []):
@@ -177,8 +175,8 @@ def complete_module(user_id, journey_id, module_id, repeat_after_days, topic):
                 cur.execute(
                     f"INSERT INTO {SCHEMA}.spaced_repetition "
                     f"(journey_id, user_id, module_id, topic, review_at) VALUES ("
-                    f"{int(journey_id)}, {int(user_id)}, {int(module_id)}, "
-                    f"{escape_str(topic)}, '{review_date}'::date)"
+                    f"%s, %s, %s, %s, %s::date)",
+                    (int(journey_id), int(user_id), int(module_id), str(topic), review_date)
                 )
 
             conn.commit()
@@ -194,14 +192,15 @@ def log_task(user_id, journey_id, module_id, topic, question, is_correct, hints_
             cur.execute(
                 f"INSERT INTO {SCHEMA}.completed_tasks "
                 f"(journey_id, user_id, module_id, topic, task_question, is_correct, hints_used, xp_earned) "
-                f"VALUES ({int(journey_id)}, {int(user_id)}, {int(module_id)}, "
-                f"{escape_str(topic)}, {escape_str(question)}, {bool(is_correct)}, "
-                f"{int(hints_used)}, {int(xp)})"
+                f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (int(journey_id), int(user_id), int(module_id), str(topic),
+                 str(question), bool(is_correct), int(hints_used), int(xp))
             )
             if xp > 0:
                 cur.execute(
-                    f"UPDATE {SCHEMA}.users SET total_xp = total_xp + {int(xp)} "
-                    f"WHERE id = {int(user_id)}"
+                    f"UPDATE {SCHEMA}.users SET total_xp = total_xp + %s "
+                    f"WHERE id = %s",
+                    (int(xp), int(user_id))
                 )
             conn.commit()
         return {'ok': True}

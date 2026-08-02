@@ -45,17 +45,11 @@ def handler(event: dict, context) -> dict:
         ident = (event.get('requestContext') or {}).get('identity') or {}
         ip = (ident.get('sourceIp') or '')[:50]
 
-        v_id = visitor_id.replace("'", "''")
-        v_path = path.replace("'", "''")
-        v_ref = "NULL" if referrer is None else "'" + referrer.replace("'", "''") + "'"
-        v_uid = "NULL" if user_uid is None else "'" + user_uid.replace("'", "''") + "'"
-        v_ua = ua.replace("'", "''")
-        v_ip = ip.replace("'", "''")
-
         cur.execute(
             f"INSERT INTO {SCHEMA}.page_visits "
             f"(visitor_id, user_uid, path, referrer, user_agent, ip, is_new_visitor) "
-            f"VALUES ('{v_id}', {v_uid}, '{v_path}', {v_ref}, '{v_ua}', '{v_ip}', {str(is_new).upper()})"
+            f"VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (visitor_id, user_uid, path, referrer, ua, ip, is_new)
         )
         cur.close()
         conn.close()
