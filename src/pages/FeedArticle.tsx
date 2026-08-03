@@ -14,6 +14,22 @@ import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
 import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 
+// Инлайн-разметка: **жирный** текст внутри абзацев, заголовков и списков.
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    const m = /^\*\*([^*]+)\*\*$/.exec(part);
+    if (m) {
+      return (
+        <strong key={idx} className="font-semibold text-white">
+          {m[1]}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
 export default function FeedArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -77,7 +93,7 @@ export default function FeedArticlePage() {
 
   const meta = CATEGORY_META[article.category];
   const fullText = article.content || article.summary;
-  const paragraphs = fullText.split(/\n+/).filter(Boolean);
+  const paragraphs = fullText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
   const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
 
   // Обложка-документ (вертикальный сертификат) — показываем целиком, без обрезки 16:9.
@@ -184,18 +200,29 @@ export default function FeedArticlePage() {
             if (h3) {
               return (
                 <h3 key={i} className="font-montserrat font-bold text-white text-lg md:text-xl mt-6 mb-1">
-                  {p.replace(/^###\s+/, "")}
+                  {renderInline(p.replace(/^###\s+/, ""))}
                 </h3>
               );
             }
             if (h2) {
               return (
                 <h2 key={i} className="font-montserrat font-black text-white text-xl md:text-2xl mt-8 mb-2">
-                  {p.replace(/^##\s+/, "")}
+                  {renderInline(p.replace(/^##\s+/, ""))}
                 </h2>
               );
             }
-            return <p key={i}>{p}</p>;
+            const lines = p.split(/\n/);
+            const isList = lines.length > 0 && lines.every((l) => /^\s*[-*]\s+/.test(l));
+            if (isList) {
+              return (
+                <ul key={i} className="list-disc pl-5 space-y-2 marker:text-primary">
+                  {lines.map((l, j) => (
+                    <li key={j}>{renderInline(l.replace(/^\s*[-*]\s+/, ""))}</li>
+                  ))}
+                </ul>
+              );
+            }
+            return <p key={i}>{renderInline(p)}</p>;
           })}
         </article>
 
