@@ -22,7 +22,7 @@ import os
 import re
 import urllib.request
 import urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 import psycopg2
 
 CORS = {
@@ -725,6 +725,388 @@ def handle_journal_post(headers, body):
         conn.close()
 
 
+# ─────────── ЕЖЕДНЕВНЫЙ ТРЕКЕР ПЛАНА НА 5 ЛЕТ ───────────
+# День открывается строго в свою дату (вперёд не заглянуть).
+# Месяц и год видны заранее. Вечерняя рефлексия скрыто анализируется и формирует следующий день.
+
+DAY_PROMPT = (
+    "Ты — наставник Марк, ведёшь человека по его 5-летнему плану. "
+    "Твоя задача — составить план на ОДИН конкретный день так, чтобы он двигал к цели года и месяца.\n"
+    "ПРАВИЛА:\n"
+    "1. Ровно 3-4 задачи на день. Каждая — конкретное действие, выполнимое за указанное время.\n"
+    "2. Суммарно задачи должны укладываться в доступное время человека в день.\n"
+    "3. Задачи должны логично продолжать вчерашний день: если вчера не получилось — упрости и помоги вернуться, "
+    "если вчера всё сделано — усложни на шаг.\n"
+    "4. Никакой воды: не «изучить основы», а «пройти урок X и написать N строк кода / сделать конспект».\n"
+    "5. focus — одна короткая фраза, главный смысл дня (до 90 символов).\n"
+    "ФОРМАТ ОТВЕТА — строго JSON: "
+    '{"focus": "строка", "tasks": [{"title": "строка", "minutes": число, "why": "зачем это, 1 фраза"}]}'
+)
+
+MONTH_PROMPT = (
+    "Ты — наставник Марк. Составь план на ОДИН месяц внутри 5-летнего плана человека.\n"
+    "ПРАВИЛА: 3-4 измеримые цели месяца, которые реально закрыть за 4 недели при указанной загрузке. "
+    "Цели должны вести к метрике года. Конкретика вместо общих слов.\n"
+    "ФОРМАТ — строго JSON: "
+    '{"title": "название месяца-этапа", "focus": "главный фокус месяца", '
+    '"goals": ["цель 1", "цель 2", "цель 3"], "metric": "измеримый результат месяца"}'
+)
+
+REFLECT_PROMPT = (
+    "Ты — наставник Марк, ведёшь личный дневник человека по его 5-летнему плану. "
+    "Человек написал, как прошёл день. Ответь коротко и по-человечески: "
+    "признай факт одной фразой, назови главную причину (если не получилось) и дай ОДИН вывод на завтра. "
+    "Без списков и заголовков, 2-4 предложения, тепло но честно. Пиши на «ты», если человек пишет на «ты». "
+    "Ты не врач: при признаках серьёзного кризиса мягко порекомендуй живого специалиста и телефон 8-800-2000-122."
+)
+
+
+def _plan_row(cur, user_id):
+    """Активный план пользователя: (plan_id, goal, direction, plan_json)."""
+    cur.execute("SELECT id, goal, direction, plan FROM career_pro_plans "
+                "WHERE user_id = %s ORDER BY id DESC LIMIT 1", (user_id,))
+    return cur.fetchone()
+
+
+def _period_for(start_date, today):
+    """Считает номер дня/месяца/года плана от даты старта."""
+    day_index = (today - start_date).days + 1
+    if day_index < 1:
+        day_index = 1
+    month_total = (day_index - 1) // 30 + 1
+    year_index = min((month_total - 1) // 12 + 1, 5)
+    month_index = (month_total - 1) % 12 + 1
+    return day_index, year_index, month_index
+
+
+def _plan_start(cur, user_id):
+    """Дата старта трекера — первый созданный день, иначе сегодня."""
+    cur.execute("SELECT MIN(day_date) FROM career_pro_days WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if row and row[0]:
+        return row[0]
+    return date.today()
+
+
+def _year_block(plan_json, year_index):
+    """Данные нужного года из five_year_plan."""
+    try:
+        years = (plan_json or {}).get('five_year_plan', {}).get('years', [])
+        for y in years:
+            if int(y.get('year', 0)) == year_index:
+                return y
+        return years[year_index - 1] if len(years) >= year_index else {}
+    except Exception:
+        return {}
+
+
+def _ensure_month(cur, user_id, plan_id, plan_json, goal, direction, year_index, month_index):
+    """Возвращает план месяца, генерируя его при первом обращении."""
+    period_key = f'y{year_index}_m{month_index}'
+    cur.execute("SELECT title, focus, goals, metric FROM career_pro_months "
+                "WHERE user_id = %s AND period_key = %s LIMIT 1", (user_id, period_key))
+    row = cur.fetchone()
+    if row:
+        return {'title': row[0], 'focus': row[1], 'goals': row[2] or [], 'metric': row[3],
+                'year': year_index, 'month': month_index}
+
+    yb = _year_block(plan_json, year_index)
+    msg = (f"Цель человека: {goal or direction or 'рост в профессии'}\n"
+           f"Направление: {direction or '—'}\n"
+           f"Год {year_index} из 5 — «{yb.get('title', '')}», фокус: {yb.get('focus', '')}\n"
+           f"Метрика года: {yb.get('metric', '')}\n"
+           f"Контрольные точки года: {'; '.join(yb.get('milestones', [])[:4])}\n"
+           f"Сейчас месяц {month_index} этого года. Составь план именно на этот месяц.")
+    data, _e = call_polza(
+        [{'role': 'system', 'content': MONTH_PROMPT}, {'role': 'user', 'content': msg}],
+        temperature=0.6, max_tokens=800, deadline=20)
+
+    if not isinstance(data, dict):
+        data = {'title': f'Месяц {month_index}', 'focus': yb.get('focus', 'Двигаемся к цели года'),
+                'goals': yb.get('milestones', [])[:3] or ['Составить список шагов', 'Начать практику'],
+                'metric': yb.get('metric', '')}
+
+    title = str(data.get('title', ''))[:200]
+    focus = str(data.get('focus', ''))[:400]
+    goals = [str(g)[:300] for g in (data.get('goals') or [])][:4]
+    metric = str(data.get('metric', ''))[:300]
+
+    cur.execute(
+        "INSERT INTO career_pro_months (user_id, plan_id, year_index, month_index, period_key, "
+        "title, focus, goals, metric) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s) "
+        "ON CONFLICT (user_id, period_key) DO NOTHING",
+        (user_id, plan_id, year_index, month_index, period_key, title, focus,
+         json.dumps(goals, ensure_ascii=False), metric))
+    return {'title': title, 'focus': focus, 'goals': goals, 'metric': metric,
+            'year': year_index, 'month': month_index}
+
+
+def _prev_day(cur, user_id, today):
+    """Вчерашний день с рефлексией — контекст для генерации сегодняшнего."""
+    cur.execute("SELECT day_date, focus, tasks, done_tasks, reflection, status "
+                "FROM career_pro_days WHERE user_id = %s AND day_date < %s "
+                "ORDER BY day_date DESC LIMIT 1", (user_id, today))
+    return cur.fetchone()
+
+
+def _ensure_day(cur, user_id, plan_id, plan_json, goal, direction, today, month_plan,
+                day_index, year_index, month_index, hours_per_week):
+    """Возвращает сегодняшний день, генерируя его с учётом вчерашней рефлексии."""
+    cur.execute("SELECT id, focus, tasks, done_tasks, status, reflection, coach_note "
+                "FROM career_pro_days WHERE user_id = %s AND day_date = %s LIMIT 1", (user_id, today))
+    row = cur.fetchone()
+    if row:
+        return {'id': row[0], 'focus': row[1], 'tasks': row[2] or [], 'done': row[3] or [],
+                'status': row[4], 'reflection': row[5], 'coach_note': row[6]}
+
+    minutes_per_day = max(20, min(240, int((hours_per_week or 5) * 60 / 7)))
+    prev = _prev_day(cur, user_id, today)
+    prev_txt = 'Это первый день — начни мягко, но конкретно.'
+    if prev:
+        p_tasks = [t.get('title', '') if isinstance(t, dict) else str(t) for t in (prev[2] or [])]
+        p_done = prev[3] or []
+        prev_txt = (f"Вчера ({prev[0]}): фокус «{prev[1]}». Задачи: {'; '.join(p_tasks[:4])}. "
+                    f"Выполнено {len(p_done)} из {len(p_tasks)}. "
+                    f"Что человек написал о дне: {(prev[4] or 'ничего не написал')[:500]}")
+
+    msg = (f"Цель: {goal or direction or 'рост в профессии'}\n"
+           f"Направление: {direction or '—'}\n"
+           f"Год {year_index}, месяц {month_index}, день плана №{day_index}.\n"
+           f"Фокус месяца: {month_plan.get('focus', '')}\n"
+           f"Цели месяца: {'; '.join(month_plan.get('goals', [])[:4])}\n"
+           f"Доступно времени в день: примерно {minutes_per_day} минут.\n"
+           f"{prev_txt}\n"
+           f"Составь план на сегодня.")
+
+    data, _e = call_polza(
+        [{'role': 'system', 'content': DAY_PROMPT}, {'role': 'user', 'content': msg}],
+        temperature=0.6, max_tokens=700, deadline=20)
+
+    if not isinstance(data, dict) or not data.get('tasks'):
+        data = {'focus': month_plan.get('focus', 'Небольшой шаг к цели'),
+                'tasks': [{'title': 'Сделать один маленький шаг по цели месяца',
+                           'minutes': minutes_per_day, 'why': 'Главное — не терять ритм'}]}
+
+    focus = str(data.get('focus', ''))[:300]
+    tasks = []
+    for t in (data.get('tasks') or [])[:4]:
+        if isinstance(t, dict):
+            tasks.append({'title': str(t.get('title', ''))[:300],
+                          'minutes': max(5, min(240, int(t.get('minutes') or 30))),
+                          'why': str(t.get('why', ''))[:200]})
+    if not tasks:
+        tasks = [{'title': 'Сделать один шаг по цели месяца', 'minutes': minutes_per_day, 'why': ''}]
+
+    cur.execute(
+        "INSERT INTO career_pro_days (user_id, plan_id, day_date, day_index, year_index, month_index, "
+        "focus, tasks) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb) "
+        "ON CONFLICT (user_id, day_date) DO NOTHING RETURNING id",
+        (user_id, plan_id, today, day_index, year_index, month_index, focus,
+         json.dumps(tasks, ensure_ascii=False)))
+    r = cur.fetchone()
+    day_id = r[0] if r else None
+    return {'id': day_id, 'focus': focus, 'tasks': tasks, 'done': [],
+            'status': 'open', 'reflection': '', 'coach_note': ''}
+
+
+def _streak(cur, user_id):
+    """Серия дней подряд с заполненной рефлексией."""
+    cur.execute("SELECT day_date FROM career_pro_days WHERE user_id = %s AND status = 'closed' "
+                "ORDER BY day_date DESC LIMIT 400", (user_id,))
+    rows = [r[0] for r in cur.fetchall()]
+    if not rows:
+        return 0
+    streak = 0
+    cursor_day = date.today()
+    if rows[0] < cursor_day - timedelta(days=1):
+        return 0
+    if rows[0] == cursor_day - timedelta(days=1):
+        cursor_day = rows[0]
+    for d in rows:
+        if d == cursor_day:
+            streak += 1
+            cursor_day -= timedelta(days=1)
+        elif d < cursor_day:
+            break
+    return streak
+
+
+def handle_today(headers):
+    """Сегодняшний день плана: задачи дня, план месяца и года, прогресс."""
+    conn = get_db()
+    if conn is None:
+        return err('База данных недоступна', 500)
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, get_token(headers))
+            if not user_id:
+                return err('Требуется вход', 401)
+            row = _plan_row(cur, user_id)
+            if not row:
+                return ok({'has_plan': False})
+            plan_id, goal, direction, plan_json = row
+
+            today = date.today()
+            start = _plan_start(cur, user_id)
+            day_index, year_index, month_index = _period_for(start, today)
+
+            month_plan = _ensure_month(cur, user_id, plan_id, plan_json, goal, direction,
+                                       year_index, month_index)
+            hpw = 5
+            try:
+                hpw = int((plan_json or {}).get('hours_per_week') or 5)
+            except Exception:
+                pass
+            day = _ensure_day(cur, user_id, plan_id, plan_json, goal, direction, today,
+                              month_plan, day_index, year_index, month_index, hpw)
+            conn.commit()
+
+            cur.execute("SELECT COUNT(*) FROM career_pro_days WHERE user_id = %s AND status='closed'",
+                        (user_id,))
+            closed = cur.fetchone()[0] or 0
+
+            return ok({
+                'has_plan': True,
+                'today': today.isoformat(),
+                'day_index': day_index,
+                'year_index': year_index,
+                'month_index': month_index,
+                'day': day,
+                'month_plan': month_plan,
+                'year_plan': _year_block(plan_json, year_index),
+                'vision': (plan_json or {}).get('five_year_plan', {}).get('vision', ''),
+                'days_closed': closed,
+                'streak': _streak(cur, user_id),
+            })
+    except Exception as e:
+        conn.rollback()
+        return err(f'Не удалось собрать день: {str(e)[:120]}', 500)
+    finally:
+        conn.close()
+
+
+def handle_day_task(headers, body):
+    """Отметить задачу дня выполненной/невыполненной."""
+    idx = body.get('index')
+    done = bool(body.get('done'))
+    if idx is None:
+        return err('Не указана задача')
+    conn = get_db()
+    if conn is None:
+        return err('База данных недоступна', 500)
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, get_token(headers))
+            if not user_id:
+                return err('Требуется вход', 401)
+            today = date.today()
+            cur.execute("SELECT id, done_tasks FROM career_pro_days "
+                        "WHERE user_id = %s AND day_date = %s LIMIT 1", (user_id, today))
+            row = cur.fetchone()
+            if not row:
+                return err('День ещё не создан', 404)
+            day_id, done_list = row
+            done_list = list(done_list or [])
+            i = int(idx)
+            if done and i not in done_list:
+                done_list.append(i)
+            if not done and i in done_list:
+                done_list = [x for x in done_list if x != i]
+            cur.execute("UPDATE career_pro_days SET done_tasks = %s::jsonb, updated_at = now() "
+                        "WHERE id = %s", (json.dumps(done_list), day_id))
+            conn.commit()
+            return ok({'done': done_list})
+    finally:
+        conn.close()
+
+
+def handle_reflect(headers, body):
+    """Вечерняя рефлексия: сохраняем «как прошёл день» и получаем ответ наставника."""
+    text = (body.get('text') or '').strip()[:3000]
+    mood = (body.get('mood') or '').strip()[:16]
+    if not text:
+        return err('Напиши пару слов о дне')
+    conn = get_db()
+    if conn is None:
+        return err('База данных недоступна', 500)
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, get_token(headers))
+            if not user_id:
+                return err('Требуется вход', 401)
+            today = date.today()
+            cur.execute("SELECT id, focus, tasks, done_tasks FROM career_pro_days "
+                        "WHERE user_id = %s AND day_date = %s LIMIT 1", (user_id, today))
+            row = cur.fetchone()
+            if not row:
+                return err('День ещё не создан', 404)
+            day_id, focus, tasks, done_list = row
+            tasks = tasks or []
+            done_list = done_list or []
+
+            prow = _plan_row(cur, user_id)
+            goal = prow[1] if prow else ''
+            titles = [t.get('title', '') if isinstance(t, dict) else str(t) for t in tasks]
+            msg = (f"Цель человека: {goal or '—'}\n"
+                   f"Фокус дня: {focus}\n"
+                   f"Задачи дня: {'; '.join(titles)}\n"
+                   f"Выполнено: {len(done_list)} из {len(titles)}\n"
+                   f"Настроение: {mood or 'не указано'}\n"
+                   f"Как прошёл день (его словами): {text}")
+            reply, _e = call_coach(
+                [{'role': 'system', 'content': REFLECT_PROMPT}, {'role': 'user', 'content': msg}],
+                deadline=20)
+            if not reply:
+                reply = ('Записал. Главное — ты не бросил и подвёл итог дня. '
+                         'Завтра сделай хотя бы один шаг из плана, даже маленький.')
+
+            score = int(round(len(done_list) * 100 / max(1, len(titles))))
+            cur.execute(
+                "UPDATE career_pro_days SET reflection=%s, coach_note=%s, mood=%s, score=%s, "
+                "status='closed', updated_at=now() WHERE id=%s",
+                (text, reply, mood, score, day_id))
+            cur.execute("INSERT INTO career_pro_journal (user_id, role, content) VALUES (%s,'user',%s)",
+                        (user_id, f'[Итог дня] {text}'))
+            cur.execute("INSERT INTO career_pro_journal (user_id, role, content) VALUES (%s,'coach',%s)",
+                        (user_id, reply))
+            conn.commit()
+            return ok({'ok': True, 'coach_note': reply, 'score': score,
+                       'streak': _streak(cur, user_id)})
+    finally:
+        conn.close()
+
+
+def handle_history(headers):
+    """История дней: что было сделано и что человек писал о днях."""
+    conn = get_db()
+    if conn is None:
+        return err('База данных недоступна', 500)
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, get_token(headers))
+            if not user_id:
+                return err('Требуется вход', 401)
+            cur.execute(
+                "SELECT day_date, day_index, focus, tasks, done_tasks, reflection, coach_note, "
+                "mood, score, status FROM career_pro_days WHERE user_id = %s "
+                "ORDER BY day_date DESC LIMIT 60", (user_id,))
+            items = []
+            for r in cur.fetchall():
+                items.append({
+                    'date': r[0].isoformat(), 'day_index': r[1], 'focus': r[2],
+                    'tasks': r[3] or [], 'done': r[4] or [], 'reflection': r[5],
+                    'coach_note': r[6], 'mood': r[7], 'score': r[8], 'status': r[9],
+                })
+            cur.execute("SELECT COUNT(*), COALESCE(AVG(score),0) FROM career_pro_days "
+                        "WHERE user_id = %s AND status='closed'", (user_id,))
+            cnt, avg = cur.fetchone()
+            return ok({'items': items, 'days_closed': cnt or 0,
+                       'avg_score': int(avg or 0), 'streak': _streak(cur, user_id)})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
@@ -756,5 +1138,13 @@ def handler(event: dict, context) -> dict:
         return handle_journal_list(headers)
     if action == 'journal_post' and method == 'POST':
         return handle_journal_post(headers, body)
+    if action == 'today' and method == 'GET':
+        return handle_today(headers)
+    if action == 'day_task' and method == 'POST':
+        return handle_day_task(headers, body)
+    if action == 'reflect' and method == 'POST':
+        return handle_reflect(headers, body)
+    if action == 'history' and method == 'GET':
+        return handle_history(headers)
 
     return err('Неизвестное действие', 404)

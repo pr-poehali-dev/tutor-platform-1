@@ -73,6 +73,40 @@
       "expectedStatus": 401,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "today без токена требует вход",
+      "method": "GET",
+      "path": "/?action=today",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "reflect без токена требует вход",
+      "method": "POST",
+      "path": "/?action=reflect",
+      "body": {"text": "день прошёл нормально"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "reflect без текста возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=reflect",
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "history без токена требует вход",
+      "method": "GET",
+      "path": "/?action=history",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }

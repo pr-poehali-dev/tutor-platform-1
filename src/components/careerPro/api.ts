@@ -219,3 +219,124 @@ export async function journalPost(content: string): Promise<{ ok: boolean; reply
 }
 
 export const COACH_COURSE_ID = 9200;
+
+// ── Ежедневный трекер плана на 5 лет ──
+
+export interface DayTask {
+  title: string;
+  minutes: number;
+  why?: string;
+}
+
+export interface TodayDay {
+  id: number | null;
+  focus: string;
+  tasks: DayTask[];
+  done: number[];
+  status: "open" | "closed";
+  reflection: string;
+  coach_note: string;
+}
+
+export interface MonthPlan {
+  title: string;
+  focus: string;
+  goals: string[];
+  metric: string;
+  year: number;
+  month: number;
+}
+
+export interface TodayResult {
+  ok: boolean;
+  has_plan?: boolean;
+  today?: string;
+  day_index?: number;
+  year_index?: number;
+  month_index?: number;
+  day?: TodayDay;
+  month_plan?: MonthPlan;
+  year_plan?: FiveYear;
+  vision?: string;
+  days_closed?: number;
+  streak?: number;
+  message?: string;
+}
+
+export async function getToday(): Promise<TodayResult> {
+  try {
+    const res = await fetch(`${URL}?action=today`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true, ...data };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
+export async function toggleDayTask(
+  index: number,
+  done: boolean,
+): Promise<{ ok: boolean; done?: number[]; message?: string }> {
+  try {
+    const res = await fetch(`${URL}?action=day_task`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ index, done }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true, done: data.done };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
+export async function sendReflection(
+  text: string,
+  mood?: string,
+): Promise<{ ok: boolean; coach_note?: string; score?: number; streak?: number; message?: string }> {
+  try {
+    const res = await fetch(`${URL}?action=reflect`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ text, mood }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true, coach_note: data.coach_note, score: data.score, streak: data.streak };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
+export interface HistoryDay {
+  date: string;
+  day_index: number;
+  focus: string;
+  tasks: DayTask[];
+  done: number[];
+  reflection: string;
+  coach_note: string;
+  mood: string;
+  score: number;
+  status: string;
+}
+
+export async function getHistory(): Promise<{
+  ok: boolean;
+  items?: HistoryDay[];
+  days_closed?: number;
+  avg_score?: number;
+  streak?: number;
+  message?: string;
+}> {
+  try {
+    const res = await fetch(`${URL}?action=history`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true, ...data };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}

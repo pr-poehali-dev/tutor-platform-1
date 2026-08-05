@@ -2,6 +2,7 @@ import Icon from "@/components/ui/icon";
 import { CareerPlan, Progress } from "./api";
 import FiveYearPlanView from "./FiveYearPlanView";
 import CoachJournal from "./CoachJournal";
+import DailyTracker from "./DailyTracker";
 
 interface Props {
   plan: CareerPlan;
@@ -147,6 +148,15 @@ export default function PlanView({ plan, price, onApply, onRestart, savedProgres
               <p className="text-white/80 text-sm md:text-base leading-relaxed">{plan.pep_talk}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {planSaved && (
+        <div>
+          <h3 className="flex items-center gap-2 font-montserrat font-black text-lg text-white mb-3">
+            <Icon name="CalendarCheck" size={18} className="text-primary" /> План на сегодня
+          </h3>
+          <DailyTracker />
         </div>
       )}
 
