@@ -47,10 +47,11 @@ export default function VisitTracker() {
     };
 
     try {
-      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(ANALYTICS_URL, blob);
-      } else {
+      // text/plain — единственный JSON-совместимый тип, который sendBeacon шлёт без
+      // CORS-preflight. С application/json браузер молча отбрасывает запрос.
+      const blob = new Blob([JSON.stringify(payload)], { type: "text/plain;charset=UTF-8" });
+      const sent = navigator.sendBeacon ? navigator.sendBeacon(ANALYTICS_URL, blob) : false;
+      if (!sent) {
         fetch(ANALYTICS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

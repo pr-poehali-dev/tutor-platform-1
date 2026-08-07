@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Предпросмотр отчёта работает",
+      "method": "GET",
+      "path": "/?action=preview",
+      "expectedStatus": 200,
+      "expectedBody": {"report": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Отправка без секрета запрещена",
+      "method": "GET",
+      "path": "/?action=send",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
