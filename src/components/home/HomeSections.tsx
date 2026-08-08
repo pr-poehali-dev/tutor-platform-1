@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import HeroSection from "@/components/HeroSection";
 import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
+import MiniCoursesPromo from "@/components/home/MiniCoursesPromo";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
 import CareerProPromo from "@/components/home/CareerProPromo";
@@ -41,6 +42,7 @@ export default function HomeSections() {
         <Suspense fallback={<SectionSkeleton />}>
           <PremiumTracks />
         </Suspense>
+        <MiniCoursesPromo />
         <QuickTools />
       </main>
     );
@@ -54,6 +56,9 @@ export default function HomeSections() {
 
       {/* 2. Точка входа — бесплатные курсы */}
       <FreeCoursesBlock />
+
+      {/* 2.2. Самый лёгкий вход — мини-курсы на один вечер, без регистрации */}
+      <MiniCoursesPromo />
 
       {/* 2.3. Флагманская фишка — индивидуальный ИИ-курс под человека */}
       <CareerProPromo />
