@@ -14,18 +14,48 @@ import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
 import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 
-// Инлайн-разметка: **жирный** текст внутри абзацев, заголовков и списков.
+// Инлайн-разметка: **жирный** текст и [ссылки](/path) внутри абзацев,
+// заголовков и списков.
 function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
   return parts.map((part, idx) => {
-    const m = /^\*\*([^*]+)\*\*$/.exec(part);
-    if (m) {
+    const bold = /^\*\*([^*]+)\*\*$/.exec(part);
+    if (bold) {
       return (
         <strong key={idx} className="font-semibold text-white">
-          {m[1]}
+          {bold[1]}
         </strong>
       );
     }
+
+    const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
+    if (link) {
+      const [, label, href] = link;
+      const isInternal = href.startsWith("/");
+      if (isInternal) {
+        return (
+          <Link
+            key={idx}
+            to={href}
+            className="text-primary font-semibold underline decoration-primary/40 underline-offset-2 hover:decoration-primary transition-colors"
+          >
+            {label}
+          </Link>
+        );
+      }
+      return (
+        <a
+          key={idx}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary font-semibold underline decoration-primary/40 underline-offset-2 hover:decoration-primary transition-colors"
+        >
+          {label}
+        </a>
+      );
+    }
+
     return part;
   });
 }
