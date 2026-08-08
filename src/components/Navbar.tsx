@@ -45,6 +45,7 @@ const MENU_GROUPS: MenuGroup[] = [
     label: "Карьера и ИИ",
     icon: "Rocket",
     items: [
+      { label: "БИЗНЕС 2026",         icon: "Gauge",       path: "/bizlab",           desc: "Проверка бизнес-идеи на прочность · бесплатно" },
       { label: "Профориентация PRO",  icon: "Fingerprint", path: "/career-pro",       desc: "Индивидуальный курс под вас · ИИ" },
       { label: "Бизнес-тренер и коуч", icon: "TrendingUp", path: "/business-coach",   desc: "Стратегия роста бизнеса · ИИ" },
       { label: "Финансовый консультант", icon: "ChartNoAxesCombined", path: "/fin-advisor", desc: "Честный ИИ-анализ по вашим цифрам" },

@@ -1,5 +1,6 @@
 import { CourseAudience, MiniCourse, MiniLesson } from "./types";
 import { AI_MONEY_COURSE } from "./courses/aiMoney";
+import { BUSINESS_2026_COURSE } from "./courses/business2026";
 import { SALARY_COURSE } from "./courses/salary";
 import { WRITING_COURSE } from "./courses/writing";
 import { TABLES_COURSE } from "./courses/tables";
@@ -12,6 +13,7 @@ import { MONEY_TEEN_COURSE } from "./courses/moneyteen";
 
 /** Порядок в хабе: сначала самые востребованные. */
 export const MINI_COURSES: MiniCourse[] = [
+  BUSINESS_2026_COURSE,
   AI_MONEY_COURSE,
   SALARY_COURSE,
   WRITING_COURSE,

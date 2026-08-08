@@ -580,6 +580,33 @@ export default function MiniCoursePage() {
         </div>
       </section>
 
+      {course.slug === "business-2026" && (
+        <section className="max-w-5xl mx-auto px-4 pb-10">
+          <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/12 to-orange-500/5 p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center gap-5">
+              <div className="text-5xl shrink-0">🏗️</div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-montserrat font-black text-xl md:text-2xl text-white mb-2">
+                  Проверьте свою идею на цифрах
+                </h2>
+                <p className="text-white/70 text-sm md:text-base">
+                  Тренажёр посчитает юнит-экономику, точку безубыточности и запас прочности вашего
+                  бизнеса, проведёт стресс-тест и покажет, выдержит ли модель кредит. Плюс разбор от
+                  ИИ-совета директоров. Бесплатно.
+                </p>
+              </div>
+              <Link
+                to="/bizlab"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3.5 font-bold text-white shadow-lg hover:scale-[1.02] transition-transform whitespace-nowrap"
+              >
+                <Icon name="Gauge" size={17} />
+                Открыть тренажёр
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="max-w-5xl mx-auto px-4 pb-16">
         <h2 className="font-montserrat font-black text-xl text-white mb-4">Другие мини-курсы</h2>
         <div className="grid gap-4 sm:grid-cols-2">
