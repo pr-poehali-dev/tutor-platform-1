@@ -19,7 +19,7 @@ import psycopg2
 
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
-ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants', 'literature'}
+ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants', 'literature', 'tech', 'business'}
 
 # Бесплатный дневной лимит чтения разборов произведений
 LITERATURE_DAILY_LIMIT = 1
