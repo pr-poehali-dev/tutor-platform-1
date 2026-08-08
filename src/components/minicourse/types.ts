@@ -22,9 +22,13 @@ export interface MiniLesson {
   result: string;
 }
 
+export type CourseAudience = "adult" | "school";
+
 export interface MiniCourse {
   /** Часть URL: /mini-course/{slug} */
   slug: string;
+  /** Для кого курс — определяет вкладку в хабе */
+  track: CourseAudience;
   title: string;
   subtitle: string;
   promise: string;

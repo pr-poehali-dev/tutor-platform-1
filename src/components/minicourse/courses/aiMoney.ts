@@ -246,6 +246,7 @@ const lessons: MiniLesson[] = [
 
 export const AI_MONEY_COURSE: MiniCourse = {
   slug: "ai-money-start",
+  track: "adult",
   title: "Первые 5 000 ₽ на нейросетях",
   subtitle: "От нуля до первой услуги, которую можно продать",
   promise:

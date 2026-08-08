@@ -5,7 +5,9 @@ import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import LessonBlocks from "@/components/minicourse/LessonBlocks";
 import {
+  CourseAudience,
   MINI_COURSES,
+  coursesByTrack,
   getCourse,
   getLesson,
   loadDone,
@@ -17,6 +19,7 @@ const SITE_URL = "https://учисьпро.рф";
 /* ─────────────── Хаб: все мини-курсы ─────────────── */
 function CoursesHub() {
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const [track, setTrack] = useState<CourseAudience>("adult");
 
   useEffect(() => {
     const map: Record<string, number> = {};
@@ -26,6 +29,7 @@ function CoursesHub() {
     setProgress(map);
   }, []);
 
+  const visible = coursesByTrack(track);
   const totalLessons = MINI_COURSES.reduce((s, c) => s + c.lessons.length, 0);
 
   const jsonLd = useMemo(
@@ -51,9 +55,9 @@ function CoursesHub() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Бесплатные мини-курсы — отработка навыка за один вечер | УЧИСЬПРО"
-        description="5 бесплатных мини-курсов для взрослых: заработок на нейросетях, переговоры о зарплате, тексты, таблицы и выступления. Без регистрации и оплаты, каждый проходится за вечер."
+        description="10 бесплатных мини-курсов для взрослых и школьников: нейросети, зарплата, тексты, таблицы, выступления, учёба, тайм-менеджмент, безопасность и финансы. Без регистрации и оплаты."
         canonical={`${SITE_URL}/mini-course`}
-        keywords="бесплатные курсы, мини-курсы, курсы для взрослых, навыки, обучение бесплатно, саморазвитие"
+        keywords="бесплатные курсы, мини-курсы, курсы для взрослых, курсы для школьников, навыки, обучение бесплатно, саморазвитие"
         jsonLd={jsonLd}
       />
 
@@ -81,7 +85,7 @@ function CoursesHub() {
         </h1>
         <p className="text-white/70 text-lg max-w-2xl mx-auto mb-6">
           Каждый курс — это один навык, отработанный до результата. Пять уроков, готовые шаблоны
-          и задание после каждого урока. Никакой теории, которую негде применить.
+          и задание после каждого урока. Отдельные линейки для взрослых и школьников.
         </p>
         <div className="flex flex-wrap justify-center gap-3 text-sm">
           <span className="rounded-lg bg-white/8 px-3 py-2 text-white/70">
@@ -99,9 +103,36 @@ function CoursesHub() {
         </div>
       </section>
 
+      <section className="max-w-6xl mx-auto px-4 pb-6">
+        <div className="flex justify-center">
+          <div className="inline-flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1">
+            {([
+              { id: "adult", label: "Взрослым", icon: "Briefcase" },
+              { id: "school", label: "Школьникам", icon: "Backpack" },
+            ] as const).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTrack(t.id)}
+                className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+                  track === t.id
+                    ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg"
+                    : "text-white/60 hover:text-white"
+                }`}
+              >
+                <Icon name={t.icon} size={15} />
+                {t.label}
+                <span className={track === t.id ? "text-white/70" : "text-white/35"}>
+                  {coursesByTrack(t.id).length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="max-w-6xl mx-auto px-4 pb-14">
         <div className="grid gap-5 md:grid-cols-2">
-          {MINI_COURSES.map((c) => {
+          {visible.map((c) => {
             const done = progress[c.slug] || 0;
             const pct = Math.round((done / c.lessons.length) * 100);
             return (
@@ -396,7 +427,9 @@ export default function MiniCoursePage() {
     },
   ];
 
-  const others = MINI_COURSES.filter((c) => c.slug !== course.slug).slice(0, 2);
+  const others = MINI_COURSES.filter(
+    (c) => c.slug !== course.slug && c.track === course.track,
+  ).slice(0, 2);
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">

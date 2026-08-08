@@ -251,6 +251,7 @@ const lessons: MiniLesson[] = [
 
 export const TABLES_COURSE: MiniCourse = {
   slug: "tables-pro",
+  track: "adult",
   title: "Таблицы и данные без страха",
   subtitle: "Excel и Google Таблицы: от хаоса до отчёта за 2 минуты",
   promise:

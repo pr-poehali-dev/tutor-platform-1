@@ -238,6 +238,7 @@ const lessons: MiniLesson[] = [
 
 export const SALARY_COURSE: MiniCourse = {
   slug: "salary-talk",
+  track: "adult",
   title: "Разговор о повышении зарплаты",
   subtitle: "Как попросить прибавку и получить её",
   promise:

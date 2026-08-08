@@ -247,6 +247,7 @@ const lessons: MiniLesson[] = [
 
 export const SPEAKING_COURSE: MiniCourse = {
   slug: "speak-confident",
+  track: "adult",
   title: "Уверенные выступления",
   subtitle: "Говорить перед людьми без страха",
   promise:

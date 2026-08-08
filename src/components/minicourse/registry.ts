@@ -1,9 +1,14 @@
-import { MiniCourse, MiniLesson } from "./types";
+import { CourseAudience, MiniCourse, MiniLesson } from "./types";
 import { AI_MONEY_COURSE } from "./courses/aiMoney";
 import { SALARY_COURSE } from "./courses/salary";
 import { WRITING_COURSE } from "./courses/writing";
 import { TABLES_COURSE } from "./courses/tables";
 import { SPEAKING_COURSE } from "./courses/speaking";
+import { STUDY_COURSE } from "./courses/study";
+import { TIME_TEEN_COURSE } from "./courses/timeteen";
+import { SAFETY_COURSE } from "./courses/safety";
+import { SCHOOL_SPEAK_COURSE } from "./courses/schoolspeak";
+import { MONEY_TEEN_COURSE } from "./courses/moneyteen";
 
 /** Порядок в хабе: сначала самые востребованные. */
 export const MINI_COURSES: MiniCourse[] = [
@@ -12,7 +17,16 @@ export const MINI_COURSES: MiniCourse[] = [
   WRITING_COURSE,
   TABLES_COURSE,
   SPEAKING_COURSE,
+  STUDY_COURSE,
+  TIME_TEEN_COURSE,
+  SAFETY_COURSE,
+  SCHOOL_SPEAK_COURSE,
+  MONEY_TEEN_COURSE,
 ];
+
+export function coursesByTrack(track: CourseAudience): MiniCourse[] {
+  return MINI_COURSES.filter((c) => c.track === track);
+}
 
 export function getCourse(slug: string): MiniCourse | undefined {
   return MINI_COURSES.find((c) => c.slug === slug);
@@ -45,4 +59,4 @@ export function saveDone(courseSlug: string, list: string[]) {
   }
 }
 
-export type { MiniCourse, MiniLesson };
+export type { MiniCourse, MiniLesson, CourseAudience };

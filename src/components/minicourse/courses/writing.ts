@@ -247,6 +247,7 @@ const lessons: MiniLesson[] = [
 
 export const WRITING_COURSE: MiniCourse = {
   slug: "clear-writing",
+  track: "adult",
   title: "Тексты, которые читают до конца",
   subtitle: "Пишем понятно: письма, посты, презентации",
   promise:
