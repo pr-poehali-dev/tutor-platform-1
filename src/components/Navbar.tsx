@@ -140,6 +140,18 @@ export default function Navbar({ mobileMenuOpen, onScrollTo, onToggleMobile }: N
               </Link>
             ))}
 
+            {/* Бесплатные мини-курсы — самая лёгкая точка входа, выделяем */}
+            <Link
+              to="/mini-course"
+              aria-label="Бесплатные мини-курсы"
+              title="Бесплатные мини-курсы за один вечер"
+              className="flex items-center gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg text-xs lg:text-[13px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:text-emerald-200 transition-all duration-200 flex-shrink-0 whitespace-nowrap"
+            >
+              <Icon name="Gift" size={14} aria-hidden="true" />
+              <span className="hidden lg:inline xl:hidden">Free</span>
+              <span className="hidden xl:inline">Бесплатно</span>
+            </Link>
+
             <span className="w-px h-5 bg-white/10 mx-1 flex-shrink-0" aria-hidden="true" />
 
             {/* Тематические выпадающие меню */}
@@ -266,6 +278,22 @@ export default function Navbar({ mobileMenuOpen, onScrollTo, onToggleMobile }: N
                 </Link>
               ))}
             </div>
+
+            {/* Бесплатные мини-курсы — вход без регистрации */}
+            <Link
+              to="/mini-course"
+              onClick={onToggleMobile}
+              aria-label="Бесплатные мини-курсы"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/12 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+            >
+              <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <Icon name="Gift" size={18} className="text-emerald-300" aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-emerald-200">Бесплатные мини-курсы</span>
+                <span className="block text-xs text-white/50">Один вечер — один навык, без регистрации</span>
+              </span>
+            </Link>
 
             {/* Тематические группы */}
             {MENU_GROUPS.map((group) => (
