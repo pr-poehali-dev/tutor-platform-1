@@ -1,38 +1,6 @@
-/** Контент бесплатного мини-курса «Первые 5 000 ₽ на нейросетях».
- *  Текст написан заранее (не генерируется ИИ) — курс-магнит должен
- *  открываться мгновенно и всегда одинаково хорошо. */
+import { MiniCourse, MiniLesson } from "../types";
 
-export interface LessonBlock {
-  kind: "text" | "steps" | "prompt" | "note" | "money" | "checklist";
-  title?: string;
-  body?: string;
-  items?: string[];
-}
-
-export interface MiniLesson {
-  slug: string;
-  index: number;
-  title: string;
-  subtitle: string;
-  minutes: number;
-  emoji: string;
-  goal: string;
-  blocks: LessonBlock[];
-  task: string;
-  result: string;
-}
-
-export const MINI_COURSE = {
-  slug: "ai-money-start",
-  title: "Первые 5 000 ₽ на нейросетях",
-  subtitle: "Мини-курс за один вечер: от нуля до первой услуги, которую можно продать",
-  promise:
-    "5 коротких уроков с готовыми промптами и шаблонами. Без вложений, без опыта, без карты — вы соберёте одну услугу и научитесь находить первого клиента.",
-  minutes: 95,
-  audience: "Для новичков 18+, кто хочет дополнительный доход к основной работе",
-};
-
-export const LESSONS: MiniLesson[] = [
+const lessons: MiniLesson[] = [
   {
     slug: "vybor-uslugi",
     index: 1,
@@ -276,6 +244,28 @@ export const LESSONS: MiniLesson[] = [
   },
 ];
 
-export function getLesson(slug: string): MiniLesson | undefined {
-  return LESSONS.find((l) => l.slug === slug);
-}
+export const AI_MONEY_COURSE: MiniCourse = {
+  slug: "ai-money-start",
+  title: "Первые 5 000 ₽ на нейросетях",
+  subtitle: "От нуля до первой услуги, которую можно продать",
+  promise:
+    "5 коротких уроков с готовыми промптами и шаблонами. Без вложений, без опыта, без карты — вы соберёте одну услугу и научитесь находить первого клиента.",
+  minutes: 95,
+  audience: "Для новичков 18+, кто хочет дополнительный доход к основной работе",
+  emoji: "🚀",
+  cover:
+    "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cd76d428-a4f3-4b3a-be68-2ce54ba0755f.jpg",
+  gradient: "from-purple-500 to-cyan-500",
+  benefit: "Первый заказ за неделю",
+  forWhom: [
+    "Хотите дополнительный доход к основной работе",
+    "Начинаете с нуля — опыт и техническое образование не нужны",
+    "Нет денег на платные подписки и оборудование",
+    "Устали от теории и хотите конкретные шаги",
+  ],
+  outcome:
+    "Выбранная услуга с ценой, рабочие инструменты, личные шаблоны запросов, портфолио из 3-5 работ и отправленные предложения клиентам.",
+  seoKeywords:
+    "заработок на нейросетях, курс бесплатно, дополнительный доход, нейросети для заработка, подработка, фриланс с нуля",
+  lessons,
+};

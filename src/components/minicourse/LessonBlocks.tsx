@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { LessonBlock } from "./lessons";
+import { LessonBlock } from "./types";
 
 function CopyablePrompt({ title, body }: { title?: string; body: string }) {
   const [copied, setCopied] = useState(false);

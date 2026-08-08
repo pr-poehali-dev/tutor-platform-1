@@ -213,7 +213,8 @@ const App = () => (
                     <Route path="/graduates" element={<Graduates />} />
                     <Route path="/free-courses" element={<FreeCourses />} />
                     <Route path="/mini-course" element={<MiniCourse />} />
-                    <Route path="/mini-course/:slug" element={<MiniCourse />} />
+                    <Route path="/mini-course/:courseSlug" element={<MiniCourse />} />
+                    <Route path="/mini-course/:courseSlug/:lessonSlug" element={<MiniCourse />} />
                     <Route path="/graduate/prep/:subject/:universityId/:facultyId" element={<GraduatePrep />} />
                     <Route path="/know-yourself" element={<KnowYourself />} />
                     <Route path="/know-yourself/result" element={<KnowYourselfResult />} />
