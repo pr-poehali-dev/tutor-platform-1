@@ -173,6 +173,7 @@ export default function BizLab() {
             verdict={verdict}
             metrics={metrics}
             review={review}
+            answers={answers}
             onRestart={restart}
           />
         )}
