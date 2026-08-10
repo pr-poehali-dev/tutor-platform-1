@@ -10,20 +10,55 @@ import { TIME_TEEN_COURSE } from "./courses/timeteen";
 import { SAFETY_COURSE } from "./courses/safety";
 import { SCHOOL_SPEAK_COURSE } from "./courses/schoolspeak";
 import { MONEY_TEEN_COURSE } from "./courses/moneyteen";
+import { SLEEP_COURSE } from "./courses/sleep";
+import { CONSUMER_LAW_COURSE } from "./courses/consumerlaw";
+import { NEGOTIATION_COURSE } from "./courses/negotiation";
+import { BACKPAIN_COURSE } from "./courses/backpain";
+import { DOCTOR_COURSE } from "./courses/doctor";
+import { COOKING_COURSE } from "./courses/cooking";
+import { HOMEFIX_COURSE } from "./courses/homefix";
+import { PHONE_FOTO_COURSE } from "./courses/phonefoto";
+import { MATH_FEAR_COURSE } from "./courses/mathfear";
+import { EXAM_STRESS_COURSE } from "./courses/examstress";
+import { ENGLISH_COURSE } from "./courses/english";
+import { PHYSICS_COURSE } from "./courses/physics";
+import { HISTORY_COURSE } from "./courses/history";
+import { LITERATURE_COURSE } from "./courses/literature";
+import { ASTRONOMY_COURSE } from "./courses/astronomy";
 
 /** Порядок в хабе: сначала самые востребованные. */
 export const MINI_COURSES: MiniCourse[] = [
+  // Взрослым: деньги и работа
   BUSINESS_2026_COURSE,
   AI_MONEY_COURSE,
   SALARY_COURSE,
+  NEGOTIATION_COURSE,
+  CONSUMER_LAW_COURSE,
+  // Взрослым: рабочие навыки
   WRITING_COURSE,
   TABLES_COURSE,
   SPEAKING_COURSE,
+  PHONE_FOTO_COURSE,
+  // Взрослым: здоровье и быт
+  SLEEP_COURSE,
+  BACKPAIN_COURSE,
+  DOCTOR_COURSE,
+  COOKING_COURSE,
+  HOMEFIX_COURSE,
+  // Школьникам: учёба и экзамены
   STUDY_COURSE,
+  MATH_FEAR_COURSE,
+  EXAM_STRESS_COURSE,
+  ENGLISH_COURSE,
+  LITERATURE_COURSE,
+  HISTORY_COURSE,
+  PHYSICS_COURSE,
+  ASTRONOMY_COURSE,
+  // Школьникам: жизненные навыки
   TIME_TEEN_COURSE,
-  SAFETY_COURSE,
   SCHOOL_SPEAK_COURSE,
   MONEY_TEEN_COURSE,
+  SAFETY_COURSE,
 ];
 
 export function coursesByTrack(track: CourseAudience): MiniCourse[] {
