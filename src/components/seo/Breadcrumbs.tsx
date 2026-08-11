@@ -73,7 +73,12 @@ export default function Breadcrumbs({ items, className = "" }: Props) {
                   </Link>
                 ) : (
                   <span
-                    className={isLast ? "text-white font-medium" : "text-white/55"}
+                    className={
+                      isLast
+                        ? "text-white font-medium block max-w-[60vw] md:max-w-none truncate"
+                        : "text-white/55"
+                    }
+                    title={isLast ? c.label : undefined}
                     itemProp="name"
                     aria-current={isLast ? "page" : undefined}
                   >
