@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { CourseAudience, MINI_COURSES, coursesByTrack, loadDone } from "./registry";
 
@@ -66,7 +67,11 @@ export default function CoursesHub() {
         </div>
       </div>
 
-      <section className="max-w-6xl mx-auto px-4 pt-12 pb-8 text-center">
+      <div className="max-w-6xl mx-auto px-4 pt-5">
+        <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Мини-курсы" }]} />
+      </div>
+
+      <section className="max-w-6xl mx-auto px-4 pt-8 pb-8 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-300 mb-5">
           <Icon name="Gift" size={13} />
           Бесплатно · без регистрации и карты

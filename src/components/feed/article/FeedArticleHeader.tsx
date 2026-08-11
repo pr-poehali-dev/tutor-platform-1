@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
 import { formatDate } from "./formatDate";
 
@@ -25,15 +24,8 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
   const isPartnerLink = Boolean(coverLink);
   return (
     <>
-      {/* Хлебные крошки (видны всегда + BreadcrumbList JSON-LD) */}
-      <div className="mb-4">
-        <Breadcrumbs items={[
-          { label: "Главная", href: "/" },
-          { label: "Лента", href: "/feed" },
-          { label: meta.label, href: "/feed" },
-          { label: article.title.slice(0, 60) },
-        ]} />
-      </div>
+      {/* Хлебные крошки рендерит страница (FeedArticle.tsx) — здесь их быть не должно,
+          иначе на экране две строки крошек и два BreadcrumbList в разметке. */}
 
       {/* Категория */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">

@@ -28,15 +28,6 @@ export default function SubjectLanding() {
   const jsonLd: Record<string, unknown>[] = [
     {
       "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
-        { "@type": "ListItem", position: 2, name: "Каталог курсов", item: `${SITE_URL}/courses` },
-        { "@type": "ListItem", position: 3, name: seo.name, item: canonical },
-      ],
-    },
-    {
-      "@context": "https://schema.org",
       "@type": "ItemList",
       name: `Курсы по ${seo.nameGenitive}`,
       itemListElement: courses.map((c, idx) => ({

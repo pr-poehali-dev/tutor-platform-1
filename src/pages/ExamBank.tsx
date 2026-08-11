@@ -61,14 +61,6 @@ export default function ExamBank() {
         jsonLd={[
           {
             "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Главная", item: "https://учисьпро.рф/" },
-              { "@type": "ListItem", position: 2, name: "Сборник заданий ОГЭ и ЕГЭ", item: "https://учисьпро.рф/exam-bank" },
-            ],
-          },
-          {
-            "@context": "https://schema.org",
             "@type": "LearningResource",
             name: "Сборник заданий ОГЭ и ЕГЭ 2020–2025 с разбором",
             description:

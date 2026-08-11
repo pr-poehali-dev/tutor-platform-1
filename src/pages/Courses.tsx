@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import BestsellersBlock from "@/components/courses/BestsellersBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
@@ -122,10 +121,6 @@ export default function CoursesPage() {
       <CoursesHeader />
 
       <main>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 pt-5">
-          <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Каталог курсов" }]} />
-        </div>
-
         {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
         {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
           <BestsellersBlock />

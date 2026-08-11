@@ -42,18 +42,6 @@ export default function KidsAge() {
 
   const canonical = `${SITE_URL}/kids/${stage.slug}`;
 
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Главная", item: SITE_URL },
-        { "@type": "ListItem", position: 2, name: "Малыш", item: `${SITE_URL}/kids` },
-        { "@type": "ListItem", position: 3, name: stage.label, item: canonical },
-      ],
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
@@ -61,7 +49,6 @@ export default function KidsAge() {
         description={`${activities.length} развивающих занятий для возраста ${stage.label}: речь, логика, моторика, окружающий мир, творчество, эмоции. ${stage.description}`}
         canonical={canonical}
         keywords={`развитие ребёнка ${stage.label}, развивающие занятия ${stage.shortLabel}, игры с ребёнком ${stage.label}, что развивает в ${stage.label}, ${stage.motto.toLowerCase()}`}
-        jsonLd={jsonLd}
       />
 
       <div className="fixed inset-0 pointer-events-none overflow-hidden">

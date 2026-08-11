@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { MiniCourse } from "./types";
 import { MINI_COURSES } from "./registry";
@@ -66,7 +67,17 @@ export default function CourseLanding({
         </div>
       </div>
 
-      <section className="max-w-5xl mx-auto px-4 pt-10 pb-8">
+      <div className="max-w-5xl mx-auto px-4 pt-5">
+        <Breadcrumbs
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Мини-курсы", href: "/mini-course" },
+            { label: course.title },
+          ]}
+        />
+      </div>
+
+      <section className="max-w-5xl mx-auto px-4 pt-6 pb-8">
         <div className="grid gap-8 md:grid-cols-2 md:items-center">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold text-emerald-300 mb-4">

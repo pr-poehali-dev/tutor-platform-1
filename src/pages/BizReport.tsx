@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import AccessBanner from "@/components/intensive/AccessBanner";
 import ReportPayForm from "@/components/bizlab/report/ReportPayForm";
@@ -92,8 +93,18 @@ export default function BizReport() {
         </section>
       )}
 
+      <div className="max-w-5xl mx-auto px-4 pt-5">
+        <Breadcrumbs
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Тренажёр бизнеса", href: "/bizlab" },
+            { label: "PDF-разбор идеи" },
+          ]}
+        />
+      </div>
+
       {/* Первый экран */}
-      <section className="max-w-5xl mx-auto px-4 pt-10 pb-8">
+      <section className="max-w-5xl mx-auto px-4 pt-6 pb-8">
         <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:items-start">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-300 mb-5">

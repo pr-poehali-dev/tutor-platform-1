@@ -34,14 +34,6 @@ const JSON_LD = [
       "Супер-курсы уровня репетитора по физике, математике и информатике: полная школьная программа, профильный ЕГЭ, ДВИ. Уроки с ИИ-наставником и голосом.",
     url: CANONICAL,
   },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Главная", item: "https://xn--h1agdcde2c.xn--p1ai/" },
-      { "@type": "ListItem", position: 2, name: "Супер-курсы", item: CANONICAL },
-    ],
-  },
 ];
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());

@@ -48,14 +48,6 @@ const JSON_LD: Record<string, unknown>[] = [
   },
   {
     "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Клинический психолог-консультант", item: CANONICAL },
-    ],
-  },
-  {
-    "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: FAQ.map((f) => ({
       "@type": "Question",
