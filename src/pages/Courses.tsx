@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
+import PersonaWidget from "@/components/persona/PersonaWidget";
 import BestsellersBlock from "@/components/courses/BestsellersBlock";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import {
@@ -153,6 +154,9 @@ export default function CoursesPage() {
       </main>
 
       <SiteFooter />
+
+      {/* Живой консультант: помогает выбрать курс голосом, если человек растерялся */}
+      <PersonaWidget personaId="dmitry" />
 
       {showMobileFilters && <div onClick={() => setShowMobileFilters(false)} />}
     </div>

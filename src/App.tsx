@@ -34,6 +34,8 @@ const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
 const AdLanding = lazy(() => import("./pages/ads/AdLanding"));
 const SiteHealth = lazy(() => import("./pages/admin/SiteHealth"));
 const VideoStudio = lazy(() => import("./pages/admin/VideoStudio"));
+const BotStudio = lazy(() => import("./pages/admin/BotStudio"));
+const AiPersona = lazy(() => import("./pages/AiPersona"));
 const AIEvolutionLab = lazy(() => import("./pages/admin/AIEvolutionLab"));
 const CoursesContent = lazy(() => import("./pages/admin/CoursesContent"));
 const MGUTrack = lazy(() => import("./pages/MGUTrack"));
@@ -202,6 +204,8 @@ const App = () => (
                     <Route path="/admin/ads" element={<AdsManager />} />
                     <Route path="/admin/site-health" element={<SiteHealth />} />
                     <Route path="/admin/video-studio" element={<VideoStudio />} />
+                    <Route path="/admin/bot-studio" element={<BotStudio />} />
+                    <Route path="/ai-persona" element={<AiPersona />} />
                     <Route path="/admin/ksusha-engine" element={<KsushaEngine />} />
                     <Route path="/admin/ai-lab" element={<AIEvolutionLab />} />
                     <Route path="/admin/courses-content" element={<CoursesContent />} />

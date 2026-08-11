@@ -100,6 +100,55 @@
   }
 }
 
+/* ===== Живое лицо ИИ-персоны =====
+   Дыхание и микродвижения: без них портрет выглядит мёртвой картинкой,
+   даже когда губы двигаются под речь. */
+@keyframes persona-breathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.012) translateY(-0.35%);
+  }
+}
+
+/* Пока персона говорит — чуть активнее, с лёгким наклоном головы */
+@keyframes persona-talk {
+  0%,
+  100% {
+    transform: scale(1.008) translateY(0) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.016) translateY(-0.5%) rotate(0.22deg);
+  }
+  65% {
+    transform: scale(1.01) translateY(-0.2%) rotate(-0.18deg);
+  }
+}
+
+@keyframes persona-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes persona-listen {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Ken Burns эффекты для VideoStudioPlayer */
 @keyframes kb-zoom-in {
   from {
