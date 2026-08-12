@@ -8,6 +8,8 @@ import CourseCardCompact from "@/components/courses/CourseCardCompact";
 import { COURSES, getCoursePrice } from "@/components/courses/coursesData";
 import { SUBJECTS_SEO, getSubjectSeo } from "@/components/courses/subjectsSeo";
 import useReadyCourses from "@/hooks/useReadyCourses";
+import SubjectExamTasks from "@/components/courses/SubjectExamTasks";
+import { getExamTasks } from "@/components/courses/subjectExamTasks";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -20,6 +22,9 @@ export default function SubjectLanding() {
     () => (seo ? COURSES.filter((c) => c.subject === seo.subjectId && readyIds.has(c.id)) : []),
     [seo, readyIds],
   );
+
+  // Разборы заданий ЕГЭ/ОГЭ есть пока не у всех предметов — где нет, блок не покажется.
+  const examTasks = useMemo(() => (seo ? getExamTasks(seo.slug) : []), [seo]);
 
   if (!seo) return <Navigate to="/courses" replace />;
 
@@ -40,11 +45,24 @@ export default function SubjectLanding() {
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: seo.faq.map((f) => ({
-        "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a },
-      })),
+      // В разметку добавляем и частые вопросы, и разборы заданий: для поиска
+      // «как решать задание N» разбор — это тот же вопрос-ответ, и он может
+      // показаться прямо в выдаче раскрытым блоком.
+      mainEntity: [
+        ...seo.faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+        ...examTasks.map((t) => ({
+          "@type": "Question",
+          name: `${t.exam}, ${t.number} (${t.topic}): ${t.statement}`,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: `${t.steps.join(" ")} Ответ: ${t.answer}. Частая ошибка: ${t.trap}`,
+          },
+        })),
+      ],
     },
     // Course schema по каждому курсу — даёт rich-карточки в выдаче
     // с ценой, рейтингом и кнопкой "Подробнее"
@@ -314,6 +332,9 @@ export default function SubjectLanding() {
           </div>
         )}
       </section>
+
+      {/* Разборы реальных заданий ЕГЭ/ОГЭ — под конкретные поисковые запросы */}
+      <SubjectExamTasks tasks={examTasks} subjectNameGenitive={seo.nameGenitive} />
 
       {/* FAQ */}
       <section className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-12">
