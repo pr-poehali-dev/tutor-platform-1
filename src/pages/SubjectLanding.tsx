@@ -10,6 +10,7 @@ import { SUBJECTS_SEO, getSubjectSeo } from "@/components/courses/subjectsSeo";
 import useReadyCourses from "@/hooks/useReadyCourses";
 import SubjectExamTasks from "@/components/courses/SubjectExamTasks";
 import { getExamTasks } from "@/components/courses/subjectExamTasks";
+import { getExamTasksPart2 } from "@/components/courses/subjectExamTasksPart2";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -24,7 +25,12 @@ export default function SubjectLanding() {
   );
 
   // Разборы заданий ЕГЭ/ОГЭ есть пока не у всех предметов — где нет, блок не покажется.
-  const examTasks = useMemo(() => (seo ? getExamTasks(seo.slug) : []), [seo]);
+  // Первая часть и вторая часть хранятся отдельно, на странице показываем вместе:
+  // компонент сам разделит их на два раздела.
+  const examTasks = useMemo(
+    () => (seo ? [...getExamTasks(seo.slug), ...getExamTasksPart2(seo.slug)] : []),
+    [seo],
+  );
 
   if (!seo) return <Navigate to="/courses" replace />;
 
@@ -59,7 +65,9 @@ export default function SubjectLanding() {
           name: `${t.exam}, ${t.number} (${t.topic}): ${t.statement}`,
           acceptedAnswer: {
             "@type": "Answer",
-            text: `${t.steps.join(" ")} Ответ: ${t.answer}. Частая ошибка: ${t.trap}`,
+            text:
+              `${t.steps.join(" ")} Ответ: ${t.answer}. Частая ошибка: ${t.trap}` +
+              (t.criteria?.length ? ` Критерии оценивания: ${t.criteria.join(" ")}` : ""),
           },
         })),
       ],
