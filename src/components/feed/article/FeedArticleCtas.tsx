@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import FeedArticleDefaultCta from "./FeedArticleDefaultCta";
 
 interface Props {
   article: FeedArticleType;
@@ -21,8 +22,18 @@ export default function FeedArticleCtas({ article }: Props) {
   const isGrantAi =
     tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||
     /grant-ai/i.test(article.slug);
+  // Специальные призывы закрывают лишь несколько узких тем.
+  // Если ни один не подошёл — показываем общий, подобранный по смыслу статьи,
+  // чтобы читатель не уходил с сайта без предложения.
+  const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
+    "олимпиада", "прораб", "для бизнеса", "обновление"];
+  const hasSpecial =
+    isGrantAi || isForecast || isSchoolBuilder ||
+    (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
+
   return (
     <>
+      {!hasSpecial && <FeedArticleDefaultCta article={article} />}
       {/* CTA grant-ai.ru — переход на отдельный сервис по грантам */}
       {isGrantAi && (
         <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">

@@ -25,6 +25,10 @@ POLZA_URL = 'https://api.polza.ai/api/v1/chat/completions'
 POLZA_MODEL = 'gpt-4o-mini'
 ALLOWED_CATEGORIES = {'science', 'culture', 'education', 'robots', 'ai', 'grants'}
 
+# Минимальная длина статьи в символах. Всё, что короче, поисковые системы
+# считают «тонким» контентом и не показывают в выдаче — такое не публикуем.
+MIN_CONTENT_LEN = 2500
+
 
 def cors_headers() -> dict:
     return {
@@ -267,15 +271,25 @@ def rewrite_article(title: str, summary: str, category: str,
         f'{{\n'
         f'  "title": "новый заголовок на русском (до 90 символов, живой, без кликбейта)",\n'
         f'  "summary": "лид-абзац на русском 1-2 предложения (до 220 символов)",\n'
-        f'  "content": "статья на русском 2-4 абзаца простым языком для школьника. '
-        f'Объясни смысл, значимость, что важно знать. Никаких выдуманных цифр. '
-        f'Если это материал из Китая или другой страны — упомяни этот контекст естественно в тексте.",\n'
+        f'  "content": "ПОДРОБНАЯ статья на русском, минимум 3500 символов. '
+        f'Это главное требование: короткие заметки на 2-3 абзаца поисковые системы считают '
+        f'пустышкой и не показывают людям, поэтому пиши развёрнуто и по делу.\\n\\n'
+        f'Структура (используй подзаголовки через ## и списки):\\n'
+        f'1) Что произошло — суть новости фактами.\\n'
+        f'2) Как это устроено — объясни механизм простым языком, разбери термины.\\n'
+        f'3) ## Почему это важно школьнику (или родителю) — конкретная польза, а не общие слова.\\n'
+        f'4) ## Что с этим делать прямо сейчас — 3-5 практических шагов, советов или разбор примера. '
+        f'Это самая ценная часть: читатель должен унести что-то применимое.\\n'
+        f'5) ## Частые вопросы — 2-3 вопроса, которые люди реально задают по этой теме, с ответами.\\n\\n'
+        f'Пиши живым языком, без канцелярита и воды. Никаких выдуманных цифр и фактов: '
+        f'если данных нет — рассуждай, но не придумывай. '
+        f'Если материал из другой страны — упомяни контекст естественно.",\n'
         f'  "tags": ["3-5 тегов на русском одним словом"]\n'
         f'}}'
     )
 
-    # Для переводов даём чуть больше токенов
-    max_t = 1200 if needs_translation else 900
+    # Объёмной статье нужен запас токенов, иначе текст оборвётся на полуслове.
+    max_t = 4500 if needs_translation else 4000
     raw = call_polza(prompt, max_tokens=max_t)
     if not raw:
         # Fallback: если ИИ недоступен и язык не русский — НЕ публикуем (нельзя смешивать языки)
@@ -360,6 +374,7 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
     created = 0
     skipped = 0
     failed_translation = 0
+    too_short = 0
 
     for it in items[:limit_per_source]:
         if already_exists(cur, it['link']):
@@ -372,6 +387,12 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
         # Если для зарубежного материала не удалось перевести — не публикуем
         if rewrite.get('skip_reason') or not rewrite.get('title') or not rewrite.get('content'):
             failed_translation += 1
+            continue
+
+        # Заслон от «тонкого» контента: короткие заметки поисковые системы
+        # не показывают, а лента ими засоряется. Такое просто не публикуем.
+        if len(rewrite['content'] or '') < MIN_CONTENT_LEN:
+            too_short += 1
             continue
 
         words = len((rewrite['content'] or '').split())
@@ -407,7 +428,8 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
     return {'source': code, 'category': category, 'country': country,
             'language': language, 'fetched': len(items),
             'created': created, 'skipped': skipped,
-            'failed_translation': failed_translation}
+            'failed_translation': failed_translation,
+            'too_short': too_short}
 
 
 def handle_fetch_all(headers: dict, body: dict) -> dict:
