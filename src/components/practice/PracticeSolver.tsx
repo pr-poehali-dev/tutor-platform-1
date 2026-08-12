@@ -1,6 +1,14 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { PracticeProblem, checkAnswer } from "@/components/practice/types";
+import { useAuth } from "@/context/AuthContext";
+import { useAccess } from "@/context/AccessContext";
+import PaywallDialog, { PaywallReason } from "@/components/paywall/PaywallDialog";
+import {
+  FREE_TASKS_WITH_SOLUTION,
+  tasksConsume,
+  tasksExhausted,
+} from "@/components/paywall/limits";
 
 interface Props {
   problem: PracticeProblem;
@@ -34,6 +42,10 @@ export default function PracticeSolver({
   const [verdict, setVerdict] = useState<"idle" | "correct" | "wrong">("idle");
   const [showSolutionUnlocked, setShowSolutionUnlocked] = useState(false);
 
+  const { isAuthenticated } = useAuth();
+  const { hasSubscription } = useAccess();
+  const [paywall, setPaywall] = useState<PaywallReason | null>(null);
+
   const totalSteps = problem.steps.length;
   const allRevealed = revealedSteps >= totalSteps;
   const diff = DIFFICULTY_STYLE[problem.difficulty];
@@ -54,7 +66,15 @@ export default function PracticeSolver({
     }
   };
 
+  // Подсмотреть готовый разбор — это и есть главная ценность тренажёра.
+  // Решил сам — показываем всегда и бесплатно (это победа ученика).
+  // Сдался и просит ответ — тратится бесплатная попытка, дальше подписка.
   const unlockSolution = () => {
+    if (tasksExhausted(hasSubscription)) {
+      setPaywall(isAuthenticated ? "subscribe" : "signup");
+      return;
+    }
+    if (!hasSubscription) tasksConsume();
     setShowSolutionUnlocked(true);
   };
 
@@ -80,6 +100,33 @@ export default function PracticeSolver({
 
   return (
     <div className="bg-card border border-white/10 rounded-3xl overflow-hidden">
+      <PaywallDialog
+        open={paywall !== null}
+        reason={paywall || "signup"}
+        onClose={() => setPaywall(null)}
+        title="Бесплатные разборы на сегодня закончились"
+        note={
+          paywall === "signup"
+            ? `Сегодня вы посмотрели ${FREE_TASKS_WITH_SOLUTION} готовых разбора. Задачи, которые решаете сами, остаются бесплатными без ограничений.`
+            : "С подпиской «Репетитор» разборы открыты всегда — и по всем предметам сразу."
+        }
+        bullets={
+          paywall === "signup"
+            ? [
+                "Больше разборов после регистрации",
+                "Прогресс и ошибки сохраняются",
+                "Решённые самостоятельно задачи — всегда бесплатно",
+                "Карта не нужна",
+              ]
+            : [
+                "Разборы без ограничений",
+                "Математика, физика, химия, биология",
+                "ИИ-репетитор объяснит непонятный шаг",
+                "Подготовка к ЕГЭ и ОГЭ целиком",
+              ]
+        }
+      />
+
       {/* Заголовок */}
       <div className="p-5 md:p-6 border-b border-white/8">
         <div className="flex flex-wrap items-center gap-2 mb-3">

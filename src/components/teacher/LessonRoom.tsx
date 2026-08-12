@@ -35,6 +35,8 @@ interface LessonRoomProps {
   lessonNotes?: LessonNotes;
   grade?: string;
   setGrade?: (g: string) => void;
+  /** Сколько бесплатных вопросов осталось сегодня (null — безлимит по подписке). */
+  questionsLeft?: number | null;
 }
 
 export default function LessonRoom({
@@ -65,6 +67,7 @@ export default function LessonRoom({
   lessonNotes,
   grade,
   setGrade,
+  questionsLeft = null,
 }: LessonRoomProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const isMicError = !!voiceError && /микрофон|microphone|доступ|denied|permission/i.test(voiceError);
@@ -91,6 +94,31 @@ export default function LessonRoom({
             </p>
           </div>
         </div>
+
+        {/* Остаток бесплатных вопросов — мягко подталкивает к подписке */}
+        {questionsLeft !== null && (
+          <div
+            className={`rounded-2xl p-3.5 border text-center ${
+              questionsLeft <= 2
+                ? "border-amber-500/40 bg-amber-500/10"
+                : "border-white/8 bg-card/60"
+            }`}
+          >
+            <p className="text-white/50 text-xs mb-1">Бесплатных вопросов сегодня</p>
+            <p
+              className={`font-montserrat font-black text-2xl ${
+                questionsLeft <= 2 ? "text-amber-300" : "text-white"
+              }`}
+            >
+              {questionsLeft}
+            </p>
+            {questionsLeft <= 2 && (
+              <p className="text-amber-200/70 text-[11px] mt-1">
+                Скоро закончатся — обновятся завтра
+              </p>
+            )}
+          </div>
+        )}
 
         {/* XP */}
         <div className="bg-card/60 border border-white/8 rounded-2xl p-4">

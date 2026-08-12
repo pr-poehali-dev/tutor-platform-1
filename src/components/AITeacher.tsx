@@ -9,6 +9,10 @@ import { TEACHERS, Teacher, LessonMessage, Emotion, AI_CHAT_URL, TTS_URL } from 
 import type { CourseLesson, SuperCourse } from "./teacher/superCourses";
 import { notesToPromptText } from "./teacher/notesToPromptText";
 import { loadLessonNotes } from "./teacher/loadLessonNotes";
+import { useAuth } from "@/context/AuthContext";
+import { useAccess } from "@/context/AccessContext";
+import PaywallDialog, { PaywallReason } from "@/components/paywall/PaywallDialog";
+import { aiConsume, aiExhausted, aiLimit, aiUsed } from "@/components/paywall/limits";
 
 interface AITeacherProps {
   showSuperCourses?: boolean;
@@ -28,6 +32,14 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState<{ course: SuperCourse; lesson: CourseLesson } | null>(null);
+
+  // Ограничение бесплатных вопросов: без входа — немного, после входа — больше,
+  // с подпиской — без лимита. Счётчик обнуляется каждые сутки.
+  const { isAuthenticated } = useAuth();
+  const { hasSubscription } = useAccess();
+  const [paywall, setPaywall] = useState<PaywallReason | null>(null);
+  const [askedCount, setAskedCount] = useState(() => aiUsed());
+  const questionsLeft = Math.max(0, aiLimit(isAuthenticated) - askedCount);
   // Класс ученика — чтобы наставник объяснял по уровню, не перегружая младших.
   const [grade, setGrade] = useState<string>(() => {
     try { return localStorage.getItem("uchispro_student_grade") || ""; } catch { return ""; }
@@ -87,6 +99,14 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
 
   // ─── AI Chat ───
   const askAI = async (userMsg: string) => {
+    // Граница бесплатного: не входил — зовём регистрироваться,
+    // вошёл и исчерпал суточный лимит — предлагаем подписку.
+    if (aiExhausted(isAuthenticated, hasSubscription)) {
+      setPaywall(isAuthenticated ? "subscribe" : "signup");
+      return;
+    }
+    if (!hasSubscription) setAskedCount(aiConsume());
+
     setIsLoading(true);
     setError(null);
     setEmotion("thinking");
@@ -224,6 +244,37 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
 
   return (
     <section id="ai-teacher" className="py-16 px-4">
+      <PaywallDialog
+        open={paywall !== null}
+        reason={paywall || "signup"}
+        onClose={() => setPaywall(null)}
+        title={
+          paywall === "signup"
+            ? "Бесплатные вопросы на сегодня закончились"
+            : "Дневной лимит вопросов исчерпан"
+        }
+        note={
+          paywall === "signup"
+            ? `Вы задали ${aiLimit(false)} вопросов. Зарегистрируйтесь — станет ${aiLimit(true)} вопросов в день, бесплатно.`
+            : "С подпиской «Репетитор» вопросы без ограничений — спрашивайте хоть всю ночь перед экзаменом."
+        }
+        bullets={
+          paywall === "signup"
+            ? [
+                `${aiLimit(true)} вопросов в день вместо ${aiLimit(false)}`,
+                "История занятий сохраняется",
+                "Доступ ко всем мини-курсам",
+                "Карта не нужна — регистрация бесплатна",
+              ]
+            : [
+                "Безлимитные вопросы репетитору",
+                "Голосовые уроки без ограничений",
+                "Проверка домашки по фото",
+                "Все супер-курсы и задачники",
+              ]
+        }
+      />
+
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
@@ -306,6 +357,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
             repeatVoice={repeatVoice}
             lessonTitle={activeLesson?.lesson.title}
             lessonNotes={activeLesson?.lesson.notes}
+            questionsLeft={hasSubscription ? null : questionsLeft}
             grade={grade}
             setGrade={setGradePersist}
           />

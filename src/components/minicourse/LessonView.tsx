@@ -3,8 +3,11 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
 import LessonBlocks from "./LessonBlocks";
+import LessonLockedBlock from "./LessonLockedBlock";
 import { MiniCourse } from "./types";
 import { getLesson } from "./registry";
+import { useAuth } from "@/context/AuthContext";
+import { FREE_LESSONS_BEFORE_SIGNUP } from "@/components/paywall/limits";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -22,6 +25,7 @@ export default function LessonView({
 }) {
   const navigate = useNavigate();
   const lesson = getLesson(course, lessonSlug);
+  const { isAuthenticated } = useAuth();
 
   if (!lesson) {
     return (
@@ -40,6 +44,8 @@ export default function LessonView({
   const prev = idx > 0 ? course.lessons[idx - 1] : null;
   const next = idx < course.lessons.length - 1 ? course.lessons[idx + 1] : null;
   const isDone = done.includes(lesson.slug);
+  // Первый урок открыт всем — дальше просим бесплатную регистрацию.
+  const locked = !isAuthenticated && lesson.index > FREE_LESSONS_BEFORE_SIGNUP;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
@@ -85,8 +91,13 @@ export default function LessonView({
           </span>
         </div>
 
-        <LessonBlocks blocks={lesson.blocks} />
+        {locked ? (
+          <LessonLockedBlock course={course} />
+        ) : (
+          <LessonBlocks blocks={lesson.blocks} />
+        )}
 
+        {!locked && (
         <div className="mt-8 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-secondary/5 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Icon name="Target" size={17} className="text-primary" />
@@ -116,7 +127,9 @@ export default function LessonView({
             )}
           </button>
         </div>
+        )}
 
+        {!locked && (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {prev ? (
             <Link
@@ -147,6 +160,7 @@ export default function LessonView({
             </button>
           )}
         </div>
+        )}
       </article>
 
       <SiteFooter />
