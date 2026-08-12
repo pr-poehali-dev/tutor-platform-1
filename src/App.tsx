@@ -8,7 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Suspense } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import NotFound from "./pages/PageNotFound";
 import { UserDataProvider } from "@/context/UserDataContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AccessProvider } from "@/context/AccessContext";
