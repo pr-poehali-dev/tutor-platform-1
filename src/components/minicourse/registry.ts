@@ -25,9 +25,18 @@ import { PHYSICS_COURSE } from "./courses/physics";
 import { HISTORY_COURSE } from "./courses/history";
 import { LITERATURE_COURSE } from "./courses/literature";
 import { ASTRONOMY_COURSE } from "./courses/astronomy";
+import { RASCI_COURSE } from "./courses/rasci";
+import { TASK_SETTING_COURSE } from "./courses/tasksetting";
+import { HIRING_COURSE } from "./courses/hiring";
+import { FEEDBACK_COURSE } from "./courses/feedback";
 
 /** Порядок в хабе: сначала самые востребованные. */
 export const MINI_COURSES: MiniCourse[] = [
+  // Руководителям: управленческие инструменты с готовым шаблоном на выходе
+  RASCI_COURSE,
+  TASK_SETTING_COURSE,
+  FEEDBACK_COURSE,
+  HIRING_COURSE,
   // Взрослым: деньги и работа
   BUSINESS_2026_COURSE,
   AI_MONEY_COURSE,
