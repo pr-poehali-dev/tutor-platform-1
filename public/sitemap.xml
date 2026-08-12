@@ -282,6 +282,7 @@
   <url><loc>https://учисьпро.рф/course-checkout/82</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/course-checkout/83</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/bizlab</loc><lastmod>2026-08-08</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
+  <url><loc>https://учисьпро.рф/instrumenty-rukovoditelya</loc><lastmod>2026-08-12</lastmod><changefreq>weekly</changefreq><priority>0.95</priority></url>
   <url><loc>https://учисьпро.рф/mini-course/matrica-otvetstvennosti</loc><lastmod>2026-08-12</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/mini-course/matrica-otvetstvennosti/pochemu-zadachi-provisayut</loc><lastmod>2026-08-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://учисьпро.рф/mini-course/matrica-otvetstvennosti/chetyre-roli</loc><lastmod>2026-08-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
@@ -314,6 +315,12 @@
   <url><loc>https://учисьпро.рф/mini-course/digital-safety</loc><lastmod>2026-08-08</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/mini-course/school-speak</loc><lastmod>2026-08-08</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://учисьпро.рф/mini-course/money-teen</loc><lastmod>2026-08-08</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url>
+    <loc>https://учисьпро.рф/feed/instrumenty-rukovoditelya-4-minikursa</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
   <url>
     <loc>https://учисьпро.рф/feed/granty-na-izuchenie-kitayskogo-yazyka-dlya-shkolnikov-ot-instituta-konfutsiya-11</loc>
     <lastmod>2026-08-10</lastmod>

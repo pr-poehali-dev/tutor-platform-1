@@ -47,6 +47,7 @@ const MENU_GROUPS: MenuGroup[] = [
     items: [
       { label: "БИЗНЕС 2026",         icon: "Gauge",       path: "/bizlab",           desc: "Проверка бизнес-идеи на прочность · бесплатно" },
       { label: "Профориентация PRO",  icon: "Fingerprint", path: "/career-pro",       desc: "Индивидуальный курс под вас · ИИ" },
+      { label: "Инструменты руководителя", icon: "Wrench", path: "/instrumenty-rukovoditelya", desc: "4 бесплатных курса с шаблонами" },
       { label: "Бизнес-тренер и коуч", icon: "TrendingUp", path: "/business-coach",   desc: "Стратегия роста бизнеса · ИИ" },
       { label: "Финансовый консультант", icon: "ChartNoAxesCombined", path: "/fin-advisor", desc: "Честный ИИ-анализ по вашим цифрам" },
       { label: "Оркестратор",         icon: "Music4", path: "/orchestrator", desc: "Онбординг и контроль удалённых команд · ИИ" },
@@ -149,8 +150,8 @@ export default function Navbar({ mobileMenuOpen, onScrollTo, onToggleMobile }: N
               className="flex items-center gap-1.5 px-2 lg:px-2.5 py-1.5 rounded-lg text-xs lg:text-[13px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:text-emerald-200 transition-all duration-200 flex-shrink-0 whitespace-nowrap"
             >
               <Icon name="Gift" size={14} aria-hidden="true" />
-              <span className="hidden lg:inline xl:hidden">Free</span>
-              <span className="hidden xl:inline">Бесплатно</span>
+              <span className="hidden lg:inline xl:hidden">Курсы</span>
+              <span className="hidden xl:inline">Мини-курсы</span>
             </Link>
 
             <span className="w-px h-5 bg-white/10 mx-1 flex-shrink-0" aria-hidden="true" />
