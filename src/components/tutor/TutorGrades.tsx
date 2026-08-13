@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { GRADE_LANDINGS } from "./gradeLandingData";
+import { SUBJECT_TUTORS } from "./subjectTutorData";
 
 /**
  * Ссылки на страницы репетитора по классам.
@@ -36,6 +37,28 @@ export default function TutorGrades() {
               {g.grade}
             </span>
             <span className="text-white/45 text-[11px] uppercase tracking-wider">класс</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="text-center mt-10 mb-6">
+        <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white">
+          Репетитор по предметам
+        </h2>
+        <p className="text-white/55 text-sm md:text-base mt-2">
+          Как занимаемся и что разбираем по каждому предмету
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {SUBJECT_TUTORS.map((s) => (
+          <Link
+            key={s.slug}
+            to={`/repetitor-online/${s.slug}`}
+            className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-card/50 px-5 py-4 hover:border-purple-400/40 hover:-translate-y-0.5 transition-all"
+          >
+            <span className="text-2xl">{s.emoji}</span>
+            <span className="font-bold text-white text-sm">{s.name}</span>
           </Link>
         ))}
       </div>
