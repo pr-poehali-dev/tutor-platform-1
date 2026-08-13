@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel, isCourseBestseller } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";
-import { getTodayPurchases } from "@/components/courses/CheckoutBoosters";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 
 interface Props {
@@ -16,7 +15,6 @@ export default function CourseCardCompact({ course }: Props) {
   const price = getCoursePrice(course);
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label || course.grade;
   const subjectLabel = SUBJECTS.find((s) => s.id === course.subject)?.label || course.subject;
-  const todayCount = getTodayPurchases(course.id, course.students);
   const examLabel = examBadgeLabel(course);
   const bestseller = isCourseBestseller(course.id);
 
@@ -89,16 +87,6 @@ export default function CourseCardCompact({ course }: Props) {
           <span className="flex items-center gap-1"><Icon name="Star" size={12} className="text-amber-400" /> {course.rating.toFixed(2)}</span>
         </div>
 
-        {!course.freeForever && !promoOn && !owned && todayCount > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] text-emerald-300/90 mb-2.5">
-            <span className="relative flex w-1.5 h-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-            </span>
-            <span className="font-semibold">{todayCount}</span>
-            <span className="text-white/45">купили сегодня</span>
-          </div>
-        )}
 
         <div className="flex items-center justify-between pt-3 border-t border-white/8">
           <div className="min-w-0">

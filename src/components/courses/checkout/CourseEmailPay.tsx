@@ -83,7 +83,7 @@ export default function CourseEmailPay({ course, price }: Props) {
 
       {/* Ценность и доверие — ДО формы, чтобы снять страх перед оплатой */}
       <CourseValueBlock lessons={course.lessons} />
-      <SocialProof courseId={course.id} popularity={course.students} />
+      <SocialProof lessons={course.lessons} duration={course.duration} />
       <PaymentSteps />
       <MoneyBackGuarantee />
 

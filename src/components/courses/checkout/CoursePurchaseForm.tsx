@@ -55,7 +55,7 @@ export default function CoursePurchaseForm({
 
       {/* Обоснование ценности и доверие — ДО кнопки, чтобы снять страх покупки */}
       <CourseValueBlock lessons={course.lessons} />
-      <SocialProof courseId={course.id} popularity={course.students} />
+      <SocialProof lessons={course.lessons} duration={course.duration} />
       <PaymentSteps />
       <MoneyBackGuarantee />
 

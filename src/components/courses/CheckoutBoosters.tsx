@@ -1,73 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import Icon from "@/components/ui/icon";
 
-/** Детерминированное число «купили сегодня» — одинаковое у всех пользователей в течение дня. */
-export function getTodayPurchases(courseId: number, popularity: number): number {
-  const today = new Date();
-  const dayKey = today.getFullYear() * 1000 + today.getMonth() * 31 + today.getDate();
-  const seed = (dayKey * 9301 + courseId * 49297) % 233280;
-  const rand = seed / 233280;
-  const base = Math.max(3, Math.round(popularity / 1500));
-  const variance = Math.round(rand * base * 0.8);
-  return base + variance;
-}
-
-/** Аватарки последних "покупателей" — стабильно для дня и курса. */
-function getBuyersAvatars(courseId: number): { emoji: string; name: string }[] {
-  const today = new Date();
-  const dayKey = today.getFullYear() * 1000 + today.getMonth() * 31 + today.getDate();
-  const avatars = [
-    { emoji: "🦊", name: "Анна" },
-    { emoji: "🐯", name: "Максим" },
-    { emoji: "🦁", name: "Полина" },
-    { emoji: "🐼", name: "Артём" },
-    { emoji: "🦄", name: "София" },
-    { emoji: "🐧", name: "Иван" },
-    { emoji: "🐨", name: "Мария" },
-    { emoji: "🦊", name: "Кирилл" },
-    { emoji: "🐰", name: "Алиса" },
-    { emoji: "🐺", name: "Даниил" },
+/**
+ * Честный блок доверия: показываем факты о самом курсе, а не выдуманные цифры.
+ *
+ * Раньше здесь был счётчик «купили сегодня: 17» — число генерировалось формулой
+ * из даты и id курса, к реальным продажам отношения не имело. Такие счётчики
+ * подрывают доверие: человек проверяет их и уходит. Показываем то, что правда.
+ */
+export function SocialProof({ lessons, duration }: { lessons: number; duration: string }) {
+  const facts = [
+    { icon: "BookOpen", label: `${lessons} уроков` },
+    { icon: "Clock", label: duration },
+    { icon: "Infinity", label: "Доступ навсегда" },
   ];
-  const seed = (dayKey + courseId * 7) % avatars.length;
-  return [
-    avatars[seed % avatars.length],
-    avatars[(seed + 3) % avatars.length],
-    avatars[(seed + 6) % avatars.length],
-  ];
-}
-
-/** Социальное доказательство: счётчик покупок сегодня + аватарки. */
-export function SocialProof({ courseId, popularity }: { courseId: number; popularity: number }) {
-  const todayCount = useMemo(() => getTodayPurchases(courseId, popularity), [courseId, popularity]);
-  const buyers = useMemo(() => getBuyersAvatars(courseId), [courseId]);
 
   return (
     <div className="bg-gradient-to-br from-emerald-500/8 to-teal-500/8 border border-emerald-500/25 rounded-2xl p-4 mb-4">
-      <div className="flex items-center gap-3">
-        <div className="flex -space-x-2 flex-shrink-0">
-          {buyers.map((b, i) => (
-            <div
-              key={i}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border-2 border-background flex items-center justify-center text-lg"
-              title={b.name}
-            >
-              {b.emoji}
-            </div>
-          ))}
-          <div className="w-9 h-9 rounded-full bg-emerald-500/20 border-2 border-background flex items-center justify-center text-emerald-300 text-[10px] font-black">
-            +{todayCount - 3}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-white/90 text-sm font-semibold flex items-center gap-1.5">
-            <span className="relative flex w-2 h-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            Купили сегодня: <span className="text-emerald-300 font-black">{todayCount}</span>
-          </p>
-          <p className="text-white/50 text-xs mt-0.5">Курс — в топе продаж этой недели</p>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        {facts.map((f) => (
+          <span key={f.label} className="inline-flex items-center gap-2 text-sm text-white/85">
+            <Icon name={f.icon} size={15} className="text-emerald-400 flex-shrink-0" />
+            {f.label}
+          </span>
+        ))}
       </div>
     </div>
   );
