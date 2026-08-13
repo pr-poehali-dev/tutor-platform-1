@@ -7,6 +7,7 @@ import TutorHero from "@/components/tutor/TutorHero";
 import TutorMentorIntro from "@/components/tutor/TutorMentorIntro";
 import TutorFeatures from "@/components/tutor/TutorFeatures";
 import TutorSubjects from "@/components/tutor/TutorSubjects";
+import TutorGrades from "@/components/tutor/TutorGrades";
 import TutorHowItWorks from "@/components/tutor/TutorHowItWorks";
 import StudentResults from "@/components/home/StudentResults";
 import TutorPricing from "@/components/tutor/TutorPricing";
@@ -76,6 +77,7 @@ export default function TutorHub() {
           </Suspense>
           <TutorFeatures />
           <TutorSubjects />
+          <TutorGrades />
           <TutorHowItWorks />
           <StudentResults />
           <TutorPricing />
