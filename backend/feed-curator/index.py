@@ -994,6 +994,65 @@ def handle_seed_if_empty(event: dict) -> dict:
         conn.close()
 
 
+def maybe_send_daily_report(cur, conn) -> bool:
+    """Отправляет владельцу ежедневный отчёт — не чаще раза в сутки.
+
+    Вызывается из часового пульса. Условия отправки:
+    1) сейчас 8 утра по Москве или позже;
+    2) сегодня отчёт ещё не уходил.
+
+    Возвращает True, если отчёт отправлен.
+    """
+    url = os.environ.get('DAILY_REPORT_URL', '').strip()
+    secret = os.environ.get('CRON_SECRET', '').strip()
+    if not url or not secret:
+        return False
+
+    # Пульс работает по UTC. 8:00 МСК = 5:00 UTC.
+    now_utc = datetime.now(timezone.utc)
+    if now_utc.hour < 5:
+        return False
+
+    # Проверяем, уходил ли отчёт сегодня (по московской дате).
+    cur.execute(
+        "SELECT 1 FROM feed_cron_runs "
+        "WHERE kind = 'daily_report' "
+        "AND (started_at AT TIME ZONE 'Europe/Moscow')::date "
+        "  = (NOW() AT TIME ZONE 'Europe/Moscow')::date "
+        "LIMIT 1"
+    )
+    if cur.fetchone():
+        return False
+
+    cur.execute(
+        "INSERT INTO feed_cron_runs (kind, status) VALUES ('daily_report', 'running') "
+        "RETURNING id"
+    )
+    run_id = cur.fetchone()[0]
+    conn.commit()
+
+    req = urllib.request.Request(
+        f"{url}?action=send",
+        method='GET',
+        headers={'Authorization': f'Bearer {secret}'},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            body = resp.read().decode('utf-8', 'replace')[:500]
+        status = 'ok'
+    except Exception as exc:
+        body = str(exc)[:500]
+        status = 'error'
+
+    cur.execute(
+        "UPDATE feed_cron_runs SET status = %s, payload = %s, finished_at = NOW() "
+        "WHERE id = %s",
+        (status, json.dumps({'response': body}, ensure_ascii=False), run_id)
+    )
+    conn.commit()
+    return status == 'ok'
+
+
 def handle_keep_alive(event: dict, headers: dict) -> dict:
     """Лёгкий часовой пульс: проверяем здоровье ленты и при нехватке добиваем из пула.
 
@@ -1090,11 +1149,23 @@ def handle_keep_alive(event: dict, headers: dict) -> dict:
                      json.dumps({'fresh_24h': 0, 'total': total_published}, ensure_ascii=False))
                 )
 
+            # Ежедневный отчёт владельцу.
+            # Часовой пульс — единственный работающий планировщик в проекте,
+            # поэтому отчёт отправляем отсюда: раз в сутки, при первом
+            # срабатывании после 8 утра по Москве. Ошибка отправки не должна
+            # ронять пульс — поэтому всё внутри try.
+            report_sent = False
+            try:
+                report_sent = maybe_send_daily_report(cur, conn)
+            except Exception as report_err:
+                print(f'daily-report failed: {report_err}')
+
             cur.execute(
                 "UPDATE feed_cron_runs SET status='ok', fetched=%s, "
                 "payload=%s, finished_at=NOW() WHERE id=%s",
                 (topup_result.get('created', 0),
                  json.dumps({
+                     'daily_report_sent': report_sent,
                      'fresh_24h': fresh_24h,
                      'total_published': total_published,
                      'active_sources': active_sources,
