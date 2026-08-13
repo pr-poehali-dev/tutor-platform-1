@@ -75,6 +75,7 @@ const KidsLanding = lazy(() => import("./pages/Kids"));
 const KidsAbout = lazy(() => import("./pages/KidsAbout"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
+const KidsTopic = lazy(() => import("./pages/KidsTopic"));
 const KidsLibrary = lazy(() => import("./pages/KidsLibrary"));
 const KidsLibraryItem = lazy(() => import("./pages/KidsLibraryItem"));
 const KidsSongs = lazy(() => import("./pages/KidsSongs"));
@@ -260,6 +261,7 @@ const App = () => (
                     <Route path="/kids" element={<KidsLanding />} />
                     <Route path="/kids/about" element={<KidsAbout />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
+                    <Route path="/kids/vopros/:topic" element={<KidsTopic />} />
                     <Route path="/kids/library" element={<KidsLibrary />} />
                     <Route path="/kids/library/:id" element={<KidsLibraryItem />} />
                     <Route path="/kids/songs" element={<KidsSongs />} />

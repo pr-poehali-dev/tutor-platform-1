@@ -12,6 +12,7 @@ import KidsTopBar from "@/components/kids/landing/KidsTopBar";
 import KidsHero from "@/components/kids/landing/KidsHero";
 import KidsSubscription from "@/components/kids/landing/KidsSubscription";
 import KidsContent from "@/components/kids/landing/KidsContent";
+import KidsTopicsBlock from "@/components/kids/KidsTopicsBlock";
 import { KIDS_JSON_LD, SITE_URL } from "@/components/kids/landing/kidsLandingData";
 
 export default function KidsLanding() {
@@ -30,9 +31,9 @@ export default function KidsLanding() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="УЧИСЬПРО Малыш — развивающие занятия для детей от 1 года до 6 лет"
-        description="Развивающий модуль для дошкольников: речь, логика, моторика, окружающий мир, творчество, эмоции. По методикам Монтессори и Никитиных. 5 возрастных ступеней, контроль экранного времени, советы родителям."
+        description="Развивающие занятия для детей от 1 года до 6 лет: развитие речи, подготовка к школе, обучение чтению и счёту, логика и моторика. По методикам Монтессори и Никитиных. Разборы для родителей: что норма и что делать. Без рекламы, с контролем экранного времени."
         canonical={`${SITE_URL}/kids`}
-        keywords="развитие детей 1 год, развивашки для малышей, развивающие занятия дошкольникам, монтессори онлайн, подготовка к школе 5 лет, развитие речи ребёнка, развитие моторики, занятия с детьми 2 года, 3 года, 4 года"
+        keywords="развивающие занятия для детей, развитие ребёнка от 1 года, ребёнок не говорит, как научить ребёнка читать, подготовка к школе, что должен уметь ребёнок к школе, развитие речи ребёнка, развивашки для малышей, монтессори онлайн, занятия с детьми 2 года, 3 года, 4 года, 5 лет"
         jsonLd={KIDS_JSON_LD}
       />
 
@@ -43,6 +44,8 @@ export default function KidsLanding() {
       <KidsSubscription />
 
       <KidsContent />
+
+      <KidsTopicsBlock />
 
       <SiteFooter />
 
