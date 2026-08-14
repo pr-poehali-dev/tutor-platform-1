@@ -9,7 +9,9 @@ import {
 } from "./kidsPromoConfig";
 
 /**
- * Верхняя полоса с акцией «Малыш»: 3 месяца за 1 ₽.
+ * Верхняя полоса с акцией «К учебному году»: 3 месяца за 1 ₽.
+ * Название сезонное: в конце августа родитель ищет, где подтянуть ребёнка
+ * к школе, и слово «малыш» мимо этого запроса.
  * Видна на каждой странице. Скрывается, если акция закончилась.
  * Запоминает закрытие на сутки.
  */
@@ -49,9 +51,9 @@ export default function KidsPromoTopBar() {
         className="block px-4 py-2 hover:bg-black/10 transition-colors"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 flex-wrap text-center">
-          <span className="text-xl">🧸</span>
+          <span className="text-xl">🎒</span>
           <span className="font-montserrat font-black text-xs md:text-sm uppercase tracking-wider">
-            Акция «Малыш»
+            К учебному году
           </span>
           <span className="hidden sm:inline text-white/95 text-xs md:text-sm font-bold">
             — {KIDS_PROMO_INTRO_MONTHS} месяца за 1 ₽, далее {KIDS_PROMO_MONTHLY_PRICE} ₽/мес

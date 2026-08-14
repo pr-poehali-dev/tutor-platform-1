@@ -1,5 +1,9 @@
 import Icon from "@/components/ui/icon";
 
+/** Действующий промокод, который подсказываем покупателю на кассе.
+ *  Заведён в базе (скидка 30%). Менять здесь — надпись обновится везде. */
+export const ACTIVE_PROMO_CODE = "ДОБРО";
+
 interface Props {
   coupon: string;
   setCoupon: (v: string) => void;
@@ -30,6 +34,31 @@ export default function CheckoutCouponForm({
       <p className="text-white/50 text-xs mb-4">
         Есть промокод? Введи код — скидка применится автоматически.
       </p>
+
+      {/* Действующая скидка была «спрятана»: промокод существовал, но о нём никто
+          не знал — за всё время ноль применений. Показываем его прямо здесь,
+          чтобы человек на кассе видел живую выгоду, а не пустое поле ввода. */}
+      {!couponApplied && (
+        <button
+          onClick={() => { setCoupon(ACTIVE_PROMO_CODE); setCouponError(null); }}
+          className="w-full mb-4 flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/15 px-4 py-3 text-left transition-colors"
+        >
+          <span className="text-xl leading-none">🎒</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-white font-bold text-sm">
+              К учебному году — скидка 30%
+            </span>
+            <span className="block text-white/55 text-xs mt-0.5">
+              Промокод{" "}
+              <span className="font-mono font-bold text-amber-300 tracking-wider">
+                {ACTIVE_PROMO_CODE}
+              </span>{" "}
+              — нажми, чтобы подставить
+            </span>
+          </span>
+          <Icon name="ChevronRight" size={16} className="text-amber-300 flex-shrink-0" />
+        </button>
+      )}
 
       {couponApplied ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
