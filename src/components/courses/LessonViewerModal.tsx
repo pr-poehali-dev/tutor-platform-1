@@ -159,6 +159,12 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка генерации урока");
       const lessonData = data as Lesson;
+      // Бэкенд помечает флагом _fallback урок-заглушку (ИИ не успел ответить).
+      // В нём общие фразы вместо объяснения темы — показывать такое ученику нельзя,
+      // лучше честно предложить повторить: со второй попытки обычно приходит настоящий урок.
+      if ((data as { _fallback?: boolean })._fallback) {
+        throw new Error("Урок не успел подготовиться. Нажми «Попробовать снова» — обычно со второго раза всё получается.");
+      }
       // Гарантируем массив задач, чтобы UI не падал на lesson.tasks
       if (!Array.isArray(lessonData.tasks)) lessonData.tasks = [];
       setLesson(lessonData);
