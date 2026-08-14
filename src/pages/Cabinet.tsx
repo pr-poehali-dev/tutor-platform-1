@@ -8,6 +8,7 @@ import KnowYourselfWidget from "@/components/knowYourself/KnowYourselfWidget";
 import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget";
 import ConsultationRequest from "@/components/cabinet/ConsultationRequest";
 import MyPlanWidget from "@/components/cabinet/MyPlanWidget";
+import StartHereWidget from "@/components/cabinet/StartHereWidget";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -102,6 +103,9 @@ export default function Cabinet() {
           </button>
         </div>
 
+        {/* Новичку — сначала бесплатный старт, а не разговор об оплате */}
+        {!hasActiveSub && <StartHereWidget />}
+
         {/* Карточка подписки */}
         <div
           className={`rounded-3xl border border-white/12 bg-gradient-to-br ${planInfo?.color ?? "from-white/8 to-white/3"} backdrop-blur-md p-6 md:p-7 mb-6`}
@@ -116,8 +120,8 @@ export default function Cabinet() {
                 </>
               ) : (
                 <>
-                  <h2 className="font-montserrat font-black text-2xl text-white mb-1">Подписки нет</h2>
-                  <p className="text-white/70 text-sm">Выбери курс в каталоге — оплата разовая, доступ открывается навсегда</p>
+                  <h2 className="font-montserrat font-black text-2xl text-white mb-1">Хочешь больше?</h2>
+                  <p className="text-white/70 text-sm">Полные курсы с ИИ-наставником и проверкой заданий. Оплата разовая — доступ навсегда</p>
                 </>
               )}
             </div>
