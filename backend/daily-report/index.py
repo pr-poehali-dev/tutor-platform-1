@@ -53,6 +53,41 @@ def notify_max(text):
     return _max_post(token, 'user_id', ident, text)
 
 
+def _already_sent_today():
+    """Проверяет, уходил ли отчёт сегодня (по московской дате)."""
+    dsn = os.environ.get('DATABASE_URL', '')
+    if not dsn:
+        return False
+    conn = psycopg2.connect(dsn)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM feed_cron_runs WHERE kind='daily_report' "
+                "AND (started_at AT TIME ZONE 'Europe/Moscow')::date "
+                "  = (NOW() AT TIME ZONE 'Europe/Moscow')::date LIMIT 1"
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def _mark_sent_today():
+    """Отмечает факт отправки, чтобы второй вызов за день ничего не слал."""
+    dsn = os.environ.get('DATABASE_URL', '')
+    if not dsn:
+        return
+    conn = psycopg2.connect(dsn)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO feed_cron_runs (kind, status, finished_at) "
+                "VALUES ('daily_report','ok',NOW())"
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def _one(cur, sql, params=None):
     cur.execute(sql, params or ())
     row = cur.fetchone()
@@ -229,7 +264,13 @@ def handler(event: dict, context) -> dict:
         secret = os.environ.get('CRON_SECRET', '')
         if not secret or auth.replace('Bearer ', '').strip() != secret:
             return err('Доступ запрещён', 403)
+        # Защита от повторной отправки: отчёт уходит один раз в сутки,
+        # даже если функцию дёрнули несколько раз (свой cron + пульс ленты).
+        if _already_sent_today():
+            return ok({'sent': False, 'skipped': 'already_sent_today', 'report': text})
         sent = notify_max(text)
+        if sent:
+            _mark_sent_today()
         return ok({'sent': sent, 'report': text})
 
     return ok({'report': text})
