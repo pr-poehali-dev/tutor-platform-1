@@ -107,6 +107,21 @@ def collect_stats():
                         "WHERE created_at::date = CURRENT_DATE "
                         "GROUP BY path ORDER BY COUNT(*) DESC LIMIT 3")
             s['top_pages'] = cur.fetchall()
+
+            # Воронка за 30 дней: где именно теряются люди. По одному дню
+            # выводы делать нельзя — трафик слишком маленький, цифры скачут.
+            s['f_visitors'] = _one(cur, f"SELECT COUNT(DISTINCT visitor_id) FROM {SCHEMA}.page_visits "
+                                        "WHERE created_at >= CURRENT_DATE - 30")
+            s['f_courses'] = _one(cur, f"SELECT COUNT(DISTINCT visitor_id) FROM {SCHEMA}.page_visits "
+                                       "WHERE created_at >= CURRENT_DATE - 30 AND path LIKE '/courses%%'")
+            s['f_checkout'] = _one(cur, f"SELECT COUNT(DISTINCT visitor_id) FROM {SCHEMA}.page_visits "
+                                        "WHERE created_at >= CURRENT_DATE - 30 AND path LIKE '/course-checkout%%'")
+            s['f_signups'] = _one(cur, "SELECT COUNT(*) FROM auth_users "
+                                       "WHERE created_at >= CURRENT_DATE - 30")
+            s['f_paid'] = _one(cur, f"SELECT COUNT(*) FROM {SCHEMA}.course_purchases "
+                                    "WHERE status='paid' AND purchased_at >= CURRENT_DATE - 30")
+            s['f_canceled'] = _one(cur, f"SELECT COUNT(*) FROM {SCHEMA}.course_purchases "
+                                        "WHERE status<>'paid' AND created_at >= CURRENT_DATE - 30")
             return s
     finally:
         conn.close()
@@ -159,11 +174,29 @@ def build_report(s):
     lines.append(f'• Домашек проверено: {s["homework"]}')
     lines.append(f'• Заявок: {s["leads"]}')
     lines.append(f'• Статей опубликовано: {s["articles"]}')
+    lines.append('')
+
+    # Воронка за 30 дней — показывает, на каком шаге теряются люди
+    lines.append('🔻 Воронка за 30 дней')
+    lines.append(f'• Зашли на сайт: {s["f_visitors"]}')
+    lines.append(f'• Смотрели курсы: {s["f_courses"]}')
+    lines.append(f'• Зарегистрировались: {s["f_signups"]}')
+    lines.append(f'• Дошли до оплаты: {s["f_checkout"]}')
+    lines.append(f'• Оплатили: {s["f_paid"]}')
+    if s['f_canceled']:
+        lines.append(f'• Бросили оплату: {s["f_canceled"]}')
 
     # Короткий вывод — на что обратить внимание
     lines.append('')
-    if s['visitors'] == 0:
+    # Совет по самому узкому месту: сначала смотрим на трафик за месяц,
+    # потому что без людей на сайте остальные шаги чинить бессмысленно.
+    if s['f_visitors'] < 30:
+        lines.append(f'⚠️ Главная проблема — трафик: за 30 дней всего {s["f_visitors"]} посетителей. '
+                     'Продаж не будет, пока на сайт не пойдут люди.')
+    elif s['visitors'] == 0:
         lines.append('⚠️ Ни одного посетителя за день — проверь рекламу и доступность сайта.')
+    elif s['f_checkout'] > 0 and s['f_paid'] == 0:
+        lines.append('⚠️ До оплаты доходят, но не платят — узкое место на кассе.')
     elif s['signups'] == 0 and s['visitors'] >= 10:
         lines.append('⚠️ Трафик есть, но никто не зарегистрировался — стоит усилить призыв на главной.')
     elif s['paid_cnt'] == 0 and s['started_cnt'] > 0:
