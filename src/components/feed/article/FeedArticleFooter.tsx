@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
 import ArticleCard from "@/components/feed/ArticleCard";
 import ShareButtons from "@/components/feed/ShareButtons";
+import CrosspostTenchat from "@/components/feed/CrosspostTenchat";
 import { articleUrl } from "@/components/feed/shareTargets";
 
 interface Props {
@@ -19,6 +20,15 @@ export default function FeedArticleFooter({ article, related }: Props) {
         title={article.title}
         summary={article.summary}
       />
+
+      <div className="mb-6">
+        <CrosspostTenchat
+          url={articleUrl(article.slug)}
+          title={article.title}
+          summary={article.summary}
+          content={article.content}
+        />
+      </div>
 
       {/* Теги */}
       {article.tags && article.tags.length > 0 && (
