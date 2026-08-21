@@ -40,6 +40,7 @@ export default function SiteFooter() {
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
               <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
               <li><Link to="/feed" className="text-fuchsia-200 hover:text-fuchsia-100 transition-colors font-bold">📡 Лента: «Хочу всё знать»</Link></li>
+              <li><Link to="/business-2026" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">📊 Бизнес 2026: где открываться</Link></li>
               <li><Link to="/feed/partnyorskie-programmy-s-bankom-tochka" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрство с Точка Банк</Link></li>
               <li><Link to="/for-business" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🚀 Для бизнеса: своя онлайн-школа</Link></li>
               <li><Link to="/partners" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрам: сотрудничество для школ</Link></li>

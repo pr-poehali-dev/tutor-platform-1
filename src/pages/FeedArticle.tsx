@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
+import CityArticleNav from "@/components/business2026/CityArticleNav";
 import { fetchArticle, fetchFeed } from "@/components/feed/api";
 import { FeedArticle as FeedArticleType, CATEGORY_META } from "@/components/feed/types";
 import { articleUrl } from "@/components/feed/shareTargets";
@@ -255,6 +256,8 @@ export default function FeedArticlePage() {
             return <p key={i}>{renderInline(p)}</p>;
           })}
         </article>
+
+        <CityArticleNav slug={article.slug} />
 
         <FeedArticleCtas article={article} />
 
