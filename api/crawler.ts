@@ -14,6 +14,8 @@
 
 import { MINI_COURSES_SEO } from "./_minicourses";
 import { LANDINGS_SEO } from "./_landings";
+import { SUBJECTS_SEO } from "../src/components/courses/subjectsSeo";
+import { KIDS_SEO } from "./_kids";
 
 const SITE = "https://учисьпро.рф";
 const FEED_API = "https://functions.poehali.dev/b9f58dbe-702c-46d3-a9b1-02d5076735ef";
@@ -467,9 +469,94 @@ function renderMiniCoursesHub(): Response {
   );
 }
 
-/** Ключевые посадочные страницы: текст берём из _landings.ts. */
+/** Страница предмета каталога: /courses/math и т.д. */
+function renderSubject(slug: string): Response | null {
+  const s = SUBJECTS_SEO.find((x) => x.slug === slug);
+  if (!s) return null;
+
+  const highlights = s.highlights
+    .map((h) => `<h3>${esc(h.title)}</h3>\n<p>${esc(h.text)}</p>`)
+    .join("\n");
+
+  const topics = s.topics.map((t) => `<li>${esc(t)}</li>`).join("\n");
+  const forWhom = s.forWhom.map((t) => `<li>${esc(t)}</li>`).join("\n");
+  const faq = s.faq
+    .map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`)
+    .join("\n");
+
+  const others = SUBJECTS_SEO.filter((x) => x.slug !== s.slug)
+    .map(
+      (x) =>
+        `<li><a href="${SITE}/courses/${x.slug}">${esc(x.name)}</a></li>`,
+    )
+    .join("\n");
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: s.h1,
+      description: s.description,
+      url: `${SITE}/courses/${s.slug}`,
+      inLanguage: "ru-RU",
+      provider: {
+        "@type": "EducationalOrganization",
+        name: "УЧИСЬПРО",
+        url: SITE,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: s.faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ];
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › <a href="${SITE}/courses">Курсы</a> › ${esc(s.name)}
+</nav>
+<h1>${esc(s.h1)}</h1>
+<p>${esc(s.intro)}</p>
+<h2>Как проходит обучение</h2>
+${highlights}
+<h2>Что входит в программу</h2>
+<ul>${topics}</ul>
+<h2>Кому подходит</h2>
+<ul>${forWhom}</ul>
+<h2>Частые вопросы</h2>
+${faq}
+<h2>Другие предметы</h2>
+<ul>${others}</ul>`;
+
+  return new Response(
+    page({
+      title: s.title,
+      description: s.description,
+      canonical: `${SITE}/courses/${s.slug}`,
+      image: s.ogImage,
+      body,
+      jsonLd,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
+/** Ключевые посадочные страницы: текст берём из _landings.ts и _kids.ts. */
 function renderLanding(path: string): Response | null {
-  const L = LANDINGS_SEO.find((l) => l.path === path);
+  const L =
+    LANDINGS_SEO.find((l) => l.path === path) ||
+    KIDS_SEO.find((l) => l.path === path);
   if (!L) return null;
 
   const sections = L.sections
@@ -576,7 +663,13 @@ export default async function handler(request: Request): Promise<Response> {
       return renderMiniCoursesHub();
     }
 
-    // Ключевые посадочные страницы (каталог курсов, ЕГЭ, бизнес-разбор)
+    const subject = path.match(/^\/courses\/([^/?#]+)/);
+    if (subject) {
+      const r = renderSubject(decodeURIComponent(subject[1]));
+      if (r) return r;
+    }
+
+    // Ключевые посадочные страницы (каталог, ЕГЭ, «Малыш», бизнес-разбор)
     const landing = renderLanding(path.replace(/\/$/, "") || "/");
     if (landing) return landing;
   } catch {

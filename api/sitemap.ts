@@ -92,19 +92,34 @@ const STATIC: Entry[] = [
   { loc: "/search", changefreq: "monthly", priority: "0.5" },
 ];
 
-/** Предметные лендинги каталога. */
+/** Предметные лендинги каталога — совпадают со списком в subjectsSeo.ts. */
 const SUBJECTS = [
   "math",
   "russian",
   "english",
   "physics",
   "chemistry",
+  "cs",
   "biology",
   "history",
-  "social",
-  "geography",
-  "informatics",
+  "society",
   "literature",
+  "geography",
+  "logic",
+  "ai",
+  "skills",
+  "career",
+  "chinese",
+  "korean",
+  "datascience",
+  "product",
+  "avangard",
+  "roomscan",
+  "marketing",
+  "prompteng",
+  "neuroincome",
+  "business",
+  "sales",
 ];
 
 function esc(s: string): string {
