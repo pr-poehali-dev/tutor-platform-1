@@ -117,6 +117,7 @@ const AiAssistant = lazy(() => import("./pages/AiAssistant"));
 const ForBusiness = lazy(() => import("./pages/ForBusiness"));
 const Corporate = lazy(() => import("./pages/Corporate"));
 const ManagerTools = lazy(() => import("./pages/ManagerTools"));
+const ForManagers = lazy(() => import("./pages/ForManagers"));
 const CareerPro = lazy(() => import("./pages/CareerPro"));
 const BusinessCoach = lazy(() => import("./pages/BusinessCoach"));
 const FinAdvisor = lazy(() => import("./pages/FinAdvisor"));
@@ -229,6 +230,7 @@ const App = () => (
                     <Route path="/graduates" element={<Graduates />} />
                     <Route path="/free-courses" element={<FreeCourses />} />
                     <Route path="/instrumenty-rukovoditelya" element={<ManagerTools />} />
+                    <Route path="/for-managers" element={<ForManagers />} />
                     <Route path="/mini-course" element={<MiniCourse />} />
                     <Route path="/mini-course/:courseSlug" element={<MiniCourse />} />
                     <Route path="/mini-course/:courseSlug/:lessonSlug" element={<MiniCourse />} />

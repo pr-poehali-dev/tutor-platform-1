@@ -54,6 +54,17 @@
       "destination": "/api/crawler?path=/for-business"
     },
     {
+      "source": "/for-managers",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/for-managers"
+    },
+    {
       "source": "/courses/:subject",
       "has": [
         {
