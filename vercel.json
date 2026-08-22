@@ -6,6 +6,54 @@
       "destination": "/api/share?page=:page"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/business-2026",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/business-2026"
+    },
+    {
+      "source": "/courses",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/courses"
+    },
+    {
+      "source": "/exam-bank",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/exam-bank"
+    },
+    {
+      "source": "/for-business",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/for-business"
+    },
+    {
       "source": "/feed",
       "has": [
         {

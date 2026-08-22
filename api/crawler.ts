@@ -13,6 +13,7 @@
  */
 
 import { MINI_COURSES_SEO } from "./_minicourses";
+import { LANDINGS_SEO } from "./_landings";
 
 const SITE = "https://учисьпро.рф";
 const FEED_API = "https://functions.poehali.dev/b9f58dbe-702c-46d3-a9b1-02d5076735ef";
@@ -466,6 +467,79 @@ function renderMiniCoursesHub(): Response {
   );
 }
 
+/** Ключевые посадочные страницы: текст берём из _landings.ts. */
+function renderLanding(path: string): Response | null {
+  const L = LANDINGS_SEO.find((l) => l.path === path);
+  if (!L) return null;
+
+  const sections = L.sections
+    .map((s) => `<h2>${esc(s.h2)}</h2>\n<p>${esc(s.text)}</p>`)
+    .join("\n");
+
+  const links = L.links
+    .map((l) => `<li><a href="${SITE}${l.url}">${esc(l.label)}</a></li>`)
+    .join("\n");
+
+  const faq = L.faq?.length
+    ? `<h2>Частые вопросы</h2>\n` +
+      L.faq
+        .map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`)
+        .join("\n")
+    : "";
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: L.h1,
+      description: L.description,
+      url: `${SITE}${L.path}`,
+      inLanguage: "ru-RU",
+      isPartOf: { "@type": "WebSite", "@id": `${SITE}/#website` },
+    },
+  ];
+
+  if (L.faq?.length) {
+    jsonLd.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: L.faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › ${esc(L.h1)}
+</nav>
+<h1>${esc(L.h1)}</h1>
+<p>${esc(L.intro)}</p>
+${sections}
+<h2>Смотрите также</h2>
+<ul>${links}</ul>
+${faq}`;
+
+  return new Response(
+    page({
+      title: L.title,
+      description: L.description,
+      canonical: `${SITE}${L.path}`,
+      body,
+      jsonLd,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
 export default async function handler(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const ua = (request.headers.get("user-agent") || "").toLowerCase();
@@ -501,6 +575,10 @@ export default async function handler(request: Request): Promise<Response> {
     if (/^\/mini-course\/?$/.test(path)) {
       return renderMiniCoursesHub();
     }
+
+    // Ключевые посадочные страницы (каталог курсов, ЕГЭ, бизнес-разбор)
+    const landing = renderLanding(path.replace(/\/$/, "") || "/");
+    if (landing) return landing;
   } catch {
     // Любая ошибка — отдаём SPA, робот увидит обычную страницу
   }

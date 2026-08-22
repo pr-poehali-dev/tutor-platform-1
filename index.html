@@ -108,6 +108,31 @@
 
 <body>
 <div id="root"></div>
+
+<!-- Запасной контент для посетителей с отключённым JavaScript и для роботов,
+     которые не исполняют скрипты. Поисковикам, кроме этого, отдаётся полноценный
+     серверный HTML — см. /api/crawler и rewrites в vercel.json. -->
+<noscript>
+    <div style="max-width:760px;margin:0 auto;padding:32px 20px;font-family:system-ui,sans-serif;color:#e8e8f0;background:#0a0a14">
+        <h1 style="font-size:26px;line-height:1.25">УЧИСЬПРО — обучение для всей семьи</h1>
+        <p>Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки,
+            адаптивные программы, подготовка к ЕГЭ и ОГЭ. Для малышей от 1 года, школьников
+            1–11 классов и взрослых.</p>
+        <h2 style="font-size:19px">Основные разделы</h2>
+        <ul style="line-height:1.9">
+            <li><a href="/courses" style="color:#a78bfa">Каталог онлайн-курсов</a> — школьные предметы и обучение взрослых</li>
+            <li><a href="/mini-course" style="color:#a78bfa">Бесплатные мини-курсы</a> — один навык за вечер, без регистрации</li>
+            <li><a href="/exam-bank" style="color:#a78bfa">Сборник заданий ОГЭ и ЕГЭ</a> — с разбором решений</li>
+            <li><a href="/homework" style="color:#a78bfa">Разбор домашних заданий</a> — проверка задач по фото</li>
+            <li><a href="/kids" style="color:#a78bfa">Малыш</a> — развивающие занятия, песни и сказки для детей</li>
+            <li><a href="/feed" style="color:#a78bfa">Лента «Хочу всё знать»</a> — наука, культура, ИИ и роботы</li>
+            <li><a href="/business-2026" style="color:#a78bfa">Бизнес 2026</a> — разбор экономики 16 городов-миллионников</li>
+            <li><a href="/for-business" style="color:#a78bfa">Для бизнеса</a> — своя онлайн-школа под ключ</li>
+        </ul>
+        <p style="margin-top:24px;color:#9a9ab0">Для работы платформы включите JavaScript в настройках браузера.</p>
+    </div>
+</noscript>
+
 <script type="module" src="/src/main.tsx"></script>
 
 <!-- Yandex.Metrika counter (platform) -->
