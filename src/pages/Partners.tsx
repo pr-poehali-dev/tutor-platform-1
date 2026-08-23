@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import PartnersLeadForm from "@/components/partners/PartnersLeadForm";
 import CompetitorsTable from "@/components/partners/CompetitorsTable";
@@ -58,7 +59,8 @@ export default function Partners() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Партнёрам и онлайн-школам · Сотрудничество с УЧИСЬПРО"
-        description="Приглашаем онлайн-школы, авторов курсов и образовательный бизнес к сотрудничеству. White-label платформа с ИИ-преподавателем, конструктором курсов и приёмом оплат. Оставьте заявку — предложим формат партнёрства."
+        description="Приглашаем онлайн-школы и авторов курсов к сотрудничеству: white-label платформа с ИИ-преподавателем, конструктором курсов и приёмом оплат. Оставьте заявку."
+        keywords="партнёрство онлайн школ, white label платформа обучения, сотрудничество для школ, франшиза онлайн школы"
         canonical={`${SITE_URL}/partners`}
       />
 
@@ -80,6 +82,10 @@ export default function Partners() {
       </div>
 
       <main className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-10 pb-16">
+        <Breadcrumbs
+          className="mb-6"
+          items={[{ label: "Главная", href: "/" }, { label: "Партнёрам" }]}
+        />
         {/* Hero */}
         <section className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-violet-500/15 border border-violet-400/30 rounded-full px-4 py-1.5 mb-5">

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import {
   getSignByKey,
@@ -73,9 +74,14 @@ export default function SignDictionaryItem() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <Link to="/dictionary" className="text-white/50 hover:text-white text-sm mb-5 inline-flex items-center gap-1">
-          <Icon name="ChevronLeft" size={16} /> К словарю
-        </Link>
+        <Breadcrumbs
+          className="mb-5"
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Словарь жестов", href: "/dictionary" },
+            { label: sign.word },
+          ]}
+        />
 
         <div className="grid md:grid-cols-2 gap-6 items-start">
           {/* Показ жеста */}

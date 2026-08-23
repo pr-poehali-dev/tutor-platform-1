@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { SIGN_CATEGORIES, searchSigns, DictSign } from "@/components/silent/signLibrary";
 
@@ -57,7 +58,7 @@ export default function SignDictionary() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Словарь жестов РЖЯ — поиск жестов русского жестового языка | УЧИСЬПРО"
+        title="Словарь жестов РЖЯ — русский жестовый язык"
         description="Онлайн-словарь русского жестового языка: найдите нужное слово и посмотрите, как показывается жест. Темы, поиск, описание артикуляции. Бесплатно."
         canonical={CANONICAL}
         keywords="словарь жестов, жестовый язык, РЖЯ, язык жестов, жесты для глухих, как показать жест, русский жестовый язык словарь"
@@ -81,6 +82,7 @@ export default function SignDictionary() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+        <Breadcrumbs className="mb-6" items={[{ label: "Главная", href: "/" }, { label: "Словарь жестов" }]} />
         {/* Hero */}
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-200 bg-cyan-500/15 border border-cyan-400/25 rounded-lg px-3 py-1 mb-4">

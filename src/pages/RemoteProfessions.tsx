@@ -36,7 +36,8 @@ export default function RemoteProfessions() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Удалённые профессии 2026: топ востребованных курсов · УЧИСЬПРО"
-        description="Подборка самых востребованных удалённых профессий по данным HH.ru и SuperJob: тендеры, ВЭД, продажи B2B, аналитик данных, Python-разработчик. Освой с нуля и выйди на доход."
+        description="Востребованные удалённые профессии по данным HH.ru и SuperJob: тендеры, ВЭД, продажи B2B, аналитик данных, Python. Освойте с нуля."
+        keywords="удалённые профессии, работа на дому, удалённая работа обучение, востребованные профессии 2026, профессия с нуля"
         canonical={`${SITE_URL}/remote-professions`}
       />
 

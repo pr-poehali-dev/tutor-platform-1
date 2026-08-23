@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import AvatarHelper from "@/components/silent/AvatarHelper";
 import HelpProject from "@/components/silent/HelpProject";
@@ -40,8 +41,8 @@ export default function Silent() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Курс для глухих детей — бесплатно, с субтитрами и жестовым языком | УЧИСЬПРО"
-        description="Инклюзивный пилотный курс для глухих и слабослышащих детей: полные субтитры, визуальная подача, добрый аватар-помощник. Бесплатно. РЖЯ-видео с носителем языка на ключевых уроках."
+        title="Курс для глухих детей — бесплатно, с жестовым языком"
+        description="Инклюзивный курс для глухих и слабослышащих детей: полные субтитры, визуальная подача, видео на РЖЯ с носителем языка и добрый аватар. Бесплатно."
         canonical={CANONICAL}
         keywords="курс для глухих детей, обучение глухих, слабослышащие дети, русский жестовый язык, РЖЯ, инклюзивное образование, субтитры, доступное обучение"
         jsonLd={JSON_LD}
@@ -73,6 +74,7 @@ export default function Silent() {
       </div>
 
       <main className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 pt-8 pb-16">
+        <Breadcrumbs className="mb-6" items={[{ label: "Главная", href: "/" }, { label: "Курс для глухих детей" }]} />
         {/* HERO */}
         <div className="grid lg:grid-cols-2 gap-8 items-center mb-14">
           <div>

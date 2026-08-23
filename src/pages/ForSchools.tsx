@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -25,6 +26,7 @@ export default function ForSchools() {
       <Seo
         title="Сотрудничество для школ, колледжей и техникумов — УЧИСЬПРО"
         description="Запустите онлайн-обучение под своим брендом с ИИ-преподавателем 24/7. Без абонплаты — только процент с продаж. Приём оплат, аналитика и помощь с грантами включены."
+        keywords="платформа для школ, обучение для школ, цифровая школа, лицензия для образовательных организаций"
         canonical={`${SITE_URL}/for-schools`}
       />
 
@@ -40,6 +42,10 @@ export default function ForSchools() {
       </header>
 
       <main className="max-w-5xl mx-auto px-5 py-12">
+        <Breadcrumbs
+          className="mb-6"
+          items={[{ label: "Главная", href: "/" }, { label: "Для школ" }]}
+        />
         {/* Hero */}
         <section className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-violet-500/15 border border-violet-500/35 rounded-full px-4 py-1.5 mb-5">

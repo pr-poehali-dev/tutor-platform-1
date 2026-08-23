@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { generateCourse, type GenerateResult } from "@/components/builder/api";
 import CourseResult from "@/components/builder/CourseResult";
 
@@ -76,7 +77,8 @@ export default function SchoolBuilder() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="ИИ-конструктор курса · Соберите онлайн-курс за минуту — УЧИСЬПРО"
-        description="Введите тему — искусственный интеллект соберёт готовый онлайн-курс: программу, уроки с заданиями и квизами, плюс маркетинг-пакет для продаж. Бесплатная демонстрация конструктора школ."
+        description="Введите тему — ИИ соберёт готовый онлайн-курс: программу, уроки с заданиями и квизами, плюс маркетинг-пакет для продаж. Бесплатная демонстрация."
+        keywords="конструктор онлайн курсов, создать курс с ии, платформа для онлайн школы, запустить онлайн школу"
         canonical={`${SITE_URL}/school-builder`}
       />
 
@@ -100,6 +102,7 @@ export default function SchoolBuilder() {
       </div>
 
       <main className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-8 pb-16">
+        <Breadcrumbs className="mb-6" items={[{ label: "Главная", href: "/" }, { label: "Конструктор школы" }]} />
         {result ? (
           <CourseResult result={result} onRestart={restart} onLead={() => navigate("/for-business#lead")} />
         ) : (

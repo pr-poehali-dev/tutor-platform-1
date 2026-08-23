@@ -28,6 +28,11 @@ const PUNYCODE_HOST = "xn--h1agdcde2c.xn--p1ai";
 const CYRILLIC_HOST = "учисьпро.рф";
 const DEFAULT_IMG = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg";
 
+/** Сколько символов заголовка реально показывает поиск, дальше — многоточие. */
+const TITLE_LIMIT = 65;
+/** Верхняя граница описания в сниппете. */
+const DESC_LIMIT = 170;
+
 /** Привести любой URL проекта к кириллическому домену */
 function normalizeUrl(url: string): string {
   if (!url) return SITE_URL;
@@ -49,10 +54,30 @@ export default function Seo({
   noindex = false,
   article,
 }: SeoProps) {
-  const fullTitle = title.includes("УЧИСЬПРО") ? title : `${title} — УЧИСЬПРО`;
+  // Бренд к заголовку добавляем только если он влезает в выдачу: Яндекс и Google
+  // показывают около 65 символов, дальше идёт многоточие. Раньше суффикс клеился
+  // всегда — и у половины страниц название обрезалось на полуслове.
+  const fullTitle =
+    title.includes("УЧИСЬПРО") || title.length + 11 > TITLE_LIMIT
+      ? title
+      : `${title} — УЧИСЬПРО`;
   const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
   const url = normalizeUrl(rawUrl);
   const img = normalizeUrl(image);
+
+  // Подсказка разработчику: в продакшене молчим, чтобы не шуметь в консоли посетителю.
+  if (import.meta.env.DEV) {
+    if (fullTitle.length > TITLE_LIMIT) {
+      console.warn(
+        `[SEO] Заголовок длиннее ${TITLE_LIMIT} символов (${fullTitle.length}) — обрежется в выдаче: «${fullTitle}»`,
+      );
+    }
+    if (description.length > DESC_LIMIT) {
+      console.warn(
+        `[SEO] Описание длиннее ${DESC_LIMIT} символов (${description.length}) на «${fullTitle}»`,
+      );
+    }
+  }
 
   return (
     <Helmet>

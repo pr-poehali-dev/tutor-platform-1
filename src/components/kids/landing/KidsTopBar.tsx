@@ -43,9 +43,10 @@ export default function KidsTopBar({ screenTime, onOpenSettings, breadcrumbs }: 
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg">🚀</div>
             <span className="font-montserrat font-black text-base gradient-text-purple tracking-wide group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
-          <div className="hidden md:block">
-            <Breadcrumbs items={crumbs} />
-          </div>
+          {/* На узких экранах крошки не помещаются в шапку, поэтому скрываем
+              их визуально — но оставляем в DOM, иначе поисковик не увидит
+              разметку BreadcrumbList на мобильной версии. */}
+          <Breadcrumbs items={crumbs} className="max-md:sr-only" />
           <div className="flex items-center gap-2">
             {/* Индикатор экранного времени */}
             {screenTime.dailyLimit > 0 && (
