@@ -5,8 +5,9 @@ Returns: HTTP-ответ с текстом отчёта и статусом от
 """
 import json
 import os
+import urllib.error
 import urllib.request
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import psycopg2
 
@@ -31,6 +32,8 @@ def err(msg, status=400):
 
 
 def _max_post(token, param, ident, text):
+    """Отправка в MAX. Возвращает (успех, причина) — причина нужна,
+    чтобы при сбое было видно, что именно ответил мессенджер."""
     url = f"{MAX_API_BASE}/messages?{param}={ident}"
     data = json.dumps({'text': text}).encode('utf-8')
     req = urllib.request.Request(url, data=data, method='POST',
@@ -38,19 +41,30 @@ def _max_post(token, param, ident, text):
                                           'Authorization': token})
     try:
         with urllib.request.urlopen(req, timeout=10):
-            return True
-    except Exception:
-        return False
+            return True, 'ok'
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', 'ignore')[:200]
+        return False, f'HTTP {e.code} ({param}): {body}'
+    except Exception as e:
+        return False, f'{type(e).__name__} ({param}): {str(e)[:200]}'
 
 
 def notify_max(text):
+    """Возвращает (отправлено, причина). MAX принимает получателя
+    либо как chat_id, либо как user_id — пробуем оба варианта."""
     token = os.environ.get('MAX_BOT_TOKEN', '')
     ident = os.environ.get('MAX_ADMIN_CHAT_ID', '')
-    if not token or not ident:
-        return False
-    if _max_post(token, 'chat_id', ident, text):
-        return True
-    return _max_post(token, 'user_id', ident, text)
+    if not token:
+        return False, 'не задан MAX_BOT_TOKEN'
+    if not ident:
+        return False, 'не задан MAX_ADMIN_CHAT_ID'
+    sent, why1 = _max_post(token, 'chat_id', ident, text)
+    if sent:
+        return True, 'ok'
+    sent, why2 = _max_post(token, 'user_id', ident, text)
+    if sent:
+        return True, 'ok'
+    return False, f'{why1}; {why2}'
 
 
 def _already_sent_today():
@@ -257,6 +271,22 @@ def handler(event: dict, context) -> dict:
 
     text = build_report(stats)
 
+    if action == 'tick':
+        # Ленивый запуск с сайта: планировщик Vercel на текущем тарифе
+        # выполняет лишь часть заданий, поэтому отчёт за месяц ушёл один раз.
+        # Пульс ленты работает именно так и срабатывает стабильно.
+        # Секрет не нужен: отправка идёт владельцу и не чаще раза в сутки.
+        if _already_sent_today():
+            return ok({'sent': False, 'skipped': 'already_sent_today'})
+        # Отчёт за прошедший день отправляем с 9:00 по Москве.
+        hour_msk = (datetime.now(timezone.utc) + timedelta(hours=3)).hour
+        if hour_msk < 9:
+            return ok({'sent': False, 'skipped': 'too_early'})
+        sent, why = notify_max(text)
+        if sent:
+            _mark_sent_today()
+        return ok({'sent': sent, 'reason': why})
+
     if action == 'send':
         headers = event.get('headers') or {}
         auth = (headers.get('Authorization') or headers.get('authorization')
@@ -266,11 +296,28 @@ def handler(event: dict, context) -> dict:
             return err('Доступ запрещён', 403)
         # Защита от повторной отправки: отчёт уходит один раз в сутки,
         # даже если функцию дёрнули несколько раз (свой cron + пульс ленты).
-        if _already_sent_today():
+        if _already_sent_today() and params.get('force') != '1':
             return ok({'sent': False, 'skipped': 'already_sent_today', 'report': text})
-        sent = notify_max(text)
+        sent, why = notify_max(text)
         if sent:
             _mark_sent_today()
-        return ok({'sent': sent, 'report': text})
+        return ok({'sent': sent, 'reason': why, 'report': text})
+
+    if action == 'diag':
+        # Проверка настройки доставки без отправки самого отчёта.
+        headers = event.get('headers') or {}
+        auth = (headers.get('Authorization') or headers.get('authorization')
+                or headers.get('X-Authorization') or '')
+        secret = os.environ.get('CRON_SECRET', '')
+        if not secret or auth.replace('Bearer ', '').strip() != secret:
+            return err('Доступ запрещён', 403)
+        sent, why = notify_max('🔧 Проверка связи: отчёт УЧИСЬПРО настроен верно.')
+        return ok({
+            'token_set': bool(os.environ.get('MAX_BOT_TOKEN')),
+            'chat_id_set': bool(os.environ.get('MAX_ADMIN_CHAT_ID')),
+            'already_sent_today': _already_sent_today(),
+            'test_sent': sent,
+            'reason': why,
+        })
 
     return ok({'report': text})

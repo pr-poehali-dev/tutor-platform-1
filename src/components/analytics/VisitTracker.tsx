@@ -19,12 +19,33 @@ function getVisitorId(): { id: string; isNew: boolean } {
   }
 }
 
+const DAILY_REPORT_URL = (func2url as Record<string, string>)["daily-report"];
+
+/** Ленивый дневной отчёт владельцу — один раз за сессию вкладки.
+ *  Планировщик Vercel на текущем тарифе выполняет не все задания,
+ *  из-за чего отчёт почти не приходил. Бэкенд сам следит, чтобы письмо
+ *  ушло не раньше 9:00 по Москве и строго один раз в сутки. */
+let reportTicked = false;
+function tickDailyReport() {
+  if (reportTicked || !DAILY_REPORT_URL) return;
+  reportTicked = true;
+  try {
+    fetch(`${DAILY_REPORT_URL}?action=tick`).catch(() => {});
+  } catch {
+    /* фоновая задача — молчим */
+  }
+}
+
 /**
  * Учёт посещений всех страниц (включая анонимных гостей).
  * Отправляет визит в backend при каждой смене URL.
  */
 export default function VisitTracker() {
   const location = useLocation();
+
+  useEffect(() => {
+    tickDailyReport();
+  }, []);
 
   useEffect(() => {
     const { id, isNew } = getVisitorId();

@@ -21,6 +21,22 @@
       "expectedStatus": 403,
       "expectedBody": {"error": "string"},
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Ленивый запуск с сайта отвечает без секрета",
+      "method": "GET",
+      "path": "/?action=tick",
+      "expectedStatus": 200,
+      "expectedBody": {"sent": "boolean"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Диагностика без секрета запрещена",
+      "method": "GET",
+      "path": "/?action=diag",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
     }
   ]
 }
