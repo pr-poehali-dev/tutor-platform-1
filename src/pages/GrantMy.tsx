@@ -51,7 +51,12 @@ export default function GrantMy() {
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
-      <Seo title="Мои заявки на гранты · УЧИСЬПРО" canonical={`${SITE_URL}/grants/my`} noindex />
+      <Seo
+        title="Мои заявки на гранты · УЧИСЬПРО"
+        description="Личный раздел: ваши заявки на гранты, их статус и история подачи."
+        canonical={`${SITE_URL}/grants/my`}
+        noindex
+      />
 
       {/* Хедер */}
       <div className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">

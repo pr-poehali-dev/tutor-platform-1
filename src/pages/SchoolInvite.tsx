@@ -41,7 +41,12 @@ export default function SchoolInvite() {
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white flex items-center justify-center px-5">
-      <Seo title="Приглашение в конструктор школ · УЧИСЬПРО" canonical={`${SITE_URL}/school`} noindex />
+      <Seo
+        title="Приглашение в конструктор школ · УЧИСЬПРО"
+        description="Активация приглашения в конструктор онлайн-школ УЧИСЬПРО."
+        canonical={`${SITE_URL}/school`}
+        noindex
+      />
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center max-w-sm w-full">
         {(state === "loading" || state === "activating") && (
           <>
