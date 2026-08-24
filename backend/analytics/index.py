@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import psycopg2
@@ -28,7 +29,22 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
 
     if method == 'POST':
-        body = json.loads(event.get('body') or '{}')
+        # sendBeacon шлёт тело как text/plain и провайдер отдаёт его в base64.
+        # Раньше json.loads падал на такой строке — из-за этого учёт посещений
+        # молча не работал: в отчётах владельцу стояли нули.
+        raw = event.get('body') or '{}'
+        if event.get('isBase64Encoded'):
+            try:
+                raw = base64.b64decode(raw).decode('utf-8', 'replace')
+            except Exception:
+                raw = '{}'
+        try:
+            body = json.loads(raw)
+        except (ValueError, TypeError):
+            cur.close()
+            conn.close()
+            return {'statusCode': 200, 'headers': cors,
+                    'body': json.dumps({'ok': False, 'skipped': 'bad_json'})}
         visitor_id = str(body.get('visitor_id') or '')[:64]
         path = str(body.get('path') or '/')[:1000]
         referrer = (str(body.get('referrer')) if body.get('referrer') else None)

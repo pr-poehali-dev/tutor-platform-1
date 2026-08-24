@@ -11,6 +11,7 @@ import {
   SecurePaymentBadge,
 } from "@/components/courses/CheckoutBoosters";
 import { ACTIVE_PROMO_CODE } from "@/components/checkout/CheckoutCouponForm";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 import func2url from "../../../../backend/func2url.json";
 
 const YOOKASSA_URL = (func2url as Record<string, string>)["yookassa-yookassa"];
@@ -73,7 +74,10 @@ export default function CourseEmailPay({ course, price }: Props) {
 
   const handlePay = async () => {
     setLocalError(null);
+    // Цели в Метрике: видно, на каком шаге человек застревает.
+    trackGoal("course_pay_click", { course: course.id, price: finalPrice });
     if (!isValidEmail(email)) {
+      trackGoal("course_pay_bad_email", { course: course.id });
       setLocalError("Введи корректный email — на него придёт чек и доступ");
       return;
     }
@@ -101,8 +105,16 @@ export default function CourseEmailPay({ course, price }: Props) {
       },
     });
     if (res?.payment_url && /^https:\/\//.test(res.payment_url)) {
+      trackGoal("course_pay_redirect", { course: course.id, price: finalPrice });
       window.location.href = res.payment_url;
+      return;
     }
+    // Раньше при сбое кнопка просто «отщёлкивала» без единого слова:
+    // человек жал повторно и уходил. Теперь честно объясняем, что делать.
+    trackGoal("course_pay_failed", { course: course.id });
+    setLocalError(
+      "Не удалось открыть страницу оплаты. Проверь интернет и попробуй ещё раз — деньги не списаны.",
+    );
   };
 
   const displayError = localError || (error ? error.message : null);
