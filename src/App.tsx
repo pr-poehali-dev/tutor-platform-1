@@ -119,6 +119,7 @@ const Corporate = lazy(() => import("./pages/Corporate"));
 const ManagerTools = lazy(() => import("./pages/ManagerTools"));
 const ForManagers = lazy(() => import("./pages/ForManagers"));
 const CareerPro = lazy(() => import("./pages/CareerPro"));
+const Order = lazy(() => import("./pages/Order"));
 const BusinessCoach = lazy(() => import("./pages/BusinessCoach"));
 const FinAdvisor = lazy(() => import("./pages/FinAdvisor"));
 const BizLab = lazy(() => import("./pages/BizLab"));
@@ -191,6 +192,7 @@ const App = () => (
                     <Route path="/for-business" element={<ForBusiness />} />
                     <Route path="/corporate" element={<Corporate />} />
                     <Route path="/career-pro" element={<CareerPro />} />
+                    <Route path="/order" element={<Order />} />
                     <Route path="/business-coach" element={<BusinessCoach />} />
                     <Route path="/fin-advisor" element={<FinAdvisor />} />
                     <Route path="/bizlab" element={<BizLab />} />

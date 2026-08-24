@@ -1,0 +1,53 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 404,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Подбор без темы возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=match",
+      "body": {"topic": ""},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Заявка без имени возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=submit",
+      "body": {"topic": "Маркетинг для кофейни", "contact_email": "test@example.com"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Заявка без контактов возвращает ошибку",
+      "method": "POST",
+      "path": "/?action=submit",
+      "body": {"contact_name": "Иван", "topic": "Маркетинг для кофейни"},
+      "expectedStatus": 400,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Список заказов без пина запрещён",
+      "method": "GET",
+      "path": "/?action=orders_list",
+      "expectedStatus": 403,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

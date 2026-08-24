@@ -31,6 +31,7 @@ const MENU_GROUPS: MenuGroup[] = [
     label: "Обучение",
     icon: "GraduationCap",
     items: [
+      { label: "Заказ курса", icon: "Sparkles",  path: "/order",        desc: "Нет нужного курса? Соберём под вас" },
       { label: "ИИ-учитель", icon: "Bot",        section: "ai-teacher", desc: "Персональный ИИ-репетитор 24/7" },
       { label: "ОГЭ и ЕГЭ",  icon: "BookMarked", path: "/exam-bank",    desc: "Банк заданий и подготовка к экзаменам" },
       { label: "Домашка",    icon: "Camera",     path: "/homework",     desc: "Проверка домашних заданий по фото" },
