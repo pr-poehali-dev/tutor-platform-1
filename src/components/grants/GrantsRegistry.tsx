@@ -7,6 +7,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   education: "Образование",
   culture: "Культура",
   science: "Наука",
+  business: "Бизнес и предпринимательство",
   other: "Другое",
 };
 
@@ -67,7 +68,11 @@ function GrantCard({ g }: { g: RegistryGrant }) {
         )}
         <div className="flex items-center gap-2 text-white/80">
           <Icon name="CalendarClock" size={15} className="text-violet-300 flex-shrink-0" />
-          <span>Дедлайн: <span className="font-semibold">{formatDate(g.deadline_on)}</span></span>
+          <span>
+            {g.deadline_on
+              ? <>Дедлайн: <span className="font-semibold">{formatDate(g.deadline_on)}</span></>
+              : <span className="font-semibold">Приём волнами — даты на сайте фонда</span>}
+          </span>
         </div>
         {g.region && (
           <div className="flex items-center gap-2 text-white/65">
