@@ -1079,6 +1079,17 @@ def handle_keep_alive(event: dict, headers: dict) -> dict:
             run_id = cur.fetchone()[0]
             conn.commit()
 
+            # Ежедневный отчёт владельцу — ПЕРВЫМ делом.
+            # Раньше он стоял в конце пульса, после ИИ-генерации статей.
+            # Генерация упирается в таймаут функции, прогон обрывается на
+            # середине — и до отчёта дело не доходило: за месяц он ушёл один раз.
+            # Отправка занимает доли секунды, поэтому теперь идёт до тяжёлой части.
+            report_sent = False
+            try:
+                report_sent = maybe_send_daily_report(cur, conn)
+            except Exception as report_err:
+                print(f'daily-report failed: {report_err}')
+
             # Метрики живучести
             cur.execute(
                 "SELECT COUNT(*) FROM feed_articles WHERE status='published' "
@@ -1148,17 +1159,6 @@ def handle_keep_alive(event: dict, headers: dict) -> dict:
                      'Cron работает, но новых статей не приходит. Проверь polza.ai и RSS.',
                      json.dumps({'fresh_24h': 0, 'total': total_published}, ensure_ascii=False))
                 )
-
-            # Ежедневный отчёт владельцу.
-            # Часовой пульс — единственный работающий планировщик в проекте,
-            # поэтому отчёт отправляем отсюда: раз в сутки, при первом
-            # срабатывании после 8 утра по Москве. Ошибка отправки не должна
-            # ронять пульс — поэтому всё внутри try.
-            report_sent = False
-            try:
-                report_sent = maybe_send_daily_report(cur, conn)
-            except Exception as report_err:
-                print(f'daily-report failed: {report_err}')
 
             cur.execute(
                 "UPDATE feed_cron_runs SET status='ok', fetched=%s, "
