@@ -1,6 +1,7 @@
 import func2url from "../../../backend/func2url.json";
 
 const URL = (func2url as Record<string, string>)["course-order"] || "";
+const CONTACT_URL = (func2url as Record<string, string>)["contact"] || "";
 
 export interface OrderModule {
   title: string;
@@ -71,10 +72,46 @@ export interface OrderSubmitPayload extends OrderRequest {
   utm?: Record<string, string>;
 }
 
+/** Запасной канал: заявка уходит в общую форму обращений, чтобы не потеряться. */
+async function submitViaContact(
+  payload: OrderSubmitPayload,
+): Promise<{ ok: boolean; message?: string }> {
+  if (!CONTACT_URL) return { ok: false, message: "Отправка временно недоступна" };
+  const lines = [
+    "ЗАКАЗ ИНДИВИДУАЛЬНОГО КУРСА",
+    `Тема: ${payload.topic}`,
+    payload.goal ? `Цель: ${payload.goal}` : "",
+    payload.level ? `Уровень: ${payload.level}` : "",
+    payload.time_per_week ? `Время: ${payload.time_per_week}` : "",
+    payload.deadline_pref ? `Сроки: ${payload.deadline_pref}` : "",
+    payload.format_pref ? `Формат: ${payload.format_pref}` : "",
+    payload.details ? `Детали: ${payload.details}` : "",
+    payload.matched?.course_title ? `Подобрано: ${payload.matched.course_title}` : "",
+  ].filter(Boolean);
+  try {
+    const res = await fetch(`${CONTACT_URL}?action=feedback_submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contact_name: payload.contact_name,
+        contact_email: payload.contact_email,
+        contact_phone: payload.contact_phone,
+        subject: "general",
+        message: lines.join("\n").slice(0, 5000),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, message: data.error };
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Сеть недоступна" };
+  }
+}
+
 export async function submitOrder(
   payload: OrderSubmitPayload,
 ): Promise<{ ok: boolean; message?: string }> {
-  if (!URL) return { ok: false, message: "Отправка временно недоступна" };
+  if (!URL) return submitViaContact(payload);
   try {
     const res = await fetch(`${URL}?action=submit`, {
       method: "POST",
@@ -85,7 +122,7 @@ export async function submitOrder(
     if (!res.ok) return { ok: false, message: data.error };
     return { ok: true };
   } catch {
-    return { ok: false, message: "Сеть недоступна" };
+    return submitViaContact(payload);
   }
 }
 

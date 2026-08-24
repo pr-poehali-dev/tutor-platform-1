@@ -100,7 +100,14 @@ export default function Order() {
     trackGoal("course_order_match", { topic: req.topic.slice(0, 60) });
     const res = await matchCourse(req, CATALOG);
     setLoading(false);
-    if (!res.ok || !res.plan) return setError(res.message || "Не удалось подобрать курс");
+    if (!res.ok || !res.plan) {
+      setError(
+        (res.message || "Не удалось подобрать курс") +
+          ". Оставьте заявку — методист разберёт запрос вручную.",
+      );
+      setShowLead(true);
+      return;
+    }
     setPlan(res.plan);
     setStage("plan");
     window.scrollTo({ top: 0, behavior: "smooth" });
