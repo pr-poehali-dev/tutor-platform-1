@@ -22,6 +22,7 @@ STATIC_PAGES = [
     ('/feed', 'daily', '0.9'),
     ('/courses', 'weekly', '0.9'),
     ('/free-courses', 'weekly', '0.9'),
+    ('/pricing', 'weekly', '0.9'),
     ('/order', 'weekly', '0.9'),
     ('/career-pro', 'weekly', '0.8'),
     ('/bizlab', 'weekly', '0.8'),
