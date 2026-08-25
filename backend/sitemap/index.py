@@ -9,7 +9,10 @@ from datetime import datetime, timezone
 
 import psycopg2
 
-SITE = 'https://учисьпро.рф'
+# В sitemap.xml адреса обязаны быть в ASCII (RFC 3986): кириллический домен
+# записывается в punycode. Для DNS и поисковиков это тот же самый учисьпро.рф,
+# но робот больше не считает файл ошибочным.
+SITE = 'https://xn--h1agdcde2c.xn--p1ai'
 SCHEMA = 't_p78828167_tutor_platform_1'
 
 # Публичные страницы сайта: (путь, частота обновления, приоритет).

@@ -10,6 +10,13 @@ interface SeoProps {
   /** JSON-LD объекты — каждый будет вставлен отдельным <script> */
   jsonLd?: Record<string, unknown>[];
   noindex?: boolean;
+  /**
+   * HTTP-код страницы. Указывается только для 404: сайт — SPA, сервер всегда
+   * отвечает 200, поэтому робот считает несуществующие адреса рабочими
+   * страницами. Тег prerender-status-code — стандартный способ сообщить
+   * поисковику и пререндеру настоящий статус.
+   */
+  statusCode?: number;
   /** Доп. метаданные для статей (type="article") — улучшают сниппеты в выдаче */
   article?: {
     publishedTime?: string | null;
@@ -52,6 +59,7 @@ export default function Seo({
   keywords,
   jsonLd,
   noindex = false,
+  statusCode,
   article,
 }: SeoProps) {
   // Бренд к заголовку добавляем только если он влезает в выдачу: Яндекс и Google
@@ -87,6 +95,10 @@ export default function Seo({
       {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={url} />
       <meta name="theme-color" content="#0a0a14" />
+
+      {statusCode && statusCode !== 200 && (
+        <meta name="prerender-status-code" content={String(statusCode)} />
+      )}
 
       {noindex ? (
         <meta name="robots" content="noindex, follow" />

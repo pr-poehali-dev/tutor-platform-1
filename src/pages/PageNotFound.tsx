@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 
+const SITE_URL = "https://учисьпро.рф";
+
 /** Куда увести человека, попавшего на несуществующий адрес. */
 const EXITS = [
   { to: "/courses", icon: "GraduationCap", label: "Все курсы", hint: "Каталог программ" },
@@ -30,7 +32,9 @@ export default function PageNotFound() {
       <Seo
         title="Страница не найдена — УЧИСЬПРО"
         description="Такой страницы нет. Перейдите в каталог курсов или задайте вопрос ИИ-помощнику."
+        canonical={`${SITE_URL}/404`}
         noindex
+        statusCode={404}
       />
 
       <div className="max-w-lg w-full text-center">

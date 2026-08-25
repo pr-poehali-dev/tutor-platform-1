@@ -49,5 +49,5 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-Host: https://учисьпро.рф
-Sitemap: https://учисьпро.рф/sitemap.xml
+Host: https://xn--h1agdcde2c.xn--p1ai
+Sitemap: https://xn--h1agdcde2c.xn--p1ai/sitemap.xml
