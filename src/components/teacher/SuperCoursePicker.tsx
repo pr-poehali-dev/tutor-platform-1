@@ -21,6 +21,7 @@ interface Props {
 }
 
 const GRADE_LABEL: Record<GradeLevel, string> = {
+  "5": "5 класс", "6": "6 класс",
   "7": "7 класс", "8": "8 класс", "9": "9 класс",
   "10": "10 класс", "11": "11 класс", "ege": "ЕГЭ",
 };
@@ -58,7 +59,7 @@ export default function SuperCoursePicker({ startLesson, progress, hasCourseAcce
           Программы уровня <span className="gradient-text-purple">репетитора</span>
         </h3>
         <p className="text-white/60 text-sm mt-2 max-w-xl mx-auto">
-          Готовая программа уроков по физике, математике и информатике. Нажми на урок — наставник объяснит тему голосом, как живой репетитор.
+          Готовая программа уроков по восьми предметам — включая логику, которой в школе больше не учат. Нажми на урок — наставник объяснит тему голосом, как живой репетитор.
         </p>
       </div>
 

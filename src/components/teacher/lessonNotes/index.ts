@@ -8,6 +8,7 @@ import { CHEMISTRY_NOTES } from "./chemistry";
 import { BIOLOGY_NOTES } from "./biology";
 import { RUSSIAN_NOTES } from "./russian";
 import { HISTORY_NOTES } from "./history";
+import { LOGIC_NOTES } from "./logic";
 
 export const LESSON_NOTES: Record<string, LessonNotes> = {
   ...PHYSICS_NOTES,
@@ -17,6 +18,7 @@ export const LESSON_NOTES: Record<string, LessonNotes> = {
   ...BIOLOGY_NOTES,
   ...RUSSIAN_NOTES,
   ...HISTORY_NOTES,
+  ...LOGIC_NOTES,
 };
 
 /**

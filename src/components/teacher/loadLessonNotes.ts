@@ -15,6 +15,7 @@ function subjectByLessonId(lessonId: string): keyof typeof LOADERS | null {
   if (lessonId.startsWith("bio-")) return "biology";
   if (lessonId.startsWith("rus-")) return "russian";
   if (lessonId.startsWith("hist-")) return "history";
+  if (lessonId.startsWith("lg-")) return "logic";
   return null;
 }
 
@@ -26,6 +27,7 @@ const LOADERS = {
   biology: () => import("./lessonNotes/biology").then((m) => m.BIOLOGY_NOTES),
   russian: () => import("./lessonNotes/russian").then((m) => m.RUSSIAN_NOTES),
   history: () => import("./lessonNotes/history").then((m) => m.HISTORY_NOTES),
+  logic: () => import("./lessonNotes/logic").then((m) => m.LOGIC_NOTES),
 } as const;
 
 const cache = new Map<string, NotesMap>();
