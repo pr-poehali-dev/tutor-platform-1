@@ -1,26 +1,42 @@
 import { lazy, ComponentType } from "react";
 
-const RELOAD_KEY = "uchispro_chunk_reload_count";
-const RELOAD_TS_KEY = "uchispro_chunk_reload_at";
+// Ключи общие с ErrorBoundary: оба механизма ловят одну и ту же ошибку чанка,
+// и счётчик попыток у них должен быть ОДИН. Иначе каждый считает свои попытки,
+// и страница успевает перезагрузиться несколько раз подряд.
+export const RELOAD_KEY = "uchispro_chunk_reload_count";
+export const RELOAD_TS_KEY = "uchispro_chunk_reload_at";
+/** Окно, внутри которого попытки считаются одной серией. */
+export const RELOAD_WINDOW_MS = 30000;
+/** Сколько перезагрузок подряд допустимо, прежде чем показать человеку экран ошибки. */
+export const RELOAD_MAX = 2;
+
+/**
+ * Общая для обоих механизмов попытка «обновиться ради свежих файлов».
+ * Возвращает true, если перезагрузка запущена, и false — если лимит исчерпан
+ * и нужно показать пользователю понятный экран вместо бесконечного мигания.
+ */
+export function tryReloadForChunk(): boolean {
+  try {
+    const now = Date.now();
+    const lastAt = Number(sessionStorage.getItem(RELOAD_TS_KEY) || "0");
+    let count = Number(sessionStorage.getItem(RELOAD_KEY) || "0");
+    if (now - lastAt > RELOAD_WINDOW_MS) count = 0;
+    if (count >= RELOAD_MAX) return false;
+    sessionStorage.setItem(RELOAD_KEY, String(count + 1));
+    sessionStorage.setItem(RELOAD_TS_KEY, String(now));
+    window.location.reload();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Аккуратно перезагружает страницу, чтобы подтянуть свежие чанки после деплоя.
  * Защита от циклов: не больше 2 перезагрузок подряд в течение 30 секунд.
  */
 function reloadForFreshChunks(): void {
-  try {
-    const now = Date.now();
-    const lastAt = Number(sessionStorage.getItem(RELOAD_TS_KEY) || "0");
-    let count = Number(sessionStorage.getItem(RELOAD_KEY) || "0");
-    // Если с прошлой перезагрузки прошло много времени — считаем ситуацию новой.
-    if (now - lastAt > 30000) count = 0;
-    if (count >= 2) return; // уже пробовали — не зацикливаемся
-    sessionStorage.setItem(RELOAD_KEY, String(count + 1));
-    sessionStorage.setItem(RELOAD_TS_KEY, String(now));
-    window.location.reload();
-  } catch {
-    /* noop */
-  }
+  tryReloadForChunk();
 }
 
 /** Признак ошибки загрузки JS-модуля/чанка (а не ошибки внутри компонента). */
@@ -51,22 +67,31 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
     try {
       return await factory();
     } catch (firstErr) {
-      // Небольшая пауза и вторая попытка — покрывает случайные сетевые сбои.
-      await new Promise((r) => setTimeout(r, 500));
-      try {
-        // Пробуем обойти кеш браузера: подгружаем модуль по URL с новым query.
-        if (chunkUrl) {
-          const bust = `${chunkUrl}${chunkUrl.includes("?") ? "&" : "?"}v=${Date.now()}`;
-          return (await import(/* @vite-ignore */ bust)) as { default: T };
+      // Повторяем несколько раз с нарастающей паузой. Это лечит главный случай:
+      // сервер отдаёт файл, но в момент первого запроса он был занят пересборкой
+      // зависимостей. Простой повтор через 500 мс часто попадал в то же окно.
+      const DELAYS = [400, 1200, 2500];
+      let lastErr: unknown = firstErr;
+
+      for (const wait of DELAYS) {
+        await new Promise((r) => setTimeout(r, wait));
+        try {
+          if (chunkUrl) {
+            const bust = `${chunkUrl}${chunkUrl.includes("?") ? "&" : "?"}v=${Date.now()}`;
+            return (await import(/* @vite-ignore */ bust)) as { default: T };
+          }
+          return await factory();
+        } catch (retryErr) {
+          lastErr = retryErr;
         }
-        return await factory();
-      } catch (secondErr) {
-        // Перезагружаем только если проблема именно в загрузке чанка.
-        if (isChunkLoadError(firstErr) || isChunkLoadError(secondErr)) {
-          reloadForFreshChunks();
-        }
-        throw secondErr;
       }
+
+      // Все попытки исчерпаны. Перезагружаем только при ошибке ЗАГРУЗКИ файла —
+      // ошибку внутри самого компонента перезагрузка не вылечит.
+      if (isChunkLoadError(firstErr) || isChunkLoadError(lastErr)) {
+        reloadForFreshChunks();
+      }
+      throw lastErr;
     }
   });
 }

@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from "react";
+import { tryReloadForChunk, RELOAD_KEY, RELOAD_TS_KEY } from "@/lib/lazyWithRetry";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -34,19 +35,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       /ChunkLoadError|Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(
         msg
       );
+    // Перезагрузку заказываем через общий счётчик из lazyWithRetry: раньше здесь
+    // был свой ключ, и два механизма перезагружали страницу по очереди, каждый
+    // «не зная» о попытках другого. Когда лимит исчерпан — показываем экран ошибки.
     if (isChunkError && typeof window !== "undefined") {
-      const KEY = "uchispro_chunk_reload_at";
-      try {
-        const last = Number(sessionStorage.getItem(KEY) || "0");
-        // Защита от цикла перезагрузок: не чаще раза в 10 секунд.
-        if (Date.now() - last > 10000) {
-          sessionStorage.setItem(KEY, String(Date.now()));
-          window.location.reload();
-          return;
-        }
-      } catch {
-        /* noop */
-      }
+      if (tryReloadForChunk()) return;
     }
 
     // Логируем в консоль (в проде это попадёт в Sentry/аналитику при наличии)
@@ -60,9 +53,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   };
 
   handleReload = () => {
-    if (typeof window !== "undefined") {
-      window.location.reload();
+    if (typeof window === "undefined") return;
+    // Человек нажал кнопку сам — сбрасываем счётчик автоперезагрузок,
+    // иначе лимит из предыдущей серии не даст странице обновиться.
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+      sessionStorage.removeItem(RELOAD_TS_KEY);
+    } catch {
+      /* noop */
     }
+    window.location.reload();
   };
 
   handleGoHome = () => {
