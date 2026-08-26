@@ -202,6 +202,14 @@ export default function CourseDetailProgram({
                               </span>
                             )}
                           </div>
+                          {l.homework && isFree && (
+                            <div className="mt-2 rounded-xl border border-amber-500/25 bg-amber-500/8 p-2.5">
+                              <p className="text-amber-200/90 text-xs font-bold flex items-center gap-1.5 mb-1">
+                                <Icon name="PenLine" size={11} /> Домашнее задание
+                              </p>
+                              <p className="text-white/65 text-xs leading-relaxed">{l.homework}</p>
+                            </div>
+                          )}
                         </div>
                       </button>
                     );

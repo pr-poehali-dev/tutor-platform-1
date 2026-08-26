@@ -8,6 +8,7 @@ export interface ModuleLesson {
   title: string;
   duration: string;
   topics: string[];
+  homework?: string | null;
 }
 
 export interface CourseModule {

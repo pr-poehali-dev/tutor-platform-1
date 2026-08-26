@@ -83,6 +83,7 @@ export default function useCourseCurriculum(courseInfo: CourseInfo, autoGenerate
         title: l.lesson_title,
         duration: `${l.estimated_minutes} мин`,
         topics: l.topics || [],
+        homework: l.homework_description || null,
       });
     });
     return Array.from(grouped.entries())
