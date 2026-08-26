@@ -8,6 +8,7 @@ import CourseCardCompact from "@/components/courses/CourseCardCompact";
 import { COURSES, getCoursePrice } from "@/components/courses/coursesData";
 import { SUBJECTS_SEO, getSubjectSeo } from "@/components/courses/subjectsSeo";
 import useReadyCourses from "@/hooks/useReadyCourses";
+import { SUPER_COURSES } from "@/components/teacher/superCourses";
 import SubjectExamTasks from "@/components/courses/SubjectExamTasks";
 import { getExamTasks } from "@/components/courses/subjectExamTasks";
 import { getExamTasksPart2 } from "@/components/courses/subjectExamTasksPart2";
@@ -233,6 +234,32 @@ export default function SubjectLanding() {
                     <p className="text-white/55 text-xs">{trainer.subtitle}</p>
                   </div>
                   <Icon name="ArrowRight" size={16} className="text-purple-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                </Link>
+              );
+            })()}
+
+            {/* Полная программа супер-курса — для предметов, где она уже написана */}
+            {(() => {
+              const superCourse = SUPER_COURSES.find((c) => c.id === seo.slug);
+              if (!superCourse) return null;
+              const lessonCount = superCourse.modules.reduce((n, m) => n + m.lessons.length, 0);
+              return (
+                <Link
+                  to="/super-courses"
+                  className="group mt-3 flex items-center gap-3 bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/35 rounded-2xl px-4 py-3 transition-all max-w-md"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0 text-lg">
+                    {superCourse.emoji}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-montserrat font-black text-white text-sm">
+                      Полная программа: {superCourse.modules.length} разделов, {lessonCount} уроков
+                    </p>
+                    <p className="text-white/55 text-xs">
+                      Теория, примеры и задачи с наставником. Первый урок бесплатно
+                    </p>
+                  </div>
+                  <Icon name="ArrowRight" size={16} className="text-amber-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </Link>
               );
             })()}

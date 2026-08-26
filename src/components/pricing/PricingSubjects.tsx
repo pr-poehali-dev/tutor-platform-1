@@ -8,6 +8,9 @@ const SUBJECTS: { name: string; emoji: string; href: string; note: string }[] = 
   { name: "Биология", emoji: "🧬", href: "/biology-problems", note: "задачник с разбором" },
   { name: "Химия", emoji: "🧪", href: "/chemistry-problems", note: "задачник с разбором" },
   { name: "Литература", emoji: "📚", href: "/feed", note: "разборы произведений" },
+  { name: "Русский язык", emoji: "✍️", href: "/super-courses", note: "грамотность и ЕГЭ" },
+  { name: "История", emoji: "🏛️", href: "/super-courses", note: "даты и сочинение" },
+  { name: "Логика", emoji: "🧠", href: "/super-courses", note: "предмета нет в школе" },
 ];
 
 export default function PricingSubjects() {
