@@ -14,10 +14,13 @@ export default function FeedArticleCtas({ article }: Props) {
   const isForecast =
     tags.some((t) => ["eduflow ai", "прогноз"].includes(t)) ||
     /eduflow|prognoz/i.test(article.slug);
+  // Важно: раньше сюда попадала любая статья, где в адресе встречалось «shkol»
+  // (а это почти всё про школу) — и читатель видел призыв открыть свою онлайн-школу.
+  // Теперь ориентируемся на теги и на явные адреса про конструктор.
   const isSchoolBuilder =
     !isForecast &&
     (tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
-      /shkol/i.test(article.slug));
+      /(konstruktor|svoya|sozdat|otkryt|zapustit)[-_]?shkol/i.test(article.slug));
   // Статьи про отдельный сервис grant-ai.ru — ведём на внешний сайт, а не на /grants.
   const isGrantAi =
     tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||

@@ -243,6 +243,22 @@ export default function FeedArticlePage() {
               );
             }
             const lines = p.split(/\n/);
+            // Цитата: все строки абзаца начинаются с «>»
+            const isQuote = lines.length > 0 && lines.every((l) => /^\s*>\s?/.test(l));
+            if (isQuote) {
+              return (
+                <blockquote
+                  key={i}
+                  className="border-l-4 border-primary/60 bg-white/[0.04] rounded-r-2xl pl-5 pr-4 py-4 my-6 text-white/90 italic"
+                >
+                  {renderInline(lines.map((l) => l.replace(/^\s*>\s?/, "")).join(" "))}
+                </blockquote>
+              );
+            }
+            // Разделитель «---»
+            if (/^\s*---+\s*$/.test(p)) {
+              return <hr key={i} className="border-white/10 my-8" />;
+            }
             const isList = lines.length > 0 && lines.every((l) => /^\s*[-*]\s+/.test(l));
             if (isList) {
               return (
