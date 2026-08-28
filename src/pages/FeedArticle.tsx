@@ -14,6 +14,7 @@ import FeedArticleHeader from "@/components/feed/article/FeedArticleHeader";
 import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
 import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
+import FeedArticleSpoiler from "@/components/feed/article/FeedArticleSpoiler";
 
 // Инлайн-разметка: **жирный** текст и [ссылки](/path) внутри абзацев,
 // заголовков и списков.
@@ -124,8 +125,29 @@ export default function FeedArticlePage() {
 
   const meta = CATEGORY_META[article.category];
   const fullText = article.content || article.summary;
-  const paragraphs = fullText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+  const rawBlocks = fullText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
   const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
+
+  // Собираем блоки-спойлеры: ":::spoiler Заголовок" ... ":::"
+  // Всё между маркерами прячется под кнопку — чтобы в статьях-практикумах
+  // человек сначала попробовал сам, а потом открыл разбор.
+  const paragraphs: (string | { spoiler: string; body: string[] })[] = [];
+  let openSpoiler: { spoiler: string; body: string[] } | null = null;
+  rawBlocks.forEach((b) => {
+    const start = b.match(/^:::spoiler\s*(.*)$/);
+    if (start) {
+      openSpoiler = { spoiler: start[1].trim() || "Показать разбор", body: [] };
+      return;
+    }
+    if (/^:::$/.test(b)) {
+      if (openSpoiler) paragraphs.push(openSpoiler);
+      openSpoiler = null;
+      return;
+    }
+    if (openSpoiler) openSpoiler.body.push(b);
+    else paragraphs.push(b);
+  });
+  if (openSpoiler) paragraphs.push(openSpoiler);
 
   // Обложка-документ (вертикальный сертификат) — показываем целиком, без обрезки 16:9.
   const isDocCover =
@@ -225,7 +247,17 @@ export default function FeedArticlePage() {
 
         {/* Контент */}
         <article className="prose-feed text-white/85 text-base md:text-lg leading-relaxed space-y-4 mb-8">
-          {paragraphs.map((p, i) => {
+          {paragraphs.map((block, i) => {
+            if (typeof block !== "string") {
+              return (
+                <FeedArticleSpoiler key={i} title={block.spoiler}>
+                  {block.body.map((line, j) => (
+                    <p key={j}>{renderInline(line)}</p>
+                  ))}
+                </FeedArticleSpoiler>
+              );
+            }
+            const p = block;
             const h2 = /^##\s+/.test(p);
             const h3 = /^###\s+/.test(p);
             if (h3) {
