@@ -36,8 +36,9 @@ export default function LessonFeedback({
   const [sent, setSent] = useState(false);
   const [showComment, setShowComment] = useState(false);
 
+  /** Отправляем отзыв РОВНО один раз, иначе низкая оценка ушла бы дважды
+   *  (сразу по клику и повторно вместе с комментарием) и задвоила статистику. */
   const send = async (stars: number, text?: string) => {
-    setRating(stars);
     await submitAgentFeedback({
       agent_key: agentKey,
       rating: stars,
@@ -49,9 +50,17 @@ export default function LessonFeedback({
       grade,
       topic: topic || lessonTitle,
     });
-    if (text !== undefined) setSent(true);
-    else setShowComment(stars <= 3);
-    if (stars >= 4) setSent(true);
+    setSent(true);
+  };
+
+  const pickStars = (stars: number) => {
+    setRating(stars);
+    // Низкая оценка — сначала спрашиваем, что не так, и отправляем вместе с текстом.
+    if (stars <= 3) {
+      setShowComment(true);
+      return;
+    }
+    send(stars);
   };
 
   if (sent) {
@@ -74,7 +83,7 @@ export default function LessonFeedback({
         {[1, 2, 3, 4, 5].map((s) => (
           <button
             key={s}
-            onClick={() => send(s)}
+            onClick={() => pickStars(s)}
             className="p-1.5 rounded-lg hover:bg-white/8 transition-colors"
             aria-label={`Оценка ${s}`}
           >
@@ -110,7 +119,7 @@ export default function LessonFeedback({
               Отправить
             </button>
             <button
-              onClick={() => setSent(true)}
+              onClick={() => send(rating || 3)}
               className="px-4 py-2.5 rounded-xl text-sm text-white/50 hover:text-white/80 transition-colors"
             >
               Пропустить

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import AutopilotPanel from "@/components/admin/AutopilotPanel";
+import AutomationStatusPanel from "@/components/admin/AutomationStatusPanel";
 import AgentGraph from "@/components/admin/AgentGraph";
 import func2url from "../../../backend/func2url.json";
 
@@ -172,6 +173,8 @@ export default function AIEvolutionLab() {
         )}
 
         {loading && <p className="text-white/55 text-sm">Загружаю агентов...</p>}
+
+        <AutomationStatusPanel />
 
         {/* Автопилот + Граф связей */}
         <div className="grid lg:grid-cols-2 gap-5 mb-8">
