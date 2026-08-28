@@ -845,11 +845,18 @@ def handle_status(conn) -> dict:
 
 
 def is_cron_authorized(headers: dict) -> bool:
+    """Авторизация cron-вызова.
+
+    Важно: облачная платформа вырезает заголовок Authorization и передаёт его
+    как X-Authorization. Без этой ветки все вызовы по расписанию молча
+    получали 403 — агент тикал, но не публиковал ни одного поста.
+    """
     secret = os.environ.get('CRON_SECRET', '')
     if not secret:
         return False
-    auth = headers.get('Authorization') or headers.get('authorization') or ''
-    return auth == f'Bearer {secret}'
+    auth = (headers.get('Authorization') or headers.get('authorization')
+            or headers.get('X-Authorization') or headers.get('x-authorization') or '')
+    return auth.replace('Bearer ', '').strip() == secret
 
 
 def is_admin(headers: dict) -> bool:

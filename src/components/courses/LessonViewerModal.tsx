@@ -401,6 +401,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
                   accent={accent}
                   onRetry={loadLesson}
                   onClose={onClose}
+                  feedbackContext={{ subject: subjectId, grade, topic }}
                 />
               )}
             </>

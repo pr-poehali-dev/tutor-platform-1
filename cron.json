@@ -38,6 +38,46 @@
       "schedule": "*/30 * * * *",
       "method": "GET",
       "url": "https://functions.poehali.dev/9e916110-c3b2-47e3-8751-9351fcd8e01d?action=cron&batch=2"
+    },
+    {
+      "name": "db-backup-daily",
+      "description": "Каждую ночь в 03:00 UTC: резервная копия ключевых таблиц базы в S3 (хранение 30 дней). Раньше задача висела только в расписании Vercel и ни разу не выполнилась",
+      "schedule": "0 3 * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/4a67fc8e-2abe-4c78-88cf-f732855e95f9?action=run",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
+    },
+    {
+      "name": "health-guardian-30m",
+      "description": "Каждые 30 минут: пингует все облачные функции, пишет статус и создаёт алерт при трёх ошибках подряд",
+      "schedule": "*/30 * * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/b26bcff9-23fd-4f6c-ada5-01f7a332d02e?action=ping_all",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
+    },
+    {
+      "name": "daily-report-owner",
+      "description": "Каждый день в 06:00 UTC: сводка по проекту владельцу в MAX — метрики, продажи, заявки",
+      "schedule": "0 6 * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/f006bf6b-1ebc-47f7-8e64-fe93f8bc3c47?action=send",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
+    },
+    {
+      "name": "it-trends-analyst-12h",
+      "description": "Дважды в сутки: ИИ-аналитик собирает IT-тренды и готовит из них материалы для Ленты",
+      "schedule": "15 5,17 * * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/345b51be-4247-4451-bc5b-a382df23647a?action=cron",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     }
   ]
 }

@@ -12,6 +12,7 @@ GET  /?action=cron_log      (X-Admin-Key)             — последние 20 
 import json
 import os
 import re
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -87,7 +88,7 @@ def unique_slug(cur, base: str) -> str:
         i += 1
 
 
-def fetch_url(url: str, timeout: int = 12) -> bytes:
+def fetch_url(url: str, timeout: int = 7) -> bytes:
     """HTTP GET с User-Agent."""
     req = urllib.request.Request(
         url,
@@ -691,10 +692,13 @@ def is_cron_authorized(event: dict, headers: dict) -> bool:
     if is_admin(headers):
         return True
     # Vercel Cron шлёт заголовок Authorization: Bearer <CRON_SECRET>
+    # Платформа вырезает Authorization и передаёт его как X-Authorization —
+    # без этой ветки вызовы по расписанию получали бы 401.
     cron_secret = os.environ.get('CRON_SECRET', '')
     if cron_secret:
-        auth = headers.get('Authorization') or headers.get('authorization') or ''
-        if auth == f'Bearer {cron_secret}':
+        auth = (headers.get('Authorization') or headers.get('authorization')
+                or headers.get('X-Authorization') or headers.get('x-authorization') or '')
+        if auth.replace('Bearer ', '').strip() == cron_secret:
             return True
     # Fallback: ?secret в query (для cron-triggers, не умеющих заголовки)
     qs = event.get('queryStringParameters') or {}
@@ -715,9 +719,17 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
     limit_per_source = max(1, min(10, int(body.get('limit') or 2)))
     moderate_limit = max(1, min(100, int(body.get('moderate_limit') or 50)))
 
+    # Бюджет времени. Платформа обрывает функцию по таймауту и запись прогона
+    # навсегда застревает в статусе 'running' (так зависло 93 запуска из 377).
+    # Обходим источники, пока укладываемся в бюджет, остальные достанутся
+    # следующему прогону — источники берутся по приоритету и ротации.
+    cron_started = time.time()
+    time_budget_sec = max(5, min(600, int(body.get('time_budget') or 20)))
+
     conn = get_db()
     fetched_total = 0
     fetch_results = []
+    sources_skipped = 0
     moderation = {'moderated': 0, 'approved': 0, 'rejected': 0, 'flagged': 0}
     cron_run_id = None
     err_msg = None
@@ -732,14 +744,21 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
             cron_run_id = cur.fetchone()[0]
             conn.commit()
 
-            # 1. Обход источников — приоритет: Китай (300) → РФ (200) → Азия (150) → Запад (100)
+            # 1. Обход источников. Ротация: первыми идут те, кого дольше всех
+            # не опрашивали — иначе при ограниченном бюджете времени хвост
+            # списка не обновлялся бы никогда.
             cur.execute(
                 "SELECT id, code, name, category, rss_url, language, country, "
                 "country_flag, priority FROM feed_sources "
-                "WHERE enabled = TRUE ORDER BY priority DESC, id"
+                "WHERE enabled = TRUE "
+                "ORDER BY last_fetched_at ASC NULLS FIRST, priority DESC, id"
             )
             sources = cur.fetchall()
             for s in sources:
+                # Бюджет исчерпан — остальные источники берёт следующий прогон
+                if time.time() - cron_started > time_budget_sec:
+                    sources_skipped += 1
+                    continue
                 try:
                     res = process_source(cur, s, limit_per_source=limit_per_source)
                     conn.commit()
@@ -779,7 +798,9 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
                  err_msg,
                  json.dumps({'fetch': fetch_results,
                              'moderation_details': moderation.get('details', []),
-                             'topup': topup_result},
+                             'topup': topup_result,
+                             'sources_skipped': sources_skipped,
+                             'elapsed_sec': round(time.time() - cron_started, 1)},
                             ensure_ascii=False),
                  cron_run_id)
             )
@@ -790,6 +811,8 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
                 'cron_run_id': cron_run_id,
                 'fetched_new': fetched_total,
                 'sources_processed': len(fetch_results),
+                'sources_skipped': sources_skipped,
+                'elapsed_sec': round(time.time() - cron_started, 1),
                 'moderation': {
                     'moderated': moderation.get('moderated', 0),
                     'approved': moderation.get('approved', 0),

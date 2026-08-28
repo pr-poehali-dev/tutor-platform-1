@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { Lesson, Task } from "@/components/journey/journeyData";
 import { MathText } from "@/lib/mathFormat";
 import TaskReportModal from "@/components/journey/lesson/TaskReportModal";
+import LessonFeedback from "./LessonFeedback";
 
 interface Props {
   lesson: Lesson;
@@ -192,9 +193,10 @@ interface DoneProps {
   accent: string;
   onRetry: () => void;
   onClose: () => void;
+  feedbackContext?: { subject?: string; grade?: string; topic?: string };
 }
 
-export function LessonViewerDone({ lesson, correctCount, accent, onRetry, onClose }: DoneProps) {
+export function LessonViewerDone({ lesson, correctCount, accent, onRetry, onClose, feedbackContext }: DoneProps) {
   return (
     <div className="text-center py-6 animate-fade-in">
       <div className="text-6xl mb-3">🎯</div>
@@ -216,6 +218,14 @@ export function LessonViewerDone({ lesson, correctCount, accent, onRetry, onClos
           </ul>
         </div>
       )}
+
+      <LessonFeedback
+        lessonTitle={lesson.title}
+        subject={feedbackContext?.subject}
+        grade={feedbackContext?.grade}
+        topic={feedbackContext?.topic}
+        accent={accent}
+      />
 
       <div className="flex flex-col sm:flex-row gap-2 justify-center">
         <button onClick={onRetry} className="bg-white/8 hover:bg-white/12 border border-white/10 text-white font-bold px-5 py-3 rounded-2xl text-sm transition-all flex items-center justify-center gap-2">
