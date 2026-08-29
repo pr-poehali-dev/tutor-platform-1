@@ -84,15 +84,21 @@ export default function ReportPayForm() {
           placeholder="Имя (необязательно)"
           className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-amber-500/40"
         />
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="Email для чека и доступа"
-          className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-amber-500/40"
-        />
+        <label className="block">
+          <span className="block text-white text-xs font-bold mb-1.5">
+            Email <span className="text-rose-300">*</span>
+            <span className="text-white/50 font-normal"> — сюда придёт отчёт и чек</span>
+          </span>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="example@mail.ru"
+            className="w-full bg-white/[0.07] border-2 border-amber-400/35 rounded-xl px-4 py-3.5 text-base text-white placeholder:text-white/35 focus:outline-none focus:border-amber-400/70"
+          />
+        </label>
       </div>
 
       <label className="flex items-start gap-2 mt-3 cursor-pointer">

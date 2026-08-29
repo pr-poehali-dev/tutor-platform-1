@@ -184,50 +184,68 @@ export default function CourseEmailPay({ course, price }: Props) {
         </div>
       )}
 
-      {/* Ценность и доверие — ДО формы, чтобы снять страх перед оплатой */}
+      {/* Форма идёт ПЕРЕД рекламными блоками.
+          Раньше до поля email нужно было проскроллить четыре блока с описанием
+          выгод — покупатель просто не находил, куда вводить почту. */}
+      <div className="space-y-3 rounded-2xl border border-purple-400/25 bg-purple-500/[0.07] p-4 mb-5">
+        <div className="flex items-center gap-2">
+          <Icon name="Mail" size={16} className="text-purple-300" />
+          <p className="text-white font-bold text-sm">Куда прислать доступ к курсу</p>
+        </div>
+
+        <label className="block">
+          <span className="block text-white/60 text-xs mb-1.5">Имя (необязательно)</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Как тебя зовут"
+            className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-white text-xs font-bold mb-1.5">
+            Email <span className="text-rose-300">*</span>
+            <span className="text-white/50 font-normal"> — сюда придёт доступ и чек</span>
+          </span>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="example@mail.ru"
+            className="w-full bg-white/[0.07] border-2 border-purple-400/35 rounded-xl px-4 py-3.5 text-base text-white placeholder:text-white/35 focus:outline-none focus:border-purple-400/70"
+          />
+        </label>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agree}
+            onChange={(e) => setAgree(e.target.checked)}
+            className="mt-0.5 accent-purple-500"
+          />
+          <span className="text-white/50 text-xs">
+            Согласен с условиями оферты и обработкой персональных данных
+          </span>
+        </label>
+
+        {displayError && <div className="text-rose-300 text-xs">{displayError}</div>}
+
+        <button
+          onClick={handlePay}
+          disabled={isLoading}
+          className={`w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r ${course.color} text-white font-bold py-4 rounded-xl disabled:opacity-60 hover:scale-[1.01] transition-transform`}
+        >
+          {isLoading ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="CreditCard" size={18} />}
+          {isLoading ? "Переходим к оплате..." : `Оплатить ${finalPrice.toLocaleString("ru-RU")} ₽`}
+        </button>
+      </div>
+
+      {/* Ценность и доверие — ПОСЛЕ формы: сначала дать оплатить, потом убеждать */}
       <CourseValueBlock lessons={course.lessons} />
       <SocialProof lessons={course.lessons} duration={course.duration} />
       <PaymentSteps />
       <MoneyBackGuarantee />
-
-      <div className="space-y-3">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Имя (необязательно)"
-          className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
-        />
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
-          placeholder="Email для чека и доступа"
-          className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
-        />
-      </div>
-
-      <label className="flex items-start gap-2 mt-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={agree}
-          onChange={(e) => setAgree(e.target.checked)}
-          className="mt-0.5 accent-purple-500"
-        />
-        <span className="text-white/45 text-xs">
-          Согласен с условиями оферты и обработкой персональных данных
-        </span>
-      </label>
-
-      {displayError && <div className="mt-3 text-rose-300 text-xs">{displayError}</div>}
-
-      <button
-        onClick={handlePay}
-        disabled={isLoading}
-        className={`mt-4 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r ${course.color} text-white font-bold py-3.5 rounded-xl disabled:opacity-60 hover:scale-[1.01] transition-transform`}
-      >
-        {isLoading ? <Icon name="Loader2" size={18} className="animate-spin" /> : <Icon name="CreditCard" size={18} />}
-        {isLoading ? "Переходим к оплате..." : "Оплатить и получить доступ"}
-      </button>
 
       <div className="mt-4">
         <SecurePaymentBadge />
