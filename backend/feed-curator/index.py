@@ -825,6 +825,140 @@ def handle_cron(event: dict, headers: dict, body: dict) -> dict:
         conn.close()
 
 
+DAILY_COLUMN_TOPICS = [
+    ('Почему ученики бросают онлайн-курсы на третьей неделе', 'education'),
+    ('Сколько на самом деле стоит привлечь одного ученика в 2026 году', 'education'),
+    ('Репетитор против онлайн-школы: что выбирают родители и почему', 'education'),
+    ('ИИ проверяет домашку: что он умеет, а что пока нет', 'ai'),
+    ('Как устроена экономика онлайн-школы: разбор на цифрах', 'education'),
+    ('Почему «научим профессии за 3 месяца» перестало работать', 'education'),
+    ('Что родители спрашивают перед оплатой курса — и как отвечать честно', 'education'),
+    ('Доходимость вместо конверсии: метрика, которую все считают неправильно', 'education'),
+    ('Подготовка к ЕГЭ: почему этот рынок не падает никогда', 'education'),
+    ('ИИ-репетитор: где он реально заменяет человека, а где мешает', 'ai'),
+    ('Короткие курсы против длинных программ: что покупают в 2026-м', 'education'),
+    ('Как мотивировать ученика дойти до конца: приёмы, которые работают', 'education'),
+    ('Бесплатный урок как воронка: почему он часто не окупается', 'education'),
+    ('Что не так с отзывами онлайн-школ и как читать их правильно', 'education'),
+    ('Нейросети в школе: запрещать нельзя учить', 'ai'),
+]
+
+
+def write_daily_column(topic: str, category: str) -> dict:
+    """Пишет авторскую колонку в стиле VC.ru: разбор с цифрами, без воды."""
+    prompt = (
+        f'Тема: {topic}\n\n'
+        f'Напиши авторскую аналитическую колонку для делового издания '
+        f'в стиле VC.ru — это площадка, где читают предприниматели, '
+        f'руководители и специалисты.\n\n'
+        f'ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА СТИЛЯ VC.RU:\n'
+        f'1. Сильное начало без разгона. Первый абзац — сразу суть или '
+        f'острое наблюдение. Никаких «в современном мире» и «в наше время».\n'
+        f'2. Конкретика вместо общих слов. Цифры, примеры, разборы. '
+        f'Если приводишь цифру — она должна быть реалистичной для рынка РФ '
+        f'2025-2026 годов. Не выдумывай точные данные исследований и не '
+        f'ссылайся на несуществующие отчёты: лучше «по разным оценкам, '
+        f'порядка X» или рассуждение от механики рынка.\n'
+        f'3. Личная позиция. Автор — практик, у него есть мнение, '
+        f'он не боится сказать «это не работает» и объяснить почему.\n'
+        f'4. Разговорный деловой тон. Обращение на «вы». Без канцелярита, '
+        f'без «данный», «осуществлять», «в рамках». Короткие абзацы по 2-4 строки.\n'
+        f'5. Структура с подзаголовками через ## и списками.\n'
+        f'6. Честность вместо рекламы. Признавай неудобные факты. '
+        f'Это главное, за что читают VC.\n'
+        f'7. В конце — практический вывод: что с этим делать читателю.\n\n'
+        f'Объём: 5000-8000 символов.\n\n'
+        f'Верни строго JSON без markdown:\n'
+        f'{{\n'
+        f'  "title": "заголовок до 95 символов — конкретный, с фактом или '
+        f'парадоксом, без кликбейта и без слова «топ»",\n'
+        f'  "summary": "подводка 1-2 предложения до 250 символов: '
+        f'что узнает читатель",\n'
+        f'  "content": "текст колонки в markdown с ## подзаголовками",\n'
+        f'  "tags": ["4-6 тегов на русском"]\n'
+        f'}}'
+    )
+    raw = call_polza(prompt, max_tokens=5000)
+    if not raw:
+        return {}
+    raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+    raw = re.sub(r'\s*```$', '', raw)
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    content = str(parsed.get('content') or '')
+    if len(content) < 1200:
+        return {}
+    return {
+        'title': str(parsed.get('title') or topic)[:380],
+        'summary': str(parsed.get('summary') or '')[:900],
+        'content': content[:25000],
+        'tags': [str(t)[:30] for t in (parsed.get('tags') or [])][:8],
+        'category': category,
+    }
+
+
+def publish_daily_column(conn) -> dict:
+    """Одна авторская колонка в день. Тему берём ту, что дольше всех не выходила."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM feed_articles WHERE source_kind = 'column' "
+            "AND COALESCE(published_at, created_at)::date = CURRENT_DATE LIMIT 1"
+        )
+        if cur.fetchone():
+            return {'created': 0, 'reason': 'already_published_today'}
+
+        cur.execute(
+            "SELECT title FROM feed_articles WHERE source_kind = 'column' "
+            "ORDER BY COALESCE(published_at, created_at) DESC LIMIT 40"
+        )
+        used = {r[0] for r in cur.fetchall()}
+
+        topic, category = None, 'education'
+        for t, c in DAILY_COLUMN_TOPICS:
+            if not any(t[:28].lower() in u.lower() for u in used):
+                topic, category = t, c
+                break
+        if topic is None:
+            idx = (datetime.now(timezone.utc).toordinal()) % len(DAILY_COLUMN_TOPICS)
+            topic, category = DAILY_COLUMN_TOPICS[idx]
+
+        col = write_daily_column(topic, category)
+        if not col:
+            return {'created': 0, 'reason': 'ai_unavailable', 'topic': topic}
+
+        slug = unique_slug(cur, slugify(col['title']))
+        words = len(col['content'].split())
+        reading_time = max(3, min(20, round(words / 200))) if words else 5
+
+        cur.execute(
+            "INSERT INTO feed_articles "
+            "(slug, title, summary, content, category, source_kind, source_name, "
+            "status, tags, reading_time_min, ai_processed, ai_notes, "
+            "source_language, published_at) "
+            "VALUES (%s,%s,%s,%s,%s,'column',%s,'published',%s,%s,TRUE,%s,'ru',NOW())",
+            (slug, col['title'], col['summary'], col['content'], col['category'],
+             'УЧИСЬПРО · Колонка редакции',
+             json.dumps(col['tags'], ensure_ascii=False),
+             reading_time,
+             f'Ежедневная авторская колонка. Тема: {topic}')
+        )
+        conn.commit()
+        return {'created': 1, 'slug': slug, 'title': col['title'], 'topic': topic}
+
+
+def handle_daily_column(event: dict, headers: dict) -> dict:
+    """Ежедневная авторская колонка. Вызывается по расписанию раз в сутки."""
+    if not (is_admin(headers) or is_cron_authorized(event, headers)):
+        return err('Требуется авторизация', 401)
+    conn = get_db()
+    try:
+        return ok(publish_daily_column(conn))
+    finally:
+        conn.close()
+
+
 def handle_cron_log(headers: dict) -> dict:
     if not is_admin(headers):
         return err('Требуется админский ключ', 401)
@@ -1415,6 +1549,9 @@ def handler(event: dict, context) -> dict:
         return handle_cron(event, headers, body)
     if action == 'cron_log':
         return handle_cron_log(headers)
+    # Ежедневная авторская колонка в стиле VC.ru (раз в сутки, по расписанию)
+    if action == 'daily_column':
+        return handle_daily_column(event, headers)
     # Публичный: автонаполнение если лента пуста (без auth, с rate-limit)
     if action == 'seed_if_empty':
         return handle_seed_if_empty(event)

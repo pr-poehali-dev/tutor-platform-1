@@ -69,6 +69,14 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "daily_column without auth — 401",
+      "method": "GET",
+      "path": "/?action=daily_column",
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "unknown action — 404",
       "method": "GET",
       "path": "/?action=unknown",
