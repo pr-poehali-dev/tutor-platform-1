@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { fetchSuggest, SearchItem } from "./api";
+import { searchLibrary } from "./localLibrarySearch";
 
 interface Props {
   /** Стиль: hero — большой блок на главной, navbar — компактный. */
@@ -65,8 +66,12 @@ export default function SearchBar({
     }
     setLoading(true);
     const t = setTimeout(async () => {
+      // Сказки и стихи хранятся в коде сайта, а не в базе, поэтому серверный
+      // поиск их не находил. Подмешиваем библиотеку к ответу сервера.
+      const local = searchLibrary(q, 4);
       const res = await fetchSuggest(q, 7);
-      setItems(res);
+      const seen = new Set(local.map((i) => i.url));
+      setItems([...local, ...res.filter((i) => !seen.has(i.url))].slice(0, 7));
       setActiveIdx(-1);
       setLoading(false);
     }, 200);

@@ -6,6 +6,8 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import SearchBar from "@/components/search/SearchBar";
 import { fetchSearch, SearchItem } from "@/components/search/api";
+import { searchLibrary, findCopyrightNotice } from "@/components/search/localLibrarySearch";
+import { LIBRARY } from "@/components/kids/libraryData";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -33,12 +35,19 @@ export default function SearchResults() {
       return;
     }
     setLoading(true);
+    // Библиотека сказок хранится в коде сайта — сервер её не видит.
+    // Ставим найденные книжки в начало: их ищут чаще всего.
+    const local = searchLibrary(q, 12);
     fetchSearch(q, 50).then((res) => {
-      setItems(res.items);
-      setTotal(res.total);
+      const seen = new Set(local.map((i) => i.url));
+      const merged = [...local, ...res.items.filter((i) => !seen.has(i.url))];
+      setItems(merged);
+      setTotal(merged.length);
       setLoading(false);
     });
   }, [q]);
+
+  const copyright = findCopyrightNotice(q);
 
   // Группировка по типу
   const groups: Partial<Record<SearchItem["kind"], SearchItem[]>> = {};
@@ -93,7 +102,49 @@ export default function SearchResults() {
               </div>
             )}
 
-            {!loading && items.length === 0 && (
+            {/* Ищут сказку, которую нельзя публиковать по авторскому праву.
+                Раньше человек видел пустоту и уходил. Теперь объясняем причину
+                и сразу ведём в библиотеку, где 30+ бесплатных произведений. */}
+            {!loading && copyright && (
+              <div className="bg-gradient-to-br from-pink-500/15 to-purple-500/10 border border-pink-400/25 rounded-3xl py-8 px-6 mb-5">
+                <div className="text-5xl mb-3">📚</div>
+                <h2 className="font-montserrat font-black text-white text-xl mb-2">
+                  Этой сказки у нас пока нет
+                </h2>
+                <p className="text-white/65 text-sm mb-4 max-w-lg leading-relaxed">
+                  {copyright.until ? (
+                    <>
+                      Произведения автора «{copyright.author}» защищены авторским правом
+                      до {copyright.until} года — по закону мы не можем разместить их бесплатно.
+                    </>
+                  ) : (
+                    <>
+                      Это произведение защищено авторским правом — по закону мы не можем
+                      разместить его бесплатно.
+                    </>
+                  )}{" "}
+                  Зато в нашей библиотеке есть {LIBRARY.length} сказок, стихов и рассказов,
+                  которые можно читать и слушать без ограничений.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to="/kids/library"
+                    className="bg-white text-background text-sm font-bold px-4 py-2.5 rounded-xl hover:scale-[1.02] transition-transform inline-flex items-center gap-2"
+                  >
+                    <Icon name="BookOpen" size={16} />
+                    Открыть библиотеку
+                  </Link>
+                  <Link
+                    to="/kids"
+                    className="bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-4 py-2.5 rounded-xl"
+                  >
+                    🧸 Раздел «Малыш»
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {!loading && items.length === 0 && !copyright && (
               <div className="bg-card/40 rounded-3xl text-center py-12 px-5">
                 <div className="text-6xl mb-3 opacity-50">🤷‍♂️</div>
                 <h2 className="font-montserrat font-black text-white text-xl mb-2">Ничего не найдено</h2>
@@ -101,10 +152,10 @@ export default function SearchResults() {
                   Попробуй другие слова, поищи по теме (например, «ЕГЭ» или «нейросети») или загляни в основные разделы.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
+                  <Link to="/kids/library" className="bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg">📖 Сказки</Link>
                   <Link to="/courses" className="bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg">📚 Курсы</Link>
                   <Link to="/exam-bank" className="bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg">🎓 ОГЭ/ЕГЭ</Link>
                   <Link to="/feed" className="bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg">📡 Лента</Link>
-                  <Link to="/graduate" className="bg-white/8 hover:bg-white/15 text-white text-xs font-bold px-3 py-2 rounded-lg">🎓 Выпускник</Link>
                 </div>
               </div>
             )}
