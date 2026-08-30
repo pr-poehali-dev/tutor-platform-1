@@ -8,6 +8,7 @@ import SearchBar from "@/components/search/SearchBar";
 import { fetchSearch, SearchItem } from "@/components/search/api";
 import { searchLibrary, findCopyrightNotice } from "@/components/search/localLibrarySearch";
 import { LIBRARY } from "@/components/kids/libraryData";
+import AiAnswer from "@/components/search/AiAnswer";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -101,6 +102,11 @@ export default function SearchResults() {
                 <p className="text-sm">Ищу везде…</p>
               </div>
             )}
+
+            {/* Нейро-ответ: ИИ отвечает на запрос своими словами прямо
+                в выдаче, как Алиса в Яндексе. Особенно важно, когда точного
+                совпадения на сайте нет — человек всё равно получает ответ. */}
+            {!loading && <AiAnswer query={q} hasResults={items.length > 0} />}
 
             {/* Ищут сказку, которую нельзя публиковать по авторскому праву.
                 Раньше человек видел пустоту и уходил. Теперь объясняем причину
