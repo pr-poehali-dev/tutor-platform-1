@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import {
   isKidsPromoActive,
@@ -21,6 +21,7 @@ export default function KidsPromoTopBar() {
   const [active, setActive] = useState(false);
   const [tick, setTick] = useState(0);
   const [hidden, setHidden] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     setActive(isKidsPromoActive());
@@ -32,7 +33,10 @@ export default function KidsPromoTopBar() {
     return () => clearInterval(t);
   }, []);
 
-  if (!active || hidden) return null;
+  // На странице оплаты человек уже принял решение — чужая акция с таймером
+  // сбивает его и уводит с полпути. Ничего не должно отвлекать от платежа.
+  const isCheckout = /^\/(course-checkout|checkout|pay)/.test(pathname);
+  if (!active || hidden || isCheckout) return null;
 
   const tl = kidsPromoTimeLeft();
   if (tl.expired) return null;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useYookassa, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { setPaidEmail } from "@/components/intensive/api";
@@ -28,7 +28,7 @@ interface Props {
  * пишет доступ в intensive_access с track=`course-${id}`.
  */
 export default function CourseEmailPay({ course, price }: Props) {
-  const [name, setName] = useState("");
+  const name = "";
   const [email, setEmail] = useState("");
   const [agree, setAgree] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -41,10 +41,18 @@ export default function CourseEmailPay({ course, price }: Props) {
 
   const { createPayment, isLoading, error } = useYookassa({ apiUrl: YOOKASSA_URL });
 
+  // Действующую скидку применяем сами. Раньше человек должен был заметить
+  // жёлтый блок и нажать его — кто не нажал, платил на 30% больше.
+  useEffect(() => {
+    if (couponApplied || couponChecking) return;
+    applyCoupon(ACTIVE_PROMO_CODE, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const track = `course-${course.id}`;
   const finalPrice = couponApplied ? couponApplied.finalRub : price;
 
-  const applyCoupon = async (raw?: string) => {
+  const applyCoupon = async (raw?: string, silent = false) => {
     const code = (raw ?? coupon).trim();
     if (!code) return;
     setCouponChecking(true);
@@ -57,7 +65,9 @@ export default function CourseEmailPay({ course, price }: Props) {
       });
       const data = await res.json();
       if (!data.valid) {
-        setCouponError(data.message || "Промокод не найден или недействителен");
+        // При автоприменении молчим: человек этот код не вводил,
+        // ошибка про «недействительный промокод» его только напугает.
+        if (!silent) setCouponError(data.message || "Промокод не найден или недействителен");
         return;
       }
       setCouponApplied({
@@ -66,7 +76,7 @@ export default function CourseEmailPay({ course, price }: Props) {
         finalRub: data.final_rub ?? price,
       });
     } catch {
-      setCouponError("Не удалось проверить промокод, попробуй ещё раз");
+      if (!silent) setCouponError("Не удалось проверить промокод, попробуй ещё раз");
     } finally {
       setCouponChecking(false);
     }
@@ -193,15 +203,8 @@ export default function CourseEmailPay({ course, price }: Props) {
           <p className="text-white font-bold text-sm">Куда прислать доступ к курсу</p>
         </div>
 
-        <label className="block">
-          <span className="block text-white/60 text-xs mb-1.5">Имя (необязательно)</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Как тебя зовут"
-            className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/40"
-          />
-        </label>
+        {/* Поле имени убрано: на оплате каждое лишнее поле — это причина
+            передумать. Для чека и доступа достаточно email. */}
         <label className="block">
           <span className="block text-white text-xs font-bold mb-1.5">
             Email <span className="text-rose-300">*</span>

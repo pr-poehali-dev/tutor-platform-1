@@ -53,12 +53,6 @@ export default function CoursePurchaseForm({
         <p className="text-white/45 text-xs mt-2">Разовая оплата · доступ навсегда · {course.lessons} уроков</p>
       </div>
 
-      {/* Обоснование ценности и доверие — ДО кнопки, чтобы снять страх покупки */}
-      <CourseValueBlock lessons={course.lessons} />
-      <SocialProof lessons={course.lessons} duration={course.duration} />
-      <PaymentSteps />
-      <MoneyBackGuarantee />
-
       {/* Email для чека 54-ФЗ */}
       {isAuthenticated && (
         <div className="mb-4">
@@ -133,6 +127,16 @@ export default function CoursePurchaseForm({
       {/* Защита платежа ЮKassa */}
       <div className="mt-4">
         <SecurePaymentBadge />
+      </div>
+
+      {/* Ценность и доверие — ПОСЛЕ кнопки: сначала дать оплатить,
+          потом убеждать сомневающихся. Раньше эти четыре блока стояли
+          между ценой и кнопкой, и покупатель терял её из виду. */}
+      <div className="mt-5">
+        <CourseValueBlock lessons={course.lessons} />
+        <SocialProof lessons={course.lessons} duration={course.duration} />
+        <PaymentSteps />
+        <MoneyBackGuarantee />
       </div>
 
       <p className="text-white/35 text-[11px] text-center mt-4 leading-relaxed">

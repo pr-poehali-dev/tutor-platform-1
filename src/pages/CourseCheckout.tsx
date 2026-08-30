@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { COURSES, GRADES, getCoursePrice } from "@/components/courses/coursesData";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
@@ -265,17 +264,12 @@ export default function CourseCheckout() {
         jsonLd={courseJsonLd}
       />
       <div className="max-w-2xl mx-auto">
-        <Breadcrumbs
-          className="mb-4"
-          items={[
-            { label: "Главная", href: "/" },
-            { label: "Курсы", href: "/courses" },
-            { label: `«${course.title}»` },
-          ]}
-        />
-        <Link to="/courses" className="inline-flex items-center gap-1.5 text-white/55 hover:text-white text-sm mb-6 transition-colors">
+        {/* На странице оплаты — минимум ссылок наружу. Крошки убраны:
+            это шаг оплаты, а не навигация. Оставлена одна скромная
+            ссылка назад — чтобы человек не чувствовал себя в ловушке. */}
+        <Link to="/courses" className="inline-flex items-center gap-1.5 text-white/40 hover:text-white/70 text-sm mb-6 transition-colors">
           <Icon name="ArrowLeft" size={14} />
-          В каталог курсов
+          Назад
         </Link>
 
         <div className="bg-card border border-white/10 rounded-3xl overflow-hidden">
