@@ -8,6 +8,7 @@ import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
 import CareerProPromo from "@/components/home/CareerProPromo";
 import HowItWorks from "@/components/home/HowItWorks";
 import TutorPromo from "@/components/home/TutorPromo";
+import AiNavigator from "@/components/home/AiNavigator";
 import StudentResults from "@/components/home/StudentResults";
 import TrustGuarantee from "@/components/home/TrustGuarantee";
 import { useAuth } from "@/context/AuthContext";
@@ -53,6 +54,10 @@ export default function HomeSections() {
     <main id="main-content">
       {/* 1. Первое впечатление + главный CTA */}
       <HeroSection />
+
+      {/* 1.5. ИИ-навигатор: новый посетитель описывает свою ситуацию
+          словами и сразу попадает в нужный раздел, минуя меню. */}
+      <AiNavigator />
 
       {/* 2. Точка входа — бесплатные курсы */}
       <FreeCoursesBlock />
