@@ -9,6 +9,7 @@ import { fetchSearch, SearchItem } from "@/components/search/api";
 import { searchLibrary, findCopyrightNotice } from "@/components/search/localLibrarySearch";
 import { LIBRARY } from "@/components/kids/libraryData";
 import AiAnswer from "@/components/search/AiAnswer";
+import { trackQuery } from "@/components/search/trackQuery";
 
 const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 
@@ -45,6 +46,8 @@ export default function SearchResults() {
       setItems(merged);
       setTotal(merged.length);
       setLoading(false);
+      // Запоминаем запрос: пустая выдача покажет, какого контента не хватает
+      trackQuery(q, "search", merged.length);
     });
   }, [q]);
 

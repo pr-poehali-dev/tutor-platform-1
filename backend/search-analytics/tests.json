@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "Сводка по запросам",
+      "method": "GET",
+      "path": "/?days=30",
+      "expectedStatus": 200,
+      "expectedBody": {"total": "number"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Запись запроса",
+      "method": "POST",
+      "path": "/",
+      "body": {"query": "тестовый запрос", "source": "search", "found_count": 0},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Пустой запрос отклоняется",
+      "method": "POST",
+      "path": "/",
+      "body": {"query": "  ", "source": "search"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

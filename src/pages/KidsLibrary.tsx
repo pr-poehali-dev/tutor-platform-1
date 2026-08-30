@@ -120,6 +120,7 @@ export default function KidsLibrary() {
         <div className="max-w-3xl mb-7">
           <AiPicker
             items={pickerItems}
+            source="library"
             accent="pink"
             title="Что почитать сегодня?"
             subtitle="Скажите, кому и зачем — подберу из библиотеки"

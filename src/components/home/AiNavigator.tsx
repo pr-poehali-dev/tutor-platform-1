@@ -87,6 +87,7 @@ export default function AiNavigator() {
     <section className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12">
       <AiPicker
         items={DESTINATIONS}
+        source="home"
         title="Расскажите, зачем пришли"
         subtitle="Подскажу, с чего начать именно вам — за пару секунд"
         placeholder="Например: ребёнку 6 лет, готовимся к школе"

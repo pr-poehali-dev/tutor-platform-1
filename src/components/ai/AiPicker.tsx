@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import func2url from "../../../backend/func2url.json";
+import { trackQuery } from "@/components/search/trackQuery";
 
 const AI_URL = (func2url as Record<string, string>)["ai-chat"];
 
@@ -32,6 +33,8 @@ interface Props {
   /** Как ИИ должен себя вести: «подбери курс» или «подбери сказку». */
   role: string;
   accent?: "purple" | "pink";
+  /** Откуда пришёл вопрос — для статистики запросов. */
+  source: "courses" | "library" | "home";
 }
 
 export default function AiPicker({
@@ -42,6 +45,7 @@ export default function AiPicker({
   chips,
   role,
   accent = "purple",
+  source,
 }: Props) {
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState("");
@@ -116,6 +120,8 @@ export default function AiPicker({
           .map((id) => items.find((i) => i.id === id))
           .filter((x): x is PickerItem => Boolean(x));
         setPicked(found.slice(0, 4));
+        // Ноль подобранного = человек хотел то, чего у нас нет
+        trackQuery(question, source, found.length, found.map((f) => f.id));
       }
     } catch {
       setError("Не получилось подобрать — попробуйте ещё раз через минуту.");

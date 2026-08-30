@@ -153,6 +153,7 @@ export default function CoursesPage() {
         <div className="max-w-6xl mx-auto px-4 pt-6">
           <AiPicker
             items={pickerItems}
+            source="courses"
             title="Не знаете, что выбрать?"
             subtitle="Опишите задачу своими словами — подберу курс из каталога"
             placeholder="Например: сыну 8 класс, проседает математика"
