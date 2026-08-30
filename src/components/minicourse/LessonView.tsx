@@ -8,6 +8,7 @@ import { MiniCourse } from "./types";
 import { getLesson } from "./registry";
 import { useAuth } from "@/context/AuthContext";
 import { FREE_LESSONS_BEFORE_SIGNUP } from "@/components/paywall/limits";
+import { OPEN_COURSE_SLUGS } from "./registry";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -45,7 +46,11 @@ export default function LessonView({
   const next = idx < course.lessons.length - 1 ? course.lessons[idx + 1] : null;
   const isDone = done.includes(lesson.slug);
   // Первый урок открыт всем — дальше просим бесплатную регистрацию.
-  const locked = !isAuthenticated && lesson.index > FREE_LESSONS_BEFORE_SIGNUP;
+  // Курсы из OPEN_COURSE_SLUGS открыты целиком и без регистрации:
+  // это общественно полезный материал, который должен быть доступен всем.
+  const fullyOpen = OPEN_COURSE_SLUGS.includes(course.slug);
+  const locked =
+    !fullyOpen && !isAuthenticated && lesson.index > FREE_LESSONS_BEFORE_SIGNUP;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">

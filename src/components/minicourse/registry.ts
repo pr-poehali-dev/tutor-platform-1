@@ -29,9 +29,16 @@ import { RASCI_COURSE } from "./courses/rasci";
 import { TASK_SETTING_COURSE } from "./courses/tasksetting";
 import { HIRING_COURSE } from "./courses/hiring";
 import { FEEDBACK_COURSE } from "./courses/feedback";
+import { WEBMASTER_COURSE } from "./courses/webmaster";
+
+/** Курсы, открытые целиком без регистрации.
+ *  Полезное для всех: такой материал не прячем за формой входа. */
+export const OPEN_COURSE_SLUGS: string[] = [WEBMASTER_COURSE.slug];
 
 /** Порядок в хабе: сначала самые востребованные. */
 export const MINI_COURSES: MiniCourse[] = [
+  // Новинка: продвижение сайта своими силами, спрос круглый год
+  WEBMASTER_COURSE,
   // Руководителям: управленческие инструменты с готовым шаблоном на выходе
   RASCI_COURSE,
   TASK_SETTING_COURSE,
