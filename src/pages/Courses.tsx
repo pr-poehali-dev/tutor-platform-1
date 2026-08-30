@@ -14,6 +14,7 @@ import { BadgeFilter, COURSES_JSON_LD } from "@/components/courses/catalog/cours
 import CoursesHeader from "@/components/courses/catalog/CoursesHeader";
 import CoursesFilters from "@/components/courses/catalog/CoursesFilters";
 import CoursesGrid from "@/components/courses/catalog/CoursesGrid";
+import AiPicker from "@/components/ai/AiPicker";
 
 export default function CoursesPage() {
   const [searchParams] = useSearchParams();
@@ -77,6 +78,31 @@ export default function CoursesPage() {
     return sorted;
   }, [query, subject, grade, format, badge, sort, readyIds]);
 
+  // Список для ИИ-подборщика: только готовые курсы, чтобы он не советовал
+  // то, что человек не сможет открыть.
+  const pickerItems = useMemo(() => {
+    const GRADE_LABEL: Record<string, string> = {
+      "1-4": "1-4 класс",
+      "5-9": "5-9 класс",
+      "10-11": "10-11 класс",
+      ege: "подготовка к ЕГЭ",
+      oge: "подготовка к ОГЭ",
+      adult: "для взрослых",
+    };
+    return COURSES.filter((c) => readyIds.has(c.id)).map((c) => {
+      const price = getCoursePrice(c);
+      return {
+        id: String(c.id),
+        title: c.title,
+        meta: `${GRADE_LABEL[c.grade] || c.grade} · ${
+          price === 0 ? "бесплатно" : `${price.toLocaleString("ru-RU")} ₽`
+        } · ${c.lessons} уроков`,
+        url: `/course/${c.id}`,
+        emoji: "📚",
+      };
+    });
+  }, [readyIds]);
+
   const activeFilters =
     (subject !== "all" ? 1 : 0) +
     (grade !== "all" ? 1 : 0) +
@@ -122,6 +148,28 @@ export default function CoursesPage() {
       <CoursesHeader />
 
       <main>
+        {/* ИИ-подборщик: родителю проще спросить словами «что подойдёт
+            восьмикласснику по математике», чем крутить пять фильтров. */}
+        <div className="max-w-6xl mx-auto px-4 pt-6">
+          <AiPicker
+            items={pickerItems}
+            title="Не знаете, что выбрать?"
+            subtitle="Опишите задачу своими словами — подберу курс из каталога"
+            placeholder="Например: сыну 8 класс, проседает математика"
+            chips={[
+              "Ребёнку 8 класс, проседает математика",
+              "Готовиться к ЕГЭ по русскому с нуля",
+              "Хочу сменить профессию, ничего не умею",
+              "Что-то бесплатное для 5 класса",
+            ]}
+            role={
+              "Ты — консультант образовательной платформы УЧИСЬПРО. " +
+              "Помогаешь родителю или взрослому выбрать курс. " +
+              "Говори просто и по-человечески, без рекламных штампов."
+            }
+          />
+        </div>
+
         {/* Хиты продаж + 1 бесплатный — на видном месте, пока не начали искать/фильтровать */}
         {badge === "all" && subject === "all" && grade === "all" && format === "all" && !query && (
           <BestsellersBlock />

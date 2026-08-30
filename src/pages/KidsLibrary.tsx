@@ -15,6 +15,7 @@ import {
 import NannyFox from "@/components/kids/NannyFox";
 import KidsHeroCover from "@/components/kids/KidsHeroCover";
 import KidsGuard from "@/components/kids/KidsGuard";
+import AiPicker from "@/components/ai/AiPicker";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -22,6 +23,20 @@ export default function KidsLibrary() {
   const [category, setCategory] = useState<LibCategory | "all">("all");
   const [age, setAge] = useState<AgeRange | "all">("all");
   const [query, setQuery] = useState("");
+
+  // Список для ИИ-подборщика: возраст и время чтения помогают ему
+  // выбрать «короткую сказку на ночь трёхлетке» осмысленно.
+  const pickerItems = useMemo(
+    () =>
+      LIBRARY.map((it) => ({
+        id: it.id,
+        title: it.title,
+        meta: `${it.author} · ${it.ages.join(", ")} лет · ${it.durationMin} мин · ${it.tags.join(", ")}`,
+        url: `/kids/library/${it.id}`,
+        emoji: it.emoji,
+      })),
+    [],
+  );
 
   const filtered = useMemo(() => {
     const base = filterLibrary(category, age);
@@ -99,6 +114,29 @@ export default function KidsLibrary() {
         <p className="text-white/65 text-base md:text-lg max-w-2xl mb-6">
           Для малышей от 2 лет и старше: народные сказки, Пушкин, Толстой, Крылов, Ушинский, Жуковский — классика из общественного достояния. Слушайте вместе: тёплый голос Лисы прочтёт каждый фрагмент.
         </p>
+
+        {/* ИИ-подборщик: родителю проще сказать «что почитать на ночь
+            трёхлетке», чем перебирать фильтры по возрасту и жанру. */}
+        <div className="max-w-3xl mb-7">
+          <AiPicker
+            items={pickerItems}
+            accent="pink"
+            title="Что почитать сегодня?"
+            subtitle="Скажите, кому и зачем — подберу из библиотеки"
+            placeholder="Например: дочке 4 года, читаем перед сном"
+            chips={[
+              "Дочке 4 года, читаем перед сном",
+              "Короткую сказку про животных",
+              "Что-то про дружбу и доброту",
+              "Стихи про зиму для детского сада",
+            ]}
+            role={
+              "Ты — добрая помощница детской библиотеки УЧИСЬПРО. " +
+              "Помогаешь родителю выбрать сказку, стих или рассказ для ребёнка. " +
+              "Говори тепло и просто, как с другом."
+            }
+          />
+        </div>
 
         <div className="max-w-3xl mb-7">
           <KidsHeroCover
