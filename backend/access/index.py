@@ -119,10 +119,12 @@ SUBSCRIPTION_PLANS = {
 }
 
 # Акция для абонемента «Малыш»: первые 3 месяца за 1 ₽ (один раз на пользователя).
-# Действует до 01.09.2026 (синхронно с фронтом kidsPromoConfig.ts).
+# Действует до 30.09.2026 (синхронно с фронтом kidsPromoConfig.ts).
+# ВАЖНО: дата ДОЛЖНА совпадать с KIDS_PROMO_END_ISO во фронте, иначе баннер
+# обещает 1 ₽, а сервер выставляет полную цену.
 KIDS_INTRO_KOPECKS = 100      # 1 ₽
 KIDS_INTRO_PERIOD_DAYS = 90   # 3 месяца
-KIDS_PROMO_END_ISO = "2026-09-01T23:59:59+03:00"
+KIDS_PROMO_END_ISO = "2026-09-30T23:59:59+03:00"
 
 
 def is_kids_promo_active() -> bool:
