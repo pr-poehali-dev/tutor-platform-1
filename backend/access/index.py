@@ -60,8 +60,11 @@ def get_course_subject(cur, course_id: int):
     return row[0] if row else None
 
 # Курсы, бесплатные навсегда — оплата за них не создаётся (доступ открыт всем).
-# Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте.
-FREE_FOREVER_COURSE_IDS = {2, 37, 64}
+# Список синхронизирован с FREE_FOREVER_COURSE_IDS на фронте
+# (src/components/courses/courseAccessFlags.ts). ПРИ ИЗМЕНЕНИИ — править в обоих местах.
+# 76 — бесплатная вводная версия «Заработка на нейросетях»,
+# 64 — её ПЛАТНАЯ полная версия. Перепутать их значит раздавать платный курс даром.
+FREE_FOREVER_COURSE_IDS = {2, 37, 76}
 
 # Индивидуальная цена за конкретный курс (по id), в копейках. Приоритетнее grade/subject.
 # СИНХРОНИЗИРОВАНО с COURSE_ID_PRICE на фронте (src/components/courses/coursesData.ts).
