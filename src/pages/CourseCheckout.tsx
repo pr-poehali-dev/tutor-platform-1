@@ -98,7 +98,7 @@ export default function CourseCheckout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returnedFromPayment, isAuthenticated, course?.id]);
 
-  // Автоначисление 5% кэшбека ЗНАЙКАМИ после успешной покупки.
+  // Автоначисление 2% кэшбека ЗНАЙКАМИ после успешной покупки.
   // Каждая покупка — один раз, ключ в localStorage.
   useEffect(() => {
     if (!course || !isAuthenticated) return;

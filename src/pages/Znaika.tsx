@@ -98,6 +98,19 @@ export default function Znaika() {
             Учись, заходи каждый день, приглашай друзей — и копи ЗНАЙКИ. <br />
             1 ЗНАЙКА = 1 ₽ скидки при оплате курса (до 30% стоимости).
           </p>
+          <div className="grid sm:grid-cols-3 gap-3 max-w-xl mx-auto mb-8 text-left">
+            {[
+              { icon: "Calendar", title: "+5 в день", text: "просто за вход" },
+              { icon: "BookOpen", title: "+3 за урок", text: "до 10 уроков в день" },
+              { icon: "UserPlus", title: "+100 за друга", text: "и +300, если он купит курс" },
+            ].map((r) => (
+              <div key={r.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <Icon name={r.icon} size={18} className="text-amber-300 mb-2" />
+                <div className="font-montserrat font-bold text-white text-sm">{r.title}</div>
+                <div className="text-white/55 text-xs">{r.text}</div>
+              </div>
+            ))}
+          </div>
           <Button onClick={openLogin} size="lg" className="bg-gradient-to-r from-purple-500 to-cyan-500">
             Войти, чтобы начать копить
           </Button>
@@ -162,7 +175,7 @@ export default function Znaika() {
                 <Icon name="Coins" size={28} className="text-amber-300" />
               </div>
               <div className="text-white/50 text-xs mt-2">
-                ≈ скидка {state ? formatZnaika(Math.min(state.balance, Math.floor(state.balance))) : "0"} ₽ при оплате курса
+                ≈ скидка {state ? formatZnaika(state.balance) : "0"} ₽ при оплате курса
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -207,11 +220,11 @@ export default function Znaika() {
               className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold shadow-lg shadow-orange-500/20"
             >
               <Icon name="Calendar" size={16} className="mr-2" />
-              {checking ? "Записываю..." : "Отметиться сегодня (+10)"}
+              {checking ? "Записываю..." : "Отметиться сегодня (+5)"}
             </Button>
             <div className="text-xs text-white/55 leading-relaxed">
-              7 дней подряд = <span className="text-amber-200 font-semibold">+50 бонус</span>,&nbsp;
-              30 дней = <span className="text-amber-200 font-semibold">+200 бонус</span>
+              7 дней подряд = <span className="text-amber-200 font-semibold">+25 бонус</span>,&nbsp;
+              30 дней = <span className="text-amber-200 font-semibold">+100 бонус</span>
             </div>
           </div>
         </Card>
@@ -234,7 +247,7 @@ export default function Znaika() {
             <EarnRow icon="Calendar" title="Ежедневный вход" reward="+5" hint="каждый день · бонус +25 за 7 дней, +100 за 30" />
             <EarnRow icon="BookOpen" title="Прохождение урока" reward="+3" hint="до 10 уроков в день" />
             <EarnRow icon="ShoppingBag" title="Покупка курса" reward="+2%" hint="кэшбек ЗНАЙКАМИ от суммы покупки" />
-            <EarnRow icon="UserPlus" title="Привёл друга" reward="+500 / +300" hint="за регистрацию и за первую покупку друга" />
+            <EarnRow icon="UserPlus" title="Привёл друга" reward="+100 / +300" hint="за регистрацию и за первую покупку друга" />
             <EarnRow icon="MessageSquare" title="Отзыв о курсе" reward="+50" hint="развёрнутый отзыв от 100 символов" />
             <EarnRow icon="Trophy" title="Достижения" reward="+50…+5000" hint="за прохождение этапов и марафонов" />
           </div>

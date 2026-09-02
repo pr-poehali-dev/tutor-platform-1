@@ -243,6 +243,7 @@ export default function Navbar({ mobileMenuOpen, onScrollTo, onToggleMobile }: N
           </div>
 
           <div className="md:hidden flex items-center gap-2">
+            {isAuthenticated && <ZnaikaBadge />}
             <Link
               to="/search"
               aria-label="Поиск по сайту"
