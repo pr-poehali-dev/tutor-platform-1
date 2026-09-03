@@ -62,7 +62,7 @@ export default function BusinessLeadForm({ defaultPlan }: Props) {
       utm,
     });
     setLoading(false);
-    if (!res.ok) return setError(res.error || res.message || "Не удалось отправить");
+    if (!res.ok) return setError(res.message || "Не удалось отправить");
     trackGoal("lead_form_success", { form_type: "business", audience: audience || "unknown" });
     setDone(res.message || "Заявка принята!");
   };
