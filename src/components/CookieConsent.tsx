@@ -44,21 +44,21 @@ export default function CookieConsent() {
           {/* Top gradient */}
           <div className="h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500" aria-hidden="true" />
 
-          <div className="p-5 md:p-6">
-            <div className="flex flex-col md:flex-row gap-4 md:gap-5 md:items-start">
+          <div className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center">
 
               {/* Icon */}
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-white/10 flex items-center justify-center text-2xl flex-shrink-0" aria-hidden="true">
+              <div className="hidden md:flex w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-white/10 items-center justify-center text-lg flex-shrink-0" aria-hidden="true">
                 🍪
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 id="cookie-consent-title" className="font-montserrat font-black text-white text-base md:text-lg mb-1.5">
+                <h3 id="cookie-consent-title" className="sr-only">
                   Мы используем cookie
                 </h3>
-                <p className="text-white/65 text-sm leading-relaxed">
-                  Для работы сервиса и сохранения твоего прогресса. Продолжая пользоваться платформой, ты соглашаешься с обработкой данных в соответствии с{" "}
+                <p className="text-white/65 text-xs leading-snug">
+                  Мы используем cookie для работы сервиса и сохранения прогресса. Продолжая, ты соглашаешься с{" "}
                   <Link to="/legal/privacy" target="_blank" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">
                     Политикой конфиденциальности
                   </Link>{" "}
@@ -97,25 +97,25 @@ export default function CookieConsent() {
                   <Icon name={expanded ? "ChevronUp" : "ChevronDown"} size={12} aria-hidden="true" />
                 </button>
               </div>
-            </div>
 
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2.5 mt-5">
-              <button
-                onClick={() => save("accepted")}
-                aria-label="Принять все cookie"
-                className="flex-1 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-              >
-                <Icon name="Check" size={15} aria-hidden="true" />
-                Принять все
-              </button>
-              <button
-                onClick={() => save("rejected")}
-                aria-label="Принять только необходимые cookie"
-                className="flex-1 bg-white/8 border border-white/15 text-white/85 hover:bg-white/12 text-sm font-bold py-3 rounded-xl transition-colors"
-              >
-                Только необходимые
-              </button>
+              {/* Buttons */}
+              <div className="flex flex-row gap-2 flex-shrink-0">
+                <button
+                  onClick={() => save("accepted")}
+                  aria-label="Принять все cookie"
+                  className="flex-1 md:flex-none bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 whitespace-nowrap"
+                >
+                  <Icon name="Check" size={13} aria-hidden="true" />
+                  Принять
+                </button>
+                <button
+                  onClick={() => save("rejected")}
+                  aria-label="Принять только необходимые cookie"
+                  className="flex-1 md:flex-none bg-white/8 border border-white/15 text-white/85 hover:bg-white/12 text-xs font-bold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Только нужные
+                </button>
+              </div>
             </div>
           </div>
         </div>

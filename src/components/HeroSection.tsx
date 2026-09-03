@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import HeroTryTutor from "@/components/home/HeroTryTutor";
 
 const HERO_IMAGE =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
@@ -24,14 +25,14 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative pt-10 md:pt-14 pb-12 px-4 overflow-hidden"
+      className="relative pt-5 md:pt-8 pb-12 px-4 overflow-hidden"
     >
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* LEFT */}
           <div className="lg:col-span-7">
             {/* Бейджи — социальное доказательство + партнёр-маркер доверия */}
-            <div className="flex flex-wrap items-center gap-2.5 mb-5 animate-fade-in-up">
+            <div className="flex flex-wrap items-center gap-2 mb-3 animate-fade-in-up">
               <div className="inline-flex items-center gap-3 bg-white/5 border border-white/12 rounded-full pl-1.5 pr-4 py-1.5 backdrop-blur-sm">
                 <div className="flex -space-x-2">
                   {AVATAR_COLORS.map((c, i) => (
@@ -45,13 +46,13 @@ export default function HeroSection() {
                   ))}
                 </div>
                 <span className="text-xs md:text-sm text-white/85 font-medium">
-                  12 000+ школьников сейчас на платформе
+                  Отвечает за 3 секунды — 24/7, без записи
                 </span>
               </div>
               <TochkaPartnerBadge />
             </div>
 
-            <h1 className="font-montserrat text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] mb-5 animate-fade-in-up animate-delay-100">
+            <h1 className="font-montserrat text-[28px] sm:text-4xl lg:text-5xl font-black leading-[1.08] mb-3 animate-fade-in-up animate-delay-100">
               ИИ-репетитор,{" "}
               <span className="gradient-text-purple text-glow-purple">
                 который доводит
@@ -64,23 +65,26 @@ export default function HeroSection() {
               на экзамене
             </h1>
 
-            <p className="text-white/80 text-base md:text-lg leading-relaxed mb-7 max-w-xl animate-fade-in-up animate-delay-200">
-              Голосовой репетитор находит твои пробелы за 5 минут диагностики и
-              ведёт по персональному маршруту до результата. 24/7, без записи,
-              без ожидания.
+            <p className="text-white/75 text-sm md:text-base leading-snug mb-4 max-w-xl animate-fade-in-up animate-delay-200">
+              Находит пробелы за 5 минут и ведёт по персональному маршруту до
+              результата. Без записи и ожидания.
             </p>
 
-            {/* CTA — одно главное действие */}
+            {/* Живая проба репетитора — главное действие первого экрана */}
+            <div className="mb-5 max-w-xl animate-fade-in-up animate-delay-300">
+              <HeroTryTutor />
+            </div>
+
             <div className="mb-6 animate-fade-in-up animate-delay-300">
               <Link
                 to="/courses"
                 onClick={() => trackGoal("hero_cta_click")}
-                className="group inline-flex bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white font-bold px-8 py-4 rounded-2xl text-base items-center justify-center gap-2 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 transition-all glow-purple"
+                className="group inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
               >
-                <span>Выбрать курс — первый урок бесплатно</span>
+                <span>или выбрать курс из каталога</span>
                 <Icon
                   name="ArrowRight"
-                  size={18}
+                  size={15}
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
