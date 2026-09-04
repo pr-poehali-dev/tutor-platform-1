@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import HeroSection from "@/components/HeroSection";
-import FreeCoursesBlock from "@/components/courses/FreeCoursesBlock";
+
 import MiniCoursesPromo from "@/components/home/MiniCoursesPromo";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
@@ -14,6 +14,9 @@ import TrustGuarantee from "@/components/home/TrustGuarantee";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
 
+// Блок тянет весь каталог курсов (≈0,5 МБ данных) — грузим его отдельно,
+// чтобы первый экран открывался быстро.
+const FreeCoursesBlock = lazy(() => import("@/components/courses/FreeCoursesBlock"));
 const AITeacher = lazy(() => import("@/components/AITeacher"));
 const PremiumTracks = lazy(() => import("@/components/PremiumTracks"));
 const MySpaceSection = lazy(() => import("@/components/myspace/MySpaceSection"));
@@ -60,7 +63,9 @@ export default function HomeSections() {
       <AiNavigator />
 
       {/* 2. Точка входа — бесплатные курсы */}
-      <FreeCoursesBlock />
+      <Suspense fallback={<SectionSkeleton />}>
+        <FreeCoursesBlock />
+      </Suspense>
 
       {/* 2.2. Самый лёгкий вход — мини-курсы на один вечер, без регистрации */}
       <MiniCoursesPromo />
