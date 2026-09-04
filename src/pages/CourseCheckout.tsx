@@ -22,7 +22,7 @@ export default function CourseCheckout() {
   const { courseId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();
+  const { isAuthenticated, openLogin, user } = useAuth();
   const { canAccessCourse, hasSubscription, buyCourse, confirmDemoPurchase, refreshAccess, syncPayment, validateCoupon } = useAccess();
   const { earn: earnZnaika } = useZnaika();
   const { isReady, loaded: readyLoaded } = useReadyCourses();
@@ -60,16 +60,9 @@ export default function CourseCheckout() {
 
   // Платный курс можно купить по email без логина (переиспользуем механизм интенсива).
   // Для таких курсов НЕ открываем принудительно окно логина.
-  const promoActiveNow = isPromoActive();
-  const coursePrice = course ? getCoursePrice(course) : 0;
-  const courseEmailEligible =
-    !!course && coursePrice > 0 && !course.freeForever && !promoActiveNow;
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated && !courseEmailEligible) {
-      openLogin();
-    }
-  }, [authLoading, isAuthenticated, openLogin, courseEmailEligible]);
+  // Раньше гостю сразу распахивали окно регистрации — человек видел форму
+  // вместо курса и уходил. Теперь сначала показываем сам курс и ценность,
+  // а вход предлагаем кнопкой, когда он уже решил забрать курс.
 
 
 
