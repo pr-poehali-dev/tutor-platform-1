@@ -93,7 +93,7 @@ export default function GraduatePrep() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title={`${program.title} — подготовка к поступлению в ${university?.shortName ?? "вуз"} | УЧИСЬПРО`}
+        title={`${program.title} — подготовка в ${university?.shortName ?? "вуз"} | УЧИСЬПРО`}
         description={`Индивидуальный курс подготовки к ЕГЭ по предмету «${subjectInfo.label}». ${program.modules.length} модулей, ${program.totalHours} часов, ${program.modules.reduce((s, m) => s + m.topics.length, 0)} тем. Цель: ${targetScore} баллов для поступления${faculty ? ` на «${faculty.specialty}»` : ""}${university ? ` в ${university.shortName}` : ""}.`}
         canonical={canonical}
         keywords={`подготовка к егэ ${subjectInfo.label.toLowerCase()}, курс егэ ${subjectInfo.label.toLowerCase()}, ${university?.shortName ?? ""}, ${faculty?.specialty ?? ""}, ${targetScore} баллов, фипи кодификатор`}
