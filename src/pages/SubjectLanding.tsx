@@ -18,7 +18,7 @@ const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
 export default function SubjectLanding() {
   const { subject = "" } = useParams();
   const seo = getSubjectSeo(subject);
-  const { readyIds, loaded: readyLoaded } = useReadyCourses();
+  const { readyIds } = useReadyCourses();
 
   const courses = useMemo(
     () => (seo ? COURSES.filter((c) => c.subject === seo.subjectId && readyIds.has(c.id)) : []),

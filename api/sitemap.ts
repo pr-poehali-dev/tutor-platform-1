@@ -121,6 +121,15 @@ const SUBJECTS = [
   "neuroincome",
   "business",
   "sales",
+  "python",
+  "analyst",
+  "accounting",
+  "cybersec",
+  "devops",
+  "tenders",
+  "ved",
+  "autocad",
+  "trading",
 ];
 
 function esc(s: string): string {
