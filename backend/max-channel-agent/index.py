@@ -958,6 +958,41 @@ def handler(event: dict, context) -> dict:
     if method == 'GET' and action in ('', 'ping'):
         return ok({'ok': True, 'service': 'max-channel-agent'})
 
+    # --- Telegram-канал: отдельный модуль в этой же функции ---
+    if action.startswith('tg_'):
+        import telegram_agent as tg
+        tg_action = action[3:]
+
+        if tg_action == 'ping':
+            return ok({'ok': True, 'service': 'tg-channel-agent',
+                       'token_set': bool(os.environ.get('TELEGRAM_BOT_TOKEN'))})
+
+        if tg_action == 'whoami':
+            success, res = tg.tg_api('getMe', {}, timeout=15)
+            if not success:
+                return ok({'ok': False, 'error': str(res)[:300]})
+            return ok({'ok': True, 'bot': {'id': res.get('id'),
+                                           'username': res.get('username'),
+                                           'name': res.get('first_name')}})
+
+        conn = get_db()
+        try:
+            if tg_action == 'webhook':
+                return tg.handle_webhook(conn, body)
+            if tg_action == 'tick':
+                return tg.handle_tick(conn)
+            if tg_action in ('cron', 'status', 'testpost'):
+                if not (is_cron_authorized(headers) or is_admin(headers)):
+                    return err('forbidden', 403)
+                if tg_action == 'cron':
+                    return tg.handle_cron(conn)
+                if tg_action == 'status':
+                    return tg.handle_status(conn)
+                return tg.handle_testpost(conn)
+            return err('Неизвестное действие Telegram', 404)
+        finally:
+            conn.close()
+
     if action == 'tick':
         conn = get_db()
         try:
