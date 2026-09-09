@@ -33,7 +33,7 @@ export default function CookieConsent() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[110] p-3 md:p-5 pointer-events-none animate-fade-in"
+      className="cookie-consent fixed inset-x-0 bottom-0 z-[110] p-3 md:p-5 pointer-events-none animate-fade-in"
       role="dialog"
       aria-modal="false"
       aria-labelledby="cookie-consent-title"

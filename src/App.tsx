@@ -21,6 +21,7 @@ import DobroTopBar from "@/components/promo/DobroTopBar";
 import KidsPromoTopBar from "@/components/promo/KidsPromoTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InstallBanner from "@/components/pwa/InstallBanner";
+import GlobalNavButton from "@/components/nav/GlobalNavButton";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -304,6 +305,7 @@ const App = () => (
                   </Routes>
                 </Suspense>
                 </ErrorBoundary>
+                <GlobalNavButton />
                 <InstallBanner />
                 <LoginModal />
               </AccessProvider>

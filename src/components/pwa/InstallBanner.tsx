@@ -51,7 +51,7 @@ export default function InstallBanner() {
   }
 
   return (
-    <div className="fixed bottom-3 inset-x-3 z-[90] md:left-auto md:right-4 md:max-w-sm animate-fade-in-up">
+    <div className="install-banner fixed bottom-3 inset-x-3 z-[90] md:left-auto md:right-4 md:max-w-sm animate-fade-in-up">
       <div className="bg-card/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl shadow-purple-500/20 p-3.5 flex items-center gap-3">
         <img src={APP_ICON} alt="УЧИСЬПРО" className="w-11 h-11 rounded-xl flex-shrink-0 border border-white/10" />
         <div className="flex-1 min-w-0">

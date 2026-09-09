@@ -490,3 +490,9 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 0.7);
 }
+
+/* Пока открыто мобильное меню, нижние плашки не должны его перекрывать */
+body:has(#mobile-nav) .cookie-consent,
+body:has(#mobile-nav) .install-banner {
+  display: none;
+}
