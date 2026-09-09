@@ -562,3 +562,53 @@ def is_cron_authorized(headers: dict) -> bool:
     got = (headers.get('authorization') or headers.get('Authorization')
            or headers.get('x-authorization') or headers.get('X-Authorization') or '')
     return got == f'Bearer {secret}'
+
+def handler(event: dict, context) -> dict:
+    """ИИ-агент Telegram-канала: автопостинг статей Ленты, дайджест недели,
+    стартовая серия постов, приветствие подписчиков и автоопределение канала."""
+    method = event.get('httpMethod', 'GET')
+    if method == 'OPTIONS':
+        return {'statusCode': 200, 'headers': cors_headers(), 'body': ''}
+
+    params = event.get('queryStringParameters') or {}
+    action = (params.get('action') or 'ping').lower()
+    headers = event.get('headers') or {}
+
+    if action == 'ping':
+        return ok({'ok': True, 'service': 'tg-channel-agent',
+                   'token_set': bool(os.environ.get('TELEGRAM_BOT_TOKEN'))})
+
+    if action == 'whoami':
+        success, res = tg_api('getMe', {}, timeout=15)
+        if not success:
+            return ok({'ok': False, 'error': str(res)[:300]})
+        return ok({'ok': True, 'bot': {'id': res.get('id'),
+                                       'username': res.get('username'),
+                                       'name': res.get('first_name')}})
+
+    try:
+        body = json.loads(event.get('body') or '{}')
+    except (ValueError, TypeError):
+        body = {}
+
+    conn = get_db()
+    try:
+        if action == 'webhook':
+            return handle_webhook(conn, body)
+        if action == 'tick':
+            return handle_tick(conn)
+        if action in ('cron', 'status', 'testpost', 'seed', 'seed_preview'):
+            if not is_cron_authorized(headers):
+                return err('unauthorized', 401)
+            if action == 'cron':
+                return handle_cron(conn)
+            if action == 'status':
+                return handle_status(conn)
+            if action == 'seed_preview':
+                return handle_seed(conn, dry_run=True)
+            if action == 'seed':
+                return handle_seed(conn)
+            return handle_testpost(conn)
+        return err('unknown action', 404)
+    finally:
+        conn.close()
