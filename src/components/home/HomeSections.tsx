@@ -5,6 +5,7 @@ import HeroSection from "@/components/HeroSection";
 import MiniCoursesPromo from "@/components/home/MiniCoursesPromo";
 import QuickTools from "@/components/home/QuickTools";
 import BusinessPromoBanner from "@/components/home/BusinessPromoBanner";
+import AdultTracks from "@/components/home/AdultTracks";
 import CareerProPromo from "@/components/home/CareerProPromo";
 import HowItWorks from "@/components/home/HowItWorks";
 import TutorPromo from "@/components/home/TutorPromo";
@@ -47,6 +48,7 @@ export default function HomeSections() {
           <PremiumTracks />
         </Suspense>
         <MiniCoursesPromo />
+        <AdultTracks />
         <QuickTools />
       </main>
     );
@@ -69,6 +71,10 @@ export default function HomeSections() {
 
       {/* 2.2. Самый лёгкий вход — мини-курсы на один вечер, без регистрации */}
       <MiniCoursesPromo />
+
+      {/* 2.25. Взрослым: платформа — это не только школа. Показываем 35 курсов
+          через цель человека (усилить работу / подработка / смена / своё дело). */}
+      <AdultTracks />
 
       {/* 2.3. Флагманская фишка — индивидуальный ИИ-курс под человека */}
       <CareerProPromo />

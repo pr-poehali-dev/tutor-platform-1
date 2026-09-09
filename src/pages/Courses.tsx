@@ -22,7 +22,7 @@ export default function CoursesPage() {
     searchParams.get("badge") === "free" ? "free" : "all";
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("all");
-  const [grade, setGrade] = useState("all");
+  const [grade, setGrade] = useState(() => searchParams.get("grade") || "all");
   const [format, setFormat] = useState("all");
   const [badge, setBadge] = useState<BadgeFilter>(initialBadge);
   const [sort, setSort] = useState<SortKey>("popular");
