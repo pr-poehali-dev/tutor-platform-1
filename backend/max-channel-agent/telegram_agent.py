@@ -512,6 +512,49 @@ def handle_testpost(conn) -> dict:
                'image_attached': bool(img), 'error': error})
 
 
+def handle_seed(conn, limit: int = 5, dry_run: bool = False) -> dict:
+    """Публикует стартовую серию постов из tg_seed_posts.
+    Идемпотентно: пост, уже отправленный ранее, повторно не уходит.
+    dry_run=True — только показать, что будет опубликовано, без отправки."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT ref_key, text, button_text, button_url, image_scene FROM "
+            + t('tg_seed_posts') + " WHERE enabled = TRUE ORDER BY id ASC LIMIT %s",
+            (limit,))
+        rows = cur.fetchall()
+
+    if not rows:
+        return ok({'ok': False, 'reason': 'no_seed_posts'})
+
+    pending = [r for r in rows if not already_posted(conn, 'seed', r[0])]
+
+    if dry_run:
+        return ok({'ok': True, 'dry_run': True, 'total': len(rows),
+                   'pending': [{'ref': r[0], 'preview': r[1][:120]} for r in pending]})
+
+    chat_id = get_channel_id(conn)
+    if not chat_id:
+        return ok({'ok': False, 'reason': 'channel_not_linked',
+                   'hint': 'Добавьте бота администратором в канал',
+                   'pending': len(pending)})
+
+    sent, failed, results = 0, 0, []
+    for ref_key, text, btn_text, btn_url, scene in pending:
+        img = make_post_image(scene or 'education, learning, bright scene', ref_key)
+        button = {'text': btn_text, 'url': btn_url} if btn_text and btn_url else None
+        success, error = tg_send_to_channel(chat_id, text, img, button=button)
+        log_post(conn, 'seed', ref_key, None, chat_id, text, success, error)
+        results.append({'ref': ref_key, 'ok': success, 'error': error})
+        if success:
+            sent += 1
+        else:
+            failed += 1
+
+    return ok({'ok': failed == 0, 'sent': sent, 'failed': failed,
+               'skipped_already_sent': len(rows) - len(pending),
+               'channel_chat_id': str(chat_id), 'results': results})
+
+
 def is_cron_authorized(headers: dict) -> bool:
     secret = os.environ.get('CRON_SECRET', '')
     if not secret:

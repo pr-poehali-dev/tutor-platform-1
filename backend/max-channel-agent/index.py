@@ -981,13 +981,17 @@ def handler(event: dict, context) -> dict:
                 return tg.handle_webhook(conn, body)
             if tg_action == 'tick':
                 return tg.handle_tick(conn)
-            if tg_action in ('cron', 'status', 'testpost'):
+            if tg_action in ('cron', 'status', 'testpost', 'seed', 'seed_preview'):
                 if not (is_cron_authorized(headers) or is_admin(headers)):
                     return err('forbidden', 403)
                 if tg_action == 'cron':
                     return tg.handle_cron(conn)
                 if tg_action == 'status':
                     return tg.handle_status(conn)
+                if tg_action == 'seed_preview':
+                    return tg.handle_seed(conn, dry_run=True)
+                if tg_action == 'seed':
+                    return tg.handle_seed(conn)
                 return tg.handle_testpost(conn)
             return err('Неизвестное действие Telegram', 404)
         finally:
