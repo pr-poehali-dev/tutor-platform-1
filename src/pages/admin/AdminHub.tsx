@@ -24,6 +24,7 @@ const SECTIONS: Section[] = [
   {
     group: "Отдел продаж",
     items: [
+      { label: "Стратегия поиска заказчиков", path: "/admin/playbook", icon: "Compass", description: "Регламент отдела: 6 сегментов, 5 алгоритмов поиска, ритм работы, метрики и ответы на возражения" },
       { label: "Заявки для бизнеса", path: "/admin/leads", icon: "Inbox", description: "Заявки со страниц «Для бизнеса» и «Корпоративное обучение»: статусы, контакты и заметки менеджера" },
       { label: "CRM: школы-клиенты", path: "/edtech-jobs", icon: "Building2", description: "База школ-партнёров и клиентов: контакты, статусы и работа отдела продаж" },
       { label: "Выплаты школам", path: "/admin/payouts", icon: "Wallet", description: "Заявки на вывод, реестр начислений и доля школ к выплате" },
