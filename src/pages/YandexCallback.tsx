@@ -35,7 +35,7 @@ export default function YandexCallback() {
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white flex items-center justify-center px-4">
-      <Seo title="Вход через Яндекс — УЧИСЬПРО" description="Завершаем вход через Яндекс" canonical="https://xn--h1agdcde2c.xn--p1ai/auth/yandex/callback" noindex />
+      <Seo title="Вход через Яндекс — УЧИСЬПРО" description="Завершаем вход через Яндекс" canonical="https://учисьпро.рф/auth/yandex/callback" noindex />
 
       <div className="max-w-md w-full text-center">
         {error ? (

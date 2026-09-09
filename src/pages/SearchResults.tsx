@@ -11,7 +11,7 @@ import { LIBRARY } from "@/components/kids/libraryData";
 import AiAnswer from "@/components/search/AiAnswer";
 import { trackQuery } from "@/components/search/trackQuery";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const KIND_LABELS: Record<SearchItem["kind"], { label: string; emoji: string; tone: string }> = {
   page:   { label: "Разделы сайта", emoji: "🧭", tone: "from-purple-500/20 to-fuchsia-500/10 border-purple-500/30" },

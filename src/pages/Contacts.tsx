@@ -6,7 +6,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { submitFeedback, FeedbackPayload } from "@/components/contact/api";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const SUBJECTS: { value: FeedbackPayload["subject"]; label: string; emoji: string }[] = [
   { value: "general",     label: "Общий вопрос",         emoji: "💬" },

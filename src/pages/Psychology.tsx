@@ -7,7 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import PsyChat from "@/components/psychology/PsyChat";
 import { PSY_SECTIONS, PSY_EMERGENCY } from "@/components/psychology/psychologyData";
 
-const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/psychology";
+const CANONICAL = "https://учисьпро.рф/psychology";
 
 const JSON_LD = [
   {

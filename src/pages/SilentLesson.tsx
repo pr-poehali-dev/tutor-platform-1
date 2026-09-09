@@ -33,7 +33,7 @@ export default function SilentLesson() {
       <Seo
         title={`${lesson.title} — курс для глухих детей | УЧИСЬПРО`}
         description="Урок с полными субтитрами, визуальной подачей и аватаром-помощником. Учимся без звука — всё показано текстом и картинками."
-        canonical={`https://xn--h1agdcde2c.xn--p1ai/silent/lesson/${lesson.slug}`}
+        canonical={`https://учисьпро.рф/silent/lesson/${lesson.slug}`}
       />
 
       {/* Top bar */}

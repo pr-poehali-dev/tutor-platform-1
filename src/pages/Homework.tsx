@@ -10,7 +10,7 @@ import { printHomeworkPdf } from "@/lib/homeworkPdf";
 
 const HOMEWORK_URL = (func2url as Record<string, string>).homework;
 const TOKEN_KEY = "uchispro_auth_token_v1";
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type Mode = "solve" | "review";
 

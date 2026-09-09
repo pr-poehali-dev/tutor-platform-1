@@ -8,7 +8,7 @@ GET /?page=dobro  — превью акции ДОБРО
 """
 import json
 
-SITE = 'https://xn--h1agdcde2c.xn--p1ai'
+SITE = 'https://xn--h1amcedk2a6b.xn--p1ai'
 
 # Карточки превью для каждой промо-страницы
 PAGES = {

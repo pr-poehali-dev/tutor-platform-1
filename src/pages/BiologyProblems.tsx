@@ -1,7 +1,7 @@
 import PracticeLayout from "@/components/practice/PracticeLayout";
 import { BIOLOGY_PROBLEMS, BIOLOGY_TOPICS } from "@/components/practice/biologyProblems";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function BiologyProblems() {
   return (

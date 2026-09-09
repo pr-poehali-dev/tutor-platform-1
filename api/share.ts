@@ -9,7 +9,7 @@
  * Маршрут /share/:page настроен через rewrite в vercel.json.
  */
 
-const SITE = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE = "https://xn--h1amcedk2a6b.xn--p1ai";
 
 interface Card {
   url: string;

@@ -15,7 +15,7 @@ import PrepCourseHero from "@/components/graduate/PrepCourseHero";
 import PrepCourseWeekPlan from "@/components/graduate/PrepCourseWeekPlan";
 import PrepCourseModules from "@/components/graduate/PrepCourseModules";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 /** Сколько недель осталось до 1 июня (старт ЕГЭ). */
 function weeksUntilExam(): number {

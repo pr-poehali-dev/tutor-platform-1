@@ -129,7 +129,7 @@ export default function EdTechJobsPage() {
       <Seo
         title="CRM маленьких школ — база клиентов для услуг платформы | УЧИСЬПРО"
         description="Рабочая CRM-база небольших онлайн-школ и репетиторских центров: воронка продаж, статусы сделок, заметки и отметки о предложенных услугах платформы."
-        canonical="https://xn--h1agdcde2c.xn--p1ai/edtech-jobs"
+        canonical="https://учисьпро.рф/edtech-jobs"
         noindex
       />
 

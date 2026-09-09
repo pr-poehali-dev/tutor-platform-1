@@ -16,7 +16,7 @@ import PoznavashkaGame from "@/components/kids/poznavashka/PoznavashkaGame";
 import type { AgeRange } from "@/components/kids/libraryData";
 import KidsGuard from "@/components/kids/KidsGuard";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function MyRussia() {
   const [category, setCategory] = useState<RussiaCategory | "all">("all");

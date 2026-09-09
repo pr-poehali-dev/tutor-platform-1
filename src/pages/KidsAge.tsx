@@ -18,7 +18,7 @@ import { useKidsProgress } from "@/components/kids/useKidsProgress";
 import ActivityRunner from "@/components/kids/ActivityRunner";
 import NannyFox from "@/components/kids/NannyFox";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function KidsAge() {
   const { age = "" } = useParams();

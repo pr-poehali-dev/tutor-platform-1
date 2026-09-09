@@ -260,7 +260,7 @@ export default function AdultTracks() {
               Пройти тест
             </Link>
             <Link
-              to="/courses?grade=adult"
+              to="/kursy-dlya-vzroslyh"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 hover:opacity-90 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-opacity"
             >
               Все 35 курсов

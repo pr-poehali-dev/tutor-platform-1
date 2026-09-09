@@ -5,8 +5,9 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 import { COURSES, getCoursePrice, getCoursePriceLabel } from "@/components/courses/coursesData";
+import { courseUrl } from "@/components/courses/courseSlug";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 // Подборка: топ востребованных удалённых профессий (HH.ru / SuperJob 2026).
 // id курсов из каталога + рыночная справка по доходу.
@@ -27,6 +28,39 @@ const STEPS = [
   { emoji: "🚀", title: "Выйди на доход", desc: "Удалённая работа или фриланс по новой профессии" },
 ];
 
+const REMOTE_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Удалённые профессии: курсы с нуля",
+    numberOfItems: PICKS.length,
+    itemListElement: PICKS.map((p, i) => {
+      const c = COURSES.find((x) => x.id === p.id);
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        ...(c
+          ? {
+              item: {
+                "@type": "Course",
+                name: c.title,
+                description: c.description.slice(0, 200),
+                url: `${SITE_URL}${courseUrl(c)}`,
+                provider: { "@type": "Organization", name: "УЧИСЬПРО", url: SITE_URL },
+                offers: {
+                  "@type": "Offer",
+                  price: getCoursePrice(c),
+                  priceCurrency: "RUB",
+                  availability: "https://schema.org/InStock",
+                },
+              },
+            }
+          : {}),
+      };
+    }),
+  },
+];
+
 export default function RemoteProfessions() {
   const picks = PICKS
     .map((p) => ({ ...p, course: COURSES.find((c) => c.id === p.id) }))
@@ -39,6 +73,7 @@ export default function RemoteProfessions() {
         description="Востребованные удалённые профессии по данным HH.ru и SuperJob: тендеры, ВЭД, продажи B2B, аналитик данных, Python. Освойте с нуля."
         keywords="удалённые профессии, работа на дому, удалённая работа обучение, востребованные профессии 2026, профессия с нуля"
         canonical={`${SITE_URL}/remote-professions`}
+        jsonLd={REMOTE_JSON_LD}
       />
 
       {/* Хедер */}

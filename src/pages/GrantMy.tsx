@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
 import { fetchMyGrants, type GrantApplication } from "@/components/grants/api";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "";

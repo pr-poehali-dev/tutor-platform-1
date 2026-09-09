@@ -92,7 +92,7 @@ def fetch_url(url: str, timeout: int = 7) -> bytes:
     """HTTP GET с User-Agent."""
     req = urllib.request.Request(
         url,
-        headers={'User-Agent': 'UchisProBot/1.0 (+https://xn--h1agdcde2c.xn--p1ai)'}
+        headers={'User-Agent': 'UchisProBot/1.0 (+https://xn--h1amcedk2a6b.xn--p1ai)'}
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()

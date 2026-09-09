@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { submitArticle } from "@/components/feed/api";
 import { CATEGORY_META, FeedCategory } from "@/components/feed/types";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function FeedSubmit() {
   const { isAuthenticated, openLogin, loading: authLoading, user } = useAuth();

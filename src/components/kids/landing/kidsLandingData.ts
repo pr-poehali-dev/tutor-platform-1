@@ -1,4 +1,4 @@
-export const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+export const SITE_URL = "https://учисьпро.рф";
 
 export const PRINCIPLES = [
   {

@@ -798,7 +798,7 @@ def handle_remove_student(conn, uid: int, body: dict) -> dict:
 # ---------- Этап 5: свой домен школы ----------
 
 DOMAIN_RE = re.compile(r'^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$')
-CNAME_TARGET = 'schools.xn--h1agdcde2c.xn--p1ai'
+CNAME_TARGET = 'schools.xn--h1amcedk2a6b.xn--p1ai'
 
 
 def normalize_domain(raw: str) -> str:

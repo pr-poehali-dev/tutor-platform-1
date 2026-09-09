@@ -20,7 +20,7 @@ import GrantForm, { LOADING_STEPS } from "@/components/grants/page/GrantForm";
 import GrantBenefits from "@/components/grants/page/GrantBenefits";
 import GrantsRegistry from "@/components/grants/GrantsRegistry";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const GRANT_JSON_LD = {
   "@context": "https://schema.org",

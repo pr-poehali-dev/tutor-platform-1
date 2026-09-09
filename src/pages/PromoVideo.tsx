@@ -11,7 +11,7 @@ import {
 import { renderVideo } from "@/components/promo/videoRenderer";
 
 const PROMO_VOICE_URL = (func2url as Record<string, string>)["promo-voice"];
-const SITE = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE = "https://учисьпро.рф";
 
 interface Generated {
   videoUrl: string;

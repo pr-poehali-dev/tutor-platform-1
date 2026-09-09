@@ -35,6 +35,7 @@ export default function SiteFooter() {
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/mini-course" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">🎁 Бесплатные мини-курсы за вечер</Link></li>
+              <li><Link to="/kursy-dlya-vzroslyh" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Курсы для взрослых: 35 программ</Link></li>
               <li><Link to="/app" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">📱 Скачать приложение</Link></li>
               <li><Link to="/search" className="text-white/70 hover:text-white transition-colors">🔎 Поиск по сайту</Link></li>
               <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>

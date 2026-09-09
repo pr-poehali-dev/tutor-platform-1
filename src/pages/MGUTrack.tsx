@@ -9,7 +9,7 @@ import { Faculty, Plan, QuickCompat } from "@/components/mgu/types";
 import func2url from "../../backend/func2url.json";
 
 const MGU_URL = (func2url as Record<string, string>)["mgu-track"];
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function MGUTrack() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);

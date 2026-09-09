@@ -5,7 +5,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { COURSES, getCoursePrice } from "@/components/courses/coursesData";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 const CANONICAL = `${SITE_URL}/expert-content`;
 const COURSE_ID = 80;
 

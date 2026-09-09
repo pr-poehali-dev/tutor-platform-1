@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fetchMyGrants, fetchGrant, type GrantApplication } from "@/components/grants/api";
 import GrantResult from "@/components/grants/GrantResult";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "";

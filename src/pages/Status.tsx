@@ -9,7 +9,7 @@ import {
   SystemHealth, SystemAlert, BackupDay,
 } from "@/components/system/api";
 
-const SITE = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE = "https://учисьпро.рф";
 
 const STATUS_LABEL: Record<string, { label: string; color: string; bg: string; emoji: string }> = {
   ok:       { label: "Все системы работают штатно",  color: "text-emerald-300", bg: "bg-emerald-500/15 border-emerald-500/35", emoji: "🟢" },

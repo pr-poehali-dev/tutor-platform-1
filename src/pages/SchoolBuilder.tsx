@@ -6,7 +6,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { generateCourse, type GenerateResult } from "@/components/builder/api";
 import CourseResult from "@/components/builder/CourseResult";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const EXAMPLES = [
   "Английский для начинающих",

@@ -21,7 +21,7 @@ export function buildShareMessage(url: string, title: string, summary = ""): str
 }
 
 /**
- * Приводит URL к ASCII (punycode-домен): https://учисьпро.рф/… → https://xn--h1agdcde2c.xn--p1ai/…
+ * Приводит URL к ASCII (punycode-домен): https://учисьпро.рф/… → https://учисьпро.рф/…
  * Нужно для соцсетей-парсеров (ВКонтакте, Одноклассники, X), которые не понимают
  * кириллический домен и из-за этого открывают свою ленту вместо окна «Поделиться».
  * Браузерный URL сам кодирует домен в punycode.

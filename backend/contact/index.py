@@ -35,7 +35,7 @@ import urllib.parse
 from datetime import datetime, timezone
 import psycopg2
 
-SITE_URL = "https://xn--h1agdcde2c.xn--p1ai"  # учисьпро.рф
+SITE_URL = "https://xn--h1amcedk2a6b.xn--p1ai"  # учисьпро.рф
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 

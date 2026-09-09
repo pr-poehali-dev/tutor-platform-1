@@ -28,10 +28,10 @@ interface SeoProps {
 }
 
 // Кириллический домен — отображается красиво в адресной строке и поиске.
-// Punycode-зеркало (xn--h1agdcde2c.xn--p1ai) остаётся валидным,
+// Punycode-зеркало (xn--h1amcedk2a6b.xn--p1ai) остаётся валидным,
 // но мы нормализуем все URL к кириллице автоматически.
 const SITE_URL = "https://учисьпро.рф";
-const PUNYCODE_HOST = "xn--h1agdcde2c.xn--p1ai";
+const PUNYCODE_HOST = "xn--h1amcedk2a6b.xn--p1ai";
 const CYRILLIC_HOST = "учисьпро.рф";
 const DEFAULT_IMG = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg";
 

@@ -54,7 +54,7 @@ def resolve_user(cur, token: str):
     return uid
 
 
-SITE_BASE = 'https://xn--h1agdcde2c.xn--p1ai'
+SITE_BASE = 'https://xn--h1amcedk2a6b.xn--p1ai'
 
 # ---- Акция «Приведи друга» (знайки) ----
 # Действует для приглашений, оформленных с этой даты (МСК).

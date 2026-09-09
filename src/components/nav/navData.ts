@@ -44,6 +44,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     short: "Взрослым",
     icon: "Rocket",
     items: [
+      { label: "Все курсы для взрослых", icon: "GraduationCap", path: "/kursy-dlya-vzroslyh", desc: "35 программ: нейросети, IT, бизнес" },
       { label: "БИЗНЕС 2026", icon: "Gauge", path: "/bizlab", desc: "Проверка бизнес-идеи на прочность · бесплатно" },
       { label: "Профориентация PRO", icon: "Fingerprint", path: "/career-pro", desc: "Индивидуальный курс под вас · ИИ" },
       { label: "Инструменты руководителя", icon: "Wrench", path: "/instrumenty-rukovoditelya", desc: "4 бесплатных курса с шаблонами" },

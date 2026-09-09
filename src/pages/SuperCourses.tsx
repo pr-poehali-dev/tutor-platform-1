@@ -23,7 +23,7 @@ interface BuyTarget {
   isPackage: boolean;
 }
 
-const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/super-courses";
+const CANONICAL = "https://учисьпро.рф/super-courses";
 
 const JSON_LD = [
   {

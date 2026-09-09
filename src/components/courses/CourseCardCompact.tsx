@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel, isCourseBestseller } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
+import { courseUrl } from "@/components/courses/courseSlug";
 
 interface Props {
   course: Course;
@@ -20,7 +21,7 @@ export default function CourseCardCompact({ course }: Props) {
 
   return (
     <Link
-      to={`/course-checkout/${course.id}`}
+      to={owned ? `/course-checkout/${course.id}` : courseUrl(course)}
       className="group relative flex flex-col bg-card border border-white/10 rounded-3xl overflow-hidden hover:border-white/25 hover:translate-y-[-2px] transition-all"
     >
       <div className={`h-1.5 bg-gradient-to-r ${course.color}`} />

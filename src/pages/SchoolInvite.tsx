@@ -5,7 +5,7 @@ import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
 import { acceptInvite } from "@/components/school/api";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type State = "loading" | "need_login" | "activating" | "success" | "error";
 

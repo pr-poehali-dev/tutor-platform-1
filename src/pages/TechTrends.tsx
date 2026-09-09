@@ -19,6 +19,39 @@ const CATEGORY_LABELS: Record<string, string> = {
   iot: "IoT",
 };
 
+const TECH_TRENDS_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Какой язык программирования учить первым?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Python — самый низкий порог входа и самый широкий спрос: веб, аналитика данных, автоматизация и ИИ. Для фронтенда начинают с JavaScript. Рейтинг на этой странице обновляется автоматически по реальному спросу.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Как обновляется рейтинг IT-направлений?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Данные собираются автоматически: учитываются динамика вакансий, активность разработчиков и упоминания технологий. Показатель импульса отражает изменение спроса за последние недели, а не разовый срез.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Можно ли войти в IT без технического образования?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Да. Работодатель смотрит на портфолио и решённые задачи, а не на диплом. Курсы для взрослых начинаются с нуля и рассчитаны на людей с полной занятостью: уроки по 30 минут, доступ навсегда.",
+        },
+      },
+    ],
+  },
+];
+
 export default function TechTrends() {
   const [data, setData] = useState<TrendsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +102,7 @@ export default function TechTrends() {
         description="ИИ-аналитика трендов программирования: рейтинг языков и технологий, динамика спроса и перспективные направления для карьеры. Обновляется автоматически."
         canonical="https://учисьпро.рф/tech-trends"
         keywords="тренды программирования, перспективные языки программирования, что учить в 2026, IT-направления, аналитика технологий, какой язык учить, востребованные технологии"
+        jsonLd={TECH_TRENDS_JSON_LD}
       />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12">

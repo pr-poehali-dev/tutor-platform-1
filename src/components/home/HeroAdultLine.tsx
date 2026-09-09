@@ -39,7 +39,7 @@ export default function HeroAdultLine() {
         ))}
 
         <Link
-          to="/courses?grade=adult"
+          to="/kursy-dlya-vzroslyh"
           onClick={() => trackGoal("hero_adult_all")}
           className="group inline-flex items-center gap-1 text-[12.5px] font-semibold text-cyan-200 hover:text-white transition-colors"
         >

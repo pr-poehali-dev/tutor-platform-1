@@ -23,7 +23,7 @@ import NannyFox from "@/components/kids/NannyFox";
 import KidsHeroCover from "@/components/kids/KidsHeroCover";
 import KidsGuard from "@/components/kids/KidsGuard";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function KidsSongs() {
   const [category, setCategory] = useState<SongCategory | "all">("all");

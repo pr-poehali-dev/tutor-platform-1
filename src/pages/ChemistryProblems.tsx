@@ -1,7 +1,7 @@
 import PracticeLayout from "@/components/practice/PracticeLayout";
 import { CHEMISTRY_PROBLEMS, CHEMISTRY_TOPICS } from "@/components/practice/chemistryProblems";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function ChemistryProblems() {
   return (

@@ -12,7 +12,7 @@ import psycopg2
 # В sitemap.xml адреса обязаны быть в ASCII (RFC 3986): кириллический домен
 # записывается в punycode. Для DNS и поисковиков это тот же самый учисьпро.рф,
 # но робот больше не считает файл ошибочным.
-SITE = 'https://xn--h1agdcde2c.xn--p1ai'
+SITE = 'https://учисьпро.рф'
 SCHEMA = 't_p78828167_tutor_platform_1'
 
 # Публичные страницы сайта: (путь, частота обновления, приоритет).
@@ -21,6 +21,7 @@ STATIC_PAGES = [
     ('/', 'daily', '1.0'),
     ('/feed', 'daily', '0.9'),
     ('/courses', 'weekly', '0.9'),
+    ('/kursy-dlya-vzroslyh', 'weekly', '0.9'),
     ('/free-courses', 'weekly', '0.9'),
     ('/pricing', 'weekly', '0.9'),
     ('/order', 'weekly', '0.9'),

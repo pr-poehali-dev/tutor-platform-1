@@ -7,7 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/context/AuthContext";
 import { fetchReviews, submitReview, Review } from "@/components/contact/api";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const ROLE_LABELS: Record<Review["author_role"], { label: string; emoji: string }> = {
   student: { label: "Ученик",   emoji: "🎒" },

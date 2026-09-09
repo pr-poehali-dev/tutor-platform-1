@@ -13,7 +13,7 @@ import {
   LESSONS,
 } from "@/components/silent/silentCourseData";
 
-const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/silent";
+const CANONICAL = "https://учисьпро.рф/silent";
 
 const JSON_LD = [
   {

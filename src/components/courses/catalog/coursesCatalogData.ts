@@ -2,6 +2,7 @@ import {
   COURSES,
   getCoursePrice,
 } from "@/components/courses/coursesData";
+import { courseUrl } from "@/components/courses/courseSlug";
 
 export type BadgeFilter = "all" | "free" | "new" | "hit" | "sale" | "trial";
 
@@ -14,7 +15,7 @@ export const BADGES: { id: BadgeFilter; label: string; icon: string }[] = [
   { id: "trial", label: "Есть пробный", icon: "Star" },
 ];
 
-export const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+export const SITE_URL = "https://учисьпро.рф";
 
 // JSON-LD: каталог курсов как ItemList со вложенными Course schema.org
 // Это даёт rich snippets в Google: список курсов с рейтингом, провайдером, описанием
@@ -23,17 +24,17 @@ export const COURSES_JSON_LD = [
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Каталог онлайн-курсов УЧИСЬПРО",
-    description: "Полный каталог онлайн-курсов для школьников 1–11 классов и подготовки к ОГЭ/ЕГЭ",
+    description: "Полный каталог онлайн-курсов: школьникам 1–11 классов, подготовка к ОГЭ и ЕГЭ, профессии и нейросети для взрослых",
     numberOfItems: COURSES.length,
     itemListElement: COURSES.map((c, idx) => ({
       "@type": "ListItem",
       position: idx + 1,
       item: {
         "@type": "Course",
-        "@id": `${SITE_URL}/course-checkout/${c.id}`,
+        "@id": `${SITE_URL}${courseUrl(c)}`,
         name: c.title,
         description: c.description,
-        url: `${SITE_URL}/course-checkout/${c.id}`,
+        url: `${SITE_URL}${courseUrl(c)}`,
         provider: {
           "@type": "EducationalOrganization",
           name: "УЧИСЬПРО",
@@ -60,7 +61,7 @@ export const COURSES_JSON_LD = [
           priceCurrency: "RUB",
           availability: "https://schema.org/InStock",
           category: c.trialAvailable ? "Подписка с пробным периодом" : "Подписка",
-          url: `${SITE_URL}/course-checkout/${c.id}`,
+          url: `${SITE_URL}${courseUrl(c)}`,
         },
         hasCourseInstance: {
           "@type": "CourseInstance",
@@ -69,13 +70,5 @@ export const COURSES_JSON_LD = [
         },
       },
     })),
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Каталог курсов", item: `${SITE_URL}/courses` },
-    ],
-  },
+  }
 ];

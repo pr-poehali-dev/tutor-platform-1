@@ -17,7 +17,7 @@ import {
   getFaculty,
 } from "@/components/graduate/graduateData";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type Step = 1 | 2 | 3 | 4;
 

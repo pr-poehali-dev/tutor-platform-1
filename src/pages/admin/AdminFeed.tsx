@@ -15,7 +15,7 @@ import AdminFeedCuratorSection from "./AdminFeed/AdminFeedCuratorSection";
 import AdminFeedCronHistorySection from "./AdminFeed/AdminFeedCronHistorySection";
 import AdminFeedModerationSection from "./AdminFeed/AdminFeedModerationSection";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function AdminFeed() {
   const [adminKey, setAdminKeyState] = useState(getAdminKey());

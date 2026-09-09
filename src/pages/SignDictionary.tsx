@@ -6,7 +6,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { SIGN_CATEGORIES, searchSigns, DictSign } from "@/components/silent/signLibrary";
 
-const CANONICAL = "https://xn--h1agdcde2c.xn--p1ai/dictionary";
+const CANONICAL = "https://учисьпро.рф/dictionary";
 
 const JSON_LD = [
   {

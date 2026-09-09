@@ -9,7 +9,7 @@ import {
 } from "@/components/promo/dobroConfig";
 import { trackShare, trackVisit } from "@/components/promo/promoTracking";
 
-const SITE = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE = "https://учисьпро.рф";
 
 const SHARE_URL = `${SITE}/promo/dobro`;
 const SHARE_TITLE = "Акция ДОБРО на УЧИСЬПРО";

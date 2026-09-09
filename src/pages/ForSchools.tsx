@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const CAPABILITIES = [
   { icon: "Bot", title: "ИИ-преподаватель 24/7", text: "Отвечает ученикам в тексте и голосом круглосуточно, проверяет домашние задания и помогает разбирать сложные темы." },

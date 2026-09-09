@@ -11,7 +11,7 @@ import {
   SIGN_CATEGORIES,
 } from "@/components/silent/signLibrary";
 
-const SITE = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE = "https://учисьпро.рф";
 
 export default function SignDictionaryItem() {
   const { key = "" } = useParams();

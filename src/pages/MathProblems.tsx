@@ -1,7 +1,7 @@
 import PracticeLayout from "@/components/practice/PracticeLayout";
 import { MATH_PROBLEMS, MATH_TOPICS } from "@/components/practice/mathProblems";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function MathProblems() {
   return (

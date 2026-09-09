@@ -5,7 +5,7 @@ import WritingProgram from "@/components/writing/WritingProgram";
 import WritingOutcomesPricingFaq from "@/components/writing/WritingOutcomesPricingFaq";
 import { FAQ } from "@/components/writing/data";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 export default function WritingCraft() {
   const jsonLd = [

@@ -212,14 +212,14 @@ export default function CourseCheckout() {
     {
       "@context": "https://schema.org",
       "@type": "Course",
-      "@id": `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+      "@id": `https://учисьпро.рф/course-checkout/${course.id}`,
       name: course.title,
       description: course.description,
-      url: `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+      url: `https://учисьпро.рф/course-checkout/${course.id}`,
       provider: {
         "@type": "EducationalOrganization",
         name: "УЧИСЬПРО",
-        sameAs: "https://xn--h1agdcde2c.xn--p1ai",
+        sameAs: "https://учисьпро.рф",
       },
       educationalLevel: gradeLabel,
       inLanguage: "ru-RU",
@@ -236,7 +236,7 @@ export default function CourseCheckout() {
         price: price,
         priceCurrency: "RUB",
         availability: courseNotReady ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
-        url: `https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`,
+        url: `https://учисьпро.рф/course-checkout/${course.id}`,
       },
       hasCourseInstance: {
         "@type": "CourseInstance",
@@ -251,7 +251,7 @@ export default function CourseCheckout() {
       <Seo
         title={`Оплата курса «${course.title}» — УЧИСЬПРО`}
         description={`Покупка онлайн-курса «${course.title}» для ${gradeLabel}: ${course.lessons} уроков, доступ навсегда. Безопасная оплата через ЮKassa, чек по 54-ФЗ.`}
-        canonical={`https://xn--h1agdcde2c.xn--p1ai/course-checkout/${course.id}`}
+        canonical={`https://учисьпро.рф/course-checkout/${course.id}`}
         type="product"
         noindex
         jsonLd={courseJsonLd}

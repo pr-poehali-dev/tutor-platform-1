@@ -13,7 +13,7 @@ import {
 } from "@/components/kids/diagnostics";
 import NannyFox from "@/components/kids/NannyFox";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const LEVEL_STYLE: Record<ScoreLevel, { label: string; cls: string; icon: string }> = {
   behind: { label: "Зона роста", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30", icon: "TrendingUp" },

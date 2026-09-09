@@ -10,7 +10,7 @@ import { loadAnswers, saveAnswers, clearAnswers, fetchLatestFromCloud } from "@/
 import { Answer, TestBlockCode } from "@/components/knowYourself/types";
 import { useAuth } from "@/context/AuthContext";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type Mode = "intro" | "test" | "review";
 

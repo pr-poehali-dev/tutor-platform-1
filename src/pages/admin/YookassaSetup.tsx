@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 
 const WEBHOOK_URL = "https://functions.poehali.dev/245bdf64-011e-43dd-b49e-6cd2202c03f7";
-const RETURN_URL_BASE = "https://xn--h1agdcde2c.xn--p1ai";
+const RETURN_URL_BASE = "https://учисьпро.рф";
 
 interface Step {
   id: string;

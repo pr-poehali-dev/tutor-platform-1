@@ -28,6 +28,8 @@ const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
 const Courses = lazy(() => import("./pages/Courses"));
+const CoursePublic = lazy(() => import("./pages/CoursePublic"));
+const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
@@ -179,6 +181,8 @@ const App = () => (
                     <Route path="/legal/privacy" element={<Privacy />} />
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/kursy-dlya-vzroslyh" element={<AdultCourses />} />
+                    <Route path="/kurs/:slug" element={<CoursePublic />} />
                     <Route path="/tutor" element={<TutorHub />} />
                     <Route path="/repetitor/:grade" element={<GradeTutor />} />
                     <Route path="/repetitor-online/:subject" element={<SubjectTutor />} />

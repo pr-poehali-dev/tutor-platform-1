@@ -21,7 +21,7 @@ import SchoolTeacher from "@/components/school/SchoolTeacher";
 import SchoolDomain from "@/components/school/SchoolDomain";
 import NoAccessGate from "@/components/school/NoAccessGate";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 type Tab = "courses" | "students" | "income" | "brand" | "ai" | "domain";
 

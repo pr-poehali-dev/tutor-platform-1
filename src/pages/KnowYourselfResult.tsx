@@ -16,7 +16,7 @@ import {
 import { getUniversity, SUBJECTS } from "@/components/graduate/graduateData";
 import { useAuth } from "@/context/AuthContext";
 
-const SITE_URL = "https://xn--h1agdcde2c.xn--p1ai";
+const SITE_URL = "https://учисьпро.рф";
 
 const OUTLOOK_LABELS = {
   rising: { label: "Растёт", emoji: "📈", tone: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30" },
