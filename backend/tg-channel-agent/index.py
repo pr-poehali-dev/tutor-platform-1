@@ -488,6 +488,29 @@ def handle_status(conn) -> dict:
     })
 
 
+def handle_testpost(conn) -> dict:
+    """Разовый приветственный пост в канал — проверка связи от начала до конца."""
+    chat_id = get_channel_id(conn)
+    if not chat_id:
+        return ok({'ok': False, 'reason': 'channel_not_linked',
+                   'hint': 'Добавьте бота администратором в канал'})
+
+    text = (
+        "👋 <b>Канал УЧИСЬПРО открыт</b>\n\n"
+        "Здесь будут разборы, образовательные новости и полезные материалы — "
+        "для родителей, школьников и взрослых, которые учатся ради дохода.\n\n"
+        "Первый урок в каждом курсе бесплатный, без карты."
+    )
+    img = make_post_image(
+        "friendly open book, graduation cap, laptop, bright educational scene",
+        "hello-channel")
+    success, error = tg_send_to_channel(
+        chat_id, text, img, button={'text': 'Открыть платформу', 'url': SITE_URL})
+    log_post(conn, 'hello', 'hello-v1', None, chat_id, text, success, error)
+    return ok({'ok': success, 'channel_chat_id': str(chat_id),
+               'image_attached': bool(img), 'error': error})
+
+
 def is_cron_authorized(headers: dict) -> bool:
     secret = os.environ.get('CRON_SECRET', '')
     if not secret:
@@ -512,6 +535,14 @@ def handler(event: dict, context) -> dict:
         return ok({'ok': True, 'service': 'tg-channel-agent',
                    'token_set': bool(os.environ.get('TELEGRAM_BOT_TOKEN'))})
 
+    if action == 'whoami':
+        success, res = tg_api('getMe', {}, timeout=15)
+        if not success:
+            return ok({'ok': False, 'error': str(res)[:300]})
+        return ok({'ok': True, 'bot': {'id': res.get('id'),
+                                       'username': res.get('username'),
+                                       'name': res.get('first_name')}})
+
     try:
         body = json.loads(event.get('body') or '{}')
     except (ValueError, TypeError):
@@ -523,10 +554,14 @@ def handler(event: dict, context) -> dict:
             return handle_webhook(conn, body)
         if action == 'tick':
             return handle_tick(conn)
-        if action in ('cron', 'status'):
+        if action in ('cron', 'status', 'testpost'):
             if not is_cron_authorized(headers):
                 return err('unauthorized', 401)
-            return handle_cron(conn) if action == 'cron' else handle_status(conn)
+            if action == 'cron':
+                return handle_cron(conn)
+            if action == 'status':
+                return handle_status(conn)
+            return handle_testpost(conn)
         return err('unknown action', 404)
     finally:
         conn.close()
