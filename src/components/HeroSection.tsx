@@ -5,6 +5,7 @@ import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 import HeroTryTutor from "@/components/home/HeroTryTutor";
+import HeroAdultLine from "@/components/home/HeroAdultLine";
 
 const HERO_IMAGE =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/e00d0075-d864-4a88-a93c-babf50ddbf13.jpg";
@@ -69,6 +70,10 @@ export default function HeroSection() {
               Находит пробелы за 5 минут и ведёт по персональному маршруту до
               результата. Без записи и ожидания.
             </p>
+
+            {/* Взрослым — чтобы не решили, что платформа только для школьников.
+                Стоит до пробы репетитора: видно без прокрутки. */}
+            <HeroAdultLine />
 
             {/* Живая проба репетитора — главное действие первого экрана */}
             <div className="mb-5 max-w-xl animate-fade-in-up animate-delay-300">
