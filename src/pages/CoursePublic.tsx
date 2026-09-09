@@ -9,6 +9,7 @@ import { findCourseBySlug, courseUrl } from "@/components/courses/courseSlug";
 import { getCourseDetail } from "@/components/courses/courseDetailsData";
 import { getCourseFaq, getWhatsIncluded } from "@/components/courses/courseValueData";
 import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
+import { getCourseSeoCopy } from "@/components/courses/seo";
 
 const SITE = "https://учисьпро.рф";
 
@@ -36,16 +37,21 @@ export default function CoursePublic() {
   const isAdult = course.grade === "adult";
   const totalLessons = detail.modules.reduce((n, m) => n + m.lessons.length, 0) || course.lessons;
 
+  // Продающий текст под поисковый запрос — если он написан для этого курса.
+  const copy = getCourseSeoCopy(course.id);
+
   const audience = isAdult ? "взрослых" : gradeLabel;
-  const title = `${course.title.split(":")[0].trim()} — онлайн-курс`;
-  const description = `${course.description.slice(0, 150).trim()}`.replace(/\s+\S*$/, "") + "…";
+  const title = copy?.metaTitle ?? `${course.title.split(":")[0].trim()} — онлайн-курс`;
+  const description =
+    copy?.metaDescription ??
+    `${course.description.slice(0, 150).trim()}`.replace(/\s+\S*$/, "") + "…";
 
   const jsonLd: Record<string, unknown>[] = [
     {
       "@context": "https://schema.org",
       "@type": "Course",
       name: course.title,
-      description: course.description,
+      description: copy?.lead ?? course.description,
       url: `${SITE}${canonicalPath}`,
       inLanguage: "ru-RU",
       provider: {
@@ -55,15 +61,21 @@ export default function CoursePublic() {
       },
       educationalLevel: gradeLabel,
       teaches: course.tags,
-      numberOfCredits: totalLessons,
-      timeRequired: `PT${totalLessons * 30}M`,
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: course.rating,
-        reviewCount: course.reviews,
-        bestRating: 5,
-        worstRating: 1,
-      },
+      numberOfCredits: course.lessons,
+      timeRequired: `PT${course.lessons * 30}M`,
+      // Рейтинг в разметке указываем только при реальных отзывах:
+      // выдуманные оценки поисковики считают нарушением и снимают сниппет.
+      ...(course.reviews > 0
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: course.rating,
+              reviewCount: course.reviews,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
       offers: {
         "@type": "Offer",
         price: price,
@@ -76,7 +88,7 @@ export default function CoursePublic() {
       hasCourseInstance: {
         "@type": "CourseInstance",
         courseMode: "online",
-        courseWorkload: `PT${totalLessons * 30}M`,
+        courseWorkload: `PT${course.lessons * 30}M`,
         instructor: { "@type": "Person", name: course.tutor },
       },
     },
@@ -112,7 +124,10 @@ export default function CoursePublic() {
         description={description}
         canonical={`${SITE}${canonicalPath}`}
         type="product"
-        keywords={[course.title, ...course.tags, `курс ${audience}`, "онлайн-обучение"].join(", ")}
+        keywords={
+          copy?.keywords ??
+          [course.title, ...course.tags, `курс ${audience}`, "онлайн-обучение"].join(", ")
+        }
         jsonLd={jsonLd}
       />
 
@@ -137,15 +152,47 @@ export default function CoursePublic() {
           </div>
         </div>
 
-        <p className="text-white/70 text-base md:text-lg leading-relaxed mb-6 max-w-3xl">{course.description}</p>
+        <p className="text-white/70 text-base md:text-lg leading-relaxed mb-6 max-w-3xl">
+          {copy?.lead ?? course.description}
+        </p>
 
+        {/* Доход в профессии — то, ради чего человек и открывает страницу.
+            Там, где заработок непредсказуем, честно пишем об этом. */}
+        {copy?.income && (
+          <section
+            className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] p-5 mb-6 max-w-3xl"
+            aria-labelledby="income"
+          >
+            <h2 id="income" className="flex items-center gap-2 text-sm font-bold text-emerald-200 mb-2">
+              <Icon name="Wallet" size={17} aria-hidden="true" />
+              Сколько зарабатывают: {copy.income.role}
+            </h2>
+            <p className="font-montserrat font-black text-xl md:text-2xl text-white mb-2">
+              {copy.income.range}
+            </p>
+            <p className="text-white/60 text-sm leading-relaxed">{copy.income.note}</p>
+          </section>
+        )}
+
+        {/* Пустые счётчики не показываем: «0 отзывов» отталкивает сильнее,
+            чем их отсутствие, а у новых курсов статистики пока нет. */}
         <div className="flex flex-wrap items-center gap-3 mb-8 text-sm">
-          <span className="flex items-center gap-1.5 text-amber-300">
-            <Icon name="Star" size={15} aria-hidden="true" />
-            {course.rating} · {course.reviews} отзывов
-          </span>
-          <span className="text-white/50">{course.students.toLocaleString("ru-RU")} учеников</span>
-          <span className="text-white/50">{totalLessons} уроков</span>
+          {course.reviews > 0 && (
+            <span className="flex items-center gap-1.5 text-amber-300">
+              <Icon name="Star" size={15} aria-hidden="true" />
+              {course.rating} · {course.reviews} отзывов
+            </span>
+          )}
+          {course.students > 0 && (
+            <span className="text-white/50">{course.students.toLocaleString("ru-RU")} учеников</span>
+          )}
+          <span className="text-white/50">{course.lessons} уроков</span>
+          {course.reviews === 0 && (
+            <span className="text-emerald-300/90 flex items-center gap-1.5">
+              <Icon name="Sparkles" size={14} aria-hidden="true" />
+              Новый курс
+            </span>
+          )}
         </div>
 
         {/* Оплата — отдельным шагом, чтобы витрина оставалась открытой поиску */}
@@ -164,12 +211,14 @@ export default function CoursePublic() {
           </Link>
         </div>
 
-        {detail.outcomes.length > 0 && (
+        {(copy?.results.length || detail.outcomes.length > 0) && (
           <section className="mb-10" aria-labelledby="outcomes">
-            <h2 id="outcomes" className="font-montserrat font-black text-xl md:text-2xl mb-4">Чему вы научитесь</h2>
+            <h2 id="outcomes" className="font-montserrat font-black text-xl md:text-2xl mb-4">
+              {copy ? "Что вы получите" : "Чему вы научитесь"}
+            </h2>
             <ul className="grid sm:grid-cols-2 gap-3">
-              {detail.outcomes.map((o, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-white/75 text-sm">
+              {(copy?.results ?? detail.outcomes).map((o, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-white/75 text-sm leading-relaxed">
                   <Icon name="Check" size={16} className="text-emerald-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
                   {o}
                 </li>
@@ -178,16 +227,36 @@ export default function CoursePublic() {
           </section>
         )}
 
-        {detail.forWhom.length > 0 && (
+        {(copy?.forWhom.length || detail.forWhom.length > 0) && (
           <section className="mb-10" aria-labelledby="forwhom">
             <h2 id="forwhom" className="font-montserrat font-black text-xl md:text-2xl mb-4">Кому подойдёт</h2>
-            <ul className="flex flex-wrap gap-2">
-              {detail.forWhom.map((f, i) => (
-                <li key={i} className="text-sm text-white/70 bg-white/[0.05] border border-white/10 rounded-xl px-3.5 py-2">
+            <ul className={copy ? "grid sm:grid-cols-2 gap-3" : "flex flex-wrap gap-2"}>
+              {(copy?.forWhom ?? detail.forWhom).map((f, i) => (
+                <li
+                  key={i}
+                  className={
+                    copy
+                      ? "flex items-start gap-2.5 text-sm text-white/75 bg-white/[0.03] border border-white/10 rounded-2xl px-4 py-3 leading-relaxed"
+                      : "text-sm text-white/70 bg-white/[0.05] border border-white/10 rounded-xl px-3.5 py-2"
+                  }
+                >
+                  {copy && (
+                    <Icon name="UserCheck" size={16} className="text-purple-300 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  )}
                   {f}
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Что происходит в профессии на рынке — снимает вопрос «а нужно ли это» */}
+        {copy?.market && (
+          <section className="mb-10" aria-labelledby="market">
+            <h2 id="market" className="font-montserrat font-black text-xl md:text-2xl mb-3">
+              Что с этой профессией на рынке
+            </h2>
+            <p className="text-white/65 text-sm md:text-base leading-relaxed max-w-3xl">{copy.market}</p>
           </section>
         )}
 

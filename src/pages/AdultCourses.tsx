@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import { COURSES, getCoursePrice, getCoursePriceLabel } from "@/components/courses/coursesData";
 import { courseUrl } from "@/components/courses/courseSlug";
+import { getCourseSeoCopy } from "@/components/courses/seo";
 
 const SITE = "https://учисьпро.рф";
 
@@ -85,7 +86,7 @@ export default function AdultCourses() {
         item: {
           "@type": "Course",
           name: c.title,
-          description: c.description.slice(0, 200),
+          description: getCourseSeoCopy(c.id)?.metaDescription ?? c.description.slice(0, 200),
           url: `${SITE}${courseUrl(c)}`,
           provider: { "@type": "Organization", name: "УЧИСЬПРО", url: SITE },
           offers: {
@@ -94,12 +95,16 @@ export default function AdultCourses() {
             priceCurrency: "RUB",
             availability: "https://schema.org/InStock",
           },
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: c.rating,
-            reviewCount: c.reviews,
-            bestRating: 5,
-          },
+          ...(c.reviews > 0
+            ? {
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: c.rating,
+                  reviewCount: c.reviews,
+                  bestRating: 5,
+                },
+              }
+            : {}),
         },
       })),
     },
@@ -187,8 +192,14 @@ export default function AdultCourses() {
                       <h3 className="font-bold text-white text-sm leading-snug">{c.title}</h3>
                     </div>
                     <p className="text-white/55 text-xs leading-relaxed mb-3 line-clamp-3">
-                      {c.description.slice(0, 130)}…
+                      {getCourseSeoCopy(c.id)?.lead.slice(0, 130) ?? c.description.slice(0, 130)}…
                     </p>
+                    {getCourseSeoCopy(c.id)?.income && (
+                      <p className="flex items-start gap-1.5 text-[11px] text-emerald-300/90 mb-2.5 leading-snug">
+                        <Icon name="Wallet" size={13} className="mt-px flex-shrink-0" aria-hidden="true" />
+                        {getCourseSeoCopy(c.id)!.income!.range}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-white">{getCoursePriceLabel(c)}</span>
                       <span className="text-white/40">{c.lessons} уроков</span>

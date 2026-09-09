@@ -48,13 +48,17 @@ export const COURSES_JSON_LD = [
           c.grade === "10-11" ? "10–11 класс" : c.grade,
         teaches: c.tags.join(", "),
         inLanguage: "ru-RU",
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: c.rating,
-          reviewCount: c.reviews,
-          bestRating: 5,
-          worstRating: 1,
-        },
+        ...(c.reviews > 0
+          ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: c.rating,
+                reviewCount: c.reviews,
+                bestRating: 5,
+                worstRating: 1,
+              },
+            }
+          : {}),
         offers: {
           "@type": "Offer",
           price: getCoursePrice(c),
