@@ -54,6 +54,7 @@ const SECTIONS: Section[] = [
   {
     group: "Состояние платформы",
     items: [
+      { label: "Инструкция: Яндекс.Вебмастер", path: "/admin/webmaster", icon: "Map", description: "5 шагов после публикации: карта сайта, переобход курсов, проверка глазами робота и сроки индексации" },
       { label: "Статус систем", path: "/status", icon: "Activity", description: "Здоровье бэкенда, БД, S3, очередей" },
       { label: "Здоровье сайта", path: "/admin/site-health", icon: "HeartPulse", description: "Метрики, ошибки фронта, скорость" },
     ],

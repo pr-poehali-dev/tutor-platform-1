@@ -102,6 +102,7 @@ const KsushaEngine = lazy(() => import("./pages/admin/KsushaEngine"));
 const SalesDashboard = lazy(() => import("./pages/admin/SalesDashboard"));
 const SalesPlaybook = lazy(() => import("./pages/admin/SalesPlaybook"));
 const CityPlan = lazy(() => import("./pages/admin/CityPlan"));
+const WebmasterGuide = lazy(() => import("./pages/admin/WebmasterGuide"));
 const Leads = lazy(() => import("./pages/admin/Leads"));
 const Payouts = lazy(() => import("./pages/admin/Payouts"));
 const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
@@ -300,6 +301,7 @@ const App = () => (
                     <Route path="/admin/sales" element={<SalesDashboard />} />
                     <Route path="/admin/playbook" element={<SalesPlaybook />} />
                     <Route path="/admin/city-plan" element={<CityPlan />} />
+                    <Route path="/admin/webmaster" element={<WebmasterGuide />} />
                     <Route path="/admin/leads" element={<Leads />} />
                     <Route path="/admin/payouts" element={<Payouts />} />
                     <Route path="/admin/grants" element={<GrantApplications />} />
