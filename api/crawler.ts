@@ -16,6 +16,10 @@ import { MINI_COURSES_SEO } from "./_minicourses";
 import { LANDINGS_SEO } from "./_landings";
 import { SUBJECTS_SEO } from "../src/components/courses/subjectsSeo";
 import { KIDS_SEO } from "./_kids";
+import { COURSES, GRADES, getCoursePrice, getCoursePriceLabel } from "../src/components/courses/coursesData";
+import { courseUrl, findCourseBySlug } from "../src/components/courses/courseSlug";
+import { getCourseSeoCopy } from "../src/components/courses/seo";
+import { getCourseFaq, getWhatsIncluded } from "../src/components/courses/courseValueData";
 
 const SITE = "https://учисьпро.рф";
 const FEED_API = "https://functions.poehali.dev/b9f58dbe-702c-46d3-a9b1-02d5076735ef";
@@ -552,6 +556,134 @@ ${faq}
   );
 }
 
+/** Витрина курса /kurs/:slug — главная страница программы для поиска.
+ *  Текст берём из тех же данных, что видит живой пользователь. */
+function renderCourse(slug: string): Response | null {
+  const course = findCourseBySlug(slug);
+  if (!course) return null;
+
+  const copy = getCourseSeoCopy(course.id);
+  const price = getCoursePrice(course);
+  const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label ?? course.grade;
+  const canonical = `${SITE}${courseUrl(course)}`;
+  const lead = copy?.lead || course.description;
+
+  // Запасной заголовок: суффикс добавляем только если укладываемся в 65 символов,
+  // иначе в выдаче он всё равно обрежется многоточием.
+  const base = course.title.split(":")[0].trim();
+  const title = copy?.metaTitle || (base.length + 14 <= 65 ? `${base} — онлайн-курс` : base);
+  const description =
+    copy?.metaDescription ||
+    `${course.description.slice(0, 150).trim()}`.replace(/\s+\S*$/, "") + "…";
+
+  const results = (copy?.results || []).map((r) => `<li>${esc(r)}</li>`).join("\n");
+  const forWhom = (copy?.forWhom || []).map((f) => `<li>${esc(f)}</li>`).join("\n");
+  const included = getWhatsIncluded(course)
+    .map((v) => `<h3>${esc(v.title)}</h3>\n<p>${esc(v.text)}</p>`)
+    .join("\n");
+  const faq = getCourseFaq(course);
+  const faqHtml = faq.map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`).join("\n");
+
+  // Похожие курсы того же направления — внутренние ссылки для обхода.
+  const related = COURSES.filter((c) => c.subject === course.subject && c.id !== course.id)
+    .slice(0, 8)
+    .map((c) => `<li><a href="${SITE}${courseUrl(c)}">${esc(c.title)}</a></li>`)
+    .join("\n");
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      name: course.title,
+      description: lead,
+      url: canonical,
+      inLanguage: "ru-RU",
+      provider: { "@type": "EducationalOrganization", name: "УЧИСЬПРО", url: SITE },
+      educationalLevel: gradeLabel,
+      teaches: course.tags,
+      numberOfCredits: course.lessons,
+      timeRequired: `PT${course.lessons * 30}M`,
+      // Рейтинг показываем только при реальных отзывах — иначе это нарушение.
+      ...(course.reviews > 0
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: course.rating,
+              reviewCount: course.reviews,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {}),
+      offers: {
+        "@type": "Offer",
+        price,
+        priceCurrency: "RUB",
+        availability: "https://schema.org/InStock",
+        url: canonical,
+      },
+      hasCourseInstance: {
+        "@type": "CourseInstance",
+        courseMode: "online",
+        courseWorkload: `PT${course.lessons * 30}M`,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: SITE },
+        { "@type": "ListItem", position: 2, name: "Курсы", item: `${SITE}/courses` },
+        { "@type": "ListItem", position: 3, name: course.title, item: canonical },
+      ],
+    },
+  ];
+
+  if (faq.length) {
+    jsonLd.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › <a href="${SITE}/courses">Курсы</a> › ${esc(course.title)}
+</nav>
+<h1>${esc(course.title)}</h1>
+<p>${esc(lead)}</p>
+<p>${esc(gradeLabel)} · ${course.lessons} уроков · ${esc(getCoursePriceLabel(course))}</p>
+${
+  copy?.income
+    ? `<h2>Сколько зарабатывают: ${esc(copy.income.role)}</h2>
+<p><strong>${esc(copy.income.range)}</strong></p>
+<p>${esc(copy.income.note)}</p>`
+    : ""
+}
+${results ? `<h2>Что вы получите</h2>\n<ul>${results}</ul>` : ""}
+${forWhom ? `<h2>Кому подойдёт</h2>\n<ul>${forWhom}</ul>` : ""}
+${copy?.market ? `<h2>Что с этой профессией на рынке</h2>\n<p>${esc(copy.market)}</p>` : ""}
+${included ? `<h2>Что входит в курс</h2>\n${included}` : ""}
+${faqHtml ? `<h2>Частые вопросы</h2>\n${faqHtml}` : ""}
+${related ? `<h2>Похожие курсы</h2>\n<ul>${related}</ul>` : ""}`;
+
+  return new Response(
+    page({ title, description, canonical, body, jsonLd, type: "product" }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
 /** Ключевые посадочные страницы: текст берём из _landings.ts и _kids.ts. */
 function renderLanding(path: string): Response | null {
   const L =
@@ -666,6 +798,12 @@ export default async function handler(request: Request): Promise<Response> {
     const subject = path.match(/^\/courses\/([^/?#]+)/);
     if (subject) {
       const r = renderSubject(decodeURIComponent(subject[1]));
+      if (r) return r;
+    }
+
+    const course = path.match(/^\/kurs\/([^/?#]+)/);
+    if (course) {
+      const r = renderCourse(decodeURIComponent(course[1]));
       if (r) return r;
     }
 

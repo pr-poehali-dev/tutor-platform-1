@@ -13,6 +13,9 @@
  * Подключено через rewrite в vercel.json: /sitemap.xml → /api/sitemap
  */
 
+import { COURSES } from "../src/components/courses/coursesData";
+import { courseUrl } from "../src/components/courses/courseSlug";
+
 const SITE = "https://учисьпро.рф";
 const FEED_API =
   "https://functions.poehali.dev/b9f58dbe-702c-46d3-a9b1-02d5076735ef";
@@ -181,6 +184,13 @@ export default async function handler(): Promise<Response> {
       loc: `/courses/${s}`,
       changefreq: "weekly",
       priority: "0.8",
+    })),
+    // Витрины курсов — берём из того же каталога, что и сайт, чтобы адреса
+    // не расходились с реальными при добавлении или переименовании курса.
+    ...COURSES.map((c) => ({
+      loc: courseUrl(c),
+      changefreq: "weekly",
+      priority: c.grade === "adult" ? "0.9" : "0.8",
     })),
   ];
 

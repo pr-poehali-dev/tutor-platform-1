@@ -41,7 +41,10 @@ export default function CoursePublic() {
   const copy = getCourseSeoCopy(course.id);
 
   const audience = isAdult ? "взрослых" : gradeLabel;
-  const title = copy?.metaTitle ?? `${course.title.split(":")[0].trim()} — онлайн-курс`;
+  // Суффикс добавляем, только если заголовок остаётся в пределах выдачи (65 знаков).
+  const titleBase = course.title.split(":")[0].trim();
+  const title =
+    copy?.metaTitle ?? (titleBase.length + 14 <= 65 ? `${titleBase} — онлайн-курс` : titleBase);
   const description =
     copy?.metaDescription ??
     `${course.description.slice(0, 150).trim()}`.replace(/\s+\S*$/, "") + "…";

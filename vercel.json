@@ -76,6 +76,17 @@
       "destination": "/api/crawler?path=/courses/:subject"
     },
     {
+      "source": "/kurs/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/kurs/:slug"
+    },
+    {
       "source": "/kids",
       "has": [
         {
