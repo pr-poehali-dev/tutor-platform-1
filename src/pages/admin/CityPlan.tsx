@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Icon from "@/components/ui/icon";
 import { CITIES, NICHES, buildSearchLinks, City, Niche } from "@/components/playbook/cities";
 import { listInstitutions, EduInstitution } from "@/components/admin/eduInstitutions/api";
+import QuickAddContact from "@/components/admin/eduInstitutions/QuickAddContact";
 
 const WAVE_META: Record<number, { label: string; tone: string; why: string }> = {
   1: {
@@ -31,12 +32,17 @@ export default function CityPlan() {
   const [openCity, setOpenCity] = useState<string | null>(null);
   const [niche, setNiche] = useState<Niche>(NICHES[0]);
 
-  useEffect(() => {
+  /** Перечитываем базу после добавления — счётчики по городам обновляются сразу */
+  const reload = useCallback(() => {
     listInstitutions({})
       .then((r) => setItems(r.ok && r.data ? r.data.items || [] : []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   /** Сколько контактов уже собрано по каждому городу */
   const byCity = useMemo(() => {
@@ -184,6 +190,7 @@ export default function CityPlan() {
                       done={byCity[c.name.toLowerCase()] || 0}
                       open={openCity === c.name}
                       onToggle={() => setOpenCity(openCity === c.name ? null : c.name)}
+                      onAdded={reload}
                     />
                   ))}
                 </div>
@@ -240,12 +247,14 @@ function CityRow({
   done,
   open,
   onToggle,
+  onAdded,
 }: {
   city: City;
   niche: Niche;
   done: number;
   open: boolean;
   onToggle: () => void;
+  onAdded: () => void;
 }) {
   const pct = Math.min(100, (done / city.target) * 100);
   const links = buildSearchLinks(city, niche);
@@ -310,6 +319,9 @@ function CityRow({
               ))}
             </div>
           </div>
+
+          {/* Нашли организацию в 2ГИС — заносим здесь же, не уходя со страницы */}
+          <QuickAddContact city={city.name} nicheLabel={niche.label} onAdded={onAdded} />
         </div>
       )}
     </article>
