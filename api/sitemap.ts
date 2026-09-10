@@ -15,6 +15,16 @@
 
 import { COURSES } from "../src/components/courses/coursesData";
 import { courseUrl } from "../src/components/courses/courseSlug";
+import { GRADE_LANDINGS } from "../src/components/tutor/gradeLandingData";
+import { SUBJECT_TUTORS } from "../src/components/tutor/subjectTutorData";
+import { SIGN_LIBRARY } from "../src/components/silent/signLibrary";
+import { LESSONS as SILENT_LESSONS } from "../src/components/silent/silentCourseData";
+import { DRAW_LESSONS } from "../src/components/draw/drawData";
+import { AGES } from "../src/components/kids/kidsData";
+import { KIDS_TOPICS } from "../src/components/kids/kidsTopicData";
+import { LIBRARY } from "../src/components/kids/libraryData";
+import { KIDS_GAMES } from "../src/components/kids/games/gamesData";
+import { MY_RUSSIA } from "../src/components/kids/myRussiaData";
 
 const SITE = "https://учисьпро.рф";
 const FEED_API =
@@ -191,6 +201,60 @@ export default async function handler(): Promise<Response> {
       loc: courseUrl(c),
       changefreq: "weekly",
       priority: c.grade === "adult" ? "0.9" : "0.8",
+    })),
+
+    // Динамические разделы. Списки берём из тех же данных, по которым
+    // страницы рисуются, — карта не может разойтись с сайтом.
+    ...GRADE_LANDINGS.map((g) => ({
+      loc: `/repetitor/${g.grade}-klass`,
+      changefreq: "monthly",
+      priority: "0.8",
+    })),
+    ...SUBJECT_TUTORS.map((s) => ({
+      loc: `/repetitor-online/${s.slug}`,
+      changefreq: "monthly",
+      priority: "0.8",
+    })),
+    // Ключи словаря кириллические — обязательно кодируем для валидного XML.
+    ...Object.keys(SIGN_LIBRARY).map((k) => ({
+      loc: `/dictionary/${encodeURIComponent(k)}`,
+      changefreq: "monthly",
+      priority: "0.6",
+    })),
+    ...SILENT_LESSONS.map((l) => ({
+      loc: `/silent/lesson/${l.slug}`,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    ...DRAW_LESSONS.map((l) => ({
+      loc: `/draw/${l.id}`,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    ...AGES.map((a) => ({
+      loc: `/kids/${a.slug}`,
+      changefreq: "weekly",
+      priority: "0.8",
+    })),
+    ...KIDS_TOPICS.map((t) => ({
+      loc: `/kids/vopros/${t.slug}`,
+      changefreq: "monthly",
+      priority: "0.8",
+    })),
+    ...LIBRARY.map((i) => ({
+      loc: `/kids/library/${i.id}`,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    ...KIDS_GAMES.map((g) => ({
+      loc: `/kids/games/${g.slug}`,
+      changefreq: "monthly",
+      priority: "0.7",
+    })),
+    ...MY_RUSSIA.map((i) => ({
+      loc: `/kids/my-russia/${i.id}`,
+      changefreq: "monthly",
+      priority: "0.7",
     })),
   ];
 

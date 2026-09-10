@@ -556,6 +556,46 @@ ${faq}
   );
 }
 
+/**
+ * Честный 404 для роботов.
+ *
+ * Сайт — SPA, сервер на любой адрес отвечает 200, поэтому несуществующие
+ * страницы попадали в индекс как рабочие. Здесь отдаём настоящий статус —
+ * но только там, где данные лежат в коде и мы точно знаем, что страницы нет.
+ * Разделы, зависящие от внешнего API (Лента), так проверять нельзя: при сбое
+ * API мы бы выбросили из индекса живые статьи.
+ */
+function notFound(path: string): Response {
+  const body = `
+<h1>Страница не найдена</h1>
+<p>Такого адреса на сайте нет: ${esc(path)}. Возможно, материал переехал или в ссылке опечатка.</p>
+<h2>Куда перейти</h2>
+<ul>
+<li><a href="${SITE}/courses">Каталог курсов</a></li>
+<li><a href="${SITE}/free-courses">Бесплатные курсы</a></li>
+<li><a href="${SITE}/feed">Лента статей</a></li>
+</ul>`;
+
+  return new Response(
+    page({
+      title: "Страница не найдена — 404",
+      description: "Такой страницы на сайте нет. Загляните в каталог курсов или в ленту статей.",
+      canonical: `${SITE}/404`,
+      body,
+    }).replace(
+      '<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large"/>',
+      '<meta name="robots" content="noindex, follow"/>',
+    ),
+    {
+      status: 404,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=300",
+      },
+    },
+  );
+}
+
 /** Витрина курса /kurs/:slug — главная страница программы для поиска.
  *  Текст берём из тех же данных, что видит живой пользователь. */
 function renderCourse(slug: string): Response | null {
@@ -798,13 +838,15 @@ export default async function handler(request: Request): Promise<Response> {
     const subject = path.match(/^\/courses\/([^/?#]+)/);
     if (subject) {
       const r = renderSubject(decodeURIComponent(subject[1]));
-      if (r) return r;
+      // Список предметов тоже в коде — отсутствие означает несуществующий адрес.
+      return r || notFound(path);
     }
 
     const course = path.match(/^\/kurs\/([^/?#]+)/);
     if (course) {
       const r = renderCourse(decodeURIComponent(course[1]));
-      if (r) return r;
+      // Каталог курсов лежит в коде: если курса нет — его нет наверняка.
+      return r || notFound(path);
     }
 
     // Ключевые посадочные страницы (каталог, ЕГЭ, «Малыш», бизнес-разбор)
