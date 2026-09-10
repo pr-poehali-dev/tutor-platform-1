@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
@@ -17,12 +18,28 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   // Пока меню открыто — фон не прокручивается под пальцем.
+  // position: fixed вместо overflow: hidden — iOS Safari игнорирует overflow на body
+  // и продолжает тянуть страницу, из-за чего меню «прыгает» и обрезается.
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
     };
   }, [open]);
 
@@ -43,10 +60,10 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
     if (item.section) onSectionClick(item.section);
   };
 
-  return (
+  const menu = (
     <div
       id="mobile-nav"
-      className="md:hidden fixed inset-0 z-[130] bg-[#0d0a1f]/98 backdrop-blur-xl flex flex-col animate-fade-in"
+      className="md:hidden fixed inset-x-0 top-0 z-[200] h-[100dvh] max-h-[100dvh] bg-[#0d0a1f]/98 backdrop-blur-xl flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-label="Меню разделов"
@@ -68,7 +85,7 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 flex flex-col gap-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] px-4 py-4 flex flex-col gap-2">
         {/* Главные разделы */}
         <div className="grid grid-cols-3 gap-2">
           {NAV_LINKS.map((link) => (
@@ -215,4 +232,8 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
       </div>
     </div>
   );
+
+  // Рендерим в body: внутри навбара меню наследовало backdrop-blur и rounded-2xl
+  // родителя — из-за этого оно и выглядело «сжатым» и обрезанным по краям.
+  return createPortal(menu, document.body);
 }
