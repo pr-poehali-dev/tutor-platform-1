@@ -7,7 +7,6 @@ import SiteFooter from "@/components/SiteFooter";
 import {
   AGES,
   AREAS,
-  ACTIVITIES,
   AgeSlug,
   Activity,
   getAge,

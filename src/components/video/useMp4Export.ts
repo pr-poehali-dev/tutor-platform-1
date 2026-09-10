@@ -201,7 +201,10 @@ export function useMp4Export() {
       }
 
       const data = await ffmpeg.readFile(outputName);
-      const blob = new Blob([data as Uint8Array], { type: "video/mp4" });
+      // ffmpeg.wasm отдаёт Uint8Array поверх ArrayBufferLike; копируем в обычный
+      // ArrayBuffer, иначе тип не подходит под BlobPart (может быть SharedArrayBuffer).
+      const bytes = new Uint8Array(data as Uint8Array);
+      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "video/mp4" });
       const url = URL.createObjectURL(blob);
 
       setState({ phase: "done", progress: 1, message: "Готово!", resultUrl: url });

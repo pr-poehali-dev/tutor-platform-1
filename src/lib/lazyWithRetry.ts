@@ -59,8 +59,8 @@ function isChunkLoadError(err: unknown): boolean {
  * Ошибки ВНУТРИ компонента (не загрузки) пробрасываются как есть — их ловит
  * ErrorBoundary, перезагрузка их не чинит.
  */
-export function lazyWithRetry<T extends ComponentType<unknown>>(
-  factory: () => Promise<{ default: T }>,
+export function lazyWithRetry<P extends object>(
+  factory: () => Promise<{ default: ComponentType<P> }>,
   chunkUrl?: string
 ) {
   return lazy(async () => {
@@ -78,7 +78,7 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
         try {
           if (chunkUrl) {
             const bust = `${chunkUrl}${chunkUrl.includes("?") ? "&" : "?"}v=${Date.now()}`;
-            return (await import(/* @vite-ignore */ bust)) as { default: T };
+            return (await import(/* @vite-ignore */ bust)) as { default: ComponentType<P> };
           }
           return await factory();
         } catch (retryErr) {

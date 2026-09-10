@@ -35,8 +35,8 @@ export default function SchoolBranding({ school, onUpdated }: Props) {
       const res = await uploadSchoolLogo(b64, file.type);
       setUploading(false);
       if (res.ok && res.data) {
-        setLogo(res.data.url);
-        onUpdated({ ...school, brand_logo_url: res.data.url });
+        setLogo(res.data.brand_logo_url);
+        onUpdated({ ...school, brand_logo_url: res.data.brand_logo_url });
       } else {
         setNotice(res.error || "Не удалось загрузить");
       }

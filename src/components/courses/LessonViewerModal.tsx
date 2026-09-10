@@ -66,7 +66,6 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
   const [showResult, setShowResult] = useState(false);
   const [hintsShown, setHintsShown] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
-  const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksFailed, setTasksFailed] = useState(false);
 
   const narrator = useLessonNarrator();
@@ -85,7 +84,6 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
 
   const loadTasksInBackground = async (lessonRef: Lesson, attempt = 1) => {
     const MAX_ATTEMPTS = 3;
-    setTasksLoading(true);
     setTasksFailed(false);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000);
@@ -107,7 +105,6 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
         throw new Error("no tasks");
       }
       setLesson({ ...lessonRef, tasks: data.tasks });
-      setTasksLoading(false);
     } catch {
       if (attempt < MAX_ATTEMPTS) {
         clearTimeout(timer);
@@ -116,7 +113,6 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
         return;
       }
       // Задачи не удалось получить — не зависаем, даём завершить урок
-      setTasksLoading(false);
       setTasksFailed(true);
     } finally {
       clearTimeout(timer);
@@ -138,7 +134,6 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     setHintsShown(0);
     setCorrectCount(0);
     setTasksFailed(false);
-    setTasksLoading(false);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000);
     try {

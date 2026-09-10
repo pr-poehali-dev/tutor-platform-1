@@ -1,4 +1,3 @@
-import Icon from "@/components/ui/icon";
 import { Course } from "@/components/courses/coursesData";
 
 interface Props {

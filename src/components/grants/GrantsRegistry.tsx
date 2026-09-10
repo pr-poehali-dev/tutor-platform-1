@@ -2,15 +2,6 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { fetchGrantsRegistry, type RegistryGrant, type GrantStatus } from "./registryApi";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  social: "Социальные проекты",
-  education: "Образование",
-  culture: "Культура",
-  science: "Наука",
-  business: "Бизнес и предпринимательство",
-  other: "Другое",
-};
-
 const STATUS_META: Record<GrantStatus, { label: string; cls: string; icon: string }> = {
   open: { label: "Приём открыт", cls: "text-emerald-300 bg-emerald-500/15 border-emerald-400/30", icon: "CircleCheck" },
   soon: { label: "Скоро откроется", cls: "text-amber-300 bg-amber-500/15 border-amber-400/30", icon: "Clock" },

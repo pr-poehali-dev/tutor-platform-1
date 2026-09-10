@@ -8,10 +8,7 @@ interface Props {
   funnel: FunnelStage[] | null;
 }
 
-export default function KpiOverview({ overview, funnel }: Props) {
-  const maxFunnel = useMemo(() => Math.max(1, ...(funnel?.map((s) => s.count) ?? [1])), [funnel]);
-  const maxDayRev = useMemo(() => Math.max(1, ...(overview?.by_day.map((d) => d.revenue) ?? [1])), [overview]);
-
+export default function KpiOverview({ overview }: Props) {
   return (
     <>
       {/* KPI */}

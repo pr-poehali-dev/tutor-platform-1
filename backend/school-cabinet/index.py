@@ -710,19 +710,28 @@ def handle_upload_logo(conn, uid: int, body: dict) -> dict:
 
 # ---------- Этап 2: ученики школы ----------
 
-def handle_students(conn, uid: int) -> dict:
-    """Список учеников школы (кто купил/приглашён), с курсом."""
+def handle_students(conn, uid: int, course_id=None) -> dict:
+    """Список учеников школы (кто купил/приглашён), с курсом.
+
+    course_id (необязательно) — вернуть только учеников конкретного курса.
+    """
     with conn.cursor() as cur:
         sid = get_school_id(cur, uid)
         if not sid:
             return ok({'items': [], 'total': 0})
-        cur.execute(
+        sql = (
             "SELECT e.id, e.student_email, e.source, e.status, e.created_at, "
             "sc.title, u.name "
             "FROM " + t('school_enrollments') + " e "
             "JOIN " + t('school_courses') + " sc ON sc.id = e.school_course_id "
             "LEFT JOIN " + t('auth_users') + " u ON u.id = e.student_user_id "
-            "WHERE e.school_id=%s ORDER BY e.created_at DESC LIMIT 500", (sid,))
+            "WHERE e.school_id=%s")
+        args = [sid]
+        if course_id is not None:
+            sql += " AND e.school_course_id=%s"
+            args.append(course_id)
+        sql += " ORDER BY e.created_at DESC LIMIT 500"
+        cur.execute(sql, tuple(args))
         items = [{
             'id': r[0], 'email': r[1], 'source': r[2], 'status': r[3],
             'created_at': r[4].isoformat() if r[4] else None,
@@ -774,7 +783,8 @@ def handle_invite_student(conn, uid: int, body: dict) -> dict:
             (cid, sid, student_uid, email))
         eid = cur.fetchone()[0]
         conn.commit()
-        return ok({'ok': True, 'id': eid})
+        # linked=True — ученик уже зарегистрирован, доступ открыт сразу
+        return ok({'ok': True, 'id': eid, 'linked': bool(student_uid)})
 
 
 def handle_remove_student(conn, uid: int, body: dict) -> dict:
@@ -1121,7 +1131,11 @@ def handler(event: dict, context) -> dict:
             if action == 'upload_logo' and method == 'POST':
                 return handle_upload_logo(conn, uid, body)
             if action == 'students':
-                return handle_students(conn, uid)
+                try:
+                    cid = int(qs['course_id']) if qs.get('course_id') else None
+                except (TypeError, ValueError):
+                    cid = None
+                return handle_students(conn, uid, cid)
             if action == 'stats':
                 return handle_school_stats(conn, uid)
             if action == 'request_payout' and method == 'POST':

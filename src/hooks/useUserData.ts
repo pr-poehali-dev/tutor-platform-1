@@ -49,9 +49,12 @@ const emptyCache: Cache = {
   badges: [],
 };
 
-async function call(action: string, payload: Record<string, unknown> = {}) {
+async function call<T = Record<string, unknown>>(
+  action: string,
+  payload: Record<string, unknown> = {}
+): Promise<Partial<T>> {
   const uid = getUserUid();
-  const res = await safeFetch<Record<string, unknown>>(USER_DATA_URL, {
+  const res = await safeFetch<T>(USER_DATA_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action, user_uid: uid, ...payload }),
@@ -67,18 +70,22 @@ export default function useUserData() {
   const refresh = useCallback(async () => {
     try {
       const [favs, hist, mine, stats] = await Promise.all([
-        call("list_favorites"),
-        call("list_history", { limit: 12 }),
-        call("list_my_courses"),
-        call("get_stats"),
+        call<{ course_ids: number[] }>("list_favorites"),
+        call<{ history: { course_id: number }[] }>("list_history", { limit: 12 }),
+        call<{ courses: MyCourse[] }>("list_my_courses"),
+        call<{
+          stats: UserStats | null;
+          activity: ActivityDay[];
+          badges: { id: string; earned_at: string }[];
+        }>("get_stats"),
       ]);
       setData({
-        favorites: favs?.course_ids || [],
-        history: (hist?.history || []).map((h: { course_id: number }) => h.course_id),
-        myCourses: mine?.courses || [],
-        stats: stats?.stats || null,
-        activity: stats?.activity || [],
-        badges: stats?.badges || [],
+        favorites: favs.course_ids || [],
+        history: (hist.history || []).map((h) => h.course_id),
+        myCourses: mine.courses || [],
+        stats: stats.stats || null,
+        activity: stats.activity || [],
+        badges: stats.badges || [],
       });
     } catch {
       // тихо

@@ -20,10 +20,6 @@ export default function Intensive() {
   const [activeLesson, setActiveLesson] = useState(0);
   const lesson = LESSONS[activeLesson];
 
-  const scrollToForm = () => {
-    document.getElementById("lead-form")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const scrollToPricing = () => {
     document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
   };

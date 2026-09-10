@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
-import { AGES, AREAS, AgeSlug, AgeStage } from "@/components/kids/kidsData";
+import { AGES, AREAS, AgeStage } from "@/components/kids/kidsData";
 import {
   DIAGNOSTIC_QUESTIONS,
   calculateResult,

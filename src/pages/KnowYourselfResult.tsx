@@ -344,7 +344,9 @@ export default function KnowYourselfResult() {
                     <div className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2">
                       <p className="text-white/45 text-[10px] uppercase tracking-wider font-bold">ЕГЭ для поступления</p>
                       <p className="font-bold text-white text-xs leading-tight">
-                        {p.egeSubjects.map((s) => SUBJECTS[s]?.label || s).join(" · ")}
+                        {p.egeSubjects
+                          .map((s) => SUBJECTS[s as keyof typeof SUBJECTS]?.label || s)
+                          .join(" · ")}
                       </p>
                     </div>
                     <div className="bg-white/[0.04] border border-white/8 rounded-xl px-3 py-2 col-span-2 md:col-span-1">

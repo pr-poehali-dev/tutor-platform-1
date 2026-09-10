@@ -18,7 +18,8 @@ export type TemplateShape =
   | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
   | { kind: "polyline"; points: [number, number][] }
   | { kind: "polygon"; points: [number, number][] }
-  | { kind: "arc"; cx: number; cy: number; r: number; start: number; end: number };
+  | { kind: "arc"; cx: number; cy: number; r: number; start: number; end: number }
+  | { kind: "path"; d: string };
 
 /** Размер виртуальной системы координат трафарета. */
 export const TEMPLATE_VIEW_W = 600;

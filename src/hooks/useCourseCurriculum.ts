@@ -18,6 +18,8 @@ export interface RealCurriculum {
   methodology: string;
   final_project: string;
   certificate_available: boolean;
+  /** Версия программы курса (в старых записях может отсутствовать). */
+  version?: number;
 }
 
 export interface RealLesson {

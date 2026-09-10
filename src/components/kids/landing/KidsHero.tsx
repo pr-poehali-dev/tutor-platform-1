@@ -1,18 +1,11 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { AGES } from "@/components/kids/kidsData";
-
-interface Progress {
-  stars: number;
-  streakDays: number;
-  completedActivities: string[];
-  totalAnswers: number;
-  correctAnswers: number;
-}
+import type { KidsProgress } from "@/components/kids/useKidsProgress";
 
 interface Props {
   totalActivities: number;
-  progress: Progress;
+  progress: KidsProgress;
 }
 
 export default function KidsHero({ totalActivities, progress }: Props) {

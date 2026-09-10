@@ -218,8 +218,16 @@ export function fetchStudents() {
   return req<{ items: StudentItem[]; total: number }>("students");
 }
 
+/** Ученики одного курса школы. */
+export function fetchCourseStudents(courseId: number) {
+  return req<{ items: StudentItem[]; total: number }>("students", {
+    query: { course_id: String(courseId) },
+  });
+}
+
 export function inviteStudent(courseId: number, email: string) {
-  return req<{ ok: boolean; id: number }>("invite_student", {
+  // linked приходит только с новой версией функции — поэтому поле опциональное
+  return req<{ ok: boolean; id: number; linked?: boolean }>("invite_student", {
     method: "POST",
     body: { course_id: courseId, email },
   });

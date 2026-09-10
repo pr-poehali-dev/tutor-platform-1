@@ -14,11 +14,12 @@ async function fetchVideos(): Promise<Record<string, string>> {
     try {
       const res = await fetch(`${KSUSHA_VIDEO_URL}?action=list`);
       const data = await res.json().catch(() => ({}));
-      cache = (data && data.videos) || {};
-      return cache;
+      const videos: Record<string, string> = (data && data.videos) || {};
+      cache = videos;
+      return videos;
     } catch {
       cache = {};
-      return cache;
+      return {};
     } finally {
       inflight = null;
     }
