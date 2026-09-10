@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Icon from "@/components/ui/icon";
 import { WEBMASTER_PLAN, WM_TIMELINE } from "@/components/playbook/webmaster";
+import RecrawlList from "@/components/playbook/RecrawlList";
 
 /** Инструкция по Яндекс.Вебмастеру после публикации SEO-правок.
  *  Внутренний документ, от индексации закрыт. */
@@ -165,6 +166,8 @@ export default function WebmasterGuide() {
             );
           })}
         </div>
+
+        <RecrawlList />
 
         <section aria-labelledby="timeline">
           <h2 id="timeline" className="font-montserrat font-black text-xl mb-1">
