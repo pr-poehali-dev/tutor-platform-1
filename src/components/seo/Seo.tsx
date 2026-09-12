@@ -47,6 +47,23 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * Канонический адрес страницы: без параметров и якоря, без хвостового слэша.
+ *
+ * Раньше сюда попадал весь window.location.href — значит переход из рекламы
+ * (?utm_source=…) или из письма (?paid=1) создавал для поиска отдельный адрес
+ * той же страницы. Это плодило дубли: одна страница — десяток «разных» URL.
+ */
+function canonicalize(url: string): string {
+  if (!url) return SITE_URL;
+  const clean = normalizeUrl(url).split("#")[0].split("?")[0];
+  // Хвостовой слэш убираем везде, кроме корня: /courses/ и /courses — одна страница.
+  if (clean.length > SITE_URL.length + 1 && clean.endsWith("/")) {
+    return clean.slice(0, -1);
+  }
+  return clean;
+}
+
+/**
  * Универсальный SEO-компонент: title, description, canonical, OG, Twitter, JSON-LD.
  * Использовать в каждой странице/важной модалке.
  */
@@ -70,7 +87,7 @@ export default function Seo({
       ? title
       : `${title} — УЧИСЬПРО`;
   const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
-  const url = normalizeUrl(rawUrl);
+  const url = canonicalize(rawUrl);
   const img = normalizeUrl(image);
 
   // Подсказка разработчику: в продакшене молчим, чтобы не шуметь в консоли посетителю.

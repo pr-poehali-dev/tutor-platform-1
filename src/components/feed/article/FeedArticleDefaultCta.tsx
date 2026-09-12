@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { FeedArticle } from "@/components/feed/types";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+// Число мини-курсов берём из реестра, а не пишем руками: в трёх местах сайта
+// стояли разные цифры (26, 30), пока курсов на самом деле был 31.
+import { MINI_COURSES } from "@/components/minicourse/registry";
 
 /**
  * Призыв по умолчанию под каждой статьёй ленты.
@@ -86,7 +89,7 @@ function pickOffer(article: FeedArticle): Offer {
     return {
       emoji: "💼",
       title: "Хотите применить это на практике?",
-      text: "26 бесплатных мини-курсов за один вечер: от запуска бизнеса до разговора о повышении зарплаты. Без карты и регистрации.",
+      text: `${MINI_COURSES.length} бесплатных мини-курсов за один вечер: от запуска бизнеса до разговора о повышении зарплаты. Без карты и регистрации.`,
       button: "Выбрать мини-курс",
       to: "/mini-course",
       goal: "article_cta_business",
@@ -106,7 +109,7 @@ function pickOffer(article: FeedArticle): Offer {
 
   return {
     emoji: "🎁",
-    title: "26 бесплатных мини-курсов на один вечер",
+    title: `${MINI_COURSES.length} бесплатных мини-курсов на один вечер`,
     text: "Короткие курсы с готовыми шаблонами: деньги, учёба, здоровье, быт. Открываются сразу — без карты и ограничений по времени.",
     button: "Выбрать курс бесплатно",
     to: "/mini-course",

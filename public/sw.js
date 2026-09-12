@@ -12,7 +12,10 @@ const OFFLINE_URL = '/';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) =>
-      cache.addAll(['/', '/manifest.webmanifest', '/favicon.svg']).catch(() => undefined),
+      // HTML-оболочку намеренно НЕ кладём в кэш при установке: после деплоя
+      // она бы осталась старой и тянула за собой удалённые чанки — человек
+      // видел белый экран. Офлайн-страница подхватится из runtime-кэша.
+      cache.addAll(['/manifest.webmanifest', '/favicon.svg']).catch(() => undefined),
     ),
   );
   self.skipWaiting();

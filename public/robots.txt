@@ -5,9 +5,14 @@ Disallow: /api/
 Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
-Disallow: /admin/
+Disallow: /admin
 Disallow: /ads/
-Disallow: /*.json$
+Disallow: /school/learning
+Disallow: /grants/my
+Disallow: /feed/submit
+Disallow: /status
+Disallow: /auth/
+Disallow: /*.json
 Disallow: /*?paid=
 Disallow: /*?utm_
 
@@ -17,8 +22,13 @@ Disallow: /legal/
 Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
-Disallow: /admin/
+Disallow: /admin
 Disallow: /ads/
+Disallow: /school/learning
+Disallow: /grants/my
+Disallow: /feed/submit
+Disallow: /status
+Disallow: /auth/
 
 User-agent: Yandex
 Allow: /
@@ -26,9 +36,14 @@ Disallow: /legal/
 Disallow: /cabinet
 Disallow: /checkout
 Disallow: /course-checkout
-Disallow: /admin/
+Disallow: /admin
 Disallow: /ads/
-Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&paid
+Disallow: /school/learning
+Disallow: /grants/my
+Disallow: /feed/submit
+Disallow: /status
+Disallow: /auth/
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&paid&from&ref
 
 User-agent: Bingbot
 Allow: /

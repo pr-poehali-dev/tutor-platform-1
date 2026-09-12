@@ -41,6 +41,9 @@ interface Entry {
 const STATIC: Entry[] = [
   { loc: "/", changefreq: "daily", priority: "1.0" },
   { loc: "/courses", changefreq: "daily", priority: "0.9" },
+  { loc: "/pricing", changefreq: "weekly", priority: "0.9" },
+  { loc: "/kursy-dlya-vzroslyh", changefreq: "weekly", priority: "0.9" },
+  { loc: "/order", changefreq: "monthly", priority: "0.7" },
   { loc: "/free-courses", changefreq: "weekly", priority: "0.8" },
   { loc: "/super-courses", changefreq: "weekly", priority: "0.8" },
   { loc: "/mini-course", changefreq: "weekly", priority: "0.9" },
@@ -165,14 +168,20 @@ function urlTag(e: Entry, today: string): string {
 /** Все опубликованные статьи Ленты — постранично, пока не кончатся. */
 async function fetchArticles(): Promise<Entry[]> {
   const out: Entry[] = [];
-  for (let page = 1; page <= 40; page++) {
+  const seen = new Set<string>();
+  // Лента растёт каждый день. Лимит в 40 страниц был рассчитан на то, что
+  // бэкенд отдаёт по 50 статей за раз, а он отдавал по 12 — то есть карта
+  // обрывалась на 480 статьях. Запас берём с большим потолком и выходим
+  // по фактическому признаку конца (has_more / пустая страница).
+  for (let page = 1; page <= 200; page++) {
     const res = await fetch(`${FEED_API}?page=${page}&limit=50`);
     if (!res.ok) break;
     const data = await res.json();
     const items = data?.items || [];
     if (!items.length) break;
     for (const a of items) {
-      if (!a?.slug) continue;
+      if (!a?.slug || seen.has(a.slug)) continue;
+      seen.add(a.slug);
       out.push({
         loc: `/feed/${a.slug}`,
         lastmod: (a.published_at || a.created_at || "").slice(0, 10) || undefined,

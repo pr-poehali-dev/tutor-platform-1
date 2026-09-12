@@ -145,7 +145,13 @@ ARTICLE_COLS = (
 def handle_list(qs: dict) -> dict:
     category = (qs.get('category') or '').strip()
     page = max(1, int(qs.get('page') or 1))
-    per_page = 12
+    # По умолчанию отдаём 12 карточек — столько влезает на экран Ленты.
+    # Карта сайта просит больше за раз: иначе, чтобы собрать все статьи,
+    # ей приходилось делать десятки запросов и она обрывалась на середине.
+    try:
+        per_page = min(100, max(1, int(qs.get('limit') or 12)))
+    except (TypeError, ValueError):
+        per_page = 12
     offset = (page - 1) * per_page
 
     conn = get_db()
