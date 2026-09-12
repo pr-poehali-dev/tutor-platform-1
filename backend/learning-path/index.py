@@ -234,6 +234,42 @@ SUBJECT_TOPICS = {
 }
 
 
+# Предметы с неизменной фактурой: даты, произведения, законы и термины не меняются
+# от месяца к месяцу. Для них контент урока ФИКСИРУЕТСЯ: и теория, и задачи берутся
+# из кэша, поэтому ученик каждый раз видит один и тот же выверенный материал,
+# а урок открывается мгновенно. Для остальных предметов (математика, физика и т.п.)
+# задачи по-прежнему генерируются свежими — там важно разнообразие тренировки.
+FIXED_CONTENT_SUBJECTS = {
+    'history', 'literature', 'society', 'geography', 'biology',
+    'chemistry', 'russian', 'psychology', 'career', 'skills',
+}
+
+
+def is_fixed_content_subject(subject):
+    """Нужно ли фиксировать (кэшировать целиком) контент по этому предмету."""
+    return str(subject or '').strip().lower() in FIXED_CONTENT_SUBJECTS
+
+
+# Предметы, где событие без даты бессмысленно — требуем от ИИ ленту времени.
+TIMELINE_SUBJECTS = {'history'}
+
+
+TIMELINE_PROMPT_BLOCK = """
+
+📅 ОБЯЗАТЕЛЬНО ДЛЯ ИСТОРИИ — ДАТЫ СОБЫТИЙ:
+- У КАЖДОГО события, упомянутого в теории и примерах, ОБЯЗАТЕЛЬНО указывай дату или период
+  прямо в тексте: «Крещение Руси — 988 год», «Куликовская битва (8 сентября 1380)».
+  Событие без даты — грубая ошибка урока.
+- ДОПОЛНИТЕЛЬНО верни поле "timeline" — ленту времени урока, отсортированную по возрастанию даты:
+  "timeline": [
+    {"date": "988", "event": "Крещение Руси", "meaning": "почему это важно (1 короткое предложение)"},
+    {"date": "1019–1054", "event": "Правление Ярослава Мудрого", "meaning": "..."}
+  ]
+- В "timeline" от 5 до 9 ключевых событий именно по теме урока, даты реальные и проверяемые.
+- Формат даты: год («1380»), период («1019–1054»), век («IX в.») или полная дата, если она
+  принципиальна («22 июня 1941»). Не выдумывай даты: если точная неизвестна — пиши период или век."""
+
+
 def call_polza(messages, max_tokens=900, temperature=0.7, timeout=50, retries=1, model='openai/gpt-4o-mini'):
     """Вызов polza.ai с заданными сообщениями + автоматический retry при таймауте"""
     api_key = os.environ.get('POLZA_API_KEY', '')
@@ -479,7 +515,12 @@ def _lesson_cache_key(subject, topic, grade, difficulty, lesson_title):
 
 
 def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
-    """Возвращает урок из кэша БД, если есть, и обновляет счётчик попаданий"""
+    """Возвращает урок из кэша БД, если есть, и обновляет счётчик попаданий.
+
+    Уроки истории, сохранённые до появления ленты времени, считаем устаревшими:
+    в них нет дат событий — ровно то, на что жаловались. Такие записи игнорируем,
+    урок сгенерируется заново уже с хронологией и перезапишет кэш.
+    """
     key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
     conn = _get_db_conn()
     if conn is None:
@@ -493,14 +534,18 @@ def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
             row = cur.fetchone()
             if not row:
                 return None
+            data = row['lesson_data']
+            if isinstance(data, str):
+                data = json.loads(data)
+            # Устаревшая запись по истории — без ленты времени. Возвращаем None,
+            # чтобы урок пересобрался с датами и перезаписал кэш.
+            if subject in TIMELINE_SUBJECTS and isinstance(data, dict) and not data.get('timeline'):
+                return None
             cur.execute(
                 "UPDATE lesson_cache SET hit_count = hit_count + 1, last_accessed_at = NOW() WHERE cache_key = %s",
                 (key,)
             )
             conn.commit()
-            data = row['lesson_data']
-            if isinstance(data, str):
-                data = json.loads(data)
             return data
     except Exception:
         return None
@@ -512,7 +557,11 @@ def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
 
 
 def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson_data):
-    """Сохраняет сгенерированный урок в кэш БД (idempotent)"""
+    """Сохраняет сгенерированный урок в кэш БД (idempotent).
+
+    Запись под тем же ключом перезаписывается: иначе устаревший урок истории
+    (без ленты времени) навсегда остался бы в кэше и пересборка ничего не дала бы.
+    """
     key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
     conn = _get_db_conn()
     if conn is None:
@@ -524,7 +573,9 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
                 INSERT INTO lesson_cache
                     (cache_key, subject, grade, topic, difficulty, lesson_title, lesson_data)
                 VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
-                ON CONFLICT (cache_key) DO NOTHING
+                ON CONFLICT (cache_key) DO UPDATE
+                    SET lesson_data = EXCLUDED.lesson_data,
+                        last_accessed_at = NOW()
                 """,
                 (
                     key,
@@ -544,6 +595,76 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
             conn.close()
         except Exception:
             pass
+
+
+def update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, tasks):
+    """Дописывает задачи в уже сохранённый урок — для предметов с фиксированным контентом.
+
+    Так урок становится полностью неизменным: и теория, и задачи одни и те же
+    при каждом открытии, без повторного обращения к ИИ.
+    """
+    key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
+    conn = _get_db_conn()
+    if conn is None:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lesson_cache
+                SET lesson_data = jsonb_set(lesson_data, '{tasks}', %s::jsonb, true)
+                WHERE cache_key = %s
+                """,
+                (json.dumps(tasks, ensure_ascii=False), key),
+            )
+            conn.commit()
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _timeline_sort_key(date_str):
+    """Год начала события для сортировки ленты времени. Понимает «1380», «1019–1054», «IX в.»."""
+    s = str(date_str or '')
+    m = re.search(r'\d{3,4}', s)
+    if m:
+        return int(m.group(0))
+    romans = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+    rm = re.search(r'\b([IVXLCDM]{1,7})\s*(?:в|век)', s)
+    if rm:
+        total, prev = 0, 0
+        for ch in reversed(rm.group(1)):
+            val = romans.get(ch, 0)
+            total = total - val if val < prev else total + val
+            prev = max(prev, val)
+        return (total - 1) * 100  # начало века
+    return 10 ** 6  # без даты — в конец
+
+
+def normalize_timeline(raw):
+    """Приводит ленту времени от ИИ к чистому виду: только события с датой, по возрастанию."""
+    if not isinstance(raw, list):
+        return []
+    items = []
+    for it in raw:
+        if not isinstance(it, dict):
+            continue
+        date = str(it.get('date') or it.get('year') or '').strip()
+        event = str(it.get('event') or it.get('title') or '').strip()
+        # Событие без даты — как раз то, на что жаловались: такое не показываем.
+        if not date or not event:
+            continue
+        items.append({
+            'date': date[:40],
+            'event': event[:180],
+            'meaning': str(it.get('meaning') or it.get('note') or '').strip()[:220],
+        })
+    items.sort(key=lambda x: _timeline_sort_key(x['date']))
+    return items[:12]
 
 
 TASK_GEN_PROMPT_TEMPLATE = """Ты — ОЧЕНЬ ВНИМАТЕЛЬНЫЙ школьный преподаватель по "{subject_name}". Сгенерируй {n} ЗАДАЧ для самопроверки по теме "{topic}" (уровень {grade}, сложность {difficulty}).
@@ -852,6 +973,16 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         exam_block=_exam_format_block(grade, subject_name),
     ) + exclusion + variability_hint
 
+    # История без дат — главная претензия к урокам: событие названо, а когда оно было, неясно.
+    if subject_name == 'История':
+        prompt += (
+            "\n\n📅 ДАТЫ ОБЯЗАТЕЛЬНЫ: в каждом задании, где упоминается событие, "
+            "указывай его год или период (в вопросе, вариантах или разборе). "
+            "Минимум две задачи из набора — прямо на датировку: «в каком году…», "
+            "«расположи события в хронологическом порядке», «соотнеси событие и дату». "
+            "Даты только реальные и проверяемые, выдумывать нельзя."
+        )
+
     # Для ЕГЭ/ОГЭ задачи важна максимальная точность ответов — генерируем умной моделью (gpt-4o)
     # и затем прогоняем второй проход самопроверки. Для обычных уроков — быстрая модель.
     # Точные науки 10-11 классов тоже считаем экзаменационными (подготовка к ЕГЭ).
@@ -1018,30 +1149,44 @@ def build_fallback_lesson(subject, topic, lesson_title=''):
 def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True, shown_questions=None):
     """Урок: теория + примеры. Задачи опционально.
 
-    Теория кэшируется (одинаковая тема даёт одинаковую теорию — это хорошо для скорости),
-    но ЗАДАЧИ всегда генерируются свежие — чтобы пользователь не видел повторов.
+    Теория кэшируется всегда (одинаковая тема даёт одинаковую теорию — это хорошо для скорости).
+    Задачи: для предметов с неизменной фактурой (история, литература, обществознание…)
+    они тоже фиксируются в кэше — материал выверенный и не должен «плыть» от захода к заходу.
+    Для остальных предметов задачи генерируются свежими, чтобы не было повторов в тренировке.
     """
+    fixed = is_fixed_content_subject(subject)
     cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
     if cached and isinstance(cached, dict):
         cached = dict(cached)  # копия, чтобы не мутировать кэш
         cached['_cached'] = True
-        # ВАЖНО: задачи НЕ берём из кэша — всегда свежие
-        if include_tasks:
-            subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
-            try:
-                cached['tasks'] = _generate_lesson_tasks_only(
-                    subject_name, topic, grade, difficulty,
-                    shown_questions=shown_questions,
-                    seed=random.randint(1000, 9999),
-                )
-            except Exception:
-                cached['tasks'] = []
-        else:
+        cached['_fixed'] = fixed
+        cached_tasks = cached.get('tasks') if isinstance(cached.get('tasks'), list) else []
+        if not include_tasks:
             cached['tasks'] = []
+            return cached
+        # Зафиксированный предмет и задачи уже сохранены — отдаём их как есть, без ИИ.
+        if fixed and cached_tasks:
+            cached['tasks'] = cached_tasks
+            return cached
+        subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+        try:
+            fresh_tasks = _generate_lesson_tasks_only(
+                subject_name, topic, grade, difficulty,
+                shown_questions=None if fixed else shown_questions,
+                seed=None if fixed else random.randint(1000, 9999),
+            )
+        except Exception:
+            fresh_tasks = []
+        cached['tasks'] = fresh_tasks
+        # Для фиксированных предметов дописываем задачи в кэш — со следующего раза
+        # урок будет отдаваться целиком из БД, одинаковый для всех учеников.
+        if fixed and fresh_tasks:
+            update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, fresh_tasks)
         return cached
 
     subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
     title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
+    needs_timeline = subject in TIMELINE_SUBJECTS
 
     # ── Этап 1: теория + примеры (быстрый запрос, ~2800 токенов) ──
     prompt_main = f"""Ты — лучший школьный преподаватель по предмету "{subject_name}". Составь ПОДРОБНЫЙ обучающий урок по теме "{topic}" для уровня "{grade}", сложность "{difficulty}".
@@ -1083,17 +1228,26 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
 - Без LaTeX, обычным текстом (используй ^, /, * для формул)
 - Русский язык, обращение на "ты"
 - НЕ возвращай поле tasks — задачи отдельно
-- Примеры из жизни (деньги, скорость, спорт, еда)"""
+- Примеры из жизни (деньги, скорость, спорт, еда)""" + (TIMELINE_PROMPT_BLOCK if needs_timeline else '')
 
     # Урок упирался в таймаут (18–20.5 сек при лимите ожидания 20) и подменялся
     # заглушкой без объяснения темы — ученик видел пустые заголовки.
     # Лечим с двух сторон: объём урока меньше (3 примера вместо 4, меньше токенов)
     # и запас по времени больше. Функция успевала отработать и за 20.5 сек,
     # поэтому 22 остаётся в пределах её лимита.
+    # Лента времени — это ещё ~10 строк JSON, поэтому истории даём запас по токенам,
+    # иначе ответ обрывается на середине и разбор JSON падает.
     try:
-        data = call_polza([{'role': 'user', 'content': prompt_main}], max_tokens=1800, temperature=0.7, timeout=22, retries=0)
+        data = call_polza(
+            [{'role': 'user', 'content': prompt_main}],
+            max_tokens=2400 if needs_timeline else 1800,
+            temperature=0.7, timeout=22, retries=0,
+        )
     except Exception:
         data = None
+
+    if isinstance(data, dict) and needs_timeline:
+        data['timeline'] = normalize_timeline(data.get('timeline'))
 
     # Если ИИ недоступен или вернул мусор — отдаём осмысленный fallback-урок,
     # а не ошибку. Покупатель курса всегда видит полезный контент.
@@ -1104,7 +1258,7 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         fb['_cached'] = False
         return fb
 
-    # В кэш сохраняем БЕЗ задач — задачи всегда свежие
+    # В кэш сохраняем теорию и примеры (задачи допишутся ниже, если предмет фиксированный)
     cache_payload = {k: v for k, v in data.items() if k != 'tasks'}
     save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, cache_payload)
 
@@ -1113,15 +1267,18 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         try:
             data['tasks'] = _generate_lesson_tasks_only(
                 subject_name, topic, grade, difficulty,
-                shown_questions=shown_questions,
-                seed=random.randint(1000, 9999),
+                shown_questions=None if fixed else shown_questions,
+                seed=None if fixed else random.randint(1000, 9999),
             )
         except Exception:
             data['tasks'] = []
+        if fixed and data['tasks']:
+            update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, data['tasks'])
     else:
         data['tasks'] = []
 
     data['_cached'] = False
+    data['_fixed'] = fixed
     return data
 
 

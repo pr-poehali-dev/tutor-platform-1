@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "@/components/journey/journeyData";
 import { MathText } from "@/lib/mathFormat";
+import LessonTimeline from "./LessonTimeline";
 
 type Phase = "theory" | "examples" | "tasks" | "done";
 
@@ -33,6 +34,8 @@ export default function LessonViewerTheory({ lesson, theoryIdx, setTheoryIdx, se
           </ul>
         </div>
       )}
+
+      {isFirst && <LessonTimeline events={lesson.timeline ?? []} accent={accent} />}
 
       <div className="flex items-center gap-2 mb-3">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black flex-shrink-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}>

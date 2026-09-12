@@ -10,6 +10,7 @@ import { getCourseDetail } from "@/components/courses/courseDetailsData";
 import { getCourseFaq, getWhatsIncluded } from "@/components/courses/courseValueData";
 import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
 import { getCourseSeoCopy } from "@/components/courses/seo";
+import { getHistoryDate } from "@/components/courses/historyDates";
 
 const SITE = "https://учисьпро.рф";
 
@@ -35,6 +36,8 @@ export default function CoursePublic() {
   const gradeLabel = GRADES.find((g) => g.id === course.grade)?.label ?? course.grade;
   const subjectSeo = SUBJECTS_SEO.find((s) => s.subjectId === course.subject);
   const isAdult = course.grade === "adult";
+  // Даты событий рядом с темами — только в истории, где без года тема нечитаема.
+  const isHistory = course.subject === "history";
   const totalLessons = detail.modules.reduce((n, m) => n + m.lessons.length, 0) || course.lessons;
 
   // Продающий текст под поисковый запрос — если он написан для этого курса.
@@ -271,12 +274,26 @@ export default function CoursePublic() {
             <div className="space-y-3">
               {detail.modules.map((m) => (
                 <article key={m.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                  <h3 className="font-bold text-white mb-2.5">{m.title}</h3>
+                  <h3 className="font-bold text-white mb-2.5 flex items-center gap-2 flex-wrap">
+                    {m.title}
+                    {isHistory && getHistoryDate(m.title) && (
+                      <span className="text-amber-200/90 bg-amber-500/12 border border-amber-500/25 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums">
+                        {getHistoryDate(m.title)}
+                      </span>
+                    )}
+                  </h3>
                   <ul className="space-y-1.5">
                     {m.lessons.map((l) => (
                       <li key={l.num} className="text-sm text-white/60 flex items-start gap-2">
                         <span className="text-white/30 tabular-nums flex-shrink-0">{l.num}.</span>
-                        {l.title}
+                        <span>
+                          {l.title}
+                          {isHistory && getHistoryDate(l.title) && (
+                            <span className="ml-2 text-amber-200/85 text-xs font-bold tabular-nums whitespace-nowrap">
+                              {getHistoryDate(l.title)}
+                            </span>
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>

@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "../journeyData";
 import { MathText } from "@/lib/mathFormat";
+import LessonTimeline from "@/components/courses/lessonViewer/LessonTimeline";
 
 interface Props {
   lesson: Lesson;
@@ -33,6 +34,8 @@ export default function LessonTheoryPhase({ lesson, theoryIdx, setTheoryIdx, onG
           </ul>
         </div>
       )}
+
+      {isFirst && <LessonTimeline events={lesson.timeline ?? []} accent={accent} />}
 
       <div className="flex items-center gap-2 mb-3">
         <div

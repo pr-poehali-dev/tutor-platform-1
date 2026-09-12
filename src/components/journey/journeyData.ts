@@ -163,6 +163,13 @@ export interface LessonExample {
   note: string;
 }
 
+/** Событие ленты времени: по истории урок обязан показывать, КОГДА это было. */
+export interface TimelineEvent {
+  date: string;
+  event: string;
+  meaning?: string;
+}
+
 export interface Lesson {
   title: string;
   subtitle: string;
@@ -173,6 +180,8 @@ export interface Lesson {
   common_mistakes: string[];
   summary: string;
   tasks: Task[];
+  /** Хронология ключевых событий урока (история). */
+  timeline?: TimelineEvent[];
   _cached?: boolean;
 }
 

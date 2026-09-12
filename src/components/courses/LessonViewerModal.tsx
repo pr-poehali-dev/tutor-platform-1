@@ -185,7 +185,11 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
     if (phase === "theory") {
       const block = lesson.theory_blocks?.[theoryIdx];
       if (!block) return "";
-      return `${block.heading}. ${block.content}`;
+      // На первом экране сначала проговариваем хронологию — по истории даты важны не меньше текста.
+      const timeline = theoryIdx === 0 && lesson.timeline?.length
+        ? "Хронология событий. " + lesson.timeline.map((e) => `${e.date} — ${e.event}.`).join(" ") + " "
+        : "";
+      return `${timeline}${block.heading}. ${block.content}`;
     }
     if (phase === "examples") {
       const ex = lesson.examples?.[exampleIdx];

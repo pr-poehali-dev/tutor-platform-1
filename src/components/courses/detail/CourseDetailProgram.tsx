@@ -6,6 +6,7 @@ import { RealCurriculum } from "@/hooks/useCourseCurriculum";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
+import { getHistoryDate } from "@/components/courses/historyDates";
 
 interface Props {
   course: Course;
@@ -40,6 +41,9 @@ export default function CourseDetailProgram({
   const navigate = useNavigate();
   const { isAuthenticated, openLogin } = useAuth();
   const { canAccessCourse, hasSubscription } = useAccess();
+  // В истории название урока — это событие, и без года оно повисает в воздухе.
+  // Для остальных предметов дат нет, поэтому и бейдж не показываем.
+  const isHistory = course.subject === "history";
 
   return (
     <div className="animate-fade-in">
@@ -116,6 +120,11 @@ export default function CourseDetailProgram({
                 <div className="flex-1 min-w-0">
                   <p className="font-montserrat font-bold text-white text-sm">{m.title}</p>
                   <div className="flex items-center gap-2 mt-1">
+                    {isHistory && getHistoryDate(m.title) && (
+                      <span className="text-amber-200/90 bg-amber-500/12 border border-amber-500/25 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums">
+                        {getHistoryDate(m.title)}
+                      </span>
+                    )}
                     <span className="text-white/40 text-xs">{m.lessons.length} уроков</span>
                     {modPercent > 0 && (
                       <>
@@ -170,6 +179,11 @@ export default function CourseDetailProgram({
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm transition-colors ${done ? "text-white/70" : isFree ? "text-white/85 group-hover:text-white" : "text-white/55"}`}>{l.title}</p>
                           <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            {isHistory && getHistoryDate(l.title) && (
+                              <span className="text-amber-200/90 bg-amber-500/12 border border-amber-500/25 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums flex items-center gap-1">
+                                <Icon name="CalendarDays" size={10} /> {getHistoryDate(l.title)}
+                              </span>
+                            )}
                             <span className="text-white/35 text-xs flex items-center gap-1">
                               <Icon name="Clock" size={11} /> {l.duration}
                             </span>
