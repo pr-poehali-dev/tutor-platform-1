@@ -27,6 +27,7 @@ const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
+const SchoolOffer = lazy(() => import("./pages/legal/SchoolOffer"));
 const Courses = lazy(() => import("./pages/Courses"));
 const CoursePublic = lazy(() => import("./pages/CoursePublic"));
 const AdultCourses = lazy(() => import("./pages/AdultCourses"));
@@ -110,6 +111,7 @@ const EduInstitutions = lazy(() => import("./pages/admin/EduInstitutions"));
 const EduOutreach = lazy(() => import("./pages/admin/EduOutreach"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
+const MetrikaGoals = lazy(() => import("./pages/admin/MetrikaGoals"));
 const AppDownload = lazy(() => import("./pages/AppDownload"));
 const Psychology = lazy(() => import("./pages/Psychology"));
 const RemoteProfessions = lazy(() => import("./pages/RemoteProfessions"));
@@ -183,6 +185,7 @@ const App = () => (
                     <Route path="/legal/offer" element={<Offer />} />
                     <Route path="/legal/privacy" element={<Privacy />} />
                     <Route path="/legal/terms" element={<Terms />} />
+                    <Route path="/legal/school-offer" element={<SchoolOffer />} />
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/kursy-dlya-vzroslyh" element={<AdultCourses />} />
                     <Route path="/kurs/:slug" element={<CoursePublic />} />
@@ -309,6 +312,7 @@ const App = () => (
                     <Route path="/admin/edu-outreach" element={<EduOutreach />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />
+                    <Route path="/admin/metrika-goals" element={<MetrikaGoals />} />
                     <Route path="/app" element={<AppDownload />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
