@@ -63,7 +63,7 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
   const menu = (
     <div
       id="mobile-nav"
-      className="md:hidden fixed inset-x-0 top-0 z-[200] h-[100dvh] max-h-[100dvh] bg-[#0d0a1f]/98 backdrop-blur-xl flex flex-col"
+      className="md:hidden fixed inset-x-0 top-0 z-[200] h-[100dvh] max-h-[100dvh] bg-[#0d0a1f] flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-label="Меню разделов"
@@ -85,7 +85,7 @@ export default function MobileMenu({ open, onClose, onSectionClick }: MobileMenu
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] px-4 py-4 flex flex-col gap-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] px-4 py-4 flex flex-col gap-2 [&>*]:flex-shrink-0">
         {/* Главные разделы */}
         <div className="grid grid-cols-3 gap-2">
           {NAV_LINKS.map((link) => (
