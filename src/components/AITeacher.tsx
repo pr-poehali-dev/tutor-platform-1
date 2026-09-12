@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { stripMarkdown } from "@/components/ui/rich-text";
 import TeacherPicker from "./teacher/TeacherPicker";
 import LessonRoom from "./teacher/LessonRoom";
 import SuperCoursePicker from "./teacher/SuperCoursePicker";
@@ -65,7 +66,8 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
       const res = await fetch(TTS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, teacher_id: teacherId, speed: settings.speed }),
+        // Разметку в озвучку не пускаем: иначе диктор читает «звёздочка звёздочка».
+        body: JSON.stringify({ text: stripMarkdown(text), teacher_id: teacherId, speed: settings.speed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

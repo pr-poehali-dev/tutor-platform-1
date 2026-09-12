@@ -1,5 +1,16 @@
 import { Fragment, ReactNode } from "react";
 
+/** Убирает markdown-разметку из текста, который уходит в озвучку.
+ *  Без этого диктор проговаривает «звёздочка звёздочка» и «решётка» вслух. */
+export function stripMarkdown(text: string): string {
+  return (text || "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*•]\s+/gm, "")
+    .replace(/^\s*(\d{1,2})[.)]\s+/gm, "$1. ")
+    .trim();
+}
+
 /** Разбирает **жирный** внутри строки. Ничего другого не трогаем — ответ ИИ
  *  не должен уметь вставлять произвольную разметку на страницу. */
 function inline(text: string): ReactNode[] {

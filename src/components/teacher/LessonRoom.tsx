@@ -1,5 +1,6 @@
 import { RefObject, useState } from "react";
 import Icon from "@/components/ui/icon";
+import RichText from "@/components/ui/rich-text";
 import AvatarDisplay from "./AvatarDisplay";
 import MicPermissionHelp from "./MicPermissionHelp";
 import { Teacher, LessonMessage, Emotion } from "./teachersData";
@@ -307,13 +308,13 @@ export default function LessonRoom({
               )}
               <div className={`max-w-[78%] flex flex-col gap-1.5 ${msg.from === "student" ? "items-end" : "items-start"}`}>
                 <div
-                  className={`px-4 py-2.5 rounded-2xl ${msgTextSize} leading-relaxed whitespace-pre-wrap ${
+                  className={`px-4 py-2.5 rounded-2xl ${msgTextSize} leading-relaxed ${
                     msg.from === "student"
-                      ? "bg-purple-500/20 border border-purple-500/30 text-white rounded-tr-sm"
+                      ? "bg-purple-500/20 border border-purple-500/30 text-white rounded-tr-sm whitespace-pre-wrap"
                       : "bg-white/6 border border-white/8 text-white/90 rounded-tl-sm"
                   }`}
                 >
-                  {msg.text}
+                  {msg.from === "student" ? msg.text : <RichText text={msg.text} />}
                 </div>
                 {msg.from === "teacher" && (
                   <button

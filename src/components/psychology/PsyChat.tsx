@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import RichText from "@/components/ui/rich-text";
+import RichText, { stripMarkdown } from "@/components/ui/rich-text";
 import { useVoiceInput } from "@/components/teacher/useVoiceInput";
 import { AI_CHAT_URL, TTS_URL, PsySection } from "./psychologyData";
 
@@ -49,7 +49,8 @@ export default function PsyChat({ section }: Props) {
         const res = await fetch(TTS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, teacher_id: section.teacherId }),
+          // Без очистки диктор проговаривает разметку вслух («звёздочка звёздочка»).
+          body: JSON.stringify({ text: stripMarkdown(text), teacher_id: section.teacherId }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.audio_base64) return;
