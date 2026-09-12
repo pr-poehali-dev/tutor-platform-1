@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import RichText from "@/components/ui/rich-text";
 import func2url from "../../../backend/func2url.json";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 
@@ -87,10 +88,10 @@ export default function HeroTryTutor() {
               className={
                 m.role === "user"
                   ? "ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-purple-500/25 border border-purple-400/30 px-3.5 py-2 text-sm text-white"
-                  : "mr-auto max-w-[92%] rounded-2xl rounded-bl-md bg-white/8 border border-white/12 px-3.5 py-2 text-sm text-white/90 whitespace-pre-wrap leading-relaxed"
+                  : "mr-auto max-w-[92%] rounded-2xl rounded-bl-md bg-white/8 border border-white/12 px-3.5 py-2 text-sm text-white/90 leading-relaxed"
               }
             >
-              {m.text}
+              {m.role === "user" ? m.text : <RichText text={m.text} />}
             </div>
           ))}
           {loading && (

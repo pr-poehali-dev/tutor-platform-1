@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import RichText from "@/components/ui/rich-text";
 import func2url from "../../../backend/func2url.json";
 
 const AI_URL = (func2url as Record<string, string>)["ai-chat"];
@@ -66,7 +67,9 @@ export default function AiAnswer({ query, hasResults }: Props) {
     setLoading(true);
 
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 25000);
+    // Развёрнутый разбор пишется дольше короткой справки — даём запас по времени,
+    // иначе ответ обрывается ожиданием ровно на глубоких запросах.
+    const timer = setTimeout(() => ctrl.abort(), 40000);
 
     fetch(AI_URL, {
       method: "POST",
@@ -75,13 +78,21 @@ export default function AiAnswer({ query, hasResults }: Props) {
       body: JSON.stringify({
         teacher_id: "alex",
         history: [],
+        // Текстовый экспертный режим: человек читает ответ глазами и ждёт разбора,
+        // а не справки в одну строку, которую он и так услышит от голосового помощника.
+        voice_mode: false,
+        expert_mode: true,
         message:
           `Пользователь ищет на образовательном сайте УЧИСЬПРО: «${q}».\n\n` +
-          `Ответь на его запрос по существу: коротко, дружелюбно, 2-4 предложения. ` +
-          `Если это детская сказка — перескажи сюжет в двух предложениях. ` +
-          `Если вопрос про учёбу или воспитание — дай конкретный совет. ` +
-          `Не выдумывай факты и не обещай того, чего нет на сайте. ` +
-          `Без приветствий, без markdown, без списков — только связный текст.`,
+          `Дай развёрнутый, экспертный ответ — глубже и полезнее, чем короткая справка ` +
+          `голосового помощника. Сначала ответь по сути, затем объясни причину или механизм, ` +
+          `приведи конкретный пример с цифрами и закончи практическим советом, что делать дальше. ` +
+          `Добавь важный нюанс или типичную ошибку по теме, о которых обычно не знают.\n\n` +
+          `Если это сказка или книга — перескажи сюжет, назови автора, главную мысль ` +
+          `и с какого возраста читать. Если вопрос про учёбу или воспитание — дай конкретный ` +
+          `план действий с понятными шагами.\n\n` +
+          `Не выдумывай факты и не обещай того, чего нет на сайте. Без приветствий. ` +
+          `Пиши абзацами по 2-4 предложения, можно короткий список, если он по делу.`,
       }),
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad"))))
@@ -118,10 +129,10 @@ export default function AiAnswer({ query, hasResults }: Props) {
         </div>
         <div className="min-w-0">
           <p className="font-montserrat font-black text-white text-sm leading-none">
-            Ответ ИИ-помощника
+            Разбор ИИ-эксперта
           </p>
           <p className="text-white/45 text-[11px] mt-1">
-            Сгенерировано нейросетью — проверяйте важные факты
+            Подробный ответ с примерами — сгенерирован нейросетью, важные факты проверяйте
           </p>
         </div>
       </div>
@@ -139,9 +150,7 @@ export default function AiAnswer({ query, hasResults }: Props) {
       )}
 
       {!loading && answer && (
-        <p className="text-white/85 text-[15px] leading-relaxed whitespace-pre-line">
-          {answer}
-        </p>
+        <RichText text={answer} className="text-white/85 text-[15px] leading-relaxed" />
       )}
 
       {!loading && answer && (

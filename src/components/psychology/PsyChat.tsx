@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import RichText from "@/components/ui/rich-text";
 import { useVoiceInput } from "@/components/teacher/useVoiceInput";
 import { AI_CHAT_URL, TTS_URL, PsySection } from "./psychologyData";
 
@@ -168,13 +169,13 @@ export default function PsyChat({ section }: Props) {
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                 m.from === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  ? "bg-primary text-primary-foreground rounded-br-md whitespace-pre-wrap"
                   : "bg-white/[0.06] text-white/90 rounded-bl-md"
               }`}
             >
-              {m.text}
+              {m.from === "user" ? m.text : <RichText text={m.text} />}
             </div>
           </div>
         ))}
