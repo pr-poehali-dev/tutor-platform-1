@@ -44,6 +44,8 @@ export default function SiteFooter() {
               <li><Link to="/business-2026" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">📊 Бизнес 2026: где открываться</Link></li>
               <li><Link to="/for-managers" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">💼 Руководителю: разборы и курсы</Link></li>
               <li><Link to="/feed/partnyorskie-programmy-s-bankom-tochka" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрство с Точка Банк</Link></li>
+              <li><Link to="/repetitoram" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🧑‍🏫 Репетиторам: свой курс за минуту</Link></li>
+              <li><Link to="/school-builder" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🪄 ИИ-конструктор курса бесплатно</Link></li>
               <li><Link to="/for-business" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🚀 Для бизнеса: своя онлайн-школа</Link></li>
               <li><Link to="/partners" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрам: сотрудничество для школ</Link></li>
               <li><Link to="/corporate" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🏭 Корпоративное обучение для компаний</Link></li>
