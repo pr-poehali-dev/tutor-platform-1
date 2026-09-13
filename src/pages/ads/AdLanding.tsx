@@ -24,6 +24,19 @@ export default function AdLanding() {
     trackAdGoal(`ad_cta_click`, { campaign: campaign.slug, action });
   };
 
+  // Школьным кампаниям подходит каталог курсов и «первый урок бесплатно»,
+  // но не всем: репетитору нужен конструктор, а обещание бесплатного урока
+  // для него просто неправда. Поэтому кампания может задать свои кнопки.
+  const cta = campaign.cta ?? {
+    primaryLabel: "Выбрать курс — первый урок бесплатно",
+    primaryPath: "/courses",
+    secondaryLabel: "Посмотреть каталог",
+    secondaryPath: campaign.quickLinks[0]?.path || "/",
+    finalNote:
+      "Первый урок бесплатно. Без привязки карты. Подписку можно отменить в любой момент.",
+    badge: "Первый урок бесплатно",
+  };
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
@@ -55,7 +68,7 @@ export default function AdLanding() {
           </Link>
           <div className="text-xs text-emerald-300 hidden sm:inline-flex items-center gap-1">
             <Icon name="ShieldCheck" size={12} />
-            Первый урок бесплатно
+            {cta.badge}
           </div>
         </div>
       </div>
@@ -77,21 +90,21 @@ export default function AdLanding() {
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <Link
-                to="/courses"
-                onClick={() => handleCtaClick("courses")}
+                to={cta.primaryPath}
+                onClick={() => handleCtaClick("primary")}
                 className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r ${campaign.color} text-white text-base font-bold px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl`}
               >
                 <Icon name="Rocket" size={16} />
-                Выбрать курс — первый урок бесплатно
+                {cta.primaryLabel}
                 <Icon name="ArrowRight" size={16} />
               </Link>
               <Link
-                to={campaign.quickLinks[0]?.path || "/"}
-                onClick={() => handleCtaClick("catalog")}
+                to={cta.secondaryPath}
+                onClick={() => handleCtaClick("secondary")}
                 className="inline-flex items-center justify-center gap-2 bg-white/8 hover:bg-white/12 border border-white/15 text-white text-base font-semibold px-6 py-4 rounded-2xl transition-colors"
               >
                 <Icon name="BookOpen" size={16} />
-                Посмотреть каталог
+                {cta.secondaryLabel}
               </Link>
             </div>
 
@@ -183,15 +196,15 @@ export default function AdLanding() {
               Начни прямо сейчас
             </h2>
             <p className="text-white/85 text-base md:text-lg mb-6 max-w-xl mx-auto">
-              Первый урок бесплатно. Без привязки карты. Подписку можно отменить в любой момент.
+              {cta.finalNote}
             </p>
             <Link
-              to="/courses"
+              to={cta.primaryPath}
               onClick={() => handleCtaClick("final_cta")}
               className="inline-flex items-center gap-2 bg-white text-purple-700 text-base font-black px-7 py-4 rounded-2xl hover:scale-[1.02] transition-transform shadow-2xl"
             >
               <Icon name="Rocket" size={16} />
-              Попробовать бесплатно
+              {cta.primaryLabel}
               <Icon name="ArrowRight" size={16} />
             </Link>
           </div>

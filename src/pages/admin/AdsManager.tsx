@@ -219,6 +219,43 @@ export default function AdsManager() {
           </ol>
         </div>
 
+        {/* Стратегия: на что оптимизировать. Без этого Директ крутит показы
+            «в никуда» и сливает бюджет на клики, которые ничем не кончаются. */}
+        <div className="bg-violet-500/8 border border-violet-500/30 rounded-2xl p-5 mb-8">
+          <p className="font-montserrat font-black text-white text-base mb-3 flex items-center gap-2">
+            <Icon name="Target" size={16} className="text-violet-300" />
+            На какую цель оптимизировать
+          </p>
+          <p className="text-white/70 text-sm mb-3">
+            Стратегия «Максимум конверсий» учится только на целях. Пока конверсий
+            меньше 10 в неделю, алгоритму не хватает данных — начинайте с ручной
+            ставки или с цели верхнего уровня, затем переключайтесь на нижнюю.
+          </p>
+          <ul className="space-y-2 text-white/75 text-sm">
+            <li>
+              <b className="text-violet-300">Репетиторам:</b> старт —{" "}
+              <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">builder_course_ready</span>{" "}
+              (человек увидел готовый курс), затем —{" "}
+              <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">tutor_lead_sent</span>{" "}
+              (оставил заявку, главная конверсия).
+            </li>
+            <li>
+              <b className="text-violet-300">Школьные кампании:</b>{" "}
+              <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">course_buy_click</span>,
+              затем{" "}
+              <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">payment_success</span>.
+            </li>
+            <li>
+              <b className="text-violet-300">Важно:</b> цели заводятся в Метрике
+              вручную — список готов в{" "}
+              <Link to="/admin/metrika-goals" className="text-cyan-300 underline underline-offset-2">
+                разделе целей
+              </Link>
+              . Без них оптимизация не работает.
+            </li>
+          </ul>
+        </div>
+
         {/* Табы */}
         <div className="flex flex-wrap gap-2 mb-6">
           {AD_CAMPAIGNS.map((c) => (

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { submitPartnerLead } from "@/components/contact/api";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 /**
  * Заявка репетитора на доступ к своей школе.
@@ -39,8 +40,13 @@ export default function TutorsLeadForm() {
       message: `Заявка репетитора на доступ к своей школе. Предмет: ${subject.trim() || "не указан"}`,
     });
     setSending(false);
-    if (res.ok) setDone(true);
-    else setError(res.message || "Не удалось отправить. Попробуйте ещё раз");
+    if (res.ok) {
+      setDone(true);
+      // Главная конверсия воронки репетиторов — на эту цель обучается Директ.
+      trackGoal("tutor_lead_sent", { subject: subject.trim().slice(0, 60) });
+    } else {
+      setError(res.message || "Не удалось отправить. Попробуйте ещё раз");
+    }
   };
 
   if (done) {

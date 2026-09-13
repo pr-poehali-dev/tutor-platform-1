@@ -147,6 +147,33 @@
       "value": 15,
       "category": "Вовлечённость",
       "description": "Сессия длится более 3 минут — заинтересованный посетитель"
+    },
+    {
+      "name": "Репетитор: запустил конструктор",
+      "id": "builder_start",
+      "type": "JS event",
+      "condition": "reachGoal('builder_start')",
+      "value": 30,
+      "category": "Репетиторы",
+      "description": "Нажал «Собрать курс» в ИИ-конструкторе — первый шаг воронки репетитора"
+    },
+    {
+      "name": "Репетитор: курс собран",
+      "id": "builder_course_ready",
+      "type": "JS event",
+      "condition": "reachGoal('builder_course_ready')",
+      "value": 120,
+      "category": "Репетиторы",
+      "description": "ИИ выдал готовый курс. Ключевая микроконверсия: человек увидел ценность продукта"
+    },
+    {
+      "name": "Репетитор: оставил заявку",
+      "id": "tutor_lead_sent",
+      "type": "JS event",
+      "condition": "reachGoal('tutor_lead_sent')",
+      "value": 1500,
+      "category": "Репетиторы",
+      "description": "Отправил заявку на доступ к своей школе. Главная конверсия — на неё оптимизируем Директ"
     }
   ],
   "ecommerce": {
@@ -156,7 +183,12 @@
       {
         "event": "purchase",
         "description": "Успешная оплата курса или подписки",
-        "fields": ["transaction_id", "value", "currency", "items"]
+        "fields": [
+          "transaction_id",
+          "value",
+          "currency",
+          "items"
+        ]
       },
       {
         "event": "begin_checkout",

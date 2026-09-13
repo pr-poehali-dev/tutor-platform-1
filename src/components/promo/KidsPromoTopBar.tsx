@@ -36,7 +36,13 @@ export default function KidsPromoTopBar() {
   // На странице оплаты человек уже принял решение — чужая акция с таймером
   // сбивает его и уводит с полпути. Ничего не должно отвлекать от платежа.
   const isCheckout = /^\/(course-checkout|checkout|pay)/.test(pathname);
-  if (!active || hidden || isCheckout) return null;
+  // На рекламных лендингах и в разделах для репетиторов детская акция
+  // не к месту: за этот клик заплачено по своей цели, а баннер уводит
+  // человека в совершенно другой продукт.
+  const isWrongAudience = /^\/(ads|repetitoram|school-builder|school|for-schools|for-business)/.test(
+    pathname,
+  );
+  if (!active || hidden || isCheckout || isWrongAudience) return null;
 
   const tl = kidsPromoTimeLeft();
   if (tl.expired) return null;

@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { generateCourse, type GenerateResult } from "@/components/builder/api";
 import CourseResult from "@/components/builder/CourseResult";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 
 const SITE_URL = "https://учисьпро.рф";
 
@@ -56,6 +57,9 @@ export default function SchoolBuilder() {
     setError(null);
     setLoading(true);
     setResult(null);
+    // Цели для Яндекс.Директа: без них кампания для репетиторов не сможет
+    // обучаться — система не знает, какой клик привёл к результату.
+    trackGoal("builder_start", { topic: topic.trim().slice(0, 80) });
     const res = await generateCourse({
       topic: topic.trim(),
       audience: audience.trim() || undefined,
@@ -64,6 +68,7 @@ export default function SchoolBuilder() {
     setLoading(false);
     if (!res.ok || !res.data) return setError(res.error || "Не удалось собрать курс");
     setResult(res.data);
+    trackGoal("builder_course_ready", { lessons });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
