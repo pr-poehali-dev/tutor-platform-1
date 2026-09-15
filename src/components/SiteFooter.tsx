@@ -34,6 +34,10 @@ export default function SiteFooter() {
           <nav aria-label="Полезные ссылки">
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
             <ul className="space-y-2 text-sm">
+              {/* Ссылка на хаб репетитора обязана быть в подвале: это самый
+                  частотный коммерческий кластер запросов, а перелинковки
+                  с остальных страниц сайта на него не было вовсе. */}
+              <li><Link to="/tutor" className="text-sky-200 hover:text-sky-100 transition-colors font-bold">🧑‍🎓 Онлайн-репетитор для школьников 24/7</Link></li>
               <li><Link to="/mini-course" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">🎁 Бесплатные мини-курсы за вечер</Link></li>
               <li><Link to="/kursy-dlya-vzroslyh" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Курсы для взрослых: 35 программ</Link></li>
               <li><Link to="/app" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">📱 Скачать приложение</Link></li>

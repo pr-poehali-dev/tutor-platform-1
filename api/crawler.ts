@@ -17,6 +17,8 @@ import { LANDINGS_SEO } from "./_landings";
 import { SUBJECTS_SEO } from "../src/components/courses/subjectsSeo";
 import { KIDS_SEO } from "./_kids";
 import { COURSES, GRADES, getCoursePrice, getCoursePriceLabel } from "../src/components/courses/coursesData";
+import { GRADE_LANDINGS } from "../src/components/tutor/gradeLandingData";
+import { SUBJECT_TUTORS } from "../src/components/tutor/subjectTutorData";
 import { courseUrl, findCourseBySlug } from "../src/components/courses/courseSlug";
 import { getCourseSeoCopy } from "../src/components/courses/seo";
 import { getCourseFaq, getWhatsIncluded } from "../src/components/courses/courseValueData";
@@ -724,6 +726,340 @@ ${related ? `<h2>Похожие курсы</h2>\n<ul>${related}</ul>` : ""}`;
   );
 }
 
+/** Общий «подвал» страниц репетитора: перелинковка по классам и предметам. */
+function tutorCrossLinks(exclude?: string): string {
+  const grades = GRADE_LANDINGS.filter((g) => `/repetitor/${g.grade}-klass` !== exclude)
+    .map(
+      (g) =>
+        `<li><a href="${SITE}/repetitor/${g.grade}-klass">ИИ-репетитор для ${g.grade} класса</a></li>`,
+    )
+    .join("\n");
+
+  const subjects = SUBJECT_TUTORS.filter(
+    (s) => `/repetitor-online/${s.slug}` !== exclude,
+  )
+    .map(
+      (s) =>
+        `<li><a href="${SITE}/repetitor-online/${s.slug}">Онлайн-репетитор ${esc(s.namePrep)}</a></li>`,
+    )
+    .join("\n");
+
+  return `
+<h2>Репетитор по классам</h2>
+<ul>${grades}</ul>
+<h2>Репетитор по предметам</h2>
+<ul>${subjects}
+<li><a href="${SITE}/tutor">Все возможности репетитора</a></li>
+</ul>`;
+}
+
+/** Общая для страниц репетитора разметка организации-исполнителя. */
+const TUTOR_PROVIDER = {
+  "@type": "EducationalOrganization",
+  "@id": `${SITE}/#organization`,
+  name: "УЧИСЬПРО",
+  url: SITE,
+};
+
+/** Страница «ИИ-репетитор для N класса». */
+function renderGradeTutor(slug: string): Response | null {
+  const grade = Number(slug.replace(/\D/g, ""));
+  const g = GRADE_LANDINGS.find((x) => x.grade === grade);
+  if (!g) return null;
+
+  const canonical = `${SITE}/repetitor/${g.grade}-klass`;
+
+  const pains = g.pains
+    .map((p) => `<h3>${esc(p.title)}</h3>\n<p>${esc(p.text)}</p>`)
+    .join("\n");
+
+  const faq = g.faq
+    .map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`)
+    .join("\n");
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: g.h1,
+      description: g.description,
+      url: canonical,
+      areaServed: "RU",
+      serviceType: "Онлайн-репетиторство с искусственным интеллектом",
+      provider: TUTOR_PROVIDER,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "RUB",
+        description: "Первое занятие бесплатно, без привязки карты",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: g.faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE}/` },
+        { "@type": "ListItem", position: 2, name: "Репетитор", item: `${SITE}/tutor` },
+        { "@type": "ListItem", position: 3, name: g.h1, item: canonical },
+      ],
+    },
+  ];
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › <a href="${SITE}/tutor">Репетитор</a> › ${esc(g.h1)}
+</nav>
+<h1>${esc(g.h1)}</h1>
+<p>${esc(g.intro)}</p>
+<h2>Предметы ${g.grade} класса</h2>
+<ul>${g.subjects.map((s) => `<li>${esc(s)}</li>`).join("\n")}</ul>
+<h2>С чем помогаем в ${g.grade} классе</h2>
+${pains}
+<h2>Сколько стоит</h2>
+<p>Первое занятие бесплатное и не требует привязки карты. Дальше — подписка,
+которая обходится дешевле одного занятия с частным репетитором в месяц,
+а заниматься можно сколько угодно.</p>
+<p><a href="${SITE}/tutor">Начать бесплатное занятие</a></p>
+<h2>Частые вопросы</h2>
+${faq}
+${tutorCrossLinks(`/repetitor/${g.grade}-klass`)}`;
+
+  return new Response(
+    page({ title: g.title, description: g.description, canonical, body, jsonLd }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
+/** Страница «Онлайн-репетитор по предмету». */
+function renderSubjectTutor(slug: string): Response | null {
+  const s = SUBJECT_TUTORS.find((x) => x.slug === slug);
+  if (!s) return null;
+
+  const canonical = `${SITE}/repetitor-online/${s.slug}`;
+
+  const pains = s.pains
+    .map((p) => `<h3>${esc(p.title)}</h3>\n<p>${esc(p.text)}</p>`)
+    .join("\n");
+
+  const topics = s.topics
+    .map(
+      (t) =>
+        `<h3>${esc(t.level)}</h3>\n<ul>${t.items.map((i) => `<li>${esc(i)}</li>`).join("\n")}</ul>`,
+    )
+    .join("\n");
+
+  const faq = s.faq
+    .map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`)
+    .join("\n");
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: s.h1,
+      description: s.description,
+      url: canonical,
+      areaServed: "RU",
+      serviceType: `Онлайн-репетитор ${s.namePrep} с искусственным интеллектом`,
+      provider: TUTOR_PROVIDER,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "RUB",
+        description: "Первое занятие бесплатно, без привязки карты",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: s.faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE}/` },
+        { "@type": "ListItem", position: 2, name: "Репетитор", item: `${SITE}/tutor` },
+        { "@type": "ListItem", position: 3, name: s.h1, item: canonical },
+      ],
+    },
+  ];
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › <a href="${SITE}/tutor">Репетитор</a> › ${esc(s.name)}
+</nav>
+<h1>${esc(s.h1)}</h1>
+<p>${esc(s.intro)}</p>
+<h2>С чем помогаем</h2>
+${pains}
+<h2>Что разбираем ${esc(s.namePrep)}</h2>
+${topics}
+<h2>Как проходит занятие</h2>
+<p>Ученик открывает сайт в браузере и начинает разговор голосом или текстом —
+без записи и расписания. Репетитор ведёт к решению по шагам, а домашнее задание
+можно сфотографировать: он покажет, где именно ошибка и почему.</p>
+<p><a href="${SITE}/tutor">Начать бесплатное занятие</a></p>
+<h2>Частые вопросы</h2>
+${faq}
+${tutorCrossLinks(`/repetitor-online/${s.slug}`)}`;
+
+  return new Response(
+    page({ title: s.title, description: s.description, canonical, body, jsonLd }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
+/** Главная страница репетитора — хаб всего кластера. */
+function renderTutorHub(): Response {
+  const canonical = `${SITE}/tutor`;
+
+  const faq = [
+    {
+      q: "Что такое онлайн-школа репетиторов УЧИСЬПРО?",
+      a: "Это платформа, где ИИ-репетитор занимается с учеником по всем школьным предметам с 1 по 11 класс. Он доступен круглосуточно без записи и расписания, объясняет голосом или текстом и проверяет домашнее задание по фотографии.",
+    },
+    {
+      q: "Сколько стоит онлайн-репетитор?",
+      a: "Первое занятие бесплатное и не требует привязки карты. Дальше — подписка, которая за месяц обходится дешевле одного занятия с частным преподавателем, при этом количество занятий не ограничено.",
+    },
+    {
+      q: "По каким предметам есть репетитор?",
+      a: "Математика и алгебра с геометрией, физика, химия, биология, русский язык, литература, английский, информатика, история и обществознание. Программа подстраивается под класс ученика.",
+    },
+    {
+      q: "Чем ИИ-репетитор отличается от живого преподавателя?",
+      a: "Он работает круглосуточно и без записи: сел за уроки в одиннадцать вечера — занимаешься сразу. Объясняет одну тему столько раз, сколько нужно, и никогда не торопит. Живой репетитор сильнее в мотивации, но стоит в разы дороже и привязан к расписанию.",
+    },
+    {
+      q: "Ребёнок будет списывать готовые ответы?",
+      a: "Нет. Репетитор ведёт к решению по шагам и задаёт наводящие вопросы вместо готового ответа. При проверке домашки по фото он показывает, где именно ошибка и почему она возникла.",
+    },
+    {
+      q: "Нужно ли что-то устанавливать?",
+      a: "Нет, всё работает в браузере на компьютере, планшете или телефоне. Достаточно открыть сайт и войти.",
+    },
+  ];
+
+  const jsonLd: Record<string, unknown>[] = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: "Онлайн-школа репетиторов УЧИСЬПРО",
+      description:
+        "Онлайн-репетитор с ИИ по всем школьным предметам для 1–11 классов: занятия голосом круглосуточно, проверка домашки по фото, подготовка к ЕГЭ и ОГЭ.",
+      url: canonical,
+      areaServed: "RU",
+      serviceType: "Онлайн-репетиторство с искусственным интеллектом",
+      provider: TUTOR_PROVIDER,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "RUB",
+        description: "Первое занятие бесплатно, без привязки карты",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE}/` },
+        { "@type": "ListItem", position: 2, name: "Репетитор", item: canonical },
+      ],
+    },
+  ];
+
+  const body = `
+<nav aria-label="Хлебные крошки">
+<a href="${SITE}/">Главная</a> › Репетитор
+</nav>
+<h1>Онлайн-репетитор для школьников — занятия 24/7</h1>
+<p>Онлайн-школа репетиторов УЧИСЬПРО: личный преподаватель с искусственным интеллектом
+по всем школьным предметам с 1 по 11 класс. Занимается круглосуточно, без записи
+и расписания, объясняет голосом и проверяет домашнее задание по фотографии.
+Первое занятие бесплатное, карта не нужна.</p>
+<h2>Как это работает</h2>
+<h3>Диагностика вместо анкеты</h3>
+<p>Первое занятие показывает реальный уровень ученика и находит пробелы,
+которые тянутся из прошлых классов. По итогам собирается персональный план.</p>
+<h3>Занятия голосом</h3>
+<p>Ученик разговаривает с репетитором вслух, как с живым преподавателем.
+Репетитор слышит ответ, поправляет и объясняет заново столько раз, сколько нужно.</p>
+<h3>Проверка домашки по фото</h3>
+<p>Сфотографировал задание — получил разбор по шагам с указанием, где именно ошибка.
+Готового ответа репетитор не выдаёт: он ведёт к решению.</p>
+<h3>Подготовка к ЕГЭ и ОГЭ</h3>
+<p>Разбор всех типов заданий, развёрнутые ответы второй части по официальным
+критериям и тренировка на банке экзаменационных задач.</p>
+<h2>Сколько стоит онлайн-репетитор</h2>
+<p>Первое занятие бесплатное и не требует привязки карты. Дальше — подписка:
+за месяц она обходится дешевле одного занятия с частным преподавателем,
+а количество занятий не ограничено. Репетитор по подписке доступен всей семье.</p>
+<p><a href="${SITE}/pricing">Тарифы и подписка</a></p>
+<h2>Частые вопросы</h2>
+${faq.map((f) => `<h3>${esc(f.q)}</h3>\n<p>${esc(f.a)}</p>`).join("\n")}
+${tutorCrossLinks("/tutor")}
+<h2>Смотрите также</h2>
+<ul>
+<li><a href="${SITE}/homework">Помощь с домашним заданием</a></li>
+<li><a href="${SITE}/exam-bank">Банк заданий ЕГЭ и ОГЭ</a></li>
+<li><a href="${SITE}/courses">Каталог курсов для школьников</a></li>
+<li><a href="${SITE}/score-calculator">Калькулятор баллов ЕГЭ</a></li>
+</ul>`;
+
+  return new Response(
+    page({
+      title: "Онлайн-репетитор для школьников 24/7 — ИИ-наставник | УЧИСЬПРО",
+      description:
+        "Онлайн-школа репетиторов: ИИ-преподаватель по всем предметам 1–11 класса. Занятия голосом круглосуточно без записи, проверка домашки по фото, подготовка к ЕГЭ и ОГЭ. Первый урок бесплатно.",
+      canonical,
+      body,
+      jsonLd,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      },
+    },
+  );
+}
+
 /** Ключевые посадочные страницы: текст берём из _landings.ts и _kids.ts. */
 function renderLanding(path: string): Response | null {
   const L =
@@ -847,6 +1183,22 @@ export default async function handler(request: Request): Promise<Response> {
       const r = renderCourse(decodeURIComponent(course[1]));
       // Каталог курсов лежит в коде: если курса нет — его нет наверняка.
       return r || notFound(path);
+    }
+
+    // Кластер «репетитор»: хаб, страницы классов и предметов.
+    // Списки лежат в коде, поэтому отсутствие — гарантированно несуществующий адрес.
+    if (/^\/tutor\/?$/.test(path)) {
+      return renderTutorHub();
+    }
+
+    const gradeTutor = path.match(/^\/repetitor\/([^/?#]+)/);
+    if (gradeTutor) {
+      return renderGradeTutor(decodeURIComponent(gradeTutor[1])) || notFound(path);
+    }
+
+    const subjTutor = path.match(/^\/repetitor-online\/([^/?#]+)/);
+    if (subjTutor) {
+      return renderSubjectTutor(decodeURIComponent(subjTutor[1])) || notFound(path);
     }
 
     // Ключевые посадочные страницы (каталог, ЕГЭ, «Малыш», бизнес-разбор)
