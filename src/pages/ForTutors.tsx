@@ -4,6 +4,7 @@ import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import TutorsLeadForm from "@/components/tutors/TutorsLeadForm";
+import FeeCalculator from "@/components/tutors/FeeCalculator";
 import { MINI_COURSES } from "@/components/minicourse/registry";
 
 const SITE_URL = "https://учисьпро.рф";
@@ -307,6 +308,11 @@ export default function ForTutors() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Калькулятор комиссии: цифры убеждают сильнее слов про удобство */}
+        <section className="mb-14">
+          <FeeCalculator feePercent={FEE_PERCENT} />
         </section>
 
         {/* Заявка + конструктор */}
