@@ -263,6 +263,17 @@
       "destination": "/api/crawler?path=/internet-marketing-s-nulya"
     },
     {
+      "source": "/kadrovye-dokumenty-proverka",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/kadrovye-dokumenty-proverka"
+    },
+    {
       "source": "/mini-course",
       "has": [
         {

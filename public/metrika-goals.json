@@ -237,6 +237,33 @@
       "value": 30,
       "category": "Навигация",
       "description": "Переход из статьи ленты на посадочную по нейросетям"
+    },
+    {
+      "name": "Старт бесплатного курса: кадры",
+      "id": "hr_landing_start",
+      "type": "JS event",
+      "condition": "reachGoal('hr_landing_start')",
+      "value": 40,
+      "category": "Воронка кадры",
+      "description": "Клик «Начать бесплатно» на посадочной /kadrovye-dokumenty-proverka"
+    },
+    {
+      "name": "Интерес к полному курсу: кадры",
+      "id": "hr_landing_full_click",
+      "type": "JS event",
+      "condition": "reachGoal('hr_landing_full_click')",
+      "value": 70,
+      "category": "Воронка кадры",
+      "description": "С посадочной перешли к платному курсу по кадровому учёту"
+    },
+    {
+      "name": "Из статьи на курс по кадрам",
+      "id": "article_cta_hr",
+      "type": "JS event",
+      "condition": "reachGoal('article_cta_hr')",
+      "value": 30,
+      "category": "Навигация",
+      "description": "Переход из статьи ленты на посадочную по кадровым документам"
     }
   ],
   "ecommerce": {

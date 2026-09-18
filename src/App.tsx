@@ -96,6 +96,7 @@ const Cabinet = lazy(() => import("./pages/Cabinet"));
 const YandexCallback = lazy(() => import("./pages/YandexCallback"));
 const NeuroIncomeLanding = lazy(() => import("./pages/NeuroIncomeLanding"));
 const MarketingLanding = lazy(() => import("./pages/MarketingLanding"));
+const HrComplianceLanding = lazy(() => import("./pages/HrComplianceLanding"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
@@ -231,6 +232,7 @@ const App = () => (
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
                     <Route path="/zarabotok-na-neirosetyah" element={<NeuroIncomeLanding />} />
                     <Route path="/internet-marketing-s-nulya" element={<MarketingLanding />} />
+                    <Route path="/kadrovye-dokumenty-proverka" element={<HrComplianceLanding />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />

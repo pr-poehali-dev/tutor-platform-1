@@ -50,6 +50,7 @@ const STATIC: Entry[] = [
   // Главные точки входа из поиска — приоритет наравне с каталогом.
   { loc: "/zarabotok-na-neirosetyah", changefreq: "weekly", priority: "1.0" },
   { loc: "/internet-marketing-s-nulya", changefreq: "weekly", priority: "1.0" },
+  { loc: "/kadrovye-dokumenty-proverka", changefreq: "weekly", priority: "1.0" },
   { loc: "/feed", changefreq: "daily", priority: "0.9" },
   { loc: "/business-2026", changefreq: "weekly", priority: "0.9" },
   { loc: "/exam-bank", changefreq: "weekly", priority: "0.9" },
