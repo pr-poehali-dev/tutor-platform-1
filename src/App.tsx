@@ -94,6 +94,8 @@ const ExamBank = lazy(() => import("./pages/ExamBank"));
 const ScoreCalculator = lazy(() => import("./pages/ScoreCalculator"));
 const Cabinet = lazy(() => import("./pages/Cabinet"));
 const YandexCallback = lazy(() => import("./pages/YandexCallback"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Znaika = lazy(() => import("./pages/Znaika"));
@@ -225,6 +227,8 @@ const App = () => (
                     <Route path="/grants" element={<GrantAssistant />} />
                     <Route path="/grants/my" element={<GrantMy />} />
                     <Route path="/auth/yandex/callback" element={<YandexCallback />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/courses/:subject" element={<SubjectLanding />} />
                     <Route path="/admin/yookassa-setup" element={<YookassaSetup />} />
                     <Route path="/admin/ads" element={<AdsManager />} />

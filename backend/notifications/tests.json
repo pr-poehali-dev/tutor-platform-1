@@ -4,6 +4,11 @@
     {"name": "list without auth — 401", "method": "GET", "path": "/?action=list", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "mark_read without auth — 401", "method": "POST", "path": "/?action=mark_read", "body": {"all": true}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
     {"name": "create without admin — 401", "method": "POST", "path": "/?action=create", "body": {"user_id": 1, "title": "Test"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
-    {"name": "unknown — 404", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
+    {"name": "unknown — 404", "method": "GET", "path": "/?action=unknown", "expectedStatus": 404, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "mail_status without admin — 401", "method": "GET", "path": "/?action=mail_status", "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "reset_request without email — 400", "method": "POST", "path": "/?action=reset_request", "body": {}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "reset_confirm with bad token — 400", "method": "POST", "path": "/?action=reset_confirm", "body": {"token": "nope-xyz", "password": "newpass123"}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "abandoned without admin — 401", "method": "POST", "path": "/?action=abandoned", "body": {}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "paid without admin — 401", "method": "POST", "path": "/?action=paid", "body": {"email": "a@b.ru"}, "expectedStatus": 401, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}
   ]
 }

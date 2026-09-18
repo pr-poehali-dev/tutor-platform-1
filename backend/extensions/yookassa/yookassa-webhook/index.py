@@ -10,6 +10,84 @@ from urllib.error import HTTPError
 import psycopg2
 
 
+def send_paid_email(cur, S: str, to_email: str, name: str, amount: float, order_id: int) -> None:
+    """Письмо покупателю: оплата прошла, доступ открыт. Пишем результат в email_log,
+    чтобы потом было видно, дошло письмо или нет."""
+    import smtplib
+    import ssl
+    from email.message import EmailMessage
+    from email.utils import formataddr
+
+    smtp_user = os.environ.get('SMTP_USER', '').strip()
+    smtp_pass = os.environ.get('SMTP_PASSWORD', '').strip()
+    site = 'https://xn--80ahdri7a.xn--p1ai'
+    subject = 'Оплата прошла — доступ открыт'
+
+    if not smtp_user or not smtp_pass:
+        cur.execute(
+            f"INSERT INTO {S}email_log (to_email, kind, subject, status, error, order_id) "
+            "VALUES (%s,'order_paid',%s,'failed','SMTP не настроен',%s)",
+            (to_email[:320], subject, order_id))
+        return
+
+    amt = f'{amount:,.0f}'.replace(',', ' ')
+    who = f'{name}, с' if name else 'С'
+    html = (
+        f'<!DOCTYPE html><html><body style="margin:0;padding:24px 12px;background:#F4F5F7;">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" border="0" '
+        f'style="max-width:560px;background:#fff;border-radius:14px;overflow:hidden;">'
+        f'<tr><td style="background:#1E1B4B;padding:22px 32px;">'
+        f'<span style="font-family:Arial,sans-serif;font-size:19px;font-weight:bold;color:#fff;">'
+        f'УЧИСЬПРО</span></td></tr>'
+        f'<tr><td style="padding:32px;font-family:Arial,sans-serif;font-size:16px;'
+        f'line-height:1.6;color:#1F2937;">'
+        f'<h1 style="margin:0 0 18px;font-size:22px;color:#111827;">Оплата прошла успешно</h1>'
+        f'<p style="margin:0 0 14px;">{who}пасибо за покупку!</p>'
+        f'<table width="100%" cellpadding="0" cellspacing="0" border="0" '
+        f'style="margin:0 0 18px;background:#F9FAFB;border-radius:10px;">'
+        f'<tr><td style="padding:16px;font-size:15px;color:#1F2937;">'
+        f'Заказ №{order_id}<br><span style="color:#6B7280;">Сумма: {amt} ₽</span>'
+        f'</td></tr></table>'
+        f'<p style="margin:0 0 24px;">Доступ уже открыт в личном кабинете.</p>'
+        f'<table cellpadding="0" cellspacing="0" border="0"><tr>'
+        f'<td align="center" bgcolor="#7C3AED" style="border-radius:10px;">'
+        f'<a href="{site}/my-courses" style="display:inline-block;padding:14px 32px;'
+        f'font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#fff;'
+        f'text-decoration:none;">Перейти к обучению</a></td></tr></table>'
+        f'</td></tr>'
+        f'<tr><td style="padding:20px 32px;background:#F9FAFB;font-family:Arial,sans-serif;'
+        f'font-size:13px;color:#6B7280;">УЧИСЬПРО — онлайн-платформа с ИИ-репетитором<br>'
+        f'<a href="{site}" style="color:#7C3AED;text-decoration:none;">учисьпро.рф</a>'
+        f'</td></tr></table></td></tr></table></body></html>'
+    )
+    text = (f'{who}пасибо за покупку!\n\nЗаказ №{order_id}\nСумма: {amt} ₽\n\n'
+            f'Доступ открыт: {site}/my-courses')
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = formataddr(('УЧИСЬПРО', smtp_user))
+    msg['To'] = to_email
+    msg.set_content(text)
+    msg.add_alternative(html, subtype='html')
+
+    try:
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL(os.environ.get('SMTP_HOST', 'smtp.yandex.ru'),
+                              int(os.environ.get('SMTP_PORT', '465')),
+                              context=ctx, timeout=20) as s:
+            s.login(smtp_user, smtp_pass)
+            s.send_message(msg)
+        cur.execute(
+            f"INSERT INTO {S}email_log (to_email, kind, subject, status, order_id) "
+            "VALUES (%s,'order_paid',%s,'sent',%s)", (to_email[:320], subject, order_id))
+    except Exception as e:
+        cur.execute(
+            f"INSERT INTO {S}email_log (to_email, kind, subject, status, error, order_id) "
+            "VALUES (%s,'order_paid',%s,'failed',%s,%s)",
+            (to_email[:320], subject, str(e)[:900], order_id))
+
+
 def notify_max_intensive(name: str, email: str, amount: float) -> None:
     """Уведомление в MAX-канал об оплате доступа к интенсиву. Не критично для платежа."""
     token = os.environ.get('MAX_BOT_TOKEN', '')
@@ -457,6 +535,19 @@ def handler(event, context):
                     WHERE id = %s
                 """, (now, now, order_id))
                 conn.commit()
+                # Чек и ссылка на курс покупателю. Письмо не должно ломать
+                # обработку платежа — любые сбои почты гасим внутри.
+                try:
+                    cur.execute(
+                        f"SELECT user_email, user_name, amount FROM {S}orders WHERE id = %s",
+                        (order_id,))
+                    orow = cur.fetchone()
+                    if orow and orow[0]:
+                        send_paid_email(cur, S, orow[0], orow[1] or '', float(orow[2] or 0),
+                                        order_id)
+                        conn.commit()
+                except Exception:
+                    conn.rollback()
 
         elif payment_status == 'canceled':
             if current_status not in ('paid', 'canceled'):

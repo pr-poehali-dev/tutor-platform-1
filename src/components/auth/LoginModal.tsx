@@ -177,6 +177,17 @@ export default function LoginModal() {
             </div>
           </label>
 
+          {mode === "login" && (
+            <div className="mt-2 text-right">
+              <a
+                href="/forgot-password"
+                className="text-white/45 hover:text-purple-300 text-xs transition-colors"
+              >
+                Забыли пароль?
+              </a>
+            </div>
+          )}
+
           {error && (
             <p className="mt-3 text-rose-300 text-xs flex items-center gap-1.5">
               <Icon name="AlertCircle" size={12} />

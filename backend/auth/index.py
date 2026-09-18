@@ -32,6 +32,99 @@ EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 MIN_PASSWORD_LEN = 6
 MAX_PASSWORD_LEN = 128
 
+SITE_URL = 'https://xn--80ahdri7a.xn--p1ai'
+
+
+def send_welcome_email(cur, to_email: str, name: str, user_id: int) -> None:
+    """Приветственное письмо новому пользователю с бесплатными курсами логики.
+    Результат пишем в email_log — чтобы видеть, что реально ушло клиенту."""
+    import smtplib
+    import ssl
+    from email.message import EmailMessage
+    from email.utils import formataddr
+
+    smtp_user = os.environ.get('SMTP_USER', '').strip()
+    smtp_pass = os.environ.get('SMTP_PASSWORD', '').strip()
+    subject = 'Добро пожаловать в УЧИСЬПРО'
+
+    if not smtp_user or not smtp_pass:
+        cur.execute(
+            "INSERT INTO email_log (to_email, kind, subject, status, error, user_id) "
+            "VALUES (%s,'welcome',%s,'failed','SMTP не настроен',%s)",
+            (to_email[:320], subject, user_id))
+        return
+
+    who = f'{name}, д' if name else 'Д'
+    courses = [
+        ('Головоломки и закономерности', '1–4 класс',
+         'logika-dlya-mladshih-golovolomki-i-zakonomernosti-37'),
+        ('Алгоритмы, множества и комбинаторика', '5–8 класс',
+         'logika-5-8-klass-algoritmy-mnozhestva-i-kombinatorika-38'),
+        ('Логика и критическое мышление', '10–11 класс',
+         'logika-i-kriticheskoe-myshlenie-10-11-klass-39'),
+    ]
+    items = ''.join(
+        f'<li style="margin-bottom:8px;"><a href="{SITE_URL}/kurs/{slug}" '
+        f'style="color:#7C3AED;text-decoration:none;">{title}</a> '
+        f'<span style="color:#6B7280;">— {grade}</span></li>'
+        for title, grade, slug in courses)
+
+    html = (
+        f'<!DOCTYPE html><html><body style="margin:0;padding:24px 12px;background:#F4F5F7;">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">'
+        f'<table width="100%" cellpadding="0" cellspacing="0" border="0" '
+        f'style="max-width:560px;background:#fff;border-radius:14px;overflow:hidden;">'
+        f'<tr><td style="background:#1E1B4B;padding:22px 32px;">'
+        f'<span style="font-family:Arial,sans-serif;font-size:19px;font-weight:bold;color:#fff;">'
+        f'УЧИСЬПРО</span></td></tr>'
+        f'<tr><td style="padding:32px;font-family:Arial,sans-serif;font-size:16px;'
+        f'line-height:1.6;color:#1F2937;">'
+        f'<h1 style="margin:0 0 18px;font-size:22px;color:#111827;">Добро пожаловать!</h1>'
+        f'<p style="margin:0 0 14px;">{who}обро пожаловать в УЧИСЬПРО.</p>'
+        f'<p style="margin:0 0 14px;">Начать советуем с бесплатных курсов логики — '
+        f'они развивают мышление, на котором держатся все остальные предметы:</p>'
+        f'<ul style="margin:0 0 18px;padding-left:20px;">{items}</ul>'
+        f'<p style="margin:0 0 24px;">Все три бесплатны — оплата не потребуется '
+        f'ни на одном шаге.</p>'
+        f'<table cellpadding="0" cellspacing="0" border="0"><tr>'
+        f'<td align="center" bgcolor="#7C3AED" style="border-radius:10px;">'
+        f'<a href="{SITE_URL}/courses" style="display:inline-block;padding:14px 32px;'
+        f'font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#fff;'
+        f'text-decoration:none;">Открыть каталог курсов</a></td></tr></table>'
+        f'</td></tr>'
+        f'<tr><td style="padding:20px 32px;background:#F9FAFB;font-family:Arial,sans-serif;'
+        f'font-size:13px;color:#6B7280;">УЧИСЬПРО — онлайн-платформа с ИИ-репетитором<br>'
+        f'<a href="{SITE_URL}" style="color:#7C3AED;text-decoration:none;">учисьпро.рф</a>'
+        f'</td></tr></table></td></tr></table></body></html>'
+    )
+    text = (f'{who}обро пожаловать в УЧИСЬПРО!\n\nБесплатные курсы логики:\n' +
+            '\n'.join(f'- {t} ({g}): {SITE_URL}/kurs/{s}' for t, g, s in courses) +
+            f'\n\nКаталог: {SITE_URL}/courses')
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = formataddr(('УЧИСЬПРО', smtp_user))
+    msg['To'] = to_email
+    msg.set_content(text)
+    msg.add_alternative(html, subtype='html')
+
+    try:
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL(os.environ.get('SMTP_HOST', 'smtp.yandex.ru'),
+                              int(os.environ.get('SMTP_PORT', '465')),
+                              context=ctx, timeout=15) as s:
+            s.login(smtp_user, smtp_pass)
+            s.send_message(msg)
+        cur.execute(
+            "INSERT INTO email_log (to_email, kind, subject, status, user_id) "
+            "VALUES (%s,'welcome',%s,'sent',%s)", (to_email[:320], subject, user_id))
+        cur.execute("UPDATE auth_users SET welcome_mailed_at=NOW() WHERE id=%s", (user_id,))
+    except Exception as e:
+        cur.execute(
+            "INSERT INTO email_log (to_email, kind, subject, status, error, user_id) "
+            "VALUES (%s,'welcome',%s,'failed',%s,%s)",
+            (to_email[:320], subject, str(e)[:900], user_id))
+
 
 def cors_headers() -> dict:
     return {
@@ -184,6 +277,14 @@ def handle_register(body: dict, user_agent: str, ip: str) -> dict:
             user_id = cur.fetchone()[0]
             token = create_session(cur, user_id, user_agent, ip)
             conn.commit()
+
+            # Приветственное письмо. Регистрация не должна падать из-за почты,
+            # поэтому любые сбои отправки гасим и просто идём дальше.
+            try:
+                send_welcome_email(cur, email, name or '', user_id)
+                conn.commit()
+            except Exception:
+                conn.rollback()
 
             return ok({
                 'success': True,
