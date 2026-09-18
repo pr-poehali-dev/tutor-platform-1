@@ -17,10 +17,18 @@ export default function FeedArticleCtas({ article }: Props) {
   // Важно: раньше сюда попадала любая статья, где в адресе встречалось «shkol»
   // (а это почти всё про школу) — и читатель видел призыв открыть свою онлайн-школу.
   // Теперь ориентируемся на теги и на явные адреса про конструктор.
+  // Теги разнородные: «онлайн-школа», «онлайн-школы», «репетиторам», «репетиторы»,
+  // «инфобизнес», «бизнес на знаниях». Перечислять их списком бессмысленно —
+  // половина статей про запуск школы мимо него проходила и получала общий призыв.
+  // «репетиторам» в дательном — это обращение к преподавателю. Просто «репетитор»
+  // стоит в статьях для родителей («как выбрать репетитора»), им предлагать
+  // открыть школу незачем.
+  const B2B_TAG = /(онлайн[- ]школ|конструктор (курсов|школ)|репетиторам|инфобизнес|бизнес на знаниях|edtech|доходимост|методолог)/i;
   const isSchoolBuilder =
     !isForecast &&
-    (tags.some((t) => ["онлайн-школа", "конструктор курсов", "конструктор школ"].includes(t)) ||
-      /(konstruktor|svoya|sozdat|otkryt|zapustit)[-_]?shkol/i.test(article.slug));
+    (tags.some((t) => B2B_TAG.test(t)) ||
+      /(konstruktor|svoya|sozdat|otkryt|zapustit)[-_]?shkol/i.test(article.slug) ||
+      /(shkol[ay]?[-_]za[-_]|metodologiya-uchispro|brosayut-kursy)/i.test(article.slug));
   // Статьи про отдельный сервис grant-ai.ru — ведём на внешний сайт, а не на /grants.
   const isGrantAi =
     tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||
@@ -107,27 +115,35 @@ export default function FeedArticleCtas({ article }: Props) {
           <div className="relative">
             <div className="text-4xl mb-2">🚀</div>
             <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
-              Создайте свою школу прямо сейчас
+              Методичка на курс пишется неделями. Здесь — минута
             </h3>
             <p className="text-white/80 text-sm md:text-base max-w-lg mx-auto mb-3">
-              Опишите тему — ИИ соберёт программу курса за минуту. Подключите оплаты, бренд и персонального
-              ИИ-преподавателя. Первый курс можно собрать бесплатно, без карты.
+              Назовите тему — ИИ вернёт программу по модулям: уроки с конспектами, практические задания,
+              квизы, рекомендованную цену и тексты для объявления. Дальше подключаются оплаты с чеками
+              по 54-ФЗ, ваш бренд и домен. Без абонплаты: 8% с продажи, нет продаж — вы ничего не должны.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-white/60 text-xs mb-5">
-              <span className="inline-flex items-center gap-1.5"><Icon name="Sparkles" size={13} className="text-violet-300" /> Курс за минуту</span>
-              <span className="inline-flex items-center gap-1.5"><Icon name="Wallet" size={13} className="text-cyan-300" /> Приём оплат</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="Sparkles" size={13} className="text-violet-300" /> Программа за 40 секунд</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="Wallet" size={13} className="text-cyan-300" /> Оплаты и чеки 54-ФЗ</span>
               <span className="inline-flex items-center gap-1.5"><Icon name="GraduationCap" size={13} className="text-fuchsia-300" /> ИИ-наставник 24/7</span>
             </div>
             <Link
               to="/school-builder"
+              onClick={() => trackGoal("article_school_builder_cta_click", { slug: article.slug })}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
             >
               <Icon name="Rocket" size={18} />
-              Создать свою школу
+              Собрать программу бесплатно
             </Link>
-            <div className="mt-3">
+            <p className="text-white/40 text-[11px] mt-2.5">
+              Без регистрации и карты. PDF с программой остаётся у вас, даже если вы не вернётесь.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+              <Link to="/repetitoram" className="text-white/45 hover:text-white/70 text-xs underline underline-offset-2 transition-colors">
+                Условия и комиссия для репетиторов
+              </Link>
               <Link to="/for-business" className="text-white/45 hover:text-white/70 text-xs underline underline-offset-2 transition-colors">
-                Узнать о возможностях для бизнеса
+                Демо для школы и учебного центра
               </Link>
             </div>
           </div>
@@ -210,18 +226,23 @@ export default function FeedArticleCtas({ article }: Props) {
           <div className="relative">
             <div className="text-4xl mb-2">🚀</div>
             <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Запустите свою онлайн-школу за вечер
+              Своя школа без IT-команды и абонплаты
             </h3>
             <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              ИИ соберёт курс за час и станет преподавателем для ваших учеников 24/7. Ваш бренд, ваш домен. Без абонплаты — только процент с продаж.
+              ИИ соберёт программу курса за минуту и будет отвечать ученикам 24/7 строго в её рамках.
+              Ваш бренд, ваш домен, оплаты с чеками по 54-ФЗ. Платите 8% с продаж — абонплаты нет.
             </p>
             <Link
-              to="/for-business"
+              to="/for-business#lead"
+              onClick={() => trackGoal("article_business_cta_click", { slug: article.slug })}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-violet-500/20"
             >
               <Icon name="Rocket" size={18} />
               Получить демо и цену
             </Link>
+            <p className="text-white/40 text-[11px] mt-2.5">
+              Покажем платформу и соберём ваш первый курс прямо на демо. Ответим в течение рабочего дня.
+            </p>
           </div>
         </div>
       )}

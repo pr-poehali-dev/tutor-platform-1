@@ -183,17 +183,41 @@ export default function FeedArticlePage() {
       articleSection: meta.label,
       keywords: (article.tags || []).join(", ") || undefined,
       wordCount,
-      timeRequired: `PT${article.reading_time_min || Math.max(1, Math.round(wordCount / 180))}M`,
+      // Время чтения считаем от текста, а не берём поле из базы: там у части
+      // статей осталось значение от исходного замысла («19 минут» при тексте
+      // на 200 слов). Расхождение заявленного и фактического объёма —
+      // прямой сигнал недостоверности для поисковика.
+      timeRequired: `PT${Math.max(1, Math.round(wordCount / 180))}M`,
       isAccessibleForFree: true,
       articleBody: fullText,
     },
   ];
 
+  // Бренд к заголовку не клеим руками: Seo сам добавит «— УЧИСЬПРО», если
+  // остаётся место в сниппете. Раньше суффикс «| Лента УЧИСЬПРО» приписывался
+  // всегда — и у статей с длинным заголовком поиск обрезал название на полуслове,
+  // показывая огрызок вместо сути.
+  const seoTitle = article.title;
+  // Описание в выдаче обрывается примерно на 170 символах. Обрезаем сами и по
+  // границе слова, чтобы сниппет заканчивался мыслью, а не серединой слова.
+  const rawDesc = article.summary || article.title;
+  const seoDesc =
+    rawDesc.length <= 170
+      ? rawDesc
+      : rawDesc.slice(0, 167).replace(/[\s,;:—-]+\S*$/, "") + "…";
+  // Заготовки и совсем короткие заметки не отдаём в индекс: страница с парой
+  // абзацев конкурирует сама с собой и тянет вниз оценку всего раздела.
+  // Порог держим тот же, что в карте сайта (api/sitemap.ts), чтобы адрес
+  // не попадал в sitemap с пометкой noindex на самой странице.
+  const THIN_CHARS = 1500;
+  const isThin = fullText.length < THIN_CHARS;
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title={`${article.title} | Лента УЧИСЬПРО`}
-        description={article.summary || article.title}
+        title={seoTitle}
+        description={seoDesc}
+        noindex={isThin}
         canonical={articleUrl(article.slug)}
         image={article.cover_url || undefined}
         type="article"

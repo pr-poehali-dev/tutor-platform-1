@@ -182,6 +182,12 @@ async function fetchArticles(): Promise<Entry[]> {
     if (!items.length) break;
     for (const a of items) {
       if (!a?.slug || seen.has(a.slug)) continue;
+      // Короткие заметки в карту не кладём. Страница статьи помечает такие
+      // адреса noindex (см. FeedArticle.tsx), и звать на них робота — значит
+      // самим себе создавать конфликт: карта говорит «индексируй», страница
+      // отвечает «не надо». Объём определяем по времени чтения: оно
+      // пересчитано от фактического текста, минута ≈ 1000 знаков.
+      if ((a.reading_time_min || 0) < 2) continue;
       seen.add(a.slug);
       out.push({
         loc: `/feed/${a.slug}`,
