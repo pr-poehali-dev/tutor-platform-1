@@ -174,6 +174,69 @@
       "value": 1500,
       "category": "Репетиторы",
       "description": "Отправил заявку на доступ к своей школе. Главная конверсия — на неё оптимизируем Директ"
+    },
+    {
+      "name": "Старт бесплатного курса: нейросети",
+      "id": "neuro_landing_start",
+      "type": "JS event",
+      "condition": "reachGoal('neuro_landing_start')",
+      "value": 40,
+      "category": "Воронка нейросети",
+      "description": "Клик «Начать бесплатно» на посадочной /zarabotok-na-neirosetyah"
+    },
+    {
+      "name": "Интерес к полной программе: нейросети",
+      "id": "neuro_landing_full_click",
+      "type": "JS event",
+      "condition": "reachGoal('neuro_landing_full_click')",
+      "value": 70,
+      "category": "Воронка нейросети",
+      "description": "С посадочной перешли к платной программе"
+    },
+    {
+      "name": "Старт бесплатного курса: маркетинг",
+      "id": "marketing_landing_start",
+      "type": "JS event",
+      "condition": "reachGoal('marketing_landing_start')",
+      "value": 40,
+      "category": "Воронка маркетинг",
+      "description": "Клик «Начать бесплатно» на посадочной /internet-marketing-s-nulya"
+    },
+    {
+      "name": "Интерес к полной программе: маркетинг",
+      "id": "marketing_landing_full_click",
+      "type": "JS event",
+      "condition": "reachGoal('marketing_landing_full_click')",
+      "value": 70,
+      "category": "Воронка маркетинг",
+      "description": "С посадочной перешли к платной программе"
+    },
+    {
+      "name": "Переход с бесплатного курса на платный",
+      "id": "course_next_step_click",
+      "type": "JS event",
+      "condition": "reachGoal('course_next_step_click')",
+      "value": 120,
+      "category": "Конверсия",
+      "description": "Главный шаг воронки: прошёл бесплатный курс и открыл платный"
+    },
+    {
+      "name": "Из статьи на курс по маркетингу",
+      "id": "article_cta_marketing",
+      "type": "JS event",
+      "condition": "reachGoal('article_cta_marketing')",
+      "value": 30,
+      "category": "Навигация",
+      "description": "Переход из статьи ленты на посадочную по маркетингу"
+    },
+    {
+      "name": "Из статьи на курс по нейросетям",
+      "id": "article_cta_ai",
+      "type": "JS event",
+      "condition": "reachGoal('article_cta_ai')",
+      "value": 30,
+      "category": "Навигация",
+      "description": "Переход из статьи ленты на посадочную по нейросетям"
     }
   ],
   "ecommerce": {
