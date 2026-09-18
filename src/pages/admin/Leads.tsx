@@ -13,6 +13,7 @@ type LeadStatus = "new" | "in_progress" | "won" | "lost";
 
 interface Lead {
   id: number;
+  is_test?: boolean;
   contact_name: string;
   contact_email: string | null;
   contact_phone: string | null;
@@ -69,6 +70,10 @@ export default function Leads() {
   const [items, setItems] = useState<Lead[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [filter, setFilter] = useState<"all" | LeadStatus>("all");
+  // Служебные заявки (наши проверки доставки уведомлений) по умолчанию скрыты:
+  // их было 17 из 20, и за ними не было видно трёх настоящих.
+  const [showTest, setShowTest] = useState(false);
+  const [testTotal, setTestTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<number, string>>({});
@@ -82,9 +87,10 @@ export default function Leads() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${CONTACT_URL}?action=leads_list`, {
-        headers: { "X-Admin-Pin": pin },
-      });
+      const res = await fetch(
+        `${CONTACT_URL}?action=leads_list${showTest ? "&include_test=1" : ""}`,
+        { headers: { "X-Admin-Pin": pin } },
+      );
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error(e?.error || `Ошибка ${res.status}`);
@@ -92,6 +98,7 @@ export default function Leads() {
       const data = await res.json();
       setItems(data.items || []);
       setCounts(data.counts || {});
+      setTestTotal(data.test_total || 0);
       const drafts: Record<number, string> = {};
       (data.items || []).forEach((l: Lead) => { drafts[l.id] = l.note || ""; });
       setNoteDrafts(drafts);
@@ -100,7 +107,7 @@ export default function Leads() {
     } finally {
       setLoading(false);
     }
-  }, [pin]);
+  }, [pin, showTest]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -230,6 +237,24 @@ export default function Leads() {
               </button>
             );
           })}
+
+          {testTotal > 0 && (
+            <button
+              onClick={() => setShowTest((s) => !s)}
+              title="Наши собственные проверки доставки уведомлений"
+              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-all ml-auto ${
+                showTest
+                  ? "border-amber-400/50 bg-amber-500/15 text-amber-200"
+                  : "border-white/10 bg-white/[0.03] text-white/45 hover:border-white/25"
+              }`}
+            >
+              <Icon name={showTest ? "EyeOff" : "Eye"} size={14} />
+              {showTest ? "Скрыть служебные" : "Показать служебные"}
+              <span className="text-xs px-1.5 py-0.5 rounded-md bg-white/8 text-white/50">
+                {testTotal}
+              </span>
+            </button>
+          )}
         </div>
 
         {error && (
@@ -259,6 +284,11 @@ export default function Leads() {
                         <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-medium ${meta.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} /> {meta.label}
                         </span>
+                        {l.is_test && (
+                          <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-300">
+                            <Icon name="FlaskConical" fallback="Beaker" size={11} /> служебная
+                          </span>
+                        )}
                       </div>
                       <div className="text-white/40 text-xs mt-1">#{l.id} · {fmtDate(l.created_at)}</div>
                     </div>

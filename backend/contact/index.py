@@ -97,15 +97,24 @@ def check_admin(headers: dict) -> bool:
 LEAD_STATUSES = {'new', 'in_progress', 'won', 'lost'}
 
 
-def handle_leads_list() -> dict:
+def handle_leads_list(qs: dict = None) -> dict:
+    """Список заявок. По умолчанию — только живые.
+
+    Служебных заявок (наши проверки доставки уведомлений) в таблице накопилось
+    17 из 20, и за ними не было видно трёх настоящих. Они помечены флагом
+    is_test и скрыты; посмотреть их можно через ?include_test=1.
+    """
+    qs = qs or {}
+    include_test = str(qs.get('include_test') or '').strip() in ('1', 'true', 'yes')
+    where = '' if include_test else 'WHERE is_test = FALSE '
     conn = get_db()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, contact_name, contact_email, contact_phone, company, "
                 "audience_type, topic, students_est, plan_interest, message, source, "
-                "status, note, created_at, updated_at "
-                "FROM partner_leads ORDER BY created_at DESC LIMIT 500"
+                "status, note, created_at, updated_at, is_test "
+                f"FROM partner_leads {where}ORDER BY created_at DESC LIMIT 500"
             )
             rows = cur.fetchall()
             items = [{
@@ -115,11 +124,15 @@ def handle_leads_list() -> dict:
                 'message': r[9], 'source': r[10], 'status': r[11], 'note': r[12],
                 'created_at': r[13].isoformat() if r[13] else None,
                 'updated_at': r[14].isoformat() if r[14] else None,
+                'is_test': bool(r[15]),
             } for r in rows]
             counts = {s: 0 for s in LEAD_STATUSES}
             for it in items:
                 counts[it['status']] = counts.get(it['status'], 0) + 1
-            return ok({'items': items, 'total': len(items), 'counts': counts})
+            cur.execute("SELECT COUNT(*) FROM partner_leads WHERE is_test = TRUE")
+            test_total = cur.fetchone()[0]
+            return ok({'items': items, 'total': len(items), 'counts': counts,
+                       'test_total': test_total, 'include_test': include_test})
     finally:
         conn.close()
 
@@ -215,13 +228,17 @@ def handle_invite_grant(body: dict) -> dict:
         conn.close()
 
 
-def handle_invites_list() -> dict:
+def handle_invites_list(qs: dict = None) -> dict:
+    """Выданные приглашения в конструктор. Служебные скрыты, как и заявки."""
+    qs = qs or {}
+    include_test = str(qs.get('include_test') or '').strip() in ('1', 'true', 'yes')
+    where = '' if include_test else 'WHERE is_test = FALSE '
     conn = get_db()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, email, token, lead_id, status, created_at, accepted_at "
-                "FROM school_builder_invites ORDER BY id DESC LIMIT 500")
+                f"FROM school_builder_invites {where}ORDER BY id DESC LIMIT 500")
             items = [{
                 'id': r[0], 'email': r[1], 'token': r[2], 'lead_id': r[3],
                 'status': r[4],
@@ -415,17 +432,44 @@ def handle_partner_lead(token: str, body: dict) -> dict:
     if plan and plan not in ALLOWED_PLAN:
         plan = None
 
+    # Служебные проверки помечаем сразу, чтобы они не смешивались с живыми
+    # заявками в админке и в отчётах.
+    is_test = bool(
+        (email and (email.endswith('@example.com') or '@test.' in email))
+        or name.lower().startswith('тест')
+        or 'проверка' in name.lower()
+        or 'проверка' in company.lower()
+        or 'диагностика' in company.lower()
+    )
+
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            # Защита от повторной отправки: человек нажимает кнопку дважды или
+            # возвращается через день. Раньше каждое нажатие создавало новую
+            # строку — в таблице лежало по 8 копий одной заявки.
+            if email or phone:
+                cur.execute(
+                    "SELECT id FROM partner_leads "
+                    "WHERE created_at > now() - interval '24 hours' "
+                    "AND ((%s <> '' AND contact_email = %s) "
+                    "  OR (%s <> '' AND contact_phone = %s)) "
+                    "ORDER BY id DESC LIMIT 1",
+                    (email, email or None, phone, phone or None)
+                )
+                dup = cur.fetchone()
+                if dup:
+                    return ok({'ok': True, 'id': dup[0], 'duplicate': True,
+                               'message': 'Заявка уже принята — мы свяжемся с вами в течение рабочего дня.'})
+
             cur.execute(
                 "INSERT INTO partner_leads "
                 "(contact_name, contact_email, contact_phone, company, audience_type, "
-                "topic, students_est, plan_interest, message, utm) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                "topic, students_est, plan_interest, message, utm, is_test) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
                 (name, email or None, phone or None, company or None, audience or None,
                  topic or None, students or None, plan or None, message or None,
-                 json.dumps(utm, ensure_ascii=False) if utm else None)
+                 json.dumps(utm, ensure_ascii=False) if utm else None, is_test)
             )
             lid = cur.fetchone()[0]
             conn.commit()
@@ -456,7 +500,10 @@ def handle_partner_lead(token: str, body: dict) -> dict:
                 lines.append(f"✍️ Сообщение: {message}")
             if utm:
                 lines.append(f"🔗 UTM: {json.dumps(utm, ensure_ascii=False)}")
-            notify_max("\n".join(lines))
+            # Служебные проверки в MAX не отправляем: иначе каждая наша
+            # диагностика выглядит как настоящая заявка от клиента.
+            if not is_test:
+                notify_max("\n".join(lines))
 
             return ok({
                 'ok': True, 'id': lid,
@@ -689,13 +736,13 @@ def handler(event: dict, context) -> dict:
         if not check_admin(headers):
             return err('Доступ запрещён', 403)
         if action == 'leads_list':
-            return handle_leads_list()
+            return handle_leads_list(qs)
         if action == 'lead_update' and method == 'POST':
             return handle_lead_update(body)
         if action == 'invite_grant' and method == 'POST':
             return handle_invite_grant(body)
         if action == 'invites_list':
-            return handle_invites_list()
+            return handle_invites_list(qs)
         if action == 'invite_revoke' and method == 'POST':
             return handle_invite_revoke(body)
         if action == 'payouts_summary':
