@@ -3,6 +3,7 @@ import { Course, getAgeRating, getCourseDisclaimers } from "@/components/courses
 import { CourseDetail } from "@/components/courses/courseDetailsData";
 import CourseDetailValue from "./CourseDetailValue";
 import CourseDetailResult from "./CourseDetailResult";
+import CourseNextStep from "./CourseNextStep";
 import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 import AnimatedTutorAvatar from "./AnimatedTutorAvatar";
 import TutorIntroVideo from "./TutorIntroVideo";
@@ -33,6 +34,10 @@ export default function CourseDetailAbout({ course, detail, examLabel }: Props) 
 
       {/* Обещание результата — только для курсов взрослых (продаём экспертность) */}
       <CourseDetailResult course={course} detail={detail} />
+
+      {/* Продолжение для бесплатных курсов: без него человек доходит до конца
+          программы и упирается в тупик, потому что ему не сказали, что дальше */}
+      <CourseNextStep course={course} />
 
       {/* Плашка формата экзамена — только для экзаменационных курсов */}
       {examLabel && (

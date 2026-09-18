@@ -241,6 +241,17 @@
       "destination": "/api/crawler?path=/feed/:slug"
     },
     {
+      "source": "/zarabotok-na-neirosetyah",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/zarabotok-na-neirosetyah"
+    },
+    {
       "source": "/mini-course",
       "has": [
         {

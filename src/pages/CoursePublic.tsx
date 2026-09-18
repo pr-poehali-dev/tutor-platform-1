@@ -11,6 +11,7 @@ import { getCourseFaq, getWhatsIncluded } from "@/components/courses/courseValue
 import { SUBJECTS_SEO } from "@/components/courses/subjectsSeo";
 import { getCourseSeoCopy } from "@/components/courses/seo";
 import { getHistoryDate } from "@/components/courses/historyDates";
+import CourseNextStep from "@/components/courses/detail/CourseNextStep";
 
 const SITE = "https://учисьпро.рф";
 
@@ -302,6 +303,13 @@ export default function CoursePublic() {
             </div>
           </section>
         )}
+
+        {/* Продолжение для бесплатных курсов. Стоит сразу после программы:
+            человек уже увидел, что внутри, и это момент решения «что дальше».
+            Без этого блока бесплатный курс заканчивается тупиком. */}
+        <section className="mb-10">
+          <CourseNextStep course={course} />
+        </section>
 
         {included.length > 0 && (
           <section className="mb-10" aria-labelledby="included">

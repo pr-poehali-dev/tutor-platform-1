@@ -47,6 +47,8 @@ const STATIC: Entry[] = [
   { loc: "/free-courses", changefreq: "weekly", priority: "0.8" },
   { loc: "/super-courses", changefreq: "weekly", priority: "0.8" },
   { loc: "/mini-course", changefreq: "weekly", priority: "0.9" },
+  // Главная точка входа из поиска — приоритет наравне с каталогом.
+  { loc: "/zarabotok-na-neirosetyah", changefreq: "weekly", priority: "1.0" },
   { loc: "/feed", changefreq: "daily", priority: "0.9" },
   { loc: "/business-2026", changefreq: "weekly", priority: "0.9" },
   { loc: "/exam-bank", changefreq: "weekly", priority: "0.9" },
