@@ -252,6 +252,17 @@
       "destination": "/api/crawler?path=/zarabotok-na-neirosetyah"
     },
     {
+      "source": "/internet-marketing-s-nulya",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/internet-marketing-s-nulya"
+    },
+    {
       "source": "/mini-course",
       "has": [
         {
