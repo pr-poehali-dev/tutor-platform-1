@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { AD_CAMPAIGNS, AdCampaign } from "@/components/ads/adsData";
+import RsyaBlock from "@/components/ads/RsyaBlock";
 
 function copyToClipboard(text: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -163,13 +164,23 @@ function CampaignBlock({ c }: { c: AdCampaign }) {
             </div>
           </div>
         </div>
+
+        {/* Кампания в сетях — своя логика, поэтому отдельным блоком */}
+        {c.rsya && <RsyaBlock rsya={c.rsya} />}
       </div>
     </div>
   );
 }
 
 export default function AdsManager() {
-  const [tab, setTab] = useState<string>(AD_CAMPAIGNS[0]?.slug ?? "");
+  // Кампания в адресе, а не только в состоянии: так на нужную вкладку можно
+  // дать ссылку и вернуться к ней после перезагрузки, не листая заново.
+  const [params, setParams] = useSearchParams();
+  const fromUrl = params.get("c") || "";
+  const tab = AD_CAMPAIGNS.some((c) => c.slug === fromUrl)
+    ? fromUrl
+    : AD_CAMPAIGNS[0]?.slug ?? "";
+  const setTab = (slug: string) => setParams({ c: slug }, { replace: true });
   const current = AD_CAMPAIGNS.find((c) => c.slug === tab) || AD_CAMPAIGNS[0];
 
   return (
