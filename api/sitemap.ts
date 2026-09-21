@@ -89,7 +89,7 @@ const STATIC: Entry[] = [
   { loc: "/corporate", changefreq: "monthly", priority: "0.7" },
   { loc: "/partners", changefreq: "monthly", priority: "0.7" },
   { loc: "/edtech-jobs", changefreq: "monthly", priority: "0.6" },
-  { loc: "/school-builder", changefreq: "monthly", priority: "0.9" },
+  { loc: "/school-builder", changefreq: "weekly", priority: "1.0" },
   { loc: "/repetitoram", changefreq: "weekly", priority: "0.9" },
   { loc: "/grants", changefreq: "weekly", priority: "0.8" },
   { loc: "/draw", changefreq: "monthly", priority: "0.7" },

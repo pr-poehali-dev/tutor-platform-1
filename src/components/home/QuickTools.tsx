@@ -37,6 +37,17 @@ const TOOLS = [
     accent: "from-violet-500/25 to-sky-500/15",
     border: "border-violet-500/30",
   },
+  // Конструктор курсов на главной был только в баннере внизу страницы,
+  // куда доскролливают единицы. Демонстрация бесплатна и без регистрации —
+  // условие этого блока выполняется.
+  {
+    label: "Конструктор курса",
+    description: "ИИ соберёт за минуту",
+    icon: "Wand2",
+    to: "/school-builder",
+    accent: "from-fuchsia-500/25 to-violet-500/15",
+    border: "border-fuchsia-500/30",
+  },
 ];
 
 export default function QuickTools() {
@@ -45,7 +56,7 @@ export default function QuickTools() {
       <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-4 text-center">
         Полезные инструменты — без регистрации
       </p>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {TOOLS.map((t) => (
           <Link
             key={t.to}

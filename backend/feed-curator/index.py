@@ -173,6 +173,25 @@ def already_exists(cur, source_url: str) -> bool:
     return cur.fetchone() is not None
 
 
+def title_already_exists(cur, title: str) -> bool:
+    """Есть ли уже статья с таким же по смыслу заголовком.
+
+    Проверки по source_url мало: одну и ту же новость перепечатывают несколько
+    изданий, и у каждой копии свой адрес. Для читателя это один и тот же сюжет
+    подряд в ленте. Сравниваем по «скелету» заголовка — без знаков препинания,
+    регистра и лишних пробелов.
+    """
+    if not title:
+        return False
+    cur.execute(
+        "SELECT 1 FROM feed_articles "
+        "WHERE lower(regexp_replace(title, '[^а-яa-z0-9 ]', '', 'gi')) = %s "
+        "LIMIT 1",
+        (re.sub(r'[^а-яa-z0-9 ]', '', title.lower(), flags=re.IGNORECASE).strip(),)
+    )
+    return cur.fetchone() is not None
+
+
 def call_polza(prompt: str, max_tokens: int = 800) -> str | None:
     """Вызов polza.ai для рерайта. Возвращает текст или None при ошибке."""
     if not POLZA_API_KEY:
@@ -394,6 +413,12 @@ def process_source(cur, source_row, limit_per_source: int = 5) -> dict:
         # не показывают, а лента ими засоряется. Такое просто не публикуем.
         if len(rewrite['content'] or '') < MIN_CONTENT_LEN:
             too_short += 1
+            continue
+
+        # Один и тот же сюжет из разных изданий: адреса разные, новость одна.
+        # Проверку по URL выше это не ловит — сверяем ещё и заголовок.
+        if title_already_exists(cur, rewrite['title']):
+            skipped += 1
             continue
 
         words = len((rewrite['content'] or '').split())
@@ -1012,25 +1037,39 @@ def topup_from_demo_pool(cur, target_count: int = 15, min_per_category: int = 2,
         if need == 0:
             continue
 
-        # Берём наименее использованные шаблоны этой категории
+        # Берём только НЕиспользованные шаблоны этой категории.
+        #
+        # use_count = 0 — жёсткое условие, а не сортировка: пул конечный, и без
+        # этого фильтра при исчерпании шаблонов лента начинала по второму кругу
+        # публиковать те же сюжеты. Лучше не опубликовать ничего, чем повторить.
         cur.execute(
             "SELECT id, code, seed_title, seed_summary, seed_facts, tags, country, country_flag "
-            "FROM feed_demo_pool WHERE category=%s "
-            "ORDER BY use_count ASC, COALESCE(last_used_at, '2000-01-01'::timestamptz) ASC "
+            "FROM feed_demo_pool WHERE category=%s AND use_count = 0 "
+            "ORDER BY COALESCE(last_used_at, '2000-01-01'::timestamptz) ASC "
             "LIMIT %s",
-            (cat, need * 2)  # с запасом на дубли
+            (cat, need * 2)  # с запасом на отсев по slug
         )
         templates = cur.fetchall()
 
         for tmpl in templates[:need]:
             tpl_id, code, title, summary, facts, tags, country, flag = tmpl
 
-            # Проверяем, что такой slug ещё не публиковали недавно (защита от дублей)
+            # Защита от дублей: шаблон из пула публикуем ОДИН раз за всё время.
+            #
+            # Раньше здесь стояло окно «14 дней», и это давало обратный эффект:
+            # пул конечный (несколько десятков шаблонов), крутится по кругу,
+            # поэтому через две недели тот же сюжет считался новым и уезжал
+            # в ленту снова. unique_slug дописывал -2, -4, -9 — и в ленте
+            # появлялись «Гранты Института Конфуция» шесть раз, «Чебурашка 3»
+            # пять раз. Для читателя это выглядит как мусор и ломает доверие
+            # к ленте целиком.
+            #
+            # Проверяем и по шаблону (use_count), и по slug — на случай,
+            # если статью завели до появления счётчика.
             base_slug = slugify(title)
             cur.execute(
-                "SELECT 1 FROM feed_articles WHERE slug LIKE %s "
-                "AND created_at > NOW() - INTERVAL '14 days' LIMIT 1",
-                (base_slug + '%',)
+                "SELECT 1 FROM feed_articles WHERE slug = %s OR slug LIKE %s LIMIT 1",
+                (base_slug, base_slug + '-%')
             )
             if cur.fetchone():
                 continue
@@ -1042,6 +1081,16 @@ def topup_from_demo_pool(cur, target_count: int = 15, min_per_category: int = 2,
             final_summary = (rewrite.get('summary') or summary)[:900]
             final_content = (rewrite.get('content') or facts)[:25000]
             final_tags = rewrite.get('tags') or (json.loads(tags) if isinstance(tags, str) else (tags or []))
+
+            # Тот же порог длины, что и для внешних источников. Без него
+            # в ленту уходили заметки по 400 знаков: читать нечего, а поиск
+            # такие страницы не показывает вовсе.
+            if len(final_content) < MIN_CONTENT_LEN:
+                continue
+
+            # Заголовок мог совпасть с уже опубликованным после рерайта ИИ.
+            if title_already_exists(cur, final_title):
+                continue
 
             words = len(final_content.split())
             reading_time = max(2, min(20, round(words / 200))) if words else 3

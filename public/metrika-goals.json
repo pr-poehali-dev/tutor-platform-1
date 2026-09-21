@@ -318,6 +318,24 @@
       "value": 30,
       "category": "Навигация",
       "description": "Переход из статьи ленты на страницу Оркестратора"
+    },
+    {
+      "name": "Конструктор: переход с главной",
+      "id": "home_builder_click",
+      "type": "JS event",
+      "condition": "reachGoal('home_builder_click')",
+      "value": 25,
+      "category": "Воронка Конструктор",
+      "description": "Клик по блоку конструктора на главной странице"
+    },
+    {
+      "name": "Конструктор: переход из статьи",
+      "id": "article_school_builder_cta_click",
+      "type": "JS event",
+      "condition": "reachGoal('article_school_builder_cta_click')",
+      "value": 30,
+      "category": "Воронка Конструктор",
+      "description": "Переход из статьи ленты в конструктор курсов"
     }
   ],
   "ecommerce": {
