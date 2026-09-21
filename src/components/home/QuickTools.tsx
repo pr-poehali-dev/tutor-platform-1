@@ -26,6 +26,17 @@ const TOOLS = [
     accent: "from-amber-500/25 to-rose-500/15",
     border: "border-amber-500/30",
   },
+  // Оркестратор был доступен только из глубины меню — и за всё время его
+  // запустили один раз. Генерация трека бесплатна и без регистрации,
+  // поэтому место ему именно здесь.
+  {
+    label: "Оркестратор",
+    description: "Трек адаптации за 30 сек",
+    icon: "Music4",
+    to: "/orchestrator",
+    accent: "from-violet-500/25 to-sky-500/15",
+    border: "border-violet-500/30",
+  },
 ];
 
 export default function QuickTools() {
@@ -34,7 +45,7 @@ export default function QuickTools() {
       <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-4 text-center">
         Полезные инструменты — без регистрации
       </p>
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {TOOLS.map((t) => (
           <Link
             key={t.to}

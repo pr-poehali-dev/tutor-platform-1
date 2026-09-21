@@ -264,6 +264,60 @@
       "value": 30,
       "category": "Навигация",
       "description": "Переход из статьи ленты на посадочную по кадровым документам"
+    },
+    {
+      "name": "Оркестратор: запустил сборку трека",
+      "id": "orchestrator_start",
+      "type": "JS event",
+      "condition": "reachGoal('orchestrator_start')",
+      "value": 40,
+      "category": "Воронка Оркестратор",
+      "description": "Нажал «Собрать трек» — начало генерации"
+    },
+    {
+      "name": "Оркестратор: трек собран",
+      "id": "orchestrator_track_ready",
+      "type": "JS event",
+      "condition": "reachGoal('orchestrator_track_ready')",
+      "value": 90,
+      "category": "Воронка Оркестратор",
+      "description": "ГЛАВНАЯ ЦЕЛЬ: ИИ собрал трек адаптации, человек увидел результат"
+    },
+    {
+      "name": "Оркестратор: открыл ИИ-ассистентов",
+      "id": "orchestrator_assistants_open",
+      "type": "JS event",
+      "condition": "reachGoal('orchestrator_assistants_open')",
+      "value": 50,
+      "category": "Воронка Оркестратор",
+      "description": "Перешёл к ИИ-ассистентам после трека"
+    },
+    {
+      "name": "Оркестратор: собрал план ресурсов",
+      "id": "orchestrator_resource_plan",
+      "type": "JS event",
+      "condition": "reachGoal('orchestrator_resource_plan')",
+      "value": 60,
+      "category": "Воронка Оркестратор",
+      "description": "Использовал планировщик: сами / ИИ / внешний исполнитель"
+    },
+    {
+      "name": "Оркестратор: оставил заявку",
+      "id": "lead_form_success",
+      "type": "JS event",
+      "condition": "reachGoal('lead_form_success')",
+      "value": 150,
+      "category": "Воронка Оркестратор",
+      "description": "Заявка на рабочий дашборд PRO — деньги"
+    },
+    {
+      "name": "Из статьи в Оркестратор",
+      "id": "article_cta_orchestrator",
+      "type": "JS event",
+      "condition": "reachGoal('article_cta_orchestrator')",
+      "value": 30,
+      "category": "Навигация",
+      "description": "Переход из статьи ленты на страницу Оркестратора"
     }
   ],
   "ecommerce": {
