@@ -118,17 +118,13 @@ SUBSCRIPTION_PLANS = {
     "tutor":  {"name": "Репетитор", "price_kopecks": 149000, "period_days": 30, "year_price_kopecks": 999000},
 }
 
-# Акция для абонемента «Малыш»: первые 3 месяца за 1 ₽ (один раз на пользователя).
-# Действует до 30.09.2026 (синхронно с фронтом kidsPromoConfig.ts).
-# ВАЖНО: дата ДОЛЖНА совпадать с KIDS_PROMO_END_ISO во фронте, иначе баннер
-# обещает 1 ₽, а сервер выставляет полную цену.
-KIDS_INTRO_KOPECKS = 100      # 1 ₽
-KIDS_INTRO_PERIOD_DAYS = 90   # 3 месяца
-KIDS_PROMO_END_ISO = "2026-09-30T23:59:59+03:00"
-
-
-def is_kids_promo_active() -> bool:
-    return datetime.now(timezone.utc) <= datetime.fromisoformat(KIDS_PROMO_END_ISO)
+# Абонемент «Малыш»: первые 3 месяца бесплатно (0 ₽, без карты), далее 399 ₽/мес.
+#
+# Раньше здесь была акция «3 месяца за 1 ₽» с датой окончания. Её заменил
+# постоянный бесплатный триал: он включается в kids_trials без платежа,
+# поэтому интро-цены в платёжной логике больше нет — подписку оформляют
+# уже по обычной цене, когда триал закончился.
+KIDS_INTRO_PERIOD_DAYS = 90   # 3 месяца — длительность бесплатного периода
 
 # Скидка на годовую оплату
 YEAR_DISCOUNT = 0.40
@@ -206,6 +202,99 @@ def award_referral_purchase_znaika(cur, buyer_user_id: int) -> None:
     )
 
 
+# ─── Партнёрская программа: 3 линии, 20 / 10 / 5 % ───────────────────────────
+#
+# Модель как в сетевом маркетинге: партнёр получает процент с платежей тех,
+# кого привёл лично (1-я линия), и с платежей их приглашённых (2-я и 3-я).
+# Дерево строится по partners.parent_partner_id, глубже 3 уровней не идём.
+PARTNER_LINE_PERCENT = {1: 20.0, 2: 10.0, 3: 5.0}
+
+
+def award_partner_commissions(cur, buyer_user_id: int, amount_kopecks: int,
+                              source_kind: str, source_id: int) -> None:
+    """Начисляет комиссии вверх по ветке партнёров — до трёх линий.
+
+    Вызывается только когда деньги реально получены. Повторный вызов
+    безопасен: уникальный индекс uq_pc_once не даст начислить дважды
+    за один и тот же платёж.
+    """
+    if not amount_kopecks or amount_kopecks <= 0 or not source_id:
+        return
+
+    # Кто пригласил покупателя. Если приглашения не было — комиссий нет.
+    cur.execute(
+        "SELECT inviter_user_id FROM referral_invites WHERE invited_user_id = %s LIMIT 1",
+        (buyer_user_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return
+
+    # Поднимаемся по ветке: 1-я линия — прямой пригласитель.
+    current_user_id = row[0]
+    for line in (1, 2, 3):
+        if not current_user_id:
+            break
+        cur.execute(
+            "SELECT id, parent_partner_id FROM partners "
+            "WHERE user_id = %s AND status = 'active' LIMIT 1",
+            (current_user_id,)
+        )
+        partner = cur.fetchone()
+        if not partner:
+            # Пользователь не активировал статус партнёра — деньги ему не идут.
+            # Но ветку не обрываем: выше по дереву партнёр может быть.
+            cur.execute(
+                "SELECT inviter_user_id FROM referral_invites WHERE invited_user_id = %s LIMIT 1",
+                (current_user_id,)
+            )
+            nxt = cur.fetchone()
+            current_user_id = nxt[0] if nxt else None
+            continue
+
+        partner_id, parent_partner_id = partner
+        percent = PARTNER_LINE_PERCENT[line]
+        commission = int(round(amount_kopecks * percent / 100))
+
+        if commission > 0:
+            cur.execute(
+                "INSERT INTO partner_commissions "
+                "(partner_id, source_user_id, line, percent, base_kopecks, "
+                "amount_kopecks, source_kind, source_id) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
+                "ON CONFLICT DO NOTHING RETURNING id",
+                (partner_id, buyer_user_id, line, percent, amount_kopecks,
+                 commission, source_kind, source_id)
+            )
+            if cur.fetchone():
+                cur.execute(
+                    "UPDATE partners SET balance_kopecks = balance_kopecks + %s, "
+                    "total_earned_kopecks = total_earned_kopecks + %s, updated_at = NOW() "
+                    "WHERE id = %s",
+                    (commission, commission, partner_id)
+                )
+                cur.execute(
+                    "INSERT INTO notifications (user_id, kind, title, body, icon, url) "
+                    "VALUES (%s, 'partner', %s, %s, 'Wallet', '/partner')",
+                    (current_user_id, 'Начислено вознаграждение',
+                     f'Вам начислено {commission / 100:.2f} ₽ '
+                     f'({percent:.0f}% с {line}-й линии).')
+                )
+
+        # Следующая линия — тот, кто привёл этого партнёра.
+        if parent_partner_id:
+            cur.execute("SELECT user_id FROM partners WHERE id = %s LIMIT 1", (parent_partner_id,))
+            up = cur.fetchone()
+            current_user_id = up[0] if up else None
+        else:
+            cur.execute(
+                "SELECT inviter_user_id FROM referral_invites WHERE invited_user_id = %s LIMIT 1",
+                (current_user_id,)
+            )
+            nxt = cur.fetchone()
+            current_user_id = nxt[0] if nxt else None
+
+
 def resolve_plan(plan_id: str, period: str):
     """Возвращает (base_plan_id, plan_dict) с учётом периода month/year.
     Годовой план: цена = месяц * 12 * (1 - YEAR_DISCOUNT), период 365 дней."""
@@ -274,12 +363,103 @@ def get_user_email(cur, user_id: int) -> str | None:
 
 
 def get_subscription_active(cur, user_id: int) -> bool:
+    """Активна ли подписка на ШКОЛЬНУЮ часть платформы.
+
+    План 'kids' сознательно исключён: детский модуль изолирован и своей
+    подпиской школьные курсы не открывает. Обратное тоже верно —
+    см. get_kids_access().
+    """
     cur.execute(
         "SELECT 1 FROM subscriptions WHERE user_id = %s AND status = 'active' "
+        "AND plan_id <> 'kids' "
         "AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1",
         (user_id,)
     )
     return cur.fetchone() is not None
+
+
+# Бесплатный доступ к «Малышу» на старте: 3 месяца, карта не нужна.
+KIDS_TRIAL_DAYS = 90
+
+
+def get_kids_access(cur, user_id: int) -> dict:
+    """Доступ к модулю «Малыш»: платная подписка 'kids' или бесплатный триал.
+
+    Возвращает источник доступа и дату окончания — фронт показывает
+    родителю, сколько осталось, без второго запроса.
+    """
+    cur.execute(
+        "SELECT expires_at FROM subscriptions WHERE user_id = %s AND plan_id = 'kids' "
+        "AND status = 'active' AND (expires_at IS NULL OR expires_at > NOW()) "
+        "ORDER BY id DESC LIMIT 1",
+        (user_id,)
+    )
+    row = cur.fetchone()
+    if row:
+        return {
+            'kids_access': True,
+            'kids_source': 'subscription',
+            'kids_expires_at': row[0].isoformat() if row[0] else None,
+            'kids_trial_used': True,
+        }
+
+    cur.execute(
+        "SELECT expires_at FROM kids_trials WHERE user_id = %s LIMIT 1",
+        (user_id,)
+    )
+    trial = cur.fetchone()
+    if not trial:
+        return {
+            'kids_access': False,
+            'kids_source': None,
+            'kids_expires_at': None,
+            'kids_trial_used': False,
+        }
+
+    expires = trial[0]
+    active = expires and expires > datetime.now(timezone.utc)
+    return {
+        'kids_access': bool(active),
+        'kids_source': 'trial' if active else None,
+        'kids_expires_at': expires.isoformat() if expires else None,
+        'kids_trial_used': True,
+    }
+
+
+def handle_kids_start_trial(token: str) -> dict:
+    """Включает бесплатные 3 месяца «Малыша». Один раз на пользователя, без карты."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+
+            cur.execute("SELECT expires_at FROM kids_trials WHERE user_id = %s LIMIT 1", (user_id,))
+            row = cur.fetchone()
+            if row:
+                # Повторный вызов не продлевает срок — просто возвращаем текущий.
+                return ok({
+                    'ok': True,
+                    'already_started': True,
+                    'expires_at': row[0].isoformat() if row[0] else None,
+                })
+
+            cur.execute(
+                "INSERT INTO kids_trials (user_id, expires_at) "
+                "VALUES (%s, NOW() + (%s || ' days')::interval) RETURNING expires_at",
+                (user_id, str(KIDS_TRIAL_DAYS))
+            )
+            expires_at = cur.fetchone()[0]
+            conn.commit()
+            return ok({
+                'ok': True,
+                'already_started': False,
+                'trial_days': KIDS_TRIAL_DAYS,
+                'expires_at': expires_at.isoformat() if expires_at else None,
+            })
+    finally:
+        conn.close()
 
 
 def get_purchased_courses(cur, user_id: int) -> list:
@@ -305,6 +485,10 @@ def handle_check(token: str, course_id: int | None) -> dict:
                     # Бесплатные навсегда курсы и акция открывают доступ даже гостям
                     'course_access': promo or free_forever,
                     'promo_active': promo,
+                    'kids_access': False,
+                    'kids_source': None,
+                    'kids_expires_at': None,
+                    'kids_trial_used': False,
                 })
             has_sub = get_subscription_active(cur, user_id)
             purchased = get_purchased_courses(cur, user_id)
@@ -317,6 +501,8 @@ def handle_check(token: str, course_id: int | None) -> dict:
                 'purchased_course_ids': purchased,
                 'course_access': course_access,
                 'promo_active': promo,
+                # Детский модуль изолирован: свой доступ, своя дата окончания.
+                **get_kids_access(cur, user_id),
             })
     finally:
         conn.close()
@@ -415,9 +601,21 @@ def handle_sync_payment(token: str, body: dict) -> dict:
                         "UPDATE subscriptions SET status = 'active', "
                         "started_at = COALESCE(started_at, NOW()), "
                         "expires_at = NOW() + (%s || ' days')::interval, updated_at = NOW() "
-                        "WHERE id = %s AND status <> 'active'",
+                        "WHERE id = %s AND status <> 'active' "
+                        "RETURNING plan_id, amount_kopecks",
                         (str(period_days or 30), sub_id)
                     )
+                    sub_row = cur.fetchone()
+                    if sub_row:
+                        # Подписка «Малыш» закрывает бесплатный период — отмечаем конверсию.
+                        if sub_row[0] == 'kids':
+                            cur.execute(
+                                "UPDATE kids_trials SET converted_at = COALESCE(converted_at, NOW()) "
+                                "WHERE user_id = %s",
+                                (user_id,)
+                            )
+                        award_partner_commissions(cur, user_id, sub_row[1] or 0,
+                                                  'subscription', sub_id)
                     conn.commit()
                     activated.append({'kind': 'subscription', 'id': sub_id})
                 elif status == 'canceled':
@@ -445,12 +643,15 @@ def handle_sync_payment(token: str, body: dict) -> dict:
                     cur.execute(
                         "UPDATE course_purchases SET status = 'paid', "
                         "purchased_at = NOW(), updated_at = NOW() "
-                        "WHERE id = %s AND status <> 'paid' RETURNING user_id",
+                        "WHERE id = %s AND status <> 'paid' "
+                        "RETURNING user_id, amount_kopecks",
                         (purchase_id,)
                     )
                     paid_row = cur.fetchone()
                     if paid_row:
                         award_referral_purchase_znaika(cur, paid_row[0])
+                        award_partner_commissions(cur, paid_row[0], paid_row[1] or 0,
+                                                  'course', purchase_id)
                     conn.commit()
                     activated.append({'kind': 'course', 'id': purchase_id, 'course_id': course_id})
                 elif status == 'canceled':
@@ -743,34 +944,20 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
             if not user_id:
                 return err('Требуется вход', 401)
 
-            # Акция «Малыш»: первые 3 месяца за 1 ₽ — один раз на пользователя.
-            # Если у пользователя ещё не было kids-подписки (любой статус) — даём интро-цену.
-            kids_intro = False
             period_days = plan['period_days']
-            if plan_id == 'kids' and period == 'month' and is_kids_promo_active():
-                cur.execute(
-                    "SELECT 1 FROM subscriptions WHERE user_id = %s AND plan_id = 'kids' LIMIT 1",
-                    (user_id,)
-                )
-                if not cur.fetchone():
-                    kids_intro = True
-                    base_kopecks = KIDS_INTRO_KOPECKS
-                    period_days = KIDS_INTRO_PERIOD_DAYS
 
-            # Скидки не распространяются на интро-акцию «Малыш» (цена уже 1 ₽).
             amount_kopecks = base_kopecks
             promo_id = None
             coupon_rid = None
-            if not kids_intro:
-                # 1) Промокод из общей таблицы promo_codes (например «ДОБРО»).
-                promo_id, promo_percent = lookup_promo(cur, coupon_code)
-                if promo_id:
-                    amount_kopecks = apply_promo_kopecks(base_kopecks, promo_percent)
-                else:
-                    # 2) Иначе — купон-скидка из магазина ЗНАЕК.
-                    coupon_rid, coupon_percent = lookup_coupon(cur, user_id, coupon_code)
-                    if coupon_rid:
-                        amount_kopecks = apply_promo_kopecks(base_kopecks, coupon_percent)
+            # 1) Промокод из общей таблицы promo_codes (например «ДОБРО»).
+            promo_id, promo_percent = lookup_promo(cur, coupon_code)
+            if promo_id:
+                amount_kopecks = apply_promo_kopecks(base_kopecks, promo_percent)
+            else:
+                # 2) Иначе — купон-скидка из магазина ЗНАЕК.
+                coupon_rid, coupon_percent = lookup_coupon(cur, user_id, coupon_code)
+                if coupon_rid:
+                    amount_kopecks = apply_promo_kopecks(base_kopecks, coupon_percent)
             amount_rub = amount_kopecks / 100
 
             # Если уже есть активная — сообщаем
@@ -988,6 +1175,8 @@ def handler(event: dict, context) -> dict:
             return handle_confirm_demo(token, body)
         if action == 'sync_payment' and method == 'POST':
             return handle_sync_payment(token, body)
+        if action == 'kids_start_trial' and method == 'POST':
+            return handle_kids_start_trial(token)
         return err('Unknown action', 404)
     except psycopg2.Error as e:
         print(f'[access] DB error: {str(e)[:500]}')

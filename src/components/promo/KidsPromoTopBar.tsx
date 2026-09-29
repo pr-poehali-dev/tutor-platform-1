@@ -1,84 +1,80 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
-import {
-  isKidsPromoActive,
-  kidsPromoTimeLeft,
-  KIDS_PROMO_INTRO_MONTHS,
-  KIDS_PROMO_MONTHLY_PRICE,
-} from "./kidsPromoConfig";
+import { KIDS_TRIAL_MONTHS, KIDS_MONTHLY_PRICE } from "./kidsPromoConfig";
 
 /**
- * Верхняя полоса с акцией «К учебному году»: 3 месяца за 1 ₽.
- * Название сезонное: в конце августа родитель ищет, где подтянуть ребёнка
- * к школе, и слово «малыш» мимо этого запроса.
- * Видна на каждой странице. Скрывается, если акция закончилась.
- * Запоминает закрытие на сутки.
+ * Верхняя полоса модуля «Малыш»: первые 3 месяца бесплатно.
+ *
+ * Раньше здесь был обратный отсчёт до конца акции «3 месяца за 1 ₽».
+ * Теперь бесплатный период постоянный, поэтому таймер убран: торопить
+ * родителя нечем, а фальшивый дедлайн подрывает доверие.
+ *
+ * Видна на каждой странице, кроме оплаты и разделов другой аудитории.
+ * Закрытие запоминается на сутки.
  */
 const HIDE_KEY = "uchispro_kids_promo_top_hidden_until";
 
 export default function KidsPromoTopBar() {
-  const [active, setActive] = useState(false);
-  const [tick, setTick] = useState(0);
   const [hidden, setHidden] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => {
-    setActive(isKidsPromoActive());
     try {
       const until = Number(localStorage.getItem(HIDE_KEY) || "0");
       if (until > Date.now()) setHidden(true);
-    } catch { /* noop */ }
-    const t = setInterval(() => setTick((x) => x + 1), 1000);
-    return () => clearInterval(t);
+    } catch {
+      /* noop */
+    }
   }, []);
 
-  // На странице оплаты человек уже принял решение — чужая акция с таймером
-  // сбивает его и уводит с полпути. Ничего не должно отвлекать от платежа.
+  // На странице оплаты человек уже принял решение — посторонний баннер
+  // сбивает его и уводит с полпути.
   const isCheckout = /^\/(course-checkout|checkout|pay)/.test(pathname);
-  // На рекламных лендингах и в разделах для репетиторов детская акция
-  // не к месту: за этот клик заплачено по своей цели, а баннер уводит
-  // человека в совершенно другой продукт.
-  const isWrongAudience = /^\/(ads|repetitoram|school-builder|school|for-schools|for-business)/.test(
-    pathname,
-  );
-  if (!active || hidden || isCheckout || isWrongAudience) return null;
+  // На рекламных лендингах и в разделах для репетиторов детский баннер
+  // не к месту: за клик заплачено по своей цели, а он уводит в другой продукт.
+  const isWrongAudience =
+    /^\/(ads|repetitoram|school-builder|school|for-schools|for-business|partner)/.test(pathname);
+  // Внутри самого раздела «Малыш» звать в «Малыш» незачем.
+  const isInsideKids = /^\/kids/.test(pathname);
 
-  const tl = kidsPromoTimeLeft();
-  if (tl.expired) return null;
+  if (hidden || isCheckout || isWrongAudience || isInsideKids) return null;
 
   const handleClose = () => {
     try {
       localStorage.setItem(HIDE_KEY, String(Date.now() + 24 * 60 * 60 * 1000));
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
     setHidden(true);
   };
 
   return (
-    <div className="relative z-50 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white" data-tick={tick}>
-      <Link
-        to="/checkout/kids"
-        className="block px-4 py-2 hover:bg-black/10 transition-colors"
-      >
+    <div className="relative z-50 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white">
+      <Link to="/kids" className="block px-4 py-2 hover:bg-black/10 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 flex-wrap text-center">
-          <span className="text-xl">🎒</span>
+          <span className="text-xl">🧸</span>
           <span className="font-montserrat font-black text-xs md:text-sm uppercase tracking-wider">
-            К учебному году
+            УЧИСЬПРО Малыш
           </span>
           <span className="hidden sm:inline text-white/95 text-xs md:text-sm font-bold">
-            — {KIDS_PROMO_INTRO_MONTHS} месяца за 1 ₽, далее {KIDS_PROMO_MONTHLY_PRICE} ₽/мес
+            — первые {KIDS_TRIAL_MONTHS} месяца бесплатно, далее {KIDS_MONTHLY_PRICE} ₽/мес
           </span>
-          <span className="inline-flex items-center gap-1 bg-black/25 rounded-lg px-2 py-1 font-mono font-black text-xs tabular-nums">
-            <Icon name="Clock" size={11} />
-            {tl.days}д {String(tl.hours).padStart(2, "0")}:{String(tl.minutes).padStart(2, "0")}:{String(tl.seconds).padStart(2, "0")}
+          <span className="inline-flex items-center gap-1 bg-black/25 rounded-lg px-2 py-1 text-xs font-bold">
+            <Icon name="CreditCard" size={11} />
+            Без карты
           </span>
           <span className="hidden md:inline text-white/90 text-xs font-bold underline underline-offset-2">
-            Оформить за 1 ₽ →
+            Открыть бесплатно →
           </span>
         </div>
       </Link>
       <button
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleClose(); }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleClose();
+        }}
         aria-label="Скрыть на сутки"
         className="absolute top-1/2 -translate-y-1/2 right-2 w-7 h-7 rounded-full bg-black/15 hover:bg-black/30 flex items-center justify-center text-white/85"
       >

@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Кабинет партнёра без токена — требует вход",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "expectedBody": { "error": "string" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Активация партнёра без токена — требует вход",
+      "method": "POST",
+      "path": "/?action=activate",
+      "expectedStatus": 401,
+      "expectedBody": { "error": "string" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Неизвестное действие возвращает 404",
+      "method": "GET",
+      "path": "/?action=nonexistent",
+      "expectedStatus": 404,
+      "expectedBody": { "error": "string" },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

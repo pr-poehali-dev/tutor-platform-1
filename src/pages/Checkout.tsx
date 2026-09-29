@@ -10,7 +10,6 @@ import {
   PlanDef,
   PlanId,
   PLANS,
-  KIDS_INTRO_PRICE,
   yearPrice,
 } from "@/components/checkout/checkoutPlans";
 import CheckoutPlanCard from "@/components/checkout/CheckoutPlanCard";
@@ -29,16 +28,12 @@ export default function Checkout() {
   const { user, isAuthenticated, loading, openLogin } = useAuth();
   const navigate = useNavigate();
   const plan = useMemo<PlanDef | null>(() => (planId && (planId in PLANS) ? PLANS[planId as PlanId] : null), [planId]);
-  // Абонемент «Малыш» с акцией: первые 3 месяца за 1 ₽ (без годовой опции).
+  // Абонемент «Малыш» оформляют уже по обычной цене: бесплатные 3 месяца
+  // включаются в самом разделе без оплаты. Годовой опции у него нет.
   const isKids = plan?.id === "kids";
-  // Год доступен только для платных тарифов (кроме «Малыша»)
   const isYear = period === "year" && !!plan && plan.price > 0 && !isKids;
-  const displayPrice = isKids
-    ? KIDS_INTRO_PRICE
-    : isYear && plan
-    ? yearPrice(plan.price, plan)
-    : plan?.price ?? 0;
-  const displayPeriod = isKids ? "3 месяца" : isYear ? "год" : plan?.period ?? "";
+  const displayPrice = isYear && plan ? yearPrice(plan.price, plan) : plan?.price ?? 0;
+  const displayPeriod = isYear ? "год" : plan?.period ?? "";
 
   const { buySubscription, validateCoupon } = useAccess();
   const [email, setEmail] = useState<string>(user?.email ?? "");

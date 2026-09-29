@@ -41,8 +41,10 @@ export const PLANS: Record<PlanId, PlanDef> = {
   },
 };
 
-// Акция «Малыш»: первые 3 месяца за 1 ₽.
-export const KIDS_INTRO_PRICE = 1;
+// Абонемент «Малыш»: первые 3 месяца бесплатно (включается без оплаты,
+// см. kids_trials на сервере). На странице оплаты — уже обычная цена,
+// сюда попадают те, у кого бесплатный период закончился.
+export const KIDS_TRIAL_MONTHS = 3;
 
 export const YEAR_DISCOUNT = 0.4;
 export function yearPrice(monthly: number, plan?: PlanDef): number {

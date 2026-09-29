@@ -1,15 +1,25 @@
 import { useCallback } from "react";
 import { useAccess } from "@/context/AccessContext";
 
-// Гейт доступа к модулю «Малыш».
-// Правило: 1 занятие бесплатно (демо), дальше — только по подписке.
-// Подписка «Малыш» (как и любая активная подписка) открывает всё.
+/**
+ * Гейт доступа к модулю «Малыш».
+ *
+ * Модуль изолирован от остальной платформы: его открывает только
+ * подписка «Малыш» или бесплатный период на 3 месяца. Школьные тарифы
+ * («Репетитор» и прочие) сюда доступа не дают — и наоборот, подписка
+ * «Малыш» не открывает школьные курсы. Раньше любая подписка открывала
+ * всё, из-за чего продавать разделы по отдельности было невозможно.
+ *
+ * Гостю без входа оставляем одно демонстрационное занятие: показать
+ * ценность до регистрации.
+ */
 const FREE_KEY = "uchispro_kids_free_activity_v1";
 
 export function useKidsAccess() {
-  const { hasSubscription } = useAccess();
+  const { kids, startKidsTrial } = useAccess();
+  const hasAccess = kids.access;
 
-  // Какое именно занятие было открыто бесплатно (по id раздела/занятия).
+  // Какое именно занятие было открыто демонстрационно.
   const getFreeId = useCallback((): string | null => {
     try {
       return localStorage.getItem(FREE_KEY);
@@ -18,25 +28,24 @@ export function useKidsAccess() {
     }
   }, []);
 
-  // Можно ли открыть это занятие.
-  // - есть подписка → всё открыто;
-  // - бесплатного ещё не тратили → можно (и это станет бесплатным);
-  // - бесплатное уже потрачено на это же занятие → можно повторно;
+  // Можно ли открыть это занятие:
+  // - есть доступ к «Малышу» → всё открыто;
+  // - демо ещё не тратили → можно (это занятие станет демонстрационным);
+  // - демо уже потрачено на него же → можно повторно;
   // - иначе → закрыто.
   const canOpen = useCallback(
     (activityId: string): boolean => {
-      if (hasSubscription) return true;
+      if (hasAccess) return true;
       const freeId = getFreeId();
       if (!freeId) return true;
       return freeId === activityId;
     },
-    [hasSubscription, getFreeId]
+    [hasAccess, getFreeId]
   );
 
-  // Зафиксировать, что бесплатное занятие открыто (если ещё не зафиксировано и нет подписки).
   const markOpened = useCallback(
     (activityId: string): void => {
-      if (hasSubscription) return;
+      if (hasAccess) return;
       try {
         if (!localStorage.getItem(FREE_KEY)) {
           localStorage.setItem(FREE_KEY, activityId);
@@ -45,11 +54,23 @@ export function useKidsAccess() {
         /* noop */
       }
     },
-    [hasSubscription]
+    [hasAccess]
   );
 
-  // Доступна ли ещё бесплатная попытка (для подсказок в UI).
-  const freeUsed = !hasSubscription && !!getFreeId();
+  const freeUsed = !hasAccess && !!getFreeId();
 
-  return { hasSubscription, canOpen, markOpened, freeUsed };
+  return {
+    /** Открыт ли детский раздел целиком. */
+    hasAccess,
+    /** Оставлено для совместимости со старыми вызовами. */
+    hasSubscription: hasAccess,
+    /** subscription — оплачено, trial — идёт бесплатный период. */
+    source: kids.source,
+    expiresAt: kids.expiresAt,
+    trialUsed: kids.trialUsed,
+    startKidsTrial,
+    canOpen,
+    markOpened,
+    freeUsed,
+  };
 }

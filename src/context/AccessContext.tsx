@@ -29,10 +29,26 @@ export interface BuySubscriptionResult {
   demoMode?: boolean;
 }
 
+/** Доступ к модулю «Малыш» — изолирован от школьной подписки. */
+export interface KidsAccessState {
+  /** Открыт ли детский раздел: платная подписка «Малыш» или бесплатный период. */
+  access: boolean;
+  /** Откуда доступ: subscription — оплачен, trial — бесплатные 3 месяца. */
+  source: "subscription" | "trial" | null;
+  /** Когда заканчивается — показываем родителю в кабинете. */
+  expiresAt: string | null;
+  /** Использован ли уже бесплатный период (повторно его не дают). */
+  trialUsed: boolean;
+}
+
 interface AccessState {
   loading: boolean;
   hasSubscription: boolean;
   purchasedCourseIds: number[];
+  /** Детский модуль живёт отдельно: своя подписка, свой срок. */
+  kids: KidsAccessState;
+  /** Включает бесплатные 3 месяца «Малыша». Карта не нужна. */
+  startKidsTrial: () => Promise<{ ok: boolean; expiresAt?: string; message?: string }>;
   canAccessCourse: (courseId: number) => boolean;
   refreshAccess: () => Promise<void>;
   buyCourse: (courseId: number, grade: string, title: string, returnUrl: string, email?: string, promoCode?: string) => Promise<BuyCourseResult>;
@@ -48,21 +64,37 @@ function readToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
+const KIDS_EMPTY: KidsAccessState = {
+  access: false,
+  source: null,
+  expiresAt: null,
+  trialUsed: false,
+};
+
 export function AccessProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [purchasedCourseIds, setPurchasedCourseIds] = useState<number[]>([]);
+  const [kids, setKids] = useState<KidsAccessState>(KIDS_EMPTY);
 
   const refreshAccess = useCallback(async () => {
     const authToken = token || readToken();
     if (!authToken) {
       setHasSubscription(false);
       setPurchasedCourseIds([]);
+      setKids(KIDS_EMPTY);
       return;
     }
     setLoading(true);
-    const res = await safeFetch<{ has_subscription?: boolean; purchased_course_ids?: number[] }>(
+    const res = await safeFetch<{
+      has_subscription?: boolean;
+      purchased_course_ids?: number[];
+      kids_access?: boolean;
+      kids_source?: "subscription" | "trial" | null;
+      kids_expires_at?: string | null;
+      kids_trial_used?: boolean;
+    }>(
       `${ACCESS_URL}?action=check`,
       { method: "GET", headers: { "X-Auth-Token": authToken } }
     );
@@ -71,10 +103,34 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       setPurchasedCourseIds(
         Array.isArray(res.data.purchased_course_ids) ? res.data.purchased_course_ids : []
       );
+      setKids({
+        access: !!res.data.kids_access,
+        source: res.data.kids_source ?? null,
+        expiresAt: res.data.kids_expires_at ?? null,
+        trialUsed: !!res.data.kids_trial_used,
+      });
     }
     // При сбое/таймауте мягко считаем, что доступа нет — без падения и без зависания.
     setLoading(false);
   }, [token]);
+
+  const startKidsTrial = useCallback(async () => {
+    const authToken = token || readToken();
+    if (!authToken) return { ok: false, message: "Сначала войдите в аккаунт" };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=kids_start_trial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, message: data.error || "Не удалось включить доступ" };
+      await refreshAccess();
+      return { ok: true, expiresAt: data.expires_at };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [token, refreshAccess]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -82,6 +138,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     } else {
       setHasSubscription(false);
       setPurchasedCourseIds([]);
+      setKids(KIDS_EMPTY);
     }
   }, [isAuthenticated, refreshAccess]);
 
@@ -206,6 +263,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     loading,
     hasSubscription,
     purchasedCourseIds,
+    kids,
+    startKidsTrial,
     canAccessCourse,
     refreshAccess,
     buyCourse,
@@ -225,6 +284,8 @@ const ACCESS_FALLBACK: AccessState = {
   loading: false,
   hasSubscription: false,
   purchasedCourseIds: [],
+  kids: KIDS_EMPTY,
+  startKidsTrial: async () => ({ ok: false, message: "Доступ недоступен" }),
   canAccessCourse: () => false,
   refreshAccess: async () => {},
   buyCourse: async () => ({ ok: false, message: "Доступ недоступен" }),
