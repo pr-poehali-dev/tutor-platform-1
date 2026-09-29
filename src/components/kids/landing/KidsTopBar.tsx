@@ -69,12 +69,15 @@ export default function KidsTopBar({ screenTime, onOpenSettings, breadcrumbs }: 
             >
               <Icon name="ShieldCheck" size={16} />
             </button>
+            {/* Раньше здесь была кнопка «Малыш», ведущая на эту же страницу.
+                Заменена на вход в родительский кабинет: абонемент, прогресс
+                ребёнка и настройки живут там. */}
             <Link
-              to="/kids"
-              className="hidden md:inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
+              to="/kids/cabinet"
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold px-3 md:px-4 py-2 rounded-xl hover:opacity-90 transition-opacity"
             >
-              <Icon name="Sparkles" size={14} />
-              Малыш
+              <Icon name="UserCircle" size={14} />
+              <span className="hidden md:inline">Кабинет</span>
             </Link>
           </div>
         </div>

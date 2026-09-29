@@ -155,14 +155,17 @@ export default function PricingPlans() {
             Малышам 1–6 лет — подписка «{KIDS.name}»
           </h3>
           <p className="text-white/65 text-sm">
-            {KIDS.description}. Первые 3 месяца за 1 ₽, далее {KIDS.price} ₽ в месяц.
+            {KIDS.description}. Первые 3 месяца бесплатно и без карты,
+            далее {KIDS.price} ₽ в месяц.
           </p>
         </div>
+        {/* Ведём в сам раздел, а не на оплату: бесплатный период включается
+            там одной кнопкой, платить на этом шаге не нужно. */}
         <Link
-          to="/checkout/kids"
+          to="/kids"
           className="rounded-xl bg-white/10 border border-white/15 text-white font-semibold px-6 py-3 text-center hover:bg-white/15 transition-colors whitespace-nowrap"
         >
-          Смотреть тариф
+          Открыть бесплатно
         </Link>
       </div>
     </section>

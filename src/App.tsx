@@ -17,6 +17,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
 import VisitTracker from "@/components/analytics/VisitTracker";
 import UtmTracker from "@/components/ads/UtmTracker";
+import RefCapture from "@/components/referrals/RefCapture";
 import DobroTopBar from "@/components/promo/DobroTopBar";
 import KidsPromoTopBar from "@/components/promo/KidsPromoTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -76,6 +77,7 @@ const Status = lazy(() => import("./pages/Status"));
 const PromoDobro = lazy(() => import("./pages/PromoDobro"));
 const PromoVideo = lazy(() => import("./pages/PromoVideo"));
 const KidsLanding = lazy(() => import("./pages/Kids"));
+const KidsCabinet = lazy(() => import("./pages/KidsCabinet"));
 const KidsAbout = lazy(() => import("./pages/KidsAbout"));
 const KidsAge = lazy(() => import("./pages/KidsAge"));
 const KidsDiagnostic = lazy(() => import("./pages/KidsDiagnostic"));
@@ -142,6 +144,7 @@ const Business2026 = lazy(() => import("./pages/Business2026"));
 const Orchestrator = lazy(() => import("./pages/Orchestrator"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
 const Partners = lazy(() => import("./pages/Partners"));
+const PartnerCabinet = lazy(() => import("./pages/PartnerCabinet"));
 const EdTechJobs = lazy(() => import("./pages/EdTechJobs"));
 const SchoolBuilder = lazy(() => import("./pages/SchoolBuilder"));
 const ForTutors = lazy(() => import("./pages/ForTutors"));
@@ -179,6 +182,7 @@ const App = () => (
             <YandexMetrika />
             <VisitTracker />
             <UtmTracker />
+            <RefCapture />
             <DobroTopBar />
             <KidsPromoTopBar />
             <AuthProvider>
@@ -220,6 +224,7 @@ const App = () => (
                     <Route path="/orchestrator" element={<Orchestrator />} />
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/partners" element={<Partners />} />
+                    <Route path="/partner" element={<PartnerCabinet />} />
                     <Route path="/edtech-jobs" element={<EdTechJobs />} />
                     <Route path="/school-builder" element={<SchoolBuilder />} />
                     <Route path="/repetitoram" element={<ForTutors />} />
@@ -290,6 +295,7 @@ const App = () => (
                     <Route path="/promo/dobro" element={<PromoDobro />} />
                     <Route path="/promo/video" element={<PromoVideo />} />
                     <Route path="/kids" element={<KidsLanding />} />
+                    <Route path="/kids/cabinet" element={<KidsCabinet />} />
                     <Route path="/kids/about" element={<KidsAbout />} />
                     <Route path="/kids/test" element={<KidsDiagnostic />} />
                     <Route path="/kids/vopros/:topic" element={<KidsTopic />} />

@@ -107,6 +107,36 @@ export default function Partners() {
           </a>
         </section>
 
+        {/* Партнёрская программа для частных лиц — отдельный продукт.
+            Эта страница про white-label для школ, а репетитору или блогеру
+            нужен не перенос школы, а ссылка и вознаграждение. */}
+        <Link
+          to="/partner"
+          className="group block mb-14 rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-900/25 via-teal-900/15 to-cyan-900/20 p-6 md:p-7 hover:border-emerald-400/50 transition-colors"
+        >
+          <div className="flex items-start gap-4">
+            <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 items-center justify-center text-2xl flex-shrink-0">
+              🤝
+            </div>
+            <div className="min-w-0">
+              <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">
+                Партнёрская программа
+              </span>
+              <h3 className="font-montserrat font-black text-white text-lg md:text-xl mt-1 mb-1.5">
+                Приводите учеников — получайте 20% с их оплат
+              </h3>
+              <p className="text-white/70 text-sm leading-relaxed mb-3">
+                Для репетиторов, блогеров и всех, кто рекомендует обучение. Плюс 10% и 5%
+                с оплат второй и третьей линии. Вывод от 1000 ₽ на карту или по СБП.
+              </p>
+              <span className="inline-flex items-center gap-1.5 text-emerald-200 group-hover:text-emerald-100 text-sm font-bold transition-colors">
+                Открыть кабинет партнёра
+                <Icon name="ArrowRight" size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </div>
+        </Link>
+
         {/* Выгоды */}
         <section className="mb-16" aria-label="Что получает школа">
           <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-8">
