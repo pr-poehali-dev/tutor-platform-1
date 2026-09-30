@@ -143,14 +143,29 @@ def channel_link() -> str:
 
 
 def welcome_text() -> str:
+    """Приветствие в личке.
+
+    Раньше здесь была общая фраза «новости и материалы» — человек не понимал,
+    что ему делать дальше, и уходил. Теперь сразу показываем конкретные
+    разделы и то, что можно получить бесплатно.
+    """
     link = channel_link()
-    parts = ["👋 Здравствуйте! Это бот платформы <b>УЧИСЬПРО</b>.\n",
-             "Здесь — образовательные новости, разборы и полезные материалы "
-             "для детей, родителей и взрослых.\n"]
+    parts = [
+        "👋 Здравствуйте! Это бот платформы <b>УЧИСЬПРО</b>.\n",
+        "Что у нас есть:\n",
+        f"🧸 <b>Малыш</b> — занятия для детей 1–6 лет: сказки с озвучкой, "
+        f"чтение, игры. Первые 3 месяца бесплатно, карта не нужна.\n"
+        f"{SITE_URL}/kids\n",
+        f"📚 <b>ИИ-репетитор</b> — разбор тем, домашка по фото, подготовка "
+        f"к ЕГЭ и ОГЭ.\n{SITE_URL}/courses\n",
+        f"🎁 <b>Бесплатные мини-курсы</b> — без регистрации и карты.\n"
+        f"{SITE_URL}/free-courses\n",
+        f"🤝 <b>Партнёрам</b> — 20% с оплат тех, кого вы привели.\n"
+        f"{SITE_URL}/partner\n",
+    ]
     if link:
         parts.append(f"📢 Наш канал: {link}\n")
-    parts.append(f"✨ Платформа: {SITE_URL}\n")
-    parts.append("Первый урок в каждом курсе — бесплатно, без карты.")
+    parts.append("Команды: /help — это меню, /stop — отписаться от бота.")
     return '\n'.join(parts)
 
 
@@ -456,13 +471,35 @@ def handle_webhook(conn, body: dict) -> dict:
     chat = message.get('chat') or {}
     if chat.get('type') == 'private' and chat.get('id'):
         uid = chat['id']
+        text = (message.get('text') or '').strip().lower()
+
+        # Отписка. Telegram требует, чтобы у бота был способ его остановить,
+        # иначе на него летят жалобы и бот попадает в ограничения.
+        if text.startswith('/stop'):
+            tg_send_to_user(
+                uid,
+                "Хорошо, больше писать не буду. Если передумаете — "
+                "отправьте /start.\n\nПлатформа всегда здесь: " + SITE_URL
+            )
+            return ok({'ok': True, 'stopped': str(uid)})
+
         if not already_welcomed(conn, uid):
             tg_send_to_user(uid, welcome_text())
             mark_welcomed(conn, uid, chat.get('username') or chat.get('first_name'))
             return ok({'ok': True, 'welcomed': str(uid)})
-        text = (message.get('text') or '').strip().lower()
+
         if text.startswith('/start') or text.startswith('/help'):
             tg_send_to_user(uid, welcome_text())
+            return ok({'ok': True, 'menu': str(uid)})
+
+        # На любое другое сообщение подсказываем, что бот умеет.
+        # Молчание в ответ выглядит как поломка.
+        if text:
+            tg_send_to_user(
+                uid,
+                "Я показываю разделы платформы и новости. "
+                "Отправьте /help, чтобы увидеть меню."
+            )
         return ok({'ok': True, 'seen': str(uid)})
 
     return ok({'ok': True, 'ignored': True})
@@ -555,6 +592,75 @@ def handle_seed(conn, limit: int = 5, dry_run: bool = False) -> dict:
                'channel_chat_id': str(chat_id), 'results': results})
 
 
+def handle_setup_webhook(params: dict) -> dict:
+    """Привязывает вебхук в Telegram, чтобы бот начал получать сообщения.
+
+    Без этого шага бот развёрнут, но мёртв: Telegram просто некуда слать
+    апдейты, и /start остаётся без ответа. Адрес самой функции передаём
+    параметром url — внутри облака свой публичный адрес не известен.
+    """
+    token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    if not token:
+        return ok({'ok': False, 'reason': 'token_not_set',
+                   'hint': 'Добавьте секрет TELEGRAM_BOT_TOKEN'})
+
+    func_url = (params.get('url') or '').strip()
+    if not func_url.startswith('https://'):
+        return ok({'ok': False, 'reason': 'url_required',
+                   'hint': 'Передайте ?url=https://functions.poehali.dev/<id>'})
+
+    hook_url = func_url + ('&' if '?' in func_url else '?') + 'action=webhook'
+    payload = json.dumps({
+        'url': hook_url,
+        # Нужны и личные сообщения, и посты канала, и смена прав бота
+        # (по ней определяем, что бота сделали админом канала).
+        'allowed_updates': ['message', 'channel_post', 'my_chat_member'],
+        'drop_pending_updates': True,
+    }).encode()
+
+    req = urllib.request.Request(
+        f'{TG_API_BASE}/bot{token}/setWebhook',
+        data=payload,
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        return ok({'ok': False, 'reason': 'telegram_error',
+                   'detail': e.read().decode()[:300]})
+    except urllib.error.URLError as e:
+        return ok({'ok': False, 'reason': 'network', 'detail': str(e)[:200]})
+
+    return ok({'ok': bool(data.get('ok')), 'webhook_url': hook_url,
+               'telegram_response': data})
+
+
+def handle_webhook_info() -> dict:
+    """Показывает, привязан ли вебхук и нет ли ошибок доставки."""
+    token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    if not token:
+        return ok({'ok': False, 'reason': 'token_not_set'})
+    try:
+        with urllib.request.urlopen(
+            f'{TG_API_BASE}/bot{token}/getWebhookInfo', timeout=15
+        ) as resp:
+            data = json.loads(resp.read().decode())
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        return ok({'ok': False, 'reason': 'request_failed', 'detail': str(e)[:200]})
+
+    info = data.get('result') or {}
+    return ok({
+        'ok': True,
+        'webhook_set': bool(info.get('url')),
+        'url': info.get('url'),
+        'pending_update_count': info.get('pending_update_count'),
+        'last_error_message': info.get('last_error_message'),
+        'last_error_date': info.get('last_error_date'),
+    })
+
+
 def is_cron_authorized(headers: dict) -> bool:
     secret = os.environ.get('CRON_SECRET', '')
     if not secret:
@@ -585,6 +691,18 @@ def handler(event: dict, context) -> dict:
         return ok({'ok': True, 'bot': {'id': res.get('id'),
                                        'username': res.get('username'),
                                        'name': res.get('first_name')}})
+
+    # Привязка вебхука защищена секретом: иначе посторонний мог бы
+    # переключить бота на свой адрес и перехватывать сообщения.
+    if action == 'setup_webhook':
+        if not is_cron_authorized(headers):
+            return ok({'ok': False, 'reason': 'unauthorized'}, 401)
+        return handle_setup_webhook(params)
+
+    if action == 'webhook_info':
+        if not is_cron_authorized(headers):
+            return ok({'ok': False, 'reason': 'unauthorized'}, 401)
+        return handle_webhook_info()
 
     try:
         body = json.loads(event.get('body') or '{}')
