@@ -182,10 +182,14 @@ const App = () => (
             <YandexMetrika />
             <VisitTracker />
             <UtmTracker />
-            <RefCapture />
             <DobroTopBar />
             <KidsPromoTopBar />
             <AuthProvider>
+              {/* RefCapture обязан быть ВНУТРИ AuthProvider: он ждёт входа
+                  через useAuth(). Снаружи хук получал заглушку с
+                  isAuthenticated: false, и партнёрский код из ссылки
+                  ?ref= сохранялся в localStorage, но никогда не применялся. */}
+              <RefCapture />
               <ZnaikaProvider>
               <AccessProvider>
                 <ErrorBoundary>

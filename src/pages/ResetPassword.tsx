@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import Seo from "@/components/seo/Seo";
 import func2url from "../../backend/func2url.json";
 
 const API = (func2url as Record<string, string>).notifications;
@@ -42,6 +43,13 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-[#0B0A1F] flex items-center justify-center px-4 py-12">
+      {/* Страница открывается по одноразовой ссылке из письма — в индексе
+          ей не место, иначе токены сброса утекают в выдачу. */}
+      <Seo
+        title="Смена пароля"
+        description="Придумайте новый пароль для входа в аккаунт УЧИСЬПРО."
+        noindex
+      />
       <div className="w-full max-w-md">
         <div className="bg-white/5 border border-white/10 rounded-2xl p-7">
           {!token ? (

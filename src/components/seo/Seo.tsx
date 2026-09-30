@@ -47,6 +47,21 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * Технический preview-домен, а не рабочий адрес сайта.
+ *
+ * Preview-домены раздают ту же сборку и тот же robots.txt с «Allow: /»,
+ * а canonical до этого собирался из window.location.href — то есть превью
+ * ссылалось само на себя и попадало в индекс полной копией сайта. Для поиска
+ * это два сайта с одинаковым контентом: он выбирает главный сам и может
+ * предпочесть технический адрес.
+ */
+function isPreviewHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  return h !== CYRILLIC_HOST && h !== PUNYCODE_HOST && h !== "localhost" && !h.startsWith("127.");
+}
+
+/**
  * Канонический адрес страницы: без параметров и якоря, без хвостового слэша.
  *
  * Раньше сюда попадал весь window.location.href — значит переход из рекламы
@@ -55,7 +70,16 @@ function normalizeUrl(url: string): string {
  */
 function canonicalize(url: string): string {
   if (!url) return SITE_URL;
-  const clean = normalizeUrl(url).split("#")[0].split("?")[0];
+  let clean = normalizeUrl(url).split("#")[0].split("?")[0];
+  // С preview-домена канонический адрес обязан указывать на рабочий сайт:
+  // путь сохраняем, хост подменяем.
+  if (isPreviewHost()) {
+    try {
+      clean = SITE_URL + new URL(clean).pathname;
+    } catch {
+      clean = SITE_URL;
+    }
+  }
   // Хвостовой слэш убираем везде, кроме корня: /courses/ и /courses — одна страница.
   if (clean.length > SITE_URL.length + 1 && clean.endsWith("/")) {
     return clean.slice(0, -1);
@@ -89,6 +113,9 @@ export default function Seo({
   const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
   const url = canonicalize(rawUrl);
   const img = normalizeUrl(image);
+  // Технический домен закрываем целиком: одного canonical мало, поиск
+  // трактует его как подсказку и всё равно может показать копию.
+  const blockIndex = noindex || isPreviewHost();
 
   // Подсказка разработчику: в продакшене молчим, чтобы не шуметь в консоли посетителю.
   if (import.meta.env.DEV) {
@@ -117,7 +144,7 @@ export default function Seo({
         <meta name="prerender-status-code" content={String(statusCode)} />
       )}
 
-      {noindex ? (
+      {blockIndex ? (
         <meta name="robots" content="noindex, follow" />
       ) : (
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
@@ -129,8 +156,13 @@ export default function Seo({
       <meta property="og:description" content={description} />
       <meta property="og:image" content={img} />
       <meta property="og:image:secure_url" content={img} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
+      {/* Размеры указываем только для картинки по умолчанию — её формат известен
+          точно (1024×1024). Раньше здесь жёстко стояло 1200×630 для любой
+          обложки: соцсети верили тегу, резервировали неверную пропорцию и
+          показывали превью с обрезкой или полями. Для своих обложек размер
+          не заявляем — краулер измерит файл сам. */}
+      {img === DEFAULT_IMG && <meta property="og:image:width" content="1024" />}
+      {img === DEFAULT_IMG && <meta property="og:image:height" content="1024" />}
       <meta property="og:image:alt" content={fullTitle} />
       <meta property="og:url" content={url} />
       <meta property="og:locale" content="ru_RU" />

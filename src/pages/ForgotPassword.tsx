@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import Seo from "@/components/seo/Seo";
 import func2url from "../../backend/func2url.json";
 
 const API = (func2url as Record<string, string>).notifications;
@@ -37,6 +38,13 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-[#0B0A1F] flex items-center justify-center px-4 py-12">
+      {/* Служебный экран: поиску тут нечего индексировать, а без тега
+          страница уходила в индекс с мета-данными главной. */}
+      <Seo
+        title="Восстановление пароля"
+        description="Введите адрес почты — отправим ссылку для смены пароля в аккаунте УЧИСЬПРО."
+        noindex
+      />
       <div className="w-full max-w-md">
         <a
           href="/"
