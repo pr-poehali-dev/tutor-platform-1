@@ -315,6 +315,48 @@ export default function FeedArticlePage() {
             if (/^\s*---+\s*$/.test(p)) {
               return <hr key={i} className="border-white/10 my-8" />;
             }
+            // Таблица в markdown: строка заголовка, строка-разделитель вида
+            // |---|---|, дальше данные. Без этой ветки таблица выводилась
+            // сырым текстом с вертикальными чертами.
+            const isTable =
+              lines.length >= 2 &&
+              /^\s*\|.*\|\s*$/.test(lines[0]) &&
+              /^\s*\|[\s:|-]+\|\s*$/.test(lines[1]);
+            if (isTable) {
+              const cells = (l: string) =>
+                l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+              const head = cells(lines[0]);
+              const body = lines.slice(2).filter((l) => /\|/.test(l)).map(cells);
+              return (
+                <div key={i} className="overflow-x-auto my-6 rounded-2xl border border-white/10">
+                  <table className="w-full text-sm md:text-base border-collapse">
+                    <thead>
+                      <tr className="bg-white/[0.06]">
+                        {head.map((c, j) => (
+                          <th
+                            key={j}
+                            className="text-left font-montserrat font-bold text-white px-4 py-3 border-b border-white/10"
+                          >
+                            {renderInline(c)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {body.map((row, j) => (
+                        <tr key={j} className="border-b border-white/5 last:border-0">
+                          {row.map((c, k) => (
+                            <td key={k} className="px-4 py-3 align-top text-white/85">
+                              {renderInline(c)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            }
             const isList = lines.length > 0 && lines.every((l) => /^\s*[-*]\s+/.test(l));
             if (isList) {
               return (
