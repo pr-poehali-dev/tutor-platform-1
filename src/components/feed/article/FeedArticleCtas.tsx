@@ -35,7 +35,8 @@ export default function FeedArticleCtas({ article }: Props) {
     /grant-ai/i.test(article.slug);
   // Статьи о найме на grant-ai.ru: общий текст про гранты там не к месту,
   // ведём сразу в оценку компетенций и HR-помощник.
-  const isGrantAiHiring = isGrantAi && tags.includes("оценка компетенций");
+  const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
+  const isGrantAiHiring = isGrantAi && !isGrantAiTeam && tags.includes("оценка компетенций");
   // Специальные призывы закрывают лишь несколько узких тем.
   // Если ни один не подошёл — показываем общий, подобранный по смыслу статьи,
   // чтобы читатель не уходил с сайта без предложения.
@@ -48,6 +49,34 @@ export default function FeedArticleCtas({ article }: Props) {
   return (
     <>
       {!hasSpecial && <FeedArticleDefaultCta article={article} />}
+      {/* CTA grant-ai.ru для статей о расчёте команды */}
+      {isGrantAiTeam && (
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">👥</div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Рассчитайте команду за две минуты
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
+              Фонд оплаты труда по зарплатам вашего региона, со страховыми взносами, и гранты,
+              которые помогут его покрыть. Без регистрации и бесплатно.
+            </p>
+            <a
+              href="https://grant-ai.ru/team"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackGoal("article_grant_ai_team_click", { slug: article.slug })}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
+            >
+              <Icon name="Calculator" size={18} />
+              Рассчитать команду
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* CTA grant-ai.ru для статей о найме: оценка компетенций и HR-помощник */}
       {isGrantAiHiring && (
         <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
@@ -89,7 +118,7 @@ export default function FeedArticleCtas({ article }: Props) {
       )}
 
       {/* CTA grant-ai.ru — переход на отдельный сервис по грантам */}
-      {isGrantAi && !isGrantAiHiring && (
+      {isGrantAi && !isGrantAiHiring && !isGrantAiTeam && (
         <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
           <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
           <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
