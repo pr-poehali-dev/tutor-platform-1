@@ -35,6 +35,8 @@ export default function FeedArticleCtas({ article }: Props) {
     /grant-ai/i.test(article.slug);
   // Статьи о найме на grant-ai.ru: общий текст про гранты там не к месту,
   // ведём сразу в оценку компетенций и HR-помощник.
+  // Статьи о разделе «Готовый бизнес под ключ» на mat-labs.ru.
+  const isTurnkey = tags.includes("готовый бизнес") && tags.includes("mat-labs.ru");
   const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
   const isGrantAiHiring = isGrantAi && !isGrantAiTeam && tags.includes("оценка компетенций");
   // Специальные призывы закрывают лишь несколько узких тем.
@@ -43,12 +45,40 @@ export default function FeedArticleCtas({ article }: Props) {
   const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
     "олимпиада", "прораб", "для бизнеса", "обновление"];
   const hasSpecial =
-    isGrantAi || isForecast || isSchoolBuilder ||
+    isGrantAi || isTurnkey || isForecast || isSchoolBuilder ||
     (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
 
   return (
     <>
       {!hasSpecial && <FeedArticleDefaultCta article={article} />}
+      {/* CTA mat-labs.ru: готовый IT-бизнес под своим брендом */}
+      {isTurnkey && (
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-700/35 via-teal-600/20 to-violet-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">🚀</div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Проверьте, свободен ли ваш город
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
+              Бесплатный разбор за 30 минут: обсудим нишу, город и ваш опыт. Каждый проект можно
+              посмотреть вживую до оплаты.
+            </p>
+            <a
+              href="https://mat-labs.ru/gotovyy-biznes"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackGoal("article_turnkey_click", { slug: article.slug })}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-emerald-500/25"
+            >
+              <Icon name="Rocket" size={18} />
+              Выбрать проект
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* CTA grant-ai.ru для статей о расчёте команды */}
       {isGrantAiTeam && (
         <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
