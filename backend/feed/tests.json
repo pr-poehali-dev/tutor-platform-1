@@ -9,6 +9,22 @@
       "bodyMatcher": "partial"
     },
     {
+      "name": "list — school direction filter",
+      "method": "GET",
+      "path": "/?action=list&d=school",
+      "expectedStatus": 200,
+      "expectedBody": {"page": 1},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "list — adult direction filter",
+      "method": "GET",
+      "path": "/?action=list&d=adult",
+      "expectedStatus": 200,
+      "expectedBody": {"page": 1},
+      "bodyMatcher": "partial"
+    },
+    {
       "name": "item without slug — 400",
       "method": "GET",
       "path": "/?action=item",

@@ -1,3 +1,5 @@
+import type { LearnerDirection } from "@/lib/directions";
+
 export interface MenuLink {
   label: string;
   icon: string;
@@ -6,81 +8,40 @@ export interface MenuLink {
   desc?: string;
 }
 
-export interface MenuGroup {
-  label: string;
-  /** Короткая подпись для узких экранов, где полная не помещается */
-  short: string;
-  icon: string;
-  items: MenuLink[];
-}
+/**
+ * Меню каждого направления — не больше 5 пунктов.
+ * Родитель малыша не видит «НЛП» и «Бизнес 2026», взрослый — «Домашку».
+ */
+export const DIRECTION_MENU: Record<LearnerDirection, MenuLink[]> = {
+  kids: [
+    { label: "Занятия по возрасту", icon: "Baby", path: "/kids", desc: "Развитие от 1 до 6 лет" },
+    { label: "Песни", icon: "Music", path: "/kids/songs", desc: "Развивающие песенки" },
+    { label: "Сказки", icon: "BookOpen", path: "/kids/library", desc: "Аудиосказки и книжки" },
+    { label: "Подготовка к школе", icon: "Pencil", path: "/kids/reading", desc: "Чтение, счёт, логика" },
+    { label: "Рисовашка", icon: "Palette", path: "/draw", desc: "Учимся рисовать" },
+  ],
+  school: [
+    { label: "ИИ-репетитор", icon: "GraduationCap", path: "/tutor", desc: "Все предметы, 24/7" },
+    { label: "Домашка", icon: "Camera", path: "/homework", desc: "Разбор по фото" },
+    { label: "ОГЭ и ЕГЭ", icon: "BookMarked", path: "/exam-bank", desc: "Банк заданий и калькулятор" },
+    { label: "Поступление", icon: "Award", path: "/graduate", desc: "Подбор вуза и МГУ-трек" },
+    { label: "Лента", icon: "Newspaper", path: "/feed?d=school", desc: "«Хочу всё знать»" },
+  ],
+  adult: [
+    { label: "Все программы", icon: "Library", path: "/kursy-dlya-vzroslyh", desc: "35 курсов: ИИ, IT, бизнес" },
+    { label: "Нейросети", icon: "Sparkles", path: "/ai-assistant", desc: "ИИ для работы за 5 дней" },
+    { label: "Удалёнка", icon: "Laptop", path: "/remote-professions", desc: "Профессии для работы из дома" },
+    { label: "Руководителю", icon: "Briefcase", path: "/for-managers", desc: "Разборы и шаблоны" },
+    { label: "Своё дело", icon: "Rocket", path: "/business-2026", desc: "Где и что открывать" },
+  ],
+};
 
-export const NAV_LINKS = [
-  { label: "Репетитор", short: "Репет", icon: "GraduationCap", path: "/tutor" },
-  { label: "Курсы", short: "Курсы", icon: "Library", path: "/courses" },
-  { label: "Лента", short: "Лента", icon: "Newspaper", path: "/feed" },
+/** Блок «Партнёрам и бизнесу» — не направление обучения, живёт отдельно. */
+export const BUSINESS_LINKS: MenuLink[] = [
+  { label: "Своя онлайн-школа", icon: "Building2", path: "/for-business", desc: "Платформа под вашим брендом" },
+  { label: "Корпоративное обучение", icon: "Users", path: "/corporate", desc: "Обучение сотрудников" },
+  { label: "Репетиторам", icon: "Wand2", path: "/repetitoram", desc: "Свой курс за минуту" },
+  { label: "Школам и центрам", icon: "School", path: "/for-schools", desc: "Сотрудничество" },
+  { label: "Партнёрская программа", icon: "Handshake", path: "/partners", desc: "Доход с оплат" },
+  { label: "Гранты", icon: "Landmark", path: "/grants", desc: "Заявка на грант с ИИ" },
 ];
-
-export const MENU_GROUPS: MenuGroup[] = [
-  {
-    label: "Детям и школьникам",
-    short: "Детям",
-    icon: "GraduationCap",
-    items: [
-      { label: "Малыш 1+", icon: "Baby", path: "/kids", desc: "Развитие малышей от 1 года" },
-      { label: "Рисовашка", icon: "Palette", path: "/draw", desc: "Рисование для детей" },
-      { label: "Для глухих детей", icon: "Hand", path: "/silent", desc: "Обучение без звука · бесплатно" },
-      { label: "Репетитор по подписке", icon: "Infinity", path: "/pricing", desc: "Все предметы без лимита · 1490 ₽/мес" },
-      { label: "ИИ-учитель", icon: "Bot", section: "ai-teacher", desc: "Персональный ИИ-репетитор 24/7" },
-      { label: "ОГЭ и ЕГЭ", icon: "BookMarked", path: "/exam-bank", desc: "Банк заданий и подготовка к экзаменам" },
-      { label: "Домашка", icon: "Camera", path: "/homework", desc: "Проверка домашних заданий по фото" },
-      { label: "Олимпиада", icon: "Trophy", path: "/olympiad", desc: "Подготовка к олимпиадам" },
-      { label: "Выпускник", icon: "Award", path: "/graduate", desc: "Помощь одиннадцатиклассникам" },
-      { label: "МГУ-трек", icon: "Crown", path: "/mgu-track", desc: "Поступление в МГУ" },
-      { label: "Заказ курса", icon: "Sparkles", path: "/order", desc: "Нет нужного курса? Соберём под вас" },
-    ],
-  },
-  {
-    label: "Взрослым: карьера и ИИ",
-    short: "Взрослым",
-    icon: "Rocket",
-    items: [
-      { label: "Все курсы для взрослых", icon: "GraduationCap", path: "/kursy-dlya-vzroslyh", desc: "35 программ: нейросети, IT, бизнес" },
-      { label: "БИЗНЕС 2026", icon: "Gauge", path: "/bizlab", desc: "Проверка бизнес-идеи на прочность · бесплатно" },
-      { label: "Профориентация PRO", icon: "Fingerprint", path: "/career-pro", desc: "Индивидуальный курс под вас · ИИ" },
-      { label: "Инструменты руководителя", icon: "Wrench", path: "/instrumenty-rukovoditelya", desc: "4 бесплатных курса с шаблонами" },
-      { label: "Бизнес-тренер и коуч", icon: "TrendingUp", path: "/business-coach", desc: "Стратегия роста бизнеса · ИИ" },
-      { label: "Финансовый консультант", icon: "ChartNoAxesCombined", path: "/fin-advisor", desc: "Честный ИИ-анализ по вашим цифрам" },
-      { label: "Оркестратор", icon: "Music4", path: "/orchestrator", desc: "Онбординг и контроль удалённых команд · ИИ" },
-      { label: "Бизнес и MBA", icon: "Briefcase", path: "/courses/business", desc: "Запуск продукта и онлайн-школы" },
-      { label: "Продажи B2B", icon: "Handshake", path: "/courses/sales", desc: "Обучение отделов продаж" },
-      { label: "Промпт-инженер", icon: "Sparkles", path: "/courses/prompteng", desc: "Профессия будущего с нуля" },
-      { label: "Удалённые профессии", icon: "Laptop", path: "/remote-professions", desc: "Работа из дома" },
-      { label: "Тренды IT", icon: "Cpu", path: "/tech-trends", desc: "ИИ-аналитика IT-направлений" },
-      { label: "Автоматизация", icon: "Workflow", path: "/intensive", desc: "Интенсив по автоматизации" },
-    ],
-  },
-  {
-    label: "Психология",
-    short: "Психология",
-    icon: "HeartHandshake",
-    items: [
-      { label: "Психологу", icon: "HeartHandshake", path: "/psychology", desc: "Поддержка и помощь онлайн" },
-      { label: "Познай себя", icon: "Compass", path: "/know-yourself", desc: "Тесты и профориентация · бесплатно" },
-      { label: "Профессия психолога", icon: "Brain", path: "/klinicheskiy-psiholog", desc: "Клиническая психология" },
-      { label: "Курс НЛП-практик", icon: "Sparkles", path: "/nlp-master", desc: "НЛП с нуля до практики" },
-    ],
-  },
-  {
-    label: "Бизнесу и школам",
-    short: "Бизнесу",
-    icon: "Building2",
-    items: [
-      { label: "Для бизнеса", icon: "Building2", path: "/for-business", desc: "Конструктор онлайн-школ" },
-      { label: "Корпоративное обучение", icon: "Users", path: "/corporate", desc: "Обучение сотрудников линейке" },
-      { label: "Партнёрам", icon: "Handshake", path: "/partners", desc: "Сотрудничество для школ" },
-      { label: "Гранты", icon: "Landmark", path: "/grants", desc: "Поиск и оформление грантов" },
-    ],
-  },
-];
-
-export const PARTNERS_LINK = { label: "Партнёрам", icon: "Handshake", path: "/partners" };

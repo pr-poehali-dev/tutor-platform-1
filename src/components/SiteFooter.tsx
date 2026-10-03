@@ -1,118 +1,197 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { useDirection } from "@/hooks/useDirection";
+import { DIRECTIONS, LEARNER_ORDER, LearnerDirection } from "@/lib/directions";
+
+interface FooterLink {
+  to: string;
+  label: string;
+}
+
+/**
+ * Ссылки подвала по направлениям. Раньше в подвале было ~30 ссылок
+ * на всё сразу: родитель малыша видел «НЛП-практик», а школьник —
+ * «Корпоративное обучение». Теперь колонка показывает своё направление.
+ * Набор ссылок покрывает ключевые страницы, чтобы не терять перелинковку.
+ */
+const FOOTER_LINKS: Record<LearnerDirection, FooterLink[]> = {
+  kids: [
+    { to: "/kids", label: "Занятия по возрасту" },
+    { to: "/kids/test", label: "Диагностика развития" },
+    { to: "/kids/songs", label: "Развивающие песни" },
+    { to: "/kids/library", label: "Сказки и книжки" },
+    { to: "/kids/reading", label: "Подготовка к школе" },
+    { to: "/kids/games", label: "Развивающие игры" },
+    { to: "/kids/my-russia", label: "Моя Россия" },
+    { to: "/draw", label: "Рисовашка" },
+    { to: "/kids/about", label: "О программе" },
+  ],
+  school: [
+    { to: "/tutor", label: "Онлайн-репетитор 24/7" },
+    { to: "/pricing", label: "Подписка — 1 490 ₽/мес" },
+    { to: "/homework", label: "Домашка по фото" },
+    { to: "/exam-bank", label: "Сборник заданий ОГЭ и ЕГЭ" },
+    { to: "/score-calculator", label: "Калькулятор баллов ЕГЭ" },
+    { to: "/exam-checklist", label: "Чек-лист выпускника" },
+    { to: "/know-yourself", label: "Профориентация «Познай себя»" },
+    { to: "/graduate", label: "Подбор вуза" },
+    { to: "/mgu-track", label: "МГУ-трек" },
+    { to: "/writing-craft", label: "Мастерская сочинений" },
+    { to: "/olympiad", label: "Олимпиада" },
+    { to: "/silent", label: "Курс для глухих детей" },
+    { to: "/feed?d=school", label: "Лента «Хочу всё знать»" },
+  ],
+  adult: [
+    { to: "/kursy-dlya-vzroslyh", label: "Все 35 программ" },
+    { to: "/ai-assistant", label: "Нейросети для работы" },
+    { to: "/zarabotok-na-neirosetyah", label: "Заработок на нейросетях" },
+    { to: "/remote-professions", label: "Удалённые профессии" },
+    { to: "/career-pro", label: "Профориентация PRO" },
+    { to: "/for-managers", label: "Руководителю" },
+    { to: "/instrumenty-rukovoditelya", label: "Инструменты руководителя" },
+    { to: "/business-2026", label: "Бизнес 2026: где открываться" },
+    { to: "/bizlab", label: "Проверка бизнес-идеи" },
+    { to: "/klinicheskiy-psiholog", label: "Профессия психолога" },
+    { to: "/nlp-master", label: "Курс НЛП-практик" },
+    { to: "/psychology", label: "Психологическая поддержка" },
+    { to: "/feed?d=adult", label: "Статьи о бизнесе и карьере" },
+  ],
+};
+
+const BUSINESS: FooterLink[] = [
+  { to: "/for-business", label: "Своя онлайн-школа" },
+  { to: "/corporate", label: "Корпоративное обучение" },
+  { to: "/repetitoram", label: "Репетиторам" },
+  { to: "/school-builder", label: "ИИ-конструктор курса" },
+  { to: "/for-schools", label: "Школам и центрам" },
+  { to: "/partners", label: "Партнёрская программа" },
+  { to: "/grants", label: "Гранты" },
+];
+
+const SUPPORT: FooterLink[] = [
+  { to: "/mini-course", label: "Бесплатные мини-курсы" },
+  { to: "/help", label: "Центр помощи" },
+  { to: "/contacts", label: "Написать нам" },
+  { to: "/reviews", label: "Отзывы" },
+  { to: "/referral", label: "Приведи друга" },
+  { to: "/app", label: "Приложение" },
+];
+
+function LinkList({ links, accent }: { links: FooterLink[]; accent?: string }) {
+  return (
+    <ul className="space-y-2 text-sm">
+      {links.map((l) => (
+        <li key={l.to}>
+          <Link to={l.to} className={`${accent || "text-white/65"} hover:text-white transition-colors`}>
+            {l.label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function SiteFooter() {
+  const { active } = useDirection();
+  const meta = active ? DIRECTIONS[active] : null;
+
   return (
     <footer className="relative z-10 mt-20 border-t border-white/8 bg-card/30 backdrop-blur-sm" aria-label="Подвал сайта">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-10">
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* About */}
-          <section className="md:col-span-2" aria-label="О проекте УЧИСЬПРО">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+          <section className="lg:col-span-2" aria-label="О проекте УЧИСЬПРО">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-lg" aria-hidden="true">
                 🚀
               </div>
               <span className="font-montserrat font-black text-white text-lg">УЧИСЬПРО</span>
             </div>
-            <p className="text-white/75 text-sm leading-relaxed max-w-md">
-              Образовательная онлайн-платформа с персональным ИИ-репетитором: голосовые уроки, адаптивные программы, подготовка к ЕГЭ и ОГЭ. Учись когда удобно — на учисьпро.рф.
+            <p className="text-white/70 text-sm leading-relaxed max-w-md">
+              Одна платформа для всей семьи: малышам — развитие, школьникам — ИИ-репетитор и подготовка к экзаменам,
+              взрослым — новые профессии и нейросети.
             </p>
-            <p className="text-white/55 text-xs mt-2">учисьпро.рф · Продукт ООО «МАТ-ЛАБС»</p>
+
+            {/* Направления — переход в любое из них */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {LEARNER_ORDER.map((id) => {
+                const d = DIRECTIONS[id];
+                return (
+                  <Link
+                    key={id}
+                    to={d.home}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                      active === id
+                        ? `bg-gradient-to-r ${d.gradient} text-white border-transparent`
+                        : "border-white/12 text-white/70 hover:text-white hover:bg-white/8"
+                    }`}
+                  >
+                    <span aria-hidden="true">{d.emoji}</span>
+                    {d.label} · {d.age}
+                  </Link>
+                );
+              })}
+            </div>
+
             <a
               href="https://max.ru/id631205241205_biz"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-sky-500/20 hover:from-sky-400 hover:to-blue-500 transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:from-sky-400 hover:to-blue-500 transition-colors"
             >
               <Icon name="Send" size={16} aria-hidden="true" />
-              Подписаться на канал в MAX
+              Канал в MAX
             </a>
           </section>
 
-          {/* Tools */}
-          <nav aria-label="Полезные ссылки">
-            <h4 className="font-montserrat font-bold text-white text-sm mb-3">Полезное</h4>
-            <ul className="space-y-2 text-sm">
-              {/* Ссылка на хаб репетитора обязана быть в подвале: это самый
-                  частотный коммерческий кластер запросов, а перелинковки
-                  с остальных страниц сайта на него не было вовсе. */}
-              <li><Link to="/tutor" className="text-sky-200 hover:text-sky-100 transition-colors font-bold">🧑‍🎓 Онлайн-репетитор для школьников 24/7</Link></li>
-              <li><Link to="/mini-course" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">🎁 Бесплатные мини-курсы за вечер</Link></li>
-              <li><Link to="/kursy-dlya-vzroslyh" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Курсы для взрослых: 35 программ</Link></li>
-              <li><Link to="/app" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">📱 Скачать приложение</Link></li>
-              <li><Link to="/search" className="text-white/70 hover:text-white transition-colors">🔎 Поиск по сайту</Link></li>
-              <li><Link to="/exam-bank" className="text-white/70 hover:text-white transition-colors">Сборник заданий ОГЭ и ЕГЭ</Link></li>
-              <li><Link to="/score-calculator" className="text-white/70 hover:text-white transition-colors">Калькулятор баллов ЕГЭ</Link></li>
-              <li><Link to="/feed" className="text-fuchsia-200 hover:text-fuchsia-100 transition-colors font-bold">📡 Лента: «Хочу всё знать»</Link></li>
-              <li><Link to="/business-2026" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">📊 Бизнес 2026: где открываться</Link></li>
-              <li><Link to="/for-managers" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">💼 Руководителю: разборы и курсы</Link></li>
-              <li><Link to="/feed/partnyorskie-programmy-s-bankom-tochka" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрство с Точка Банк</Link></li>
-              <li><Link to="/repetitoram" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🧑‍🏫 Репетиторам: свой курс за минуту</Link></li>
-              <li><Link to="/school-builder" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🪄 ИИ-конструктор курса бесплатно</Link></li>
-              <li><Link to="/for-business" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🚀 Для бизнеса: своя онлайн-школа</Link></li>
-              <li><Link to="/partners" className="text-violet-200 hover:text-violet-100 transition-colors font-bold">🤝 Партнёрам: сотрудничество для школ</Link></li>
-              <li><Link to="/corporate" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🏭 Корпоративное обучение для компаний</Link></li>
-              <li><Link to="/exam-checklist" className="text-rose-200 hover:text-rose-100 transition-colors font-bold">⏰ До ЕГЭ: чек-лист выпускника</Link></li>
-              <li><Link to="/know-yourself" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">🪞 Познай себя: профориентация</Link></li>
-              <li><Link to="/graduate" className="text-purple-200 hover:text-purple-100 transition-colors font-bold">🎓 Выпускник: подбор вуза и программа</Link></li>
-              <li><Link to="/mgu-track" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">👑 МГУ-трек: поступление в МГУ</Link></li>
-              <li><Link to="/writing-craft" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">✍️ Мастерская сочинений и журналистики</Link></li>
-              <li><Link to="/klinicheskiy-psiholog" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">🩺 Профессия психолога: КПТ, ACT, DBT</Link></li>
-              <li><Link to="/nlp-master" className="text-fuchsia-200 hover:text-fuchsia-100 transition-colors font-bold">🧠 Курс НЛП-практик: влияние и коучинг</Link></li>
-            </ul>
+          <nav aria-label={meta ? `Разделы: ${meta.label}` : "Популярное"}>
+            <h4 className="font-montserrat font-bold text-white text-sm mb-3">
+              {meta ? `${meta.emoji} ${meta.label}` : "🎒 Популярное"}
+            </h4>
+            <LinkList links={active ? FOOTER_LINKS[active] : FOOTER_LINKS.school.slice(0, 6)} accent={meta?.text} />
           </nav>
 
-          {/* Поддержка */}
           <nav aria-label="Поддержка">
             <h4 className="font-montserrat font-bold text-white text-sm mb-3">Поддержка</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/mini-course/yandex-webmaster" className="text-rose-200 hover:text-rose-100 transition-colors font-black">🔎 Продвижение сайта — бесплатный курс</Link></li>
-              <li><Link to="/silent" className="text-teal-200 hover:text-teal-100 transition-colors font-bold">🤟 Курс для глухих детей — бесплатно</Link></li>
-              <li><Link to="/znaika" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🪙 ЗНАЙКИ — копи и трать</Link></li>
-              <li><Link to="/help" className="text-emerald-200 hover:text-emerald-100 transition-colors font-bold">💡 Центр помощи и FAQ</Link></li>
-              <li><Link to="/contacts" className="text-cyan-200 hover:text-cyan-100 transition-colors font-bold">✉️ Написать нам</Link></li>
-              <li><Link to="/reviews" className="text-yellow-200 hover:text-yellow-100 transition-colors font-bold">⭐ Отзывы учеников</Link></li>
-              <li><Link to="/referral" className="text-amber-200 hover:text-amber-100 transition-colors font-bold">🎁 Приведи друга — +7 дней</Link></li>
-              <li><a href="https://t.me/+QgiLIa1gFRY4Y2Iy" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition-colors">💬 Telegram-сообщество</a></li>
-              <li><a href="https://max.ru/id631205241205_biz" target="_blank" rel="noopener noreferrer" className="text-sky-200 hover:text-sky-100 transition-colors font-bold">📢 Канал в MAX</a></li>
-            </ul>
+            <LinkList links={SUPPORT} />
+            <h4 className="font-montserrat font-bold text-white text-sm mt-6 mb-3">Документы</h4>
+            <LinkList
+              links={[
+                { to: "/legal/offer", label: "Публичная оферта" },
+                { to: "/legal/privacy", label: "Конфиденциальность" },
+                { to: "/legal/terms", label: "Пользовательское соглашение" },
+              ]}
+            />
           </nav>
 
-          {/* Legal */}
-          <nav aria-label="Правовые документы">
-            <h4 className="font-montserrat font-bold text-white text-sm mb-3">Документы</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/legal/offer" className="text-white/70 hover:text-white transition-colors">Публичная оферта</Link></li>
-              <li><Link to="/legal/privacy" className="text-white/70 hover:text-white transition-colors">Конфиденциальность</Link></li>
-              <li><Link to="/legal/terms" className="text-white/70 hover:text-white transition-colors">Пользовательское соглашение</Link></li>
-            </ul>
-            <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5 text-xs">
-              <p className="text-white/70 flex items-center gap-1.5"><Icon name="ShieldCheck" size={12} className="text-green-400" aria-hidden="true" /> Серверы в РФ</p>
-              <p className="text-white/70 flex items-center gap-1.5"><Icon name="Lock" size={12} className="text-cyan-400" aria-hidden="true" /> Шифрование HTTPS</p>
+          <nav aria-label="Партнёрам и бизнесу">
+            <h4 className="font-montserrat font-bold text-white/80 text-sm mb-3">Партнёрам и бизнесу</h4>
+            <LinkList links={BUSINESS} accent="text-white/50" />
+            <div className="mt-5 pt-3 border-t border-white/8 space-y-1.5 text-xs">
+              <p className="text-white/60 flex items-center gap-1.5">
+                <Icon name="ShieldCheck" size={12} className="text-green-400" aria-hidden="true" /> Серверы в РФ
+              </p>
+              <p className="text-white/60 flex items-center gap-1.5">
+                <Icon name="Lock" size={12} className="text-cyan-400" aria-hidden="true" /> Шифрование HTTPS
+              </p>
             </div>
           </nav>
         </div>
 
-        {/* Bottom */}
-        <div className="pt-6 border-t border-white/8 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="text-white/40 text-xs leading-relaxed">
-              <p className="font-bold text-white/70 mb-1">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
-              <p>Сервис «УЧИСЬПРО» (учисьпро.рф) — продукт ООО «МАТ-ЛАБС». Все права защищены.</p>
-              <p className="mt-1 max-w-xl">
-                Программы, методики, тексты уроков и материалы курсов являются объектами авторского права (ст. 1225–1302 ГК РФ). Исключительные права принадлежат ООО «МАТ-ЛАБС». Копирование, распространение и перепродажа без письменного согласия правообладателя запрещены.
-              </p>
-              <p className="mt-1 max-w-xl">
-                Сервис не выдаёт документов государственного образца. Услуги носят информационно-консультационный характер. Не подлежит лицензированию в соответствии со ст. 91 273-ФЗ.
-              </p>
-            </div>
-            <div className="text-white/30 text-xs">
-              Обработка данных: 152-ФЗ · Реклама: 38-ФЗ · ЗоЗПП
-            </div>
+        <div className="pt-6 border-t border-white/8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="text-white/40 text-xs leading-relaxed">
+            <p className="font-bold text-white/70 mb-1">© {new Date().getFullYear()} ООО «МАТ-ЛАБС»</p>
+            <p>Сервис «УЧИСЬПРО» (учисьпро.рф) — продукт ООО «МАТ-ЛАБС». Все права защищены.</p>
+            <p className="mt-1 max-w-xl">
+              Программы, методики, тексты уроков и материалы курсов являются объектами авторского права (ст. 1225–1302 ГК РФ).
+              Исключительные права принадлежат ООО «МАТ-ЛАБС». Копирование, распространение и перепродажа без письменного согласия правообладателя запрещены.
+            </p>
+            <p className="mt-1 max-w-xl">
+              Сервис не выдаёт документов государственного образца. Услуги носят информационно-консультационный характер.
+              Не подлежит лицензированию в соответствии со ст. 91 273-ФЗ.
+            </p>
           </div>
+          <div className="text-white/30 text-xs">Обработка данных: 152-ФЗ · Реклама: 38-ФЗ · ЗоЗПП</div>
         </div>
-
       </div>
     </footer>
   );

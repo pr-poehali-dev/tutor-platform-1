@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { KIDS_TRIAL_MONTHS, KIDS_MONTHLY_PRICE } from "./kidsPromoConfig";
+import { directionForPath } from "@/lib/directions";
 
 /**
  * Верхняя полоса модуля «Малыш»: первые 3 месяца бесплатно.
@@ -37,8 +38,12 @@ export default function KidsPromoTopBar() {
     /^\/(ads|repetitoram|school-builder|school|for-schools|for-business|partner)/.test(pathname);
   // Внутри самого раздела «Малыш» звать в «Малыш» незачем.
   const isInsideKids = /^\/kids/.test(pathname);
+  // Взрослому, который пришёл за профессией, и партнёру детский баннер не нужен:
+  // показываем его только на главной, в «Школе» и на общих страницах.
+  const dir = directionForPath(pathname);
+  const isOtherDirection = dir === "adult" || dir === "business";
 
-  if (hidden || isCheckout || isWrongAudience || isInsideKids) return null;
+  if (hidden || isCheckout || isWrongAudience || isInsideKids || isOtherDirection) return null;
 
   const handleClose = () => {
     try {

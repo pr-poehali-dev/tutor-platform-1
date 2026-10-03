@@ -40,6 +40,9 @@ export interface Entry {
 /** Постоянные разделы сайта. Ленту добавляем отдельно — она живая. */
 const STATIC: Entry[] = [
   { loc: "/", changefreq: "daily", priority: "1.0" },
+  // Первые страницы направлений: «Школа» и «Взрослые» («Малыш» — это /kids).
+  { loc: "/shkola", changefreq: "weekly", priority: "0.95" },
+  { loc: "/vzroslym", changefreq: "weekly", priority: "0.95" },
   { loc: "/courses", changefreq: "daily", priority: "0.9" },
   { loc: "/pricing", changefreq: "weekly", priority: "0.9" },
   { loc: "/kursy-dlya-vzroslyh", changefreq: "weekly", priority: "0.9" },
@@ -88,7 +91,6 @@ const STATIC: Entry[] = [
   { loc: "/for-schools", changefreq: "monthly", priority: "0.7" },
   { loc: "/corporate", changefreq: "monthly", priority: "0.7" },
   { loc: "/partners", changefreq: "monthly", priority: "0.7" },
-  { loc: "/edtech-jobs", changefreq: "monthly", priority: "0.6" },
   { loc: "/school-builder", changefreq: "weekly", priority: "1.0" },
   { loc: "/repetitoram", changefreq: "weekly", priority: "0.9" },
   { loc: "/grants", changefreq: "weekly", priority: "0.8" },

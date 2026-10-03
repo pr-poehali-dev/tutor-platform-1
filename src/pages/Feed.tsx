@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { FEED_DIRECTION_CATEGORIES, FeedDirection } from "@/components/feed/api";
+import { getSavedDirection } from "@/lib/directions";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
@@ -12,8 +14,39 @@ const SITE_URL = "https://учисьпро.рф";
 
 type CatFilter = FeedCategory | "all";
 
+const DIRECTION_TABS: { id: FeedDirection; label: string; emoji: string }[] = [
+  { id: "school", label: "Школьникам", emoji: "🎒" },
+  { id: "adult", label: "Взрослым", emoji: "💼" },
+  { id: "all", label: "Всё", emoji: "🗂" },
+];
+
+/** Направление ленты: явно из ?d=, иначе — последний выбор посетителя.
+ *  Малышу лента не нужна, поэтому для него открываем школьную. */
+function initialDirection(raw: string | null): FeedDirection {
+  if (raw === "school" || raw === "adult" || raw === "all") return raw;
+  const saved = getSavedDirection();
+  if (saved === "adult") return "adult";
+  if (saved === "school" || saved === "kids") return "school";
+  return "all";
+}
+
 export default function Feed() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [direction, setDirectionState] = useState<FeedDirection>(() => initialDirection(searchParams.get("d")));
   const [category, setCategory] = useState<CatFilter>("all");
+
+  const setDirection = (d: FeedDirection) => {
+    setDirectionState(d);
+    setCategory("all");
+    const next = new URLSearchParams(searchParams);
+    if (d === "all") next.delete("d");
+    else next.set("d", d);
+    setSearchParams(next, { replace: true });
+  };
+
+  const visibleCategories = (Object.keys(CATEGORY_META) as FeedCategory[]).filter(
+    (c) => direction === "all" || FEED_DIRECTION_CATEGORIES[direction].includes(c),
+  );
   const [items, setItems] = useState<FeedArticle[]>([]);
   const [counts, setCounts] = useState<Partial<Record<FeedCategory, number>>>({});
   const [total, setTotal] = useState(0);
@@ -37,7 +70,7 @@ export default function Feed() {
 
     (async () => {
       try {
-        const res = await fetchFeed(category, 1);
+        const res = await fetchFeed(category, 1, direction);
         if (cancelled) return;
         setItems(res.items || []);
         setCounts(res.category_counts);
@@ -50,7 +83,7 @@ export default function Feed() {
           const seed = await seedIfEmpty();
           if (!cancelled && seed.auto_seeded) {
             setTimeout(async () => {
-              const r2 = await fetchFeed(category, 1);
+              const r2 = await fetchFeed(category, 1, direction);
               if (cancelled) return;
               setItems(r2.items || []);
               setCounts(r2.category_counts);
@@ -67,7 +100,7 @@ export default function Feed() {
           keepAlive().then((ka) => {
             if (!cancelled && ka.ok && !ka.skipped && (ka.topup_created || 0) > 0) {
               setTimeout(async () => {
-                const r2 = await fetchFeed(category, 1);
+                const r2 = await fetchFeed(category, 1, direction);
                 if (cancelled) return;
                 setItems(r2.items || []);
                 setCounts(r2.category_counts);
@@ -87,13 +120,13 @@ export default function Feed() {
     return () => {
       cancelled = true;
     };
-  }, [category]);
+  }, [category, direction]);
 
   const loadMore = async () => {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const res = await fetchFeed(category, next);
+      const res = await fetchFeed(category, next, direction);
       setItems((prev) => [...prev, ...(res.items || [])]);
       setPage(next);
       setHasMore(res.has_more);
@@ -164,8 +197,9 @@ export default function Feed() {
             <span className="bg-gradient-to-r from-fuchsia-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Хочу всё знать</span>
           </h1>
           <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">
-            Наука, культура, образование, нейросети и роботы — свежие новости простым языком для школьников.
-            Можешь и сам публиковать свои статьи!
+            {direction === "adult"
+              ? "Бизнес, гранты, нейросети и карьера — разборы и новости для взрослых."
+              : "Наука, культура, образование, нейросети и роботы — свежие новости простым языком для школьников. Можешь и сам публиковать свои статьи!"}
           </p>
         </section>
 
@@ -182,6 +216,28 @@ export default function Feed() {
           </div>
         </section>
 
+        {/* Для кого лента: школьнику не нужны статьи о грантах, взрослому — новости для детей */}
+        <div className="flex justify-center mb-5">
+          <div className="inline-flex gap-1 rounded-2xl border border-white/10 bg-white/5 p-1" role="tablist" aria-label="Для кого статьи">
+            {DIRECTION_TABS.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={direction === t.id}
+                onClick={() => setDirection(t.id)}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                  direction === t.id
+                    ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white shadow-lg"
+                    : "text-white/60 hover:text-white"
+                }`}
+              >
+                <span aria-hidden="true">{t.emoji}</span>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Фильтры по категориям */}
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -195,7 +251,7 @@ export default function Feed() {
             <Icon name="LayoutGrid" size={12} />
             Все ({total})
           </button>
-          {(Object.keys(CATEGORY_META) as FeedCategory[]).map((cat) => {
+          {visibleCategories.map((cat) => {
             const meta = CATEGORY_META[cat];
             const count = counts[cat] || 0;
             const active = category === cat;

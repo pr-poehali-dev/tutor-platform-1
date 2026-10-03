@@ -95,9 +95,22 @@ export function clearAdminKey() {
 
 // ─── ПУБЛИЧНЫЕ ─────────────────────────────────────────────────────────
 
-export async function fetchFeed(category?: FeedCategory | "all", page = 1): Promise<FeedListResponse> {
+export type FeedDirection = "school" | "adult" | "all";
+
+/** Рубрики, которые видит каждое направление (совпадает с бэкендом). */
+export const FEED_DIRECTION_CATEGORIES: Record<Exclude<FeedDirection, "all">, FeedCategory[]> = {
+  school: ["science", "culture", "education", "robots", "literature", "tech", "ai"],
+  adult: ["business", "grants", "ai", "tech"],
+};
+
+export async function fetchFeed(
+  category?: FeedCategory | "all",
+  page = 1,
+  direction: FeedDirection = "all",
+): Promise<FeedListResponse> {
   const params = new URLSearchParams({ action: "list", page: String(page) });
   if (category && category !== "all") params.set("category", category);
+  if (direction !== "all") params.set("d", direction);
   const res = await fetch(`${FEED_URL}?${params}`);
   if (!res.ok) return { items: [], page: 1, per_page: 12, total: 0, has_more: false, category_counts: {} };
   return await res.json();

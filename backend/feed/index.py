@@ -142,8 +142,18 @@ ARTICLE_COLS = (
 )
 
 
+# Рубрики Ленты по направлениям сайта. Школьнику не показываем статьи
+# о грантах и партнёрке, взрослому — новости для детей. «ИИ» нужен обоим.
+DIRECTION_CATEGORIES = {
+    'school': ['science', 'culture', 'education', 'robots', 'literature', 'tech', 'ai'],
+    'adult': ['business', 'grants', 'ai', 'tech'],
+}
+
+
 def handle_list(qs: dict) -> dict:
     category = (qs.get('category') or '').strip()
+    direction = (qs.get('d') or '').strip()
+    allowed = DIRECTION_CATEGORIES.get(direction)
     page = max(1, int(qs.get('page') or 1))
     # По умолчанию отдаём 12 карточек — столько влезает на экран Ленты.
     # Карта сайта просит больше за раз: иначе, чтобы собрать все статьи,
@@ -159,9 +169,12 @@ def handle_list(qs: dict) -> dict:
         with conn.cursor() as cur:
             where = "status = 'published'"
             params = []
-            if category and category in ALLOWED_CATEGORIES:
+            if category and category in ALLOWED_CATEGORIES and (not allowed or category in allowed):
                 where += " AND category = %s"
                 params.append(category)
+            elif allowed:
+                where += " AND category IN (" + ",".join(["%s"] * len(allowed)) + ")"
+                params.extend(allowed)
 
             cur.execute(
                 f"SELECT {ARTICLE_COLS} FROM feed_articles WHERE {where} "
@@ -179,7 +192,7 @@ def handle_list(qs: dict) -> dict:
                 "SELECT category, COUNT(*) FROM feed_articles "
                 "WHERE status = 'published' GROUP BY category"
             )
-            counts = {r[0]: r[1] for r in cur.fetchall()}
+            counts = {r[0]: r[1] for r in cur.fetchall() if not allowed or r[0] in allowed}
 
             return ok({
                 'items': items,

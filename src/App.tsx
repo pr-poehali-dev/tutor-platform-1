@@ -23,6 +23,7 @@ import KidsPromoTopBar from "@/components/promo/KidsPromoTopBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import InstallBanner from "@/components/pwa/InstallBanner";
 import GlobalNavButton from "@/components/nav/GlobalNavButton";
+import DirectionStrip from "@/components/nav/DirectionStrip";
 
 const Offer = lazy(() => import("./pages/legal/Offer"));
 const CourseCheckout = lazy(() => import("./pages/CourseCheckout"));
@@ -161,6 +162,8 @@ const Silent = lazy(() => import("./pages/Silent"));
 const SilentLesson = lazy(() => import("./pages/SilentLesson"));
 const SignDictionary = lazy(() => import("./pages/SignDictionary"));
 const SignDictionaryItem = lazy(() => import("./pages/SignDictionaryItem"));
+const SchoolHome = lazy(() => import("./pages/SchoolHome"));
+const AdultHome = lazy(() => import("./pages/AdultHome"));
 
 const PageSkeleton = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -184,6 +187,7 @@ const App = () => (
             <UtmTracker />
             <DobroTopBar />
             <KidsPromoTopBar />
+            <DirectionStrip />
             <AuthProvider>
               {/* RefCapture обязан быть ВНУТРИ AuthProvider: он ждёт входа
                   через useAuth(). Снаружи хук получал заглушку с
@@ -196,6 +200,8 @@ const App = () => (
                 <Suspense fallback={<PageSkeleton />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
+                    <Route path="/shkola" element={<SchoolHome />} />
+                    <Route path="/vzroslym" element={<AdultHome />} />
                     <Route path="/legal/offer" element={<Offer />} />
                     <Route path="/legal/privacy" element={<Privacy />} />
                     <Route path="/legal/terms" element={<Terms />} />

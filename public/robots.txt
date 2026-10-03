@@ -12,6 +12,7 @@ Disallow: /grants/my
 Disallow: /feed/submit
 Disallow: /status
 Disallow: /auth/
+Disallow: /edtech-jobs
 Disallow: /*.json
 Disallow: /*?paid=
 Disallow: /*?utm_
