@@ -692,7 +692,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       },
       {
         label: "Курсы для взрослых",
-        description: "35 программ с нуля",
+        description: "40+ программ с нуля",
         path: "/kursy-dlya-vzroslyh",
       },
       {
@@ -911,7 +911,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
       },
       {
         label: "Курсы для взрослых",
-        description: "35 программ с нуля",
+        description: "40+ программ с нуля",
         path: "/kursy-dlya-vzroslyh",
       },
       {

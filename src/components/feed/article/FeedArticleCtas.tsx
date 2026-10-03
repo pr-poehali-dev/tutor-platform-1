@@ -383,7 +383,7 @@ export default function FeedArticleCtas({ article }: Props) {
               >
                 <span className="text-3xl">🤖</span>
                 <span className="text-white font-bold text-sm leading-tight">Нейросети с нуля</span>
-                <span className="gradient-text-purple font-black text-base">12 900 ₽</span>
+                <span className="gradient-text-purple font-black text-base">5 990 ₽</span>
               </Link>
             </div>
           </div>

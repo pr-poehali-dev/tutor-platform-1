@@ -13,9 +13,9 @@ const SITE = "https://учисьпро.рф";
 /** Направления взрослых курсов — сгруппированы по цели человека,
  *  а не по внутренним предметам: так ищут работу, а не «курс по subject». */
 const TRACKS: { id: string; label: string; icon: string; subjects: string[] }[] = [
-  { id: "ai", label: "Нейросети и ИИ", icon: "Sparkles", subjects: ["ai", "prompteng", "neuroincome", "avangard"] },
+  { id: "ai", label: "Нейросети и ИИ", icon: "Sparkles", subjects: ["aiagents", "vibecoding", "ai", "prompteng", "neuroincome", "avangard"] },
   { id: "it", label: "IT и данные", icon: "Cpu", subjects: ["cs", "datascience", "product", "roomscan", "smartmach"] },
-  { id: "business", label: "Бизнес и продажи", icon: "Briefcase", subjects: ["business", "marketing", "sales", "tenders", "ved"] },
+  { id: "business", label: "Бизнес и продажи", icon: "Briefcase", subjects: ["marketplaces", "business", "marketing", "sales", "tenders", "ved"] },
   { id: "help", label: "Психология и люди", icon: "HeartHandshake", subjects: ["psychology", "personalbrand"] },
   { id: "lang", label: "Языки и творчество", icon: "Languages", subjects: ["chinese", "korean", "design"] },
 ];
@@ -31,7 +31,7 @@ const FAQ = [
   },
   {
     q: "Сколько стоит и есть ли подписка?",
-    a: "Оплата разовая, подписки нет. Цены — от 3 990 ₽ за курс, доступ навсегда, включая все будущие обновления программы.",
+    a: "Оплата разовая, подписки нет. Цены — от 1 990 ₽ за курс, доступ навсегда, включая все будущие обновления программы.",
   },
   {
     q: "Выдаёте ли документ об образовании?",

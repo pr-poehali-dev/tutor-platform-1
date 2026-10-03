@@ -69,7 +69,7 @@ export const DIRECTIONS: Record<LearnerDirection, DirectionMeta> = {
     emoji: "💼",
     icon: "Briefcase",
     home: "/vzroslym",
-    price: "35 программ, мини-курсы бесплатно",
+    price: "40+ программ, мини-курсы бесплатно",
     tagline: "Нейросети, удалённые профессии, своё дело и управление",
     gradient: "from-emerald-500 to-sky-500",
     text: "text-emerald-200",
@@ -89,6 +89,7 @@ export const ADULT_SUBJECTS = new Set([
   "datascience", "product", "avangard", "roomscan", "marketing", "prompteng",
   "neuroincome", "business", "sales", "python", "analyst", "accounting",
   "cybersec", "devops", "tenders", "ved", "autocad", "trading", "career",
+  "aiagents", "marketplaces", "vibecoding",
 ]);
 
 const RULES: Rule[] = [
@@ -151,10 +152,9 @@ export function directionForPath(pathname: string): Direction {
  *  Реестр тяжёлый (тексты всех уроков), поэтому школьные слаги держим здесь.
  *  Всё, что не в этом списке, — взрослые курсы. */
 export const SCHOOL_MINI = new Set([
-  "naiti-polyarnuyu", "pochemu-ne-govorish", "chto-proishodit-s-telom",
-  "pochemu-daty-ne-zapominayutsya", "kak-chitat-tolstuyu-knigu", "razobrat-uslovie",
-  "kuda-uhodyat-dengi", "mikrovolnovka", "moshenniki", "strah-doski",
-  "pochemu-zabyvaetsya", "kuda-uhodit-vremya",
+  "space-basics", "english-speak", "exam-calm", "history-logic", "literature-read",
+  "math-without-fear", "money-teen", "physics-around", "digital-safety",
+  "school-speak", "how-to-study", "time-teen",
 ]);
 
 function miniCourseDirection(slug?: string): Direction {

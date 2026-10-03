@@ -8,6 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 import DirectionSwitch from "@/components/nav/DirectionSwitch";
 import { DIRECTIONS, LearnerDirection } from "@/lib/directions";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import { PLANS, FAMILY_SEPARATE_PRICE } from "@/components/checkout/checkoutPlans";
 
 export interface LandingCard {
   to: string;
@@ -229,23 +230,30 @@ export default function DirectionLanding({ direction, seo, hero, facts, groups, 
   );
 }
 
-/** Семейное предложение: одна ссылка на все направления. */
+/** Семейный тариф — единственное предложение, общее для всех направлений. */
 export function FamilyOffer() {
+  const family = PLANS.family;
   return (
     <div className="rounded-3xl border border-amber-300/25 bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-violet-500/10 p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5">
       <div className="text-4xl" aria-hidden="true">👨‍👩‍👧‍👦</div>
       <div className="flex-1">
-        <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1">Учитесь всей семьёй</h3>
+        <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1">
+          Семейный тариф — {family.price.toLocaleString("ru-RU")} ₽/мес
+        </h3>
         <p className="text-white/70 text-sm md:text-base">
-          Один аккаунт на семью: малыш, школьник и вы. Расскажем, как оформить доступ для всех сразу и сэкономить.
+          «Малыш» для младшего и ИИ-репетитор для школьника в одной подписке.{" "}
+          <span className="text-white/45 line-through">{FAMILY_SEPARATE_PRICE.toLocaleString("ru-RU")} ₽</span>{" "}
+          <span className="text-emerald-300 font-semibold">
+            экономия {(FAMILY_SEPARATE_PRICE - family.price).toLocaleString("ru-RU")} ₽ каждый месяц
+          </span>
         </p>
       </div>
       <Link
-        to="/contacts?topic=family"
+        to="/checkout/family"
         onClick={() => trackGoal("family_offer_click")}
         className="inline-flex items-center justify-center gap-2 bg-white text-[#1a1530] font-bold px-6 py-3 rounded-xl hover:bg-white/90 transition-colors"
       >
-        Узнать о семейном доступе
+        Оформить для семьи
       </Link>
     </div>
   );

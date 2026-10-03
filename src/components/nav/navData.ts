@@ -28,7 +28,7 @@ export const DIRECTION_MENU: Record<LearnerDirection, MenuLink[]> = {
     { label: "Лента", icon: "Newspaper", path: "/feed?d=school", desc: "«Хочу всё знать»" },
   ],
   adult: [
-    { label: "Все программы", icon: "Library", path: "/kursy-dlya-vzroslyh", desc: "35 курсов: ИИ, IT, бизнес" },
+    { label: "Все программы", icon: "Library", path: "/kursy-dlya-vzroslyh", desc: "40+ курсов: ИИ, IT, бизнес" },
     { label: "Нейросети", icon: "Sparkles", path: "/ai-assistant", desc: "ИИ для работы за 5 дней" },
     { label: "Удалёнка", icon: "Laptop", path: "/remote-professions", desc: "Профессии для работы из дома" },
     { label: "Руководителю", icon: "Briefcase", path: "/for-managers", desc: "Разборы и шаблоны" },

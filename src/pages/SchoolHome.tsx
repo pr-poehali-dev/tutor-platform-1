@@ -39,6 +39,20 @@ export default function SchoolHome() {
             { to: "/tutor", icon: "GraduationCap", title: "ИИ-репетитор", text: "Все предметы школьной программы. Голосом или текстом, в любое время.", badge: "Главное" },
             { to: "/homework", icon: "Camera", title: "Домашка по фото", text: "Сфотографируй задание — получишь разбор с объяснением, а не просто ответ." },
             { to: "/writing-craft", icon: "PenLine", title: "Мастерская сочинений", text: "Сочинения, эссе и журналистика: структура, аргументы, разбор ошибок." },
+            { to: "/super-courses", icon: "Mic", title: "Супер-курсы с голосом", text: "8 предметов: наставник ведёт урок вслух, как живой репетитор." },
+            { to: "/math-problems", icon: "Sigma", title: "Задачники", text: "Математика, химия, биология — задачи с пошаговыми решениями." },
+            { to: "/silent", icon: "Hand", title: "Курс для глухих детей", text: "Субтитры, жестовый язык и визуальная подача.", badge: "Бесплатно" },
+          ],
+        },
+        {
+          title: "Литература: разборы произведений",
+          cards: [
+            { to: "/feed/razbor-evgeniy-onegin-pushkin", icon: "BookOpen", title: "«Евгений Онегин»", text: "Сюжет, герои, темы и аргументы для сочинения." },
+            { to: "/feed/razbor-voyna-i-mir-tolstoy", icon: "BookOpen", title: "«Война и мир»", text: "Главное из четырёх томов — без потери смысла." },
+            { to: "/feed/razbor-prestuplenie-i-nakazanie-dostoevskiy", icon: "BookOpen", title: "«Преступление и наказание»", text: "Теория Раскольникова и её крах." },
+            { to: "/feed/razbor-mertvye-dushi-gogol", icon: "BookOpen", title: "«Мёртвые души»", text: "Помещики, Чичиков и замысел поэмы." },
+            { to: "/feed/razbor-geroy-nashego-vremeni-lermontov", icon: "BookOpen", title: "«Герой нашего времени»", text: "Печорин и композиция романа." },
+            { to: "/feed/razbor-revizor-gogol", icon: "BookOpen", title: "«Ревизор»", text: "Комедия, которая смешит и пугает." },
           ],
         },
         {
