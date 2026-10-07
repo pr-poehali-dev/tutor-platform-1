@@ -37,6 +37,8 @@ export default function FeedArticleCtas({ article }: Props) {
   // ведём сразу в оценку компетенций и HR-помощник.
   // Статьи о разделе «Готовый бизнес под ключ» на mat-labs.ru.
   const isTurnkey = tags.includes("готовый бизнес") && tags.includes("mat-labs.ru");
+  // Статьи о сочинениях — ведём в Мастерскую сочинений.
+  const isWriting = tags.includes("сочинение");
   const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
   const isGrantAiHiring = isGrantAi && !isGrantAiTeam && tags.includes("оценка компетенций");
   // Специальные призывы закрывают лишь несколько узких тем.
@@ -45,12 +47,37 @@ export default function FeedArticleCtas({ article }: Props) {
   const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
     "олимпиада", "прораб", "для бизнеса", "обновление"];
   const hasSpecial =
-    isGrantAi || isTurnkey || isForecast || isSchoolBuilder ||
+    isGrantAi || isTurnkey || isWriting || isForecast || isSchoolBuilder ||
     (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
 
   return (
     <>
       {!hasSpecial && <FeedArticleDefaultCta article={article} />}
+      {/* CTA: Мастерская сочинений для статей о сочинениях */}
+      {isWriting && (
+        <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-600/30 via-rose-600/15 to-violet-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-amber-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="text-4xl mb-2">✍️</div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Пишите сочинения на высокий балл
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
+              Итоговое сочинение, ЕГЭ и журналистские жанры — с наставником, который разбирает ваши тексты.
+            </p>
+            <Link
+              to="/writing-craft"
+              onClick={() => trackGoal("article_writing_click", { slug: article.slug })}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-amber-500/25"
+            >
+              <Icon name="PenLine" size={18} />
+              Записаться в Мастерскую сочинений
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* CTA mat-labs.ru: готовый IT-бизнес под своим брендом */}
       {isTurnkey && (
         <div className="relative overflow-hidden rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-700/35 via-teal-600/20 to-violet-700/30 p-6 md:p-8 mb-8 text-center">
