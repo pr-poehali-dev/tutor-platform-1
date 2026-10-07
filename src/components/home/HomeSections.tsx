@@ -8,6 +8,7 @@ import { trackGoal } from "@/components/analytics/YandexMetrika";
 import AiNavigator from "@/components/home/AiNavigator";
 import StudentResults from "@/components/home/StudentResults";
 import TrustGuarantee from "@/components/home/TrustGuarantee";
+import TochkaTrustStrip from "@/components/partners/TochkaTrustStrip";
 import { FamilyOffer } from "@/components/direction/DirectionLanding";
 import { useAuth } from "@/context/AuthContext";
 import { SectionSkeleton } from "./constants";
@@ -105,6 +106,9 @@ export default function HomeSections() {
       </section>
 
       <TrustGuarantee />
+
+      {/* Партнёр проекта — Точка Банк: знак доверия, без рекламы */}
+      <TochkaTrustStrip />
 
       {/* Текст для поиска: главная по-прежнему отвечает на запросы о репетиторе
           и обучении — без него страница из «дверей» потеряла бы позиции. */}

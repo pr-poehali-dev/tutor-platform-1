@@ -1,4 +1,5 @@
 import DirectionLanding from "@/components/direction/DirectionLanding";
+import TochkaBusinessBanner from "@/components/partners/TochkaBusinessBanner";
 
 /** Первая страница направления «Взрослые» (от 18 лет). */
 export default function AdultHome() {
@@ -68,6 +69,12 @@ export default function AdultHome() {
           ],
         },
       ]}
+      afterGroups={
+        <TochkaBusinessBanner
+          title="Учитесь запускать своё дело? Оформите его легально"
+          text="Регистрация ИП или ООО без визита в налоговую и расчётный счёт для бизнеса — бесплатно у нашего партнёра, Точка Банк."
+        />
+      }
       price={{
         title: "Начните бесплатно",
         text: "19 мини-курсов проходятся за один вечер без регистрации. Полные программы — с ИИ-наставником и проверкой заданий.",

@@ -44,6 +44,8 @@ interface Props {
   groups: LandingGroup[];
   price: { title: string; text: string; points: string[]; cta: { to: string; label: string } };
   faq: LandingFaq[];
+  /** Дополнительный блок после разделов (например, партнёр направления). */
+  afterGroups?: React.ReactNode;
 }
 
 /**
@@ -51,7 +53,7 @@ interface Props {
  * обещание → факты → разделы направления → цена → вопросы.
  * Только ссылки своего направления — чужих разделов здесь нет.
  */
-export default function DirectionLanding({ direction, seo, hero, facts, groups, price, faq }: Props) {
+export default function DirectionLanding({ direction, seo, hero, facts, groups, price, faq, afterGroups }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const d = DIRECTIONS[direction];
   const url = `https://учисьпро.рф${d.home}`;
@@ -173,6 +175,8 @@ export default function DirectionLanding({ direction, seo, hero, facts, groups, 
             </div>
           </section>
         ))}
+
+        {afterGroups && <div className="max-w-3xl mx-auto px-4 pb-12">{afterGroups}</div>}
 
         {/* Цена */}
         <section className="max-w-6xl mx-auto px-4 pb-12">

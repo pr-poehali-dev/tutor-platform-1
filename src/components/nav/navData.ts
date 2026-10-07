@@ -44,4 +44,5 @@ export const BUSINESS_LINKS: MenuLink[] = [
   { label: "Школам и центрам", icon: "School", path: "/for-schools", desc: "Сотрудничество" },
   { label: "Партнёрская программа", icon: "Handshake", path: "/partners", desc: "Доход с оплат" },
   { label: "Гранты", icon: "Landmark", path: "/grants", desc: "Заявка на грант с ИИ" },
+  { label: "Партнёрство с Точка Банк", icon: "BadgeCheck", path: "/feed/partnyorskie-programmy-s-bankom-tochka", desc: "Наш партнёр" },
 ];
