@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { DIRECTIONS, LEARNER_ORDER, LearnerDirection, getSavedDirection, saveDirection } from "@/lib/directions";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 
 const DOOR_IMAGES: Record<LearnerDirection, string> = {
   kids: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/d2270d9d-8d65-4f21-92cf-98add66b6130.jpg",
@@ -43,6 +44,8 @@ export default function DirectionDoors() {
         )}
 
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">
+          {/* Знак доверия на первом экране — как было до разделения на направления */}
+          <TochkaPartnerBadge className="mb-4" />
           <h1 className="font-montserrat font-black text-3xl sm:text-4xl lg:text-5xl leading-[1.08] mb-3">
             Учёба для всей семьи —{" "}
             <span className="gradient-text-purple">с ИИ-наставником</span>
