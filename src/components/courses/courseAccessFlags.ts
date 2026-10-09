@@ -16,3 +16,16 @@ export function isCourseBestseller(courseId: number): boolean {
 export function isCourseFreeForever(courseId: number): boolean {
   return FREE_FOREVER_COURSE_IDS.includes(courseId);
 }
+/** Курсы раздела «Школьникам»: каталог (кроме взрослых) + предметы репетитора.
+ *  Их открывает промокод доступа «САМАРА». СИНХРОНИЗИРОВАНО с SCHOOL_COURSE_IDS
+ *  в backend/access/index.py — при изменении править в обоих местах. */
+const SCHOOL_COURSE_ID_LIST = [
+  ...Array.from({ length: 47 }, (_, i) => i + 1),
+  49, 56, 58, 59, 60, 61,
+  9001, 9002, 9003, 9004, 9005, 9006, 9007,
+];
+export const SCHOOL_COURSE_IDS = new Set<number>(SCHOOL_COURSE_ID_LIST);
+
+export function isSchoolCourse(courseId: number): boolean {
+  return SCHOOL_COURSE_IDS.has(courseId);
+}

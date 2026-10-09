@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, ReactNode 
 import func2url from "../../backend/func2url.json";
 import { useAuth } from "@/context/AuthContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
-import { isCourseFreeForever } from "@/components/courses/courseAccessFlags";
+import { isCourseFreeForever, isSchoolCourse } from "@/components/courses/courseAccessFlags";
 import { safeFetch } from "@/lib/safeFetch";
 
 const ACCESS_URL = (func2url as Record<string, string>).access;
@@ -45,6 +45,10 @@ interface AccessState {
   loading: boolean;
   hasSubscription: boolean;
   purchasedCourseIds: number[];
+  /** До какой даты открыты курсы «Школьникам» по промокоду (пилот школ). */
+  schoolAccessUntil: string | null;
+  /** Активирует промокод бесплатного доступа (напр. «САМАРА»). */
+  redeemAccessCode: (code: string) => Promise<{ ok: boolean; alreadyActive?: boolean; expiresAt?: string; message?: string }>;
   /** Детский модуль живёт отдельно: своя подписка, свой срок. */
   kids: KidsAccessState;
   /** Включает бесплатные 3 месяца «Малыша». Карта не нужна. */
@@ -77,6 +81,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [purchasedCourseIds, setPurchasedCourseIds] = useState<number[]>([]);
   const [kids, setKids] = useState<KidsAccessState>(KIDS_EMPTY);
+  const [schoolAccessUntil, setSchoolAccessUntil] = useState<string | null>(null);
 
   const refreshAccess = useCallback(async () => {
     const authToken = token || readToken();
@@ -84,6 +89,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       setHasSubscription(false);
       setPurchasedCourseIds([]);
       setKids(KIDS_EMPTY);
+      setSchoolAccessUntil(null);
       return;
     }
     setLoading(true);
@@ -94,6 +100,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       kids_source?: "subscription" | "trial" | null;
       kids_expires_at?: string | null;
       kids_trial_used?: boolean;
+      school_access_until?: string | null;
     }>(
       `${ACCESS_URL}?action=check`,
       { method: "GET", headers: { "X-Auth-Token": authToken } }
@@ -109,6 +116,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         expiresAt: res.data.kids_expires_at ?? null,
         trialUsed: !!res.data.kids_trial_used,
       });
+      setSchoolAccessUntil(res.data.school_access_until ?? null);
     }
     // При сбое/таймауте мягко считаем, что доступа нет — без падения и без зависания.
     setLoading(false);
@@ -139,15 +147,35 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       setHasSubscription(false);
       setPurchasedCourseIds([]);
       setKids(KIDS_EMPTY);
+      setSchoolAccessUntil(null);
     }
   }, [isAuthenticated, refreshAccess]);
+
+  const redeemAccessCode = useCallback(async (code: string) => {
+    const authToken = token || readToken();
+    if (!authToken) return { ok: false, message: "Сначала войдите в аккаунт" };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=redeem_access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, message: data.error || "Не удалось активировать промокод" };
+      await refreshAccess();
+      return { ok: true, alreadyActive: !!data.already_active, expiresAt: data.expires_at };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [token, refreshAccess]);
 
   const canAccessCourse = useCallback(
     // Бесплатные навсегда курсы открыты всем и всегда.
     // Во время акции «ДОБРО» — все курсы доступны бесплатно для всех.
     (courseId: number) =>
-      isCourseFreeForever(courseId) || isPromoActive() || hasSubscription || purchasedCourseIds.includes(courseId),
-    [hasSubscription, purchasedCourseIds]
+      isCourseFreeForever(courseId) || isPromoActive() || hasSubscription || purchasedCourseIds.includes(courseId) ||
+      (!!schoolAccessUntil && new Date(schoolAccessUntil) > new Date() && isSchoolCourse(courseId)),
+    [hasSubscription, purchasedCourseIds, schoolAccessUntil]
   );
 
   const buyCourse = useCallback(async (courseId: number, grade: string, title: string, returnUrl: string, email?: string, promoCode?: string): Promise<BuyCourseResult> => {
@@ -263,6 +291,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     loading,
     hasSubscription,
     purchasedCourseIds,
+    schoolAccessUntil,
+    redeemAccessCode,
     kids,
     startKidsTrial,
     canAccessCourse,
@@ -284,6 +314,8 @@ const ACCESS_FALLBACK: AccessState = {
   loading: false,
   hasSubscription: false,
   purchasedCourseIds: [],
+  schoolAccessUntil: null,
+  redeemAccessCode: async () => ({ ok: false, message: "Доступ недоступен" }),
   kids: KIDS_EMPTY,
   startKidsTrial: async () => ({ ok: false, message: "Доступ недоступен" }),
   canAccessCourse: () => false,

@@ -4,6 +4,7 @@ GET  /?action=check[&course_id=N]   header: X-Auth-Token  -> { has_subscription,
 POST /?action=buy_course            body: {course_id, grade, title, return_url} -> создаёт платёж ЮKassa за курс
 POST /?action=buy_subscription      body: {plan_id, return_url, email?} -> создаёт платёж ЮKassa за подписку
 POST /?action=confirm_demo          body: {purchase_id, kind?} -> демо-активация без оплаты (для тестов)
+POST /?action=redeem_access         body: {code} -> активирует промокод доступа (напр. «САМАРА» — курсы раздела «Школьникам»)
 """
 import json
 import os
@@ -113,6 +114,12 @@ COURSE_ID_PRICE_KOPECKS = {
     # Оркестратор — рабочий дашборд координации удалённых команд, 15 000 ₽.
     9203: 1500000,  # Оркестратор PRO: дашборд проектов, исполнителей, задач и метрик качества
 }
+
+# Курсы раздела «Школьникам»: каталог (все, кроме взрослых) + предметы репетитора.
+# СИНХРОНИЗИРОВАНО с SCHOOL_COURSE_IDS на фронте (src/components/courses/courseAccessFlags.ts).
+# Промокод доступа со scope='school' открывает только их — взрослые курсы,
+# «Малыш» и подписка «Репетитор» не затрагиваются.
+SCHOOL_COURSE_IDS = set(range(1, 48)) | {49, 56, 58, 59, 60, 61} | set(range(9001, 9008))
 
 # Тарифы подписки (server-side, нельзя подделать с клиента).
 # Годовая цена = 12 мес со скидкой 40% (платишь как за ~7 месяцев).
@@ -472,6 +479,65 @@ def handle_kids_start_trial(token: str) -> dict:
         conn.close()
 
 
+def get_access_grant(cur, user_id: int, scope: str):
+    """Действующий доступ по промокоду (дата окончания) или None."""
+    cur.execute(
+        "SELECT expires_at FROM access_grants WHERE user_id = %s AND scope = %s "
+        "AND expires_at > NOW() LIMIT 1",
+        (user_id, scope)
+    )
+    row = cur.fetchone()
+    return row[0] if row else None
+
+
+def find_access_promo(cur, code: str):
+    """Действующий промокод доступа: (id, scope, expires_at) или None."""
+    code = (code or '').strip()
+    if not code:
+        return None
+    cur.execute(
+        "SELECT id, scope, expires_at FROM access_promo_codes "
+        "WHERE UPPER(code) = UPPER(%s) AND active = TRUE AND expires_at > NOW() "
+        "AND (max_uses IS NULL OR used_count < max_uses) LIMIT 1",
+        (code,)
+    )
+    return cur.fetchone()
+
+
+def handle_redeem_access(token: str, body: dict) -> dict:
+    """Активирует промокод доступа. Повторная активация не дублирует запись."""
+    code = (body.get('code') or '').strip()
+    if not code:
+        return err('Введите промокод', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Сначала войдите в аккаунт', 401)
+            promo = find_access_promo(cur, code)
+            if not promo:
+                return err('Промокод не найден или срок его действия закончился', 404)
+            promo_id, scope, expires_at = promo
+            existing = get_access_grant(cur, user_id, scope)
+            if existing:
+                return ok({'ok': True, 'already_active': True, 'scope': scope,
+                           'expires_at': existing.isoformat()})
+            cur.execute(
+                "INSERT INTO access_grants (user_id, scope, promo_code_id, expires_at) "
+                "VALUES (%s, %s, %s, %s) "
+                "ON CONFLICT (user_id, scope) DO UPDATE SET promo_code_id = EXCLUDED.promo_code_id, "
+                "expires_at = EXCLUDED.expires_at, created_at = NOW()",
+                (user_id, scope, promo_id, expires_at)
+            )
+            cur.execute("UPDATE access_promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
+            conn.commit()
+            return ok({'ok': True, 'already_active': False, 'scope': scope,
+                       'expires_at': expires_at.isoformat()})
+    finally:
+        conn.close()
+
+
 def get_purchased_courses(cur, user_id: int) -> list:
     cur.execute(
         "SELECT course_id FROM course_purchases WHERE user_id = %s AND status = 'paid'",
@@ -499,18 +565,23 @@ def handle_check(token: str, course_id: int | None) -> dict:
                     'kids_source': None,
                     'kids_expires_at': None,
                     'kids_trial_used': False,
+                    'school_access_until': None,
                 })
             has_sub = get_subscription_active(cur, user_id)
             purchased = get_purchased_courses(cur, user_id)
+            school_until = get_access_grant(cur, user_id, 'school')
             course_access = promo or free_forever
             if not course_access and course_id is not None:
-                course_access = has_sub or (course_id in purchased)
+                course_access = has_sub or (course_id in purchased) or (
+                    school_until is not None and course_id in SCHOOL_COURSE_IDS)
             return ok({
                 'authenticated': True,
                 'has_subscription': has_sub,
                 'purchased_course_ids': purchased,
                 'course_access': course_access,
                 'promo_active': promo,
+                # Доступ к курсам «Школьникам» по промокоду (пилот школ).
+                'school_access_until': school_until.isoformat() if school_until else None,
                 # Детский модуль изолирован: свой доступ, своя дата окончания.
                 **get_kids_access(cur, user_id),
             })
@@ -897,6 +968,8 @@ def handle_validate_coupon(token: str, body: dict) -> dict:
             user_id = resolve_user(cur, token)
 
             promo_id, percent = lookup_promo(cur, coupon_code)
+            if not promo_id and find_access_promo(cur, coupon_code):
+                return ok({'valid': False, 'message': 'Это промокод бесплатного доступа к курсам «Школьникам» — активируйте его на странице учисьпро.рф/samara'})
             if not promo_id:
                 # Персональный купон требует авторизации
                 if not user_id:
@@ -1185,6 +1258,8 @@ def handler(event: dict, context) -> dict:
             return handle_confirm_demo(token, body)
         if action == 'sync_payment' and method == 'POST':
             return handle_sync_payment(token, body)
+        if action == 'redeem_access' and method == 'POST':
+            return handle_redeem_access(token, body)
         if action == 'kids_start_trial' and method == 'POST':
             return handle_kids_start_trial(token)
         return err('Unknown action', 404)

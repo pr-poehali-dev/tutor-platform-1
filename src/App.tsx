@@ -34,6 +34,8 @@ const Courses = lazy(() => import("./pages/Courses"));
 const CoursePublic = lazy(() => import("./pages/CoursePublic"));
 const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
+const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
+const SchoolPilotDeck = lazy(() => import("./pages/SchoolPilotDeck"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
@@ -233,6 +235,8 @@ const App = () => (
                     <Route path="/business-2026" element={<Business2026 />} />
                     <Route path="/orchestrator" element={<Orchestrator />} />
                     <Route path="/for-schools" element={<ForSchools />} />
+                    <Route path="/samara" element={<SamaraPilot />} />
+                    <Route path="/for-schools/presentation" element={<SchoolPilotDeck />} />
                     <Route path="/partners" element={<Partners />} />
                     <Route path="/partner" element={<PartnerCabinet />} />
                     <Route path="/edtech-jobs" element={<EdTechJobs />} />

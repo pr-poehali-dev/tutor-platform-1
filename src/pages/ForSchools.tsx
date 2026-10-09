@@ -65,6 +65,9 @@ export default function ForSchools() {
               <Icon name="Sparkles" size={18} /> Обсудить сотрудничество
             </span>
           </a>
+          <Link to="/for-schools/presentation" className="ml-0 sm:ml-3 mt-3 sm:mt-0 inline-flex items-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 px-7 rounded-xl transition-colors">
+            <Icon name="Presentation" size={18} /> Презентация для школ
+          </Link>
         </section>
 
         {/* Возможности */}

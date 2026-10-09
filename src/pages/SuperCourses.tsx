@@ -41,7 +41,7 @@ const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 export default function SuperCourses() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated, openLogin, user } = useAuth();
-  const { purchasedCourseIds, buyCourse, confirmDemoPurchase, syncPayment } = useAccess();
+  const { purchasedCourseIds, buyCourse, confirmDemoPurchase, syncPayment, canAccessCourse } = useAccess();
 
   const [buyTarget, setBuyTarget] = useState<BuyTarget | null>(null);
   const [email, setEmail] = useState<string>(user?.email ?? "");
@@ -73,7 +73,7 @@ export default function SuperCourses() {
   // Доступ к предмету: акция ИЛИ куплен сам предмет ИЛИ куплен пакет с этим предметом.
   // Никакого общего безлимитного доступа — только конкретные покупки.
   const hasCourseAccess = (courseId: number) =>
-    promoOn || hasSubjectAccess(courseId, purchasedCourseIds);
+    promoOn || hasSubjectAccess(courseId, purchasedCourseIds) || canAccessCourse(courseId);
 
   // Открыть окно оплаты предмета.
   const openBuy = (course: SuperCourse) => {

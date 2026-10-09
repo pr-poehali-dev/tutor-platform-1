@@ -11,52 +11,82 @@
       "method": "GET",
       "path": "/?action=check&course_id=1",
       "expectedStatus": 200,
-      "expectedBody": {"authenticated": false, "has_subscription": false},
+      "expectedBody": {
+        "authenticated": false,
+        "has_subscription": false
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Check с невалидным токеном - тоже гость",
       "method": "GET",
       "path": "/?action=check",
-      "headers": {"X-Auth-Token": "invalid-token-xxx"},
+      "headers": {
+        "X-Auth-Token": "invalid-token-xxx"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"authenticated": false},
+      "expectedBody": {
+        "authenticated": false
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Buy курса без токена - 401 (требуется вход)",
       "method": "POST",
       "path": "/?action=buy_course",
-      "body": {"course_id": 1, "grade": "ege", "return_url": "https://example.com/ok"},
+      "body": {
+        "course_id": 1,
+        "grade": "ege",
+        "return_url": "https://example.com/ok"
+      },
       "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Buy подписки без токена - 401 (требуется вход)",
       "method": "POST",
       "path": "/?action=buy_subscription",
-      "body": {"plan_id": "pro", "return_url": "https://example.com/ok"},
+      "body": {
+        "plan_id": "pro",
+        "return_url": "https://example.com/ok"
+      },
       "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "validate_coupon: промокод ДОБРО даёт 30% без токена",
       "method": "POST",
       "path": "/?action=validate_coupon",
-      "body": {"coupon_code": "ДОБРО", "amount_rub": 1000},
+      "body": {
+        "coupon_code": "ДОБРО",
+        "amount_rub": 1000
+      },
       "expectedStatus": 200,
-      "expectedBody": {"valid": true, "percent": 30, "final_rub": 700},
+      "expectedBody": {
+        "valid": true,
+        "percent": 30,
+        "final_rub": 700
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "validate_coupon: неизвестный промокод - невалиден",
       "method": "POST",
       "path": "/?action=validate_coupon",
-      "body": {"coupon_code": "НЕТ-ТАКОГО-КОДА", "amount_rub": 1290},
+      "body": {
+        "coupon_code": "НЕТ-ТАКОГО-КОДА",
+        "amount_rub": 1290
+      },
       "expectedStatus": 200,
-      "expectedBody": {"valid": false},
+      "expectedBody": {
+        "valid": false
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -65,7 +95,9 @@
       "path": "/?action=sync_payment",
       "body": {},
       "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -73,6 +105,22 @@
       "method": "GET",
       "path": "/?action=unknown",
       "expectedStatus": 404
+    },
+    {
+      "name": "Промокод доступа без входа - 401",
+      "method": "POST",
+      "path": "/?action=redeem_access",
+      "body": {
+        "code": "САМАРА"
+      },
+      "expectedStatus": 401
+    },
+    {
+      "name": "Промокод доступа без кода - 400",
+      "method": "POST",
+      "path": "/?action=redeem_access",
+      "body": {},
+      "expectedStatus": 400
     }
   ]
 }
