@@ -4,7 +4,7 @@ import DirectionSwitch from "./DirectionSwitch";
 
 /** На этих страницах полоса не нужна: своя шапка с переключателем,
  *  служебные экраны или оплата, где отвлекать нельзя. */
-const SKIP = /^\/($|shkola$|vzroslym$|admin|checkout|course-checkout|auth|school\/learning|kids\/games\/)/;
+const SKIP = /^\/($|shkola$|vzroslym$|admin|checkout|course-checkout|auth|school\/learning|kids\/games\/|for-schools\/presentation)/;
 
 /**
  * Тонкая полоса с переключателем направлений над любой страницей.
