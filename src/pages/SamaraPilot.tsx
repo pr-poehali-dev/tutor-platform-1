@@ -55,31 +55,10 @@ export default function SamaraPilot() {
   return (
     <div className="min-h-screen bg-mesh text-white font-golos">
       <Seo
-        title="Промокод САМАРА: бесплатные курсы для школьников"
-        description="Пилотный проект для школ Самары: промокод САМАРА открывает бесплатный доступ к курсам 1–11 класса, ОГЭ и ЕГЭ на учисьпро.рф до 31 мая 2027 года."
+        title="Пилотный проект для школ Самары: активация доступа"
+        description="Страница активации доступа для учеников школ — участниц пилотного проекта УЧИСЬПРО в Самаре."
         canonical="https://учисьпро.рф/samara"
-        keywords="промокод САМАРА, бесплатные курсы для школьников, учисьпро промокод, подготовка к ОГЭ и ЕГЭ бесплатно, школы Самары"
-        jsonLd={[
-          {
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            name: "Промокод САМАРА: бесплатные курсы для школьников",
-            url: "https://учисьпро.рф/samara",
-            inLanguage: "ru-RU",
-            isPartOf: { "@type": "WebSite", name: "УЧИСЬПРО", url: "https://учисьпро.рф" },
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "Offer",
-            name: "Бесплатный доступ к курсам раздела «Школьникам» по промокоду САМАРА",
-            url: "https://учисьпро.рф/samara",
-            price: "0",
-            priceCurrency: "RUB",
-            availability: "https://schema.org/InStock",
-            validThrough: "2027-05-31T23:59:59+03:00",
-            seller: { "@type": "Organization", name: "УЧИСЬПРО", url: "https://учисьпро.рф" },
-          },
-        ]}
+        noindex
       />
 
       <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
@@ -98,7 +77,7 @@ export default function SamaraPilot() {
           items={[
             { label: "Главная", href: "/" },
             { label: "Школьникам", href: "/shkola" },
-            { label: "Промокод САМАРА", href: "/samara" },
+            { label: "Пилот школ Самары", href: "/samara" },
           ]}
         />
         <div className="text-center mb-8">

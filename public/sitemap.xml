@@ -289,12 +289,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/samara</loc>
-    <lastmod>2026-10-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://учисьпро.рф/corporate</loc>
     <lastmod>2026-10-10</lastmod>
     <changefreq>monthly</changefreq>
@@ -2137,6 +2131,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://учисьпро.рф/feed/pilotnyy-proekt-uchispro-dlya-shkol-samary</loc>
+    <lastmod>2026-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://учисьпро.рф/feed/kak-bystro-vyuchit-angliyskie-slova-i-nepravilnye-glagoly</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>monthly</changefreq>
@@ -3457,12 +3457,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/professiya-specialist-po-ved-i-tamozhne</loc>
-    <lastmod>2026-06-23</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://учисьпро.рф/feed/professiya-specialist-po-tenderam-i-goszakupkam</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>monthly</changefreq>
@@ -3470,6 +3464,12 @@
   </url>
   <url>
     <loc>https://учисьпро.рф/feed/professiya-menedzher-po-prodazham-b2b</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://учисьпро.рф/feed/professiya-specialist-po-ved-i-tamozhne</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -3499,13 +3499,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/besplatnyy-kurs-neyroseti-s-nulya-ot-pervogo-prompta-do-svoego-proekta</loc>
+    <loc>https://учисьпро.рф/feed/besplatnaya-psihologicheskaya-pomoshch-onlayn-vy-ne-odni</loc>
     <lastmod>2026-06-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/besplatnaya-psihologicheskaya-pomoshch-onlayn-vy-ne-odni</loc>
+    <loc>https://учисьпро.рф/feed/besplatnyy-kurs-neyroseti-s-nulya-ot-pervogo-prompta-do-svoego-proekta</loc>
     <lastmod>2026-06-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -3523,13 +3523,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/detskiy-razdel-uchispro-igry-i-poznavashka</loc>
+    <loc>https://учисьпро.рф/feed/dva-besplatnyh-kursa-zarabotok-na-ii-2026</loc>
     <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/dva-besplatnyh-kursa-zarabotok-na-ii-2026</loc>
+    <loc>https://учисьпро.рф/feed/detskiy-razdel-uchispro-igry-i-poznavashka</loc>
     <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

@@ -34,7 +34,6 @@ STATIC_PAGES = [
     ('/homework', 'weekly', '0.8'),
     ('/school', 'weekly', '0.7'),
     ('/for-schools', 'weekly', '0.7'),
-    ('/samara', 'monthly', '0.6'),
     ('/for-business', 'weekly', '0.7'),
     ('/corporate', 'weekly', '0.7'),
     ('/kids', 'weekly', '0.7'),

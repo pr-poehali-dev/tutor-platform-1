@@ -105,8 +105,8 @@ export default function SamaraLeaflet() {
   return (
     <div className="min-h-screen bg-slate-200 font-golos">
       <Seo
-        title="Листовка для учеников: промокод САМАРА"
-        description="Печатная памятка для учеников школ-участниц пилота УЧИСЬПРО: QR-код и промокод САМАРА."
+        title="Листовка для учеников школ-участниц пилота"
+        description="Печатная памятка для учеников школ — участниц пилотного проекта УЧИСЬПРО в Самаре."
         canonical="https://учисьпро.рф/samara/leaflet"
         noindex
       />
@@ -133,7 +133,7 @@ export default function SamaraLeaflet() {
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
                 <li><Link to="/for-schools" className="hover:text-slate-900">Для школ</Link></li>
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
-                <li><Link to="/samara" className="hover:text-slate-900">Промокод САМАРА</Link></li>
+                <li><Link to="/samara" className="hover:text-slate-900">Пилот школ Самары</Link></li>
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
                 <li className="text-slate-800 font-medium">Листовка</li>
               </ol>
