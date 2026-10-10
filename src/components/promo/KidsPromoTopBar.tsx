@@ -35,7 +35,7 @@ export default function KidsPromoTopBar() {
   // На рекламных лендингах и в разделах для репетиторов детский баннер
   // не к месту: за клик заплачено по своей цели, а он уводит в другой продукт.
   const isWrongAudience =
-    /^\/(ads|repetitoram|school-builder|school|for-schools|for-business|partner|samara)/.test(pathname);
+    /^\/(ads|repetitoram|school-builder|school|for-schools|for-business|partner|samara|parents)/.test(pathname) || /\/presentation$/.test(pathname);
   // Внутри самого раздела «Малыш» звать в «Малыш» незачем.
   const isInsideKids = /^\/kids/.test(pathname);
   // Взрослому, который пришёл за профессией, и партнёру детский баннер не нужен:

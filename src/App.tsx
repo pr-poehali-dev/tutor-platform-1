@@ -36,6 +36,9 @@ const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
 const SamaraLeaflet = lazy(() => import("./pages/SamaraLeaflet"));
+const TutorsDeck = lazy(() => import("./pages/decks/TutorsDeck"));
+const ParentsDeck = lazy(() => import("./pages/decks/ParentsDeck"));
+const PartnersDeck = lazy(() => import("./pages/decks/PartnersDeck"));
 const SchoolPilotDeck = lazy(() => import("./pages/SchoolPilotDeck"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
@@ -239,6 +242,9 @@ const App = () => (
                     <Route path="/samara" element={<SamaraPilot />} />
                     <Route path="/samara/leaflet" element={<SamaraLeaflet />} />
                     <Route path="/for-schools/presentation" element={<SchoolPilotDeck />} />
+                    <Route path="/repetitoram/presentation" element={<TutorsDeck />} />
+                    <Route path="/parents/presentation" element={<ParentsDeck />} />
+                    <Route path="/partner/presentation" element={<PartnersDeck />} />
                     <Route path="/partners" element={<Partners />} />
                     <Route path="/partner" element={<PartnerCabinet />} />
                     <Route path="/edtech-jobs" element={<EdTechJobs />} />
