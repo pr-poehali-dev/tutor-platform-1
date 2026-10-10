@@ -35,6 +35,7 @@ const CoursePublic = lazy(() => import("./pages/CoursePublic"));
 const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
+const SamaraLeaflet = lazy(() => import("./pages/SamaraLeaflet"));
 const SchoolPilotDeck = lazy(() => import("./pages/SchoolPilotDeck"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
@@ -236,6 +237,7 @@ const App = () => (
                     <Route path="/orchestrator" element={<Orchestrator />} />
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/samara" element={<SamaraPilot />} />
+                    <Route path="/samara/leaflet" element={<SamaraLeaflet />} />
                     <Route path="/for-schools/presentation" element={<SchoolPilotDeck />} />
                     <Route path="/partners" element={<Partners />} />
                     <Route path="/partner" element={<PartnerCabinet />} />

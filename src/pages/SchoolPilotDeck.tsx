@@ -377,6 +377,9 @@ export default function SchoolPilotDeck() {
           </Link>
           <span className="hidden sm:block text-sm font-semibold text-slate-700">Пилотный проект УЧИСЬПРО для школ Самары</span>
           <div className="flex items-center gap-2">
+            <Link to="/samara/leaflet" className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
+              <Icon name="QrCode" size={15} /> <span className="hidden sm:inline">Листовка</span>
+            </Link>
             <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
               <Icon name="Download" size={15} /> PDF
             </button>
