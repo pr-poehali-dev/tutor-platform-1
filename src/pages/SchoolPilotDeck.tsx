@@ -55,17 +55,23 @@ function Point({ icon, title, text }: { icon: string; title: string; text: strin
   );
 }
 
-const SLIDES: ((n: number) => ReactNode)[] = [
+const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
   // 1. Обложка — сразу выгода для школы
-  () => (
+  (_n, print) => (
     <div className="relative bg-white font-golos overflow-hidden flex" style={{ width: W, height: H }}>
       <div className="w-[58%] h-full flex flex-col justify-between px-16 py-14 text-white" style={{ background: NAVY }}>
         <span className="font-montserrat font-black text-[20px] tracking-wide">УЧИСЬПРО</span>
         <div>
           <p className="text-[14px] font-bold uppercase tracking-[0.22em] text-blue-300 mb-5">Предложение для директоров и педагогов</p>
-          <h1 className="font-montserrat font-extrabold text-[50px] leading-[1.08] mb-6">
-            Цифровой помощник для ваших учеников — без затрат для школы
-          </h1>
+          {print ? (
+            <p className="font-montserrat font-extrabold text-[50px] leading-[1.08] mb-6">
+              Цифровой помощник для ваших учеников — без затрат для школы
+            </p>
+          ) : (
+            <h1 className="font-montserrat font-extrabold text-[50px] leading-[1.08] mb-6">
+              Цифровой помощник для ваших учеников — без затрат для школы
+            </h1>
+          )}
           <p className="text-[20px] text-slate-300 leading-relaxed max-w-[600px]">
             Платформа продолжает работу учителя дома: объясняет тему заново, помогает с домашним заданием и готовит к ОГЭ и ЕГЭ.
           </p>
@@ -372,10 +378,15 @@ export default function SchoolPilotDeck() {
 
       <div className="deck-screen flex flex-col h-full">
         <header className="flex items-center justify-between px-4 md:px-6 h-14 bg-white border-b border-slate-300 flex-shrink-0">
-          <Link to="/for-schools" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900">
-            <Icon name="ArrowLeft" size={16} /> Для школ
-          </Link>
-          <span className="hidden sm:block text-sm font-semibold text-slate-700">Пилотный проект УЧИСЬПРО для школ Самары</span>
+          <nav aria-label="Хлебные крошки" className="text-sm min-w-0">
+            <ol className="flex items-center gap-1.5 text-slate-500 truncate">
+              <li><Link to="/" className="hover:text-slate-900">Главная</Link></li>
+              <li aria-hidden><Icon name="ChevronRight" size={13} className="text-slate-300" /></li>
+              <li><Link to="/for-schools" className="hover:text-slate-900">Для школ</Link></li>
+              <li aria-hidden className="hidden md:block"><Icon name="ChevronRight" size={13} className="text-slate-300" /></li>
+              <li className="hidden md:block text-slate-800 font-medium">Презентация</li>
+            </ol>
+          </nav>
           <div className="flex items-center gap-2">
             <Link to="/samara/leaflet" className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
               <Icon name="QrCode" size={15} /> <span className="hidden sm:inline">Листовка</span>
@@ -430,7 +441,7 @@ export default function SchoolPilotDeck() {
 
       <div className="deck-print hidden">
         {SLIDES.map((render, n) => (
-          <div key={n} style={{ width: W, height: H }}>{render(n + 1)}</div>
+          <div key={n} style={{ width: W, height: H }}>{render(n + 1, true)}</div>
         ))}
       </div>
     </div>

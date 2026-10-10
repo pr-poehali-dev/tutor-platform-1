@@ -35,9 +35,9 @@ function Leaflet() {
           <span className="font-montserrat font-black text-[13pt] tracking-wide">УЧИСЬПРО</span>
           <span className="text-[7.5pt] uppercase tracking-[0.18em] text-blue-200 font-bold">Пилот школ Самары</span>
         </div>
-        <h1 className="font-montserrat font-extrabold text-[21pt] leading-[1.1]">
+        <p className="font-montserrat font-extrabold text-[21pt] leading-[1.1]">
           Курсы для школьников — <span style={{ color: AMBER }}>бесплатно</span> весь учебный год
-        </h1>
+        </p>
       </div>
 
       <div className="px-[10mm] pt-[6mm] flex gap-[6mm] items-center">
@@ -127,7 +127,18 @@ export default function SamaraLeaflet() {
       <div className="leaflet-toolbar sticky top-0 z-10 bg-white border-b border-slate-300">
         <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-bold text-slate-800 text-sm md:text-base">Листовка для учеников — промокод САМАРА</p>
+            <nav aria-label="Хлебные крошки" className="text-xs mb-1">
+              <ol className="flex items-center gap-1.5 text-slate-500 flex-wrap">
+                <li><Link to="/" className="hover:text-slate-900">Главная</Link></li>
+                <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
+                <li><Link to="/for-schools" className="hover:text-slate-900">Для школ</Link></li>
+                <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
+                <li><Link to="/samara" className="hover:text-slate-900">Промокод САМАРА</Link></li>
+                <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
+                <li className="text-slate-800 font-medium">Листовка</li>
+              </ol>
+            </nav>
+            <h1 className="font-bold text-slate-800 text-sm md:text-base">Листовка для учеников — промокод САМАРА</h1>
             <p className="text-slate-500 text-xs md:text-sm">Лист А4 = 2 листовки. Печать: масштаб 100%, без полей, «Фон» включён.</p>
           </div>
           <div className="flex items-center gap-2">

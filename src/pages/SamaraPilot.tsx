@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
@@ -54,9 +55,31 @@ export default function SamaraPilot() {
   return (
     <div className="min-h-screen bg-mesh text-white font-golos">
       <Seo
-        title="Промокод САМАРА — бесплатные курсы для школьников"
-        description="Пилотный проект для школ Самары: бесплатный доступ к курсам раздела «Школьникам» на учисьпро.рф до 31 мая 2027 года."
+        title="Промокод САМАРА: бесплатные курсы для школьников"
+        description="Пилотный проект для школ Самары: промокод САМАРА открывает бесплатный доступ к курсам 1–11 класса, ОГЭ и ЕГЭ на учисьпро.рф до 31 мая 2027 года."
         canonical="https://учисьпро.рф/samara"
+        keywords="промокод САМАРА, бесплатные курсы для школьников, учисьпро промокод, подготовка к ОГЭ и ЕГЭ бесплатно, школы Самары"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Промокод САМАРА: бесплатные курсы для школьников",
+            url: "https://учисьпро.рф/samara",
+            inLanguage: "ru-RU",
+            isPartOf: { "@type": "WebSite", name: "УЧИСЬПРО", url: "https://учисьпро.рф" },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "Offer",
+            name: "Бесплатный доступ к курсам раздела «Школьникам» по промокоду САМАРА",
+            url: "https://учисьпро.рф/samara",
+            price: "0",
+            priceCurrency: "RUB",
+            availability: "https://schema.org/InStock",
+            validThrough: "2027-05-31T23:59:59+03:00",
+            seller: { "@type": "Organization", name: "УЧИСЬПРО", url: "https://учисьпро.рф" },
+          },
+        ]}
       />
 
       <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
@@ -69,7 +92,15 @@ export default function SamaraPilot() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-5 py-10 md:py-14">
+      <main className="max-w-3xl mx-auto px-5 py-8 md:py-12">
+        <Breadcrumbs
+          className="mb-6"
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Школьникам", href: "/shkola" },
+            { label: "Промокод САМАРА", href: "/samara" },
+          ]}
+        />
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-cyan-500/15 border border-cyan-500/35 rounded-full px-4 py-1.5 mb-5">
             <Icon name="School" size={13} className="text-cyan-300" />
