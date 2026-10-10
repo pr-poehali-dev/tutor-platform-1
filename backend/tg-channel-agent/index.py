@@ -365,7 +365,7 @@ def handle_cron(conn) -> dict:
             "SELECT a.id, a.slug, a.title, a.summary, a.category "
             "FROM " + t('feed_articles') + " a "
             "WHERE a.status='published' AND a.published_at IS NOT NULL "
-            "AND a.published_at > NOW() - INTERVAL '7 days' "
+            "AND a.published_at > NOW() - INTERVAL '7 days' AND a.published_at <= NOW() "
             "AND NOT EXISTS (SELECT 1 FROM " + t('tg_channel_posts') + " p "
             "  WHERE p.kind='feed_article' AND p.ref_key = a.slug AND p.ok=TRUE) "
             "ORDER BY a.published_at ASC LIMIT %s", (MAX_ARTICLES_PER_RUN,))

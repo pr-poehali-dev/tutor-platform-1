@@ -2131,19 +2131,31 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://учисьпро.рф/feed/proekt-2036-chast-1-pismo-iz-budushchego</loc>
+    <lastmod>2026-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://учисьпро.рф/feed/iskusstvennyy-intellekt-na-grebne-volny-ili-puzyr-naduvatelstva</loc>
+    <lastmod>2026-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://учисьпро.рф/feed/pilotnyy-proekt-uchispro-dlya-shkol-samary</loc>
     <lastmod>2026-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kak-bystro-vyuchit-angliyskie-slova-i-nepravilnye-glagoly</loc>
+    <loc>https://учисьпро.рф/feed/kak-reshat-zadachi-na-procenty-vse-tipy-s-primerami</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kak-reshat-zadachi-na-procenty-vse-tipy-s-primerami</loc>
+    <loc>https://учисьпро.рф/feed/kak-bystro-vyuchit-angliyskie-slova-i-nepravilnye-glagoly</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -3355,13 +3367,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kurs-dlya-gluhih-detey-kak-my-ego-delaem</loc>
+    <loc>https://учисьпро.рф/feed/kak-sozdat-idealnuyu-onlayn-shkolu</loc>
     <lastmod>2026-07-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kak-sozdat-idealnuyu-onlayn-shkolu</loc>
+    <loc>https://учисьпро.рф/feed/kurs-dlya-gluhih-detey-kak-my-ego-delaem</loc>
     <lastmod>2026-07-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -3457,7 +3469,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/professiya-specialist-po-tenderam-i-goszakupkam</loc>
+    <loc>https://учисьпро.рф/feed/professiya-specialist-po-ved-i-tamozhne</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -3469,7 +3481,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/professiya-specialist-po-ved-i-tamozhne</loc>
+    <loc>https://учисьпро.рф/feed/professiya-specialist-po-tenderam-i-goszakupkam</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

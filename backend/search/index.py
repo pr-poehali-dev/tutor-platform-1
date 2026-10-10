@@ -244,6 +244,7 @@ def search_feed(cur, q: str, limit: int) -> list:
                END AS score
         FROM feed_articles
         WHERE status = 'published'
+          AND (published_at IS NULL OR published_at <= NOW())
           AND (LOWER(title) LIKE LOWER(%s)
                OR LOWER(summary) LIKE LOWER(%s)
                OR LOWER(content) LIKE LOWER(%s))

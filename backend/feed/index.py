@@ -167,7 +167,8 @@ def handle_list(qs: dict) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            where = "status = 'published'"
+            # Статьи с датой в будущем — отложенные: появляются сами в свой день.
+            where = "status = 'published' AND (published_at IS NULL OR published_at <= NOW())"
             params = []
             if category and category in ALLOWED_CATEGORIES and (not allowed or category in allowed):
                 where += " AND category = %s"
@@ -190,7 +191,8 @@ def handle_list(qs: dict) -> dict:
             # Категории со счётчиками
             cur.execute(
                 "SELECT category, COUNT(*) FROM feed_articles "
-                "WHERE status = 'published' GROUP BY category"
+                "WHERE status = 'published' AND (published_at IS NULL OR published_at <= NOW()) "
+                "GROUP BY category"
             )
             counts = {r[0]: r[1] for r in cur.fetchall() if not allowed or r[0] in allowed}
 
@@ -215,7 +217,8 @@ def handle_item(qs: dict, token: str = '', ip: str = '') -> dict:
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT {ARTICLE_COLS} FROM feed_articles "
-                f"WHERE slug = %s AND status = 'published' LIMIT 1",
+                f"WHERE slug = %s AND status = 'published' "
+                f"AND (published_at IS NULL OR published_at <= NOW()) LIMIT 1",
                 (slug,)
             )
             row = cur.fetchone()

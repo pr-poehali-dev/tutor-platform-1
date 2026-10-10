@@ -15,6 +15,7 @@ import FeedArticleCtas from "@/components/feed/article/FeedArticleCtas";
 import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 import FeedArticleSpoiler from "@/components/feed/article/FeedArticleSpoiler";
+import SeriesNav from "@/components/feed/article/SeriesNav";
 
 // Инлайн-разметка: **жирный** текст и [ссылки](/path) внутри абзацев,
 // заголовков и списков.
@@ -372,6 +373,7 @@ export default function FeedArticlePage() {
         </article>
 
         <CityArticleNav slug={article.slug} />
+        <SeriesNav slug={article.slug} />
 
         <FeedArticleCtas article={article} />
 

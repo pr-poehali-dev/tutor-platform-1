@@ -105,7 +105,8 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 f"SELECT slug, COALESCE(updated_at, published_at, created_at) "
                 f"FROM {SCHEMA}.feed_articles "
-                f"WHERE status = 'published' AND slug IS NOT NULL AND slug <> '' "
+                f"WHERE status = 'published' AND (published_at IS NULL OR published_at <= NOW()) "
+                f"AND slug IS NOT NULL AND slug <> '' "
                 f"ORDER BY COALESCE(published_at, created_at) DESC NULLS LAST"
             )
             rows = cur.fetchall()
