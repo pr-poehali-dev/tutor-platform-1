@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import Seo from "@/components/seo/Seo";
 import Icon from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
@@ -89,7 +90,10 @@ export default function Znaika() {
           canonical="https://учисьпро.рф/znaika"
           keywords="знайки, бонусы учисьпро, кэшбек за обучение, скидка на курсы, реферальная программа, геймификация обучения"
         />
-        <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+        <div className="max-w-2xl mx-auto px-6 pt-6">
+          <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "ЗНАЙКИ" }]} />
+        </div>
+        <div className="max-w-2xl mx-auto px-6 py-20 text-center">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center mx-auto mb-6">
             <Icon name="Coins" size={40} className="text-amber-300" />
           </div>

@@ -87,6 +87,14 @@ function canonicalize(url: string): string {
   return clean;
 }
 
+function clampDescription(text: string): string {
+  const clean = (text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= DESC_LIMIT) return clean;
+  const cut = clean.slice(0, DESC_LIMIT - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 100 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—–-]+$/, "")}…`;
+}
+
 /**
  * Универсальный SEO-компонент: title, description, canonical, OG, Twitter, JSON-LD.
  * Использовать в каждой странице/важной модалке.
@@ -110,6 +118,8 @@ export default function Seo({
     title.includes("УЧИСЬПРО") || title.length + 11 > TITLE_LIMIT
       ? title
       : `${title} — УЧИСЬПРО`;
+  // Описание длиннее лимита поиск обрезает на полуслове — режем сами по целому слову.
+  const metaDescription = clampDescription(description);
   const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
   const url = canonicalize(rawUrl);
   const img = normalizeUrl(image);
@@ -135,7 +145,7 @@ export default function Seo({
     <Helmet>
       <html lang="ru" />
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
+      <meta name="description" content={metaDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={url} />
       <meta name="theme-color" content="#0a0a14" />
@@ -153,7 +163,7 @@ export default function Seo({
       {/* Open Graph */}
       <meta property="og:type" content={type} />
       <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
+      <meta property="og:description" content={metaDescription} />
       <meta property="og:image" content={img} />
       <meta property="og:image:secure_url" content={img} />
       {/* Размеры указываем только для картинки по умолчанию — её формат известен
@@ -187,7 +197,7 @@ export default function Seo({
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:description" content={metaDescription} />
       <meta name="twitter:image" content={img} />
       <meta name="twitter:image:alt" content={fullTitle} />
 

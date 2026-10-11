@@ -65,7 +65,7 @@ export default function TalePlayerControls({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-white/80 text-[10px] uppercase tracking-wider font-bold">Читает Лиса</p>
-            <p className="font-montserrat font-black text-white text-base leading-tight">{item.title}</p>
+            <h1 className="font-montserrat font-black text-white text-base leading-tight">{item.title}</h1>
             <p className="text-white/75 text-xs">{item.author}</p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import SiteFooter from "@/components/SiteFooter";
@@ -56,6 +57,14 @@ export default function SilentLesson() {
       </div>
 
       <main className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 pt-6 pb-16">
+        <Breadcrumbs
+          className="mb-4"
+          items={[
+            { label: "Главная", href: "/" },
+            { label: "Курс для глухих детей", href: "/silent" },
+            { label: lesson.title },
+          ]}
+        />
         <h1 className="sr-only">{lesson.title}</h1>
 
         {/* Аватар-помощник ведёт урок */}

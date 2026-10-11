@@ -116,6 +116,7 @@ export default function PartnerCabinet() {
       <Seo
         title="Кабинет партнёра — УЧИСЬПРО"
         description="Партнёрская программа УЧИСЬПРО: вознаграждение с личных приглашений и структуры."
+        canonical="https://учисьпро.рф/partner"
         noindex
       />
       <main className="relative z-10 max-w-4xl mx-auto px-5 md:px-8 pt-8 pb-16">{children}</main>

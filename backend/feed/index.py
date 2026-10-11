@@ -456,6 +456,26 @@ def handle_create_manual(headers: dict, body: dict) -> dict:
         conn.close()
 
 
+def with_db_retry(fn, attempts: int = 3):
+    """Повтор чтения, если база временно ограничила частоту запросов (всплеск трафика)."""
+    import time
+    for i in range(attempts):
+        try:
+            return fn()
+        except (psycopg2.errors.QueryCanceled, psycopg2.OperationalError):
+            if i == attempts - 1:
+                return {'statusCode': 503, 'headers': {**cors_headers(), 'Retry-After': '2'},
+                        'body': json.dumps({'error': 'Сервис перегружен, повторите через пару секунд'})}
+            time.sleep(0.3 * (i + 1))
+
+
+def with_cache(resp: dict, seconds: int) -> dict:
+    """Публичные ответы кэшируются браузером и CDN — меньше нагрузки на базу."""
+    if seconds and resp.get('statusCode') == 200:
+        resp['headers'] = {**(resp.get('headers') or {}), 'Cache-Control': f'public, max-age={seconds}'}
+    return resp
+
+
 def handler(event: dict, context) -> dict:
     """Лента: список / деталь / публикация / модерация."""
     method = event.get('httpMethod', 'GET')
@@ -474,10 +494,10 @@ def handler(event: dict, context) -> dict:
         body = {}
 
     if action == 'list':
-        return handle_list(qs)
+        return with_cache(with_db_retry(lambda: handle_list(qs)), 60)
     if action == 'item':
         ip = ((event.get('requestContext') or {}).get('identity') or {}).get('sourceIp', '')
-        return handle_item(qs, token, ip)
+        return with_db_retry(lambda: handle_item(qs, token, ip))
     if action == 'submit' and method == 'POST':
         return handle_submit(token, body)
     if action == 'pending':
