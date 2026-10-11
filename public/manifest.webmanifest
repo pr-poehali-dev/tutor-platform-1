@@ -10,30 +10,28 @@
   "theme_color": "#7c3aed",
   "lang": "ru-RU",
   "dir": "ltr",
-  "categories": ["education", "productivity", "books"],
+  "categories": [
+    "education",
+    "productivity",
+    "books"
+  ],
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/cf2ffd57-2e2d-4bbc-acb2-725c718bdc4a.jpg",
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
