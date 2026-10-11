@@ -89,7 +89,7 @@ export const ADULT_SUBJECTS = new Set([
   "datascience", "product", "avangard", "roomscan", "marketing", "prompteng",
   "neuroincome", "business", "sales", "python", "analyst", "accounting",
   "cybersec", "devops", "tenders", "ved", "autocad", "trading", "career",
-  "aiagents", "marketplaces", "vibecoding",
+  "aiagents", "marketplaces", "vibecoding", "smm",
 ]);
 
 const RULES: Rule[] = [

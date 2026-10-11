@@ -10,6 +10,9 @@ export default function CourseDetailReviews({ detail }: Props) {
       <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-xl p-3 mb-5 text-yellow-200/85 text-xs">
         ℹ️ Отзывы публикуются обезличенно. Указаны только инициалы и город ученика — в соответствии с требованиями Федерального закона №152-ФЗ «О персональных данных».
       </div>
+      {detail.reviews.length === 0 && (
+        <p className="text-white/50 text-sm">Курс только что вышел — отзывы появятся после первых выпускников.</p>
+      )}
       <div className="flex flex-col gap-3">
         {detail.reviews.map((r, i) => (
           <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-4">

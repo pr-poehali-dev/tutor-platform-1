@@ -91,6 +91,7 @@ COURSE_ID_PRICE_KOPECKS = {
     92: 1159000,   # ИИ-агенты и автоматизация в n8n
     93: 1479000,   # Менеджер маркетплейсов с ИИ
     94: 719000,    # Вайб-кодинг
+    95: 499,       # SMM с нуля — символическая цена 4,99 ₽
     # Супер-курсы (предметы репетитора) — разовая покупка предмета, 1990 ₽.
     # Доступ до конца учебного года. СИНХРОНИЗИРОВАНО с superCourses.ts.
     9001: 199000,  # Предмет: Физика
@@ -790,6 +791,9 @@ def handle_buy_course(token: str, body: dict) -> dict:
 
             # Промокод-скидка (считается на сервере, клиент не влияет на итог).
             promo_id, promo_percent = lookup_promo(cur, promo_code)
+            # Символические цены (меньше 10 ₽) скидками не уменьшаем.
+            if promo_id and amount_kopecks < 1000:
+                promo_id, promo_percent = None, 0
             if promo_id:
                 amount_kopecks = apply_promo_kopecks(amount_kopecks, promo_percent)
             amount_rub = amount_kopecks / 100
@@ -825,7 +829,7 @@ def handle_buy_course(token: str, body: dict) -> dict:
                 return ok({
                     'purchase_id': purchase_id,
                     'course_id': course_id,
-                    'amount_rub': amount_kopecks // 100,
+                    'amount_rub': amount_kopecks / 100,
                     'title': title,
                     'status': 'pending',
                     'demo_mode': True,
@@ -882,7 +886,7 @@ def handle_buy_course(token: str, body: dict) -> dict:
             return ok({
                 'purchase_id': purchase_id,
                 'course_id': course_id,
-                'amount_rub': amount_kopecks // 100,
+                'amount_rub': amount_kopecks / 100,
                 'payment_id': payment_id,
                 'payment_url': confirmation_url,
                 'status': 'pending',

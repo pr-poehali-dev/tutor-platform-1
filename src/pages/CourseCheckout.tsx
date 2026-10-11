@@ -319,7 +319,7 @@ export default function CourseCheckout() {
               />
             ) : (
               <>
-                {!demoMode && (
+                {!demoMode && price >= 10 && (
                   <CheckoutCouponForm
                     coupon={coupon}
                     setCoupon={setCoupon}

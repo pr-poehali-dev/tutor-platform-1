@@ -27,6 +27,7 @@ const mapSubject = (s: string) => {
   if (SUPPORTED_SUBJECTS.includes(s)) return s;
   if (s === "prompteng" || s === "neuroincome" || s === "cybersec" || s === "devops" || s === "aiagents" || s === "vibecoding") return "ai";
   if (s === "marketplaces") return "business";
+  if (s === "smm") return "marketing";
   if (s === "accounting" || s === "autocad" || s === "trading") return "business";
   return "math";
 };

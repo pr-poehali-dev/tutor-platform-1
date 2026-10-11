@@ -15,7 +15,7 @@ const SITE = "https://учисьпро.рф";
 const TRACKS: { id: string; label: string; icon: string; subjects: string[] }[] = [
   { id: "ai", label: "Нейросети и ИИ", icon: "Sparkles", subjects: ["aiagents", "vibecoding", "ai", "prompteng", "neuroincome", "avangard"] },
   { id: "it", label: "IT и данные", icon: "Cpu", subjects: ["cs", "datascience", "product", "roomscan", "smartmach"] },
-  { id: "business", label: "Бизнес и продажи", icon: "Briefcase", subjects: ["marketplaces", "business", "marketing", "sales", "tenders", "ved"] },
+  { id: "business", label: "Бизнес и продажи", icon: "Briefcase", subjects: ["smm", "marketplaces", "business", "marketing", "sales", "tenders", "ved"] },
   { id: "help", label: "Психология и люди", icon: "HeartHandshake", subjects: ["psychology", "personalbrand"] },
   { id: "lang", label: "Языки и творчество", icon: "Languages", subjects: ["chinese", "korean", "design"] },
 ];

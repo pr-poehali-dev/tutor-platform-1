@@ -37,6 +37,7 @@ const mapSubject = (s: string): string => {
   // Близкие соответствия для предметов без собственного набора тем.
   if (s === "prompteng" || s === "neuroincome" || s === "cybersec" || s === "devops" || s === "aiagents" || s === "vibecoding") return "ai";
   if (s === "marketplaces") return "business";
+  if (s === "smm") return "marketing";
   if (s === "accounting" || s === "autocad" || s === "trading") return "business";
   return "math";
 };

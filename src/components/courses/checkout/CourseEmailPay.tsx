@@ -44,7 +44,7 @@ export default function CourseEmailPay({ course, price }: Props) {
   // Действующую скидку применяем сами. Раньше человек должен был заметить
   // жёлтый блок и нажать его — кто не нажал, платил на 30% больше.
   useEffect(() => {
-    if (couponApplied || couponChecking) return;
+    if (couponApplied || couponChecking || price < 10) return;
     applyCoupon(ACTIVE_PROMO_CODE, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -149,7 +149,7 @@ export default function CourseEmailPay({ course, price }: Props) {
       </p>
 
       {/* Скидка для покупателя без входа: подставляем действующий промокод одним нажатием */}
-      {couponApplied ? (
+      {price < 10 ? null : couponApplied ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 mb-5">
           <span className="flex items-center gap-2 min-w-0">
             <Icon name="CheckCircle2" size={16} className="text-emerald-400 flex-shrink-0" />

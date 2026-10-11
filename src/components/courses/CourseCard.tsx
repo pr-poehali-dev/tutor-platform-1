@@ -261,7 +261,9 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
                   </span>
                   <span className="text-white text-sm">₽</span>
                 </div>
-                <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
+                {realPrice >= 10 && (
+                  <span className="text-white/30 text-xs line-through">{oldPrice.toLocaleString("ru-RU")} ₽</span>
+                )}
                 <div className="text-white/40 text-xs">за полный курс</div>
                 <div className="flex items-center gap-1 mt-1 text-emerald-400/90 text-[11px] font-medium">
                   <Icon name="ShieldCheck" size={12} />
