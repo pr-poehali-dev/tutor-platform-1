@@ -478,6 +478,17 @@ def handler(event, context):
                     )
                     conn.commit()
                     notify_max_intensive(buyer_name, buyer_email, amount_val)
+                # Курс, оплаченный без входа: сразу записываем покупку в аккаунт с этим email.
+                if track.startswith('course-') and track[7:].isdigit() and buyer_email:
+                    cur.execute(
+                        f"INSERT INTO {S}course_purchases (user_id, course_id, amount_kopecks, "
+                        f"payment_provider, payment_id, status, purchased_at) "
+                        f"SELECT u.id, %s, %s, 'yookassa', %s, 'paid', NOW() FROM {S}auth_users u "
+                        f"WHERE lower(u.email) = %s AND NOT EXISTS (SELECT 1 FROM {S}course_purchases cp "
+                        f"WHERE cp.user_id = u.id AND cp.course_id = %s AND cp.status = 'paid')",
+                        (int(track[7:]), int(round(amount_val * 100)), payment_id, buyer_email, int(track[7:]))
+                    )
+                    conn.commit()
                 elif existing[2] != 'paid':
                     cur.execute(
                         f"UPDATE {S}intensive_access SET status='paid', activated_at=NOW() "

@@ -11,6 +11,8 @@ interface Props {
   productName?: string;
   /** Текст под заголовком «Доступ открыт». */
   grantedText?: string;
+  /** Вызывается, когда доступ подтверждён, — чтобы страница показала вход в курс. */
+  onGranted?: () => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * - Если доступ уже сохранён локально — показывает «Доступ открыт».
  * - Иначе позволяет проверить доступ по email (для тех, кто оплатил с другого устройства).
  */
-export default function AccessBanner({ track, productName = "интенсив", grantedText }: Props) {
+export default function AccessBanner({ track, productName = "интенсив", grantedText, onGranted }: Props) {
   const justPaid = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("paid") === "1";
   const [state, setState] = useState<State>("idle");
   const [email, setEmail] = useState(getPaidEmail(track) || "");
@@ -85,6 +87,11 @@ export default function AccessBanner({ track, productName = "интенсив", 
   };
 
   const defaultGranted = `Оплата прошла — ${productName} полностью твой. Проходи в своём темпе, ИИ-наставник на связи 24/7.`;
+
+  useEffect(() => {
+    if (state === "granted") onGranted?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   if (state === "granted") {
     return (

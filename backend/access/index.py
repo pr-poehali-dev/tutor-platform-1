@@ -540,9 +540,14 @@ def handle_redeem_access(token: str, body: dict) -> dict:
 
 
 def get_purchased_courses(cur, user_id: int) -> list:
+    """Курсы, оплаченные из аккаунта, плюс оплаченные без входа на email этого аккаунта."""
     cur.execute(
-        "SELECT course_id FROM course_purchases WHERE user_id = %s AND status = 'paid'",
-        (user_id,)
+        "SELECT course_id FROM course_purchases WHERE user_id = %s AND status = 'paid' "
+        "UNION "
+        "SELECT CAST(substring(ia.track FROM 8) AS INTEGER) FROM intensive_access ia "
+        "JOIN auth_users u ON lower(u.email) = lower(ia.email) "
+        "WHERE u.id = %s AND ia.status = 'paid' AND ia.track ~ '^course-[0-9]+$'",
+        (user_id, user_id)
     )
     return [r[0] for r in cur.fetchall()]
 

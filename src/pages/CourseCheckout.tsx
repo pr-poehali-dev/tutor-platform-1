@@ -298,7 +298,8 @@ export default function CourseCheckout() {
                 <AccessBanner
                   track={`course-${course.id}`}
                   productName="курс"
-                  grantedText="Оплата прошла — курс твой навсегда. Доступ открыт ниже."
+                  grantedText="Оплата прошла — курс твой навсегда."
+                  onGranted={() => setDone(true)}
                 />
               ) : (
                 <>

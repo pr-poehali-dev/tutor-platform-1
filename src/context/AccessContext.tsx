@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import { isCourseFreeForever, isSchoolCourse } from "@/components/courses/courseAccessFlags";
 import { safeFetch } from "@/lib/safeFetch";
+import { getSavedAccess } from "@/components/intensive/api";
 
 const ACCESS_URL = (func2url as Record<string, string>).access;
 const TOKEN_KEY = "uchispro_auth_token_v1";
@@ -174,6 +175,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     // Во время акции «ДОБРО» — все курсы доступны бесплатно для всех.
     (courseId: number) =>
       isCourseFreeForever(courseId) || isPromoActive() || hasSubscription || purchasedCourseIds.includes(courseId) ||
+      !!getSavedAccess(`course-${courseId}`) ||
       (!!schoolAccessUntil && new Date(schoolAccessUntil) > new Date() && isSchoolCourse(courseId)),
     [hasSubscription, purchasedCourseIds, schoolAccessUntil]
   );
