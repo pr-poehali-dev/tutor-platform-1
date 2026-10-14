@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {"name": "OPTIONS CORS", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Регистрация с неверным email", "method": "POST", "path": "/?action=register", "body": {"email": "bad", "track": "teacher"}, "expectedStatus": 400},
+    {"name": "Регистрация в неизвестный марафон", "method": "POST", "path": "/?action=register", "body": {"email": "a@b.ru", "track": "x"}, "expectedStatus": 400},
+    {"name": "Кабинет без токена", "method": "GET", "path": "/?action=me", "expectedStatus": 401},
+    {"name": "Кабинет с чужим токеном", "method": "GET", "path": "/?action=me&token=nope", "expectedStatus": 404},
+    {"name": "Тест скорости гостем", "method": "POST", "path": "/?action=reading_test", "body": {"visitor_id": "test-suite", "grade": "2", "words": 120, "seconds": 60, "comprehension": 80}, "expectedStatus": 200, "expectedBody": {"wpm": 120}, "bodyMatcher": "partial"},
+    {"name": "Тест скорости — мусорные данные", "method": "POST", "path": "/?action=reading_test", "body": {"words": 0, "seconds": 1}, "expectedStatus": 400},
+    {"name": "Пульс напоминаний", "method": "GET", "path": "/?action=tick", "expectedStatus": 200},
+    {"name": "Статистика без ключа", "method": "GET", "path": "/?action=stats", "expectedStatus": 401},
+    {"name": "Неизвестное действие", "method": "GET", "path": "/?action=zzz", "expectedStatus": 404}
+  ]
+}

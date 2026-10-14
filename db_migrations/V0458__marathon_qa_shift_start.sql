@@ -1,0 +1,2 @@
+-- Тестовый участник QA: сдвигаем старт на сутки назад, чтобы проверить открытие дня 2 и напоминание.
+UPDATE t_p78828167_tutor_platform_1.marathon_participants SET started_at = NOW() - INTERVAL '25 hours' WHERE email = 'qa-marathon-test@example.com';

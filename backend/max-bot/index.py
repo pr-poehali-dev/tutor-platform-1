@@ -307,6 +307,22 @@ def handle_webhook(conn, body: dict) -> dict:
                          "откройте Настройки родителя на сайте и нажмите «Подключить MAX».")
         return ok({'ok': True})
 
+    # Коды марафона скорочтения начинаются с «M» и хранятся у участника марафона.
+    if code.startswith('M'):
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE " + t('marathon_participants') + " SET max_chat_id=%s, updated_at=NOW() "
+                "WHERE max_link_code=%s RETURNING id",
+                (chat_id, code)
+            )
+            linked = cur.fetchone()
+            conn.commit()
+        if linked:
+            max_send_message(chat_id,
+                             "✅ Готово! Буду напоминать о каждом новом уроке марафона скорочтения. "
+                             "Уроки открываются раз в сутки.")
+            return ok({'ok': True})
+
     with conn.cursor() as cur:
         cur.execute(
             "SELECT user_id, status FROM " + t('max_links') + " WHERE link_code = %s",

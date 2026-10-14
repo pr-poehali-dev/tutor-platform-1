@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import func2url from "../../../backend/func2url.json";
+import { tickReminders } from "@/components/marathon/api";
 
 const ANALYTICS_URL = (func2url as Record<string, string>).analytics;
 const VISITOR_KEY = "up_visitor_id";
@@ -45,6 +46,7 @@ export default function VisitTracker() {
 
   useEffect(() => {
     tickDailyReport();
+    tickReminders();
   }, []);
 
   useEffect(() => {
