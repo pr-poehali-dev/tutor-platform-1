@@ -210,7 +210,7 @@ export default function FeedArticleCtas({ article }: Props) {
           <div className="relative">
             <div className="inline-flex items-center gap-2 bg-violet-500/20 border border-violet-400/30 rounded-full px-3 py-1 mb-3">
               <Icon name="Sparkles" size={12} className="text-violet-200" />
-              <span className="text-violet-100 text-[11px] font-bold uppercase tracking-wider">EduFlow AI</span>
+              <span className="text-violet-100 text-[11px] font-bold uppercase tracking-wider">Прогноз школы</span>
             </div>
             <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
               Посчитайте прибыль своей школы за 30 секунд

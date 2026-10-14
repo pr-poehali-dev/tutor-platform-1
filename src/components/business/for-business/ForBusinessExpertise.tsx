@@ -56,12 +56,12 @@ export default function ForBusinessExpertise() {
           <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">Экспертность и ответственность</span>
         </div>
         <h2 className="font-montserrat font-black text-2xl md:text-3xl mb-2">
-          Почему вам можно{" "}
-          <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">доверить свою школу</span>
+          Почему нам можно{" "}
+          <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">доверить вашу школу</span>
         </h2>
         <p className="text-white/55 text-sm max-w-xl mx-auto">
-          Мы не просто даём инструмент — мы берём на себя техническую, финансовую и юридическую сторону.
-          Вы отвечаете за экспертизу, мы — за всё остальное.
+          Мы не просто даём инструмент, а берём на себя техническую, финансовую и юридическую сторону.
+          Вы отвечаете за содержание курсов, мы — за всё остальное.
         </p>
       </div>
 

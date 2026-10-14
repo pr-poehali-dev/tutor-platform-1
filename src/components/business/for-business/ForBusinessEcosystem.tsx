@@ -11,7 +11,7 @@ const STAGES: { icon: string; step: string; title: string; desc: string; accent:
     icon: "Sparkles",
     step: "01",
     title: "ИИ-старт и контент",
-    desc: "Вводите тему и аудиторию — ИИ собирает структуру курса, уроки, тесты и маркетинг-план. Транскрибирует ваши видео в тесты.",
+    desc: "Вводите тему и аудиторию — ИИ собирает структуру курса, уроки, тесты и маркетинг-план. Превращает ваши видео в тесты.",
     accent: "from-violet-500 to-fuchsia-500",
   },
   {
@@ -57,7 +57,7 @@ export default function ForBusinessEcosystem() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 bg-cyan-500/15 border border-cyan-500/30 rounded-full px-4 py-1.5 mb-4">
           <Icon name="Infinity" size={13} className="text-cyan-300" />
-          <span className="text-cyan-200 text-xs font-bold uppercase tracking-wider">Экосистема EduFlow AI</span>
+          <span className="text-cyan-200 text-xs font-bold uppercase tracking-wider">Экосистема УЧИСЬПРО для школ</span>
         </div>
         <h2 className="font-montserrat font-black text-2xl md:text-3xl mb-2">
           Замкнутый цикл:{" "}

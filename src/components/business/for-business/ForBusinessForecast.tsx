@@ -103,14 +103,14 @@ export default function ForBusinessForecast() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 bg-violet-500/15 border border-violet-500/30 rounded-full px-4 py-1.5 mb-4">
           <Icon name="Sparkles" size={13} className="text-violet-300" />
-          <span className="text-violet-200 text-xs font-bold uppercase tracking-wider">EduFlow AI · прогноз запуска</span>
+          <span className="text-violet-200 text-xs font-bold uppercase tracking-wider">Прогноз запуска школы</span>
         </div>
         <h2 className="font-montserrat font-black text-2xl md:text-3xl mb-2">
           Посчитайте свою школу{" "}
           <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">до запуска</span>
         </h2>
         <p className="text-white/55 text-sm max-w-xl mx-auto">
-          Задайте вводные — ИИ-модель спрогнозирует выручку, доходимость и чистую прибыль
+          Задайте вводные — калькулятор спрогнозирует выручку, доходимость и чистую прибыль
           с учётом комиссии платформы и налогов.
         </p>
       </div>
@@ -258,7 +258,7 @@ export default function ForBusinessForecast() {
                 <Icon name="TrendingUp" size={16} className="text-emerald-300 mt-0.5 flex-shrink-0" />
                 <p className="text-white/75 text-xs leading-snug">
                   Реклама окупается примерно за <b className="text-white">{result.paybackDays} дн.</b> Дальше каждый вложенный
-                  рубль работает в плюс. Масштабируйте бюджет — модель почти линейна.
+                  рубль работает в плюс. С ростом бюджета результат растёт почти пропорционально.
                 </p>
               </div>
             ) : (
