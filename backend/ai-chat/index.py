@@ -18,7 +18,7 @@ import urllib.parse
 import urllib.error
 from datetime import datetime
 
-from chem import CHEM_RULES, fix_text as chem_fix_text, is_chemistry
+from chem import ALKANE_RULES, CHEM_RULES, fix_text as chem_fix_text, is_alkane_topic, is_chemistry
 
 try:
     import psycopg2  # есть в окружении; используется только для rate-limit
@@ -835,6 +835,8 @@ def handler(event, context):
                 CHEM_RULES + '\nЭто правило ВАЖНЕЕ правила «формулы словами»: ответ читают с экрана, '
                 'поэтому уравнения реакций пиши формулами, а не словами.'
             )
+            if is_alkane_topic(user_message, course_title, lesson_notes[:400]):
+                context_lines.append(ALKANE_RULES)
 
         # Адаптивный формат.
         #

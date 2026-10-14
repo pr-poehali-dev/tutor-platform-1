@@ -13,7 +13,7 @@ import urllib.error
 import psycopg2
 import psycopg2.extras
 
-from chem import CHEM_RULES, fix_obj as chem_fix_obj
+from chem import ALKANE_RULES, CHEM_RULES, fix_obj as chem_fix_obj, is_alkane_topic
 
 
 SUBJECT_TOPICS = {
@@ -547,6 +547,12 @@ def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
             # чтобы урок пересобрался с датами и перезаписал кэш.
             if subject in TIMELINE_SUBJECTS and isinstance(data, dict) and not data.get('timeline'):
                 return None
+            # Уроки по алканам без изомеризации и циклизации (обязательны в школе — уточнение
+            # репетитора Юлии Быковой) пересобираем заново.
+            if subject == 'chemistry' and is_alkane_topic(topic, lesson_title) and isinstance(data, dict):
+                blob = json.dumps(data, ensure_ascii=False).lower()
+                if 'изомериз' not in blob or 'цикл' not in blob or 'AlCl' not in json.dumps(data, ensure_ascii=False):
+                    return None
             cur.execute(
                 "UPDATE lesson_cache SET hit_count = hit_count + 1, last_accessed_at = NOW() WHERE cache_key = %s",
                 (key,)
@@ -983,6 +989,8 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
             '\n- В заданиях на уравнения реакций правильный вариант ответа — уравнение с верными коэффициентами. '
             'Неверные варианты делай правдоподобными: ошибка в коэффициенте, продукте или условиях.'
         )
+        if is_alkane_topic(topic):
+            prompt += '\n\n' + ALKANE_RULES + '\n- Среди задач обязательно одна на изомеризацию и одна на циклизацию/дегидрирование.'
 
     # История без дат — главная претензия к урокам: событие названо, а когда оно было, неясно.
     if subject_name == 'История':
@@ -1288,7 +1296,8 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
 - НЕ возвращай поле tasks — задачи отдельно
 - Примеры из жизни (деньги, скорость, спорт, еда)""" + (TIMELINE_PROMPT_BLOCK if needs_timeline else '') + (
         '\n\n' + CHEM_RULES + '\n- В теории и примерах приводи конкретные уравнения реакций по теме с коэффициентами '
-        'и условиями (например, для алканов: горение, галогенирование на свету, дегидрирование, крекинг, изомеризация).'
+        'и условиями.' + ('\n\n' + ALKANE_RULES + '\n- Изомеризации и циклизации посвяти отдельный раздел теории или пример.'
+                          if is_alkane_topic(topic, lesson_title) else '')
         if subject == 'chemistry' else '')
 
     # Урок упирался в таймаут (18–20.5 сек при лимите ожидания 20) и подменялся
