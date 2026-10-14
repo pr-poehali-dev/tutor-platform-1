@@ -182,6 +182,8 @@ export interface Lesson {
   tasks: Task[];
   /** Хронология ключевых событий урока (история). */
   timeline?: TimelineEvent[];
+  /** Химия: сколько уравнений реакций проверено на баланс и сколько исправлено. */
+  chem_verified?: { checked: number; fixed: number };
   _cached?: boolean;
 }
 

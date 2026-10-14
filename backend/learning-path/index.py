@@ -13,6 +13,8 @@ import urllib.error
 import psycopg2
 import psycopg2.extras
 
+from chem import CHEM_RULES, fix_obj as chem_fix_obj
+
 
 SUBJECT_TOPICS = {
     'math': {
@@ -295,9 +297,13 @@ def call_polza(messages, max_tokens=900, temperature=0.7, timeout=50, retries=1,
             )
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 result = json.loads(response.read().decode('utf-8'))
-            content = result['choices'][0]['message']['content'].strip()
+            choice = result['choices'][0]
+            content = choice['message']['content'].strip()
+            if choice.get('finish_reason') == 'length':
+                print(f'[learning-path] ответ обрезан по max_tokens={max_tokens}, model={model}')
             return json.loads(content)
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+            print(f'[learning-path] call_polza {type(e).__name__}: {str(e)[:120]}')
             last_err = e
             if attempt >= retries:
                 break
@@ -972,6 +978,11 @@ def _generate_lesson_tasks_only(subject_name, topic, grade, difficulty, shown_qu
         subject_name=subject_name, topic=topic, grade=grade, difficulty=difficulty, n=n,
         exam_block=_exam_format_block(grade, subject_name),
     ) + exclusion + variability_hint
+    if subject_name == 'Химия':
+        prompt += '\n\n' + CHEM_RULES + (
+            '\n- В заданиях на уравнения реакций правильный вариант ответа — уравнение с верными коэффициентами. '
+            'Неверные варианты делай правдоподобными: ошибка в коэффициенте, продукте или условиях.'
+        )
 
     # История без дат — главная претензия к урокам: событие названо, а когда оно было, неясно.
     if subject_name == 'История':
@@ -1146,6 +1157,53 @@ def build_fallback_lesson(subject, topic, lesson_title=''):
     }
 
 
+def chem_check_lesson(data):
+    """Химия: проверяет баланс всех уравнений урока и исправляет коэффициенты.
+    Доработано по просьбе репетитора по химии Юлии Быковой."""
+    if not isinstance(data, dict):
+        return data
+    fixed_data, st = chem_fix_obj({k: v for k, v in data.items() if k != 'tasks'}, pretty=True)
+    fixed_data['tasks'] = chem_check_tasks(data.get('tasks') or [])
+    prev = data.get('chem_verified') or {}
+    fixed_data['chem_verified'] = {
+        'checked': st['checked'],
+        'fixed': st['fixed'] + int(prev.get('fixed', 0) if isinstance(prev, dict) else 0),
+    }
+    for k in ('_cached', '_fixed'):
+        if k in data:
+            fixed_data[k] = data[k]
+    return fixed_data
+
+
+def chem_check_tasks(tasks):
+    """В задачах уравниваем условие, подсказки, разбор и ВЕРНЫЙ вариант ответа.
+    Неверные варианты (дистракторы) не трогаем — иначе все варианты стали бы правильными."""
+    out = []
+    for t in tasks if isinstance(tasks, list) else []:
+        if not isinstance(t, dict):
+            out.append(t)
+            continue
+        t = dict(t)
+        # Условие и контекст могут намеренно содержать неуравненную схему — только оформляем индексы.
+        for key in ('question', 'context'):
+            if key in t:
+                t[key], _ = chem_fix_obj(t[key], pretty=True, balance=False)
+        for key in ('explanation', 'hints'):
+            if key in t:
+                t[key], _ = chem_fix_obj(t[key], pretty=True)
+        opts = t.get('options')
+        ci = t.get('correct_answer')
+        if isinstance(opts, list) and isinstance(ci, int) and 0 <= ci < len(opts) and isinstance(opts[ci], str):
+            new_opt, _ = chem_fix_obj(opts[ci], pretty=True)
+            opts = [chem_fix_obj(o, pretty=True, balance=False)[0] if isinstance(o, str) else o for o in opts]
+            opts[ci] = new_opt
+            t['options'] = opts
+            if isinstance(t.get('correct_answer_text'), str):
+                t['correct_answer_text'], _ = chem_fix_obj(t['correct_answer_text'], pretty=True)
+        out.append(t)
+    return out
+
+
 def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', include_tasks=True, shown_questions=None):
     """Урок: теория + примеры. Задачи опционально.
 
@@ -1163,11 +1221,11 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         cached_tasks = cached.get('tasks') if isinstance(cached.get('tasks'), list) else []
         if not include_tasks:
             cached['tasks'] = []
-            return cached
+            return chem_check_lesson(cached) if subject == 'chemistry' else cached
         # Зафиксированный предмет и задачи уже сохранены — отдаём их как есть, без ИИ.
         if fixed and cached_tasks:
             cached['tasks'] = cached_tasks
-            return cached
+            return chem_check_lesson(cached) if subject == 'chemistry' else cached
         subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
         try:
             fresh_tasks = _generate_lesson_tasks_only(
@@ -1182,7 +1240,7 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         # урок будет отдаваться целиком из БД, одинаковый для всех учеников.
         if fixed and fresh_tasks:
             update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, fresh_tasks)
-        return cached
+        return chem_check_lesson(cached) if subject == 'chemistry' else cached
 
     subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
     title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
@@ -1228,7 +1286,10 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
 - Без LaTeX, обычным текстом (используй ^, /, * для формул)
 - Русский язык, обращение на "ты"
 - НЕ возвращай поле tasks — задачи отдельно
-- Примеры из жизни (деньги, скорость, спорт, еда)""" + (TIMELINE_PROMPT_BLOCK if needs_timeline else '')
+- Примеры из жизни (деньги, скорость, спорт, еда)""" + (TIMELINE_PROMPT_BLOCK if needs_timeline else '') + (
+        '\n\n' + CHEM_RULES + '\n- В теории и примерах приводи конкретные уравнения реакций по теме с коэффициентами '
+        'и условиями (например, для алканов: горение, галогенирование на свету, дегидрирование, крекинг, изомеризация).'
+        if subject == 'chemistry' else '')
 
     # Урок упирался в таймаут (18–20.5 сек при лимите ожидания 20) и подменялся
     # заглушкой без объяснения темы — ученик видел пустые заголовки.
@@ -1240,7 +1301,7 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
     try:
         data = call_polza(
             [{'role': 'user', 'content': prompt_main}],
-            max_tokens=2400 if needs_timeline else 1800,
+            max_tokens=2400 if (needs_timeline or subject == 'chemistry') else 1800,
             temperature=0.7, timeout=22, retries=0,
         )
     except Exception:
@@ -1257,6 +1318,9 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         fb['tasks'] = []
         fb['_cached'] = False
         return fb
+
+    if subject == 'chemistry':
+        data = chem_check_lesson(data)
 
     # В кэш сохраняем теорию и примеры (задачи допишутся ниже, если предмет фиксированный)
     cache_payload = {k: v for k, v in data.items() if k != 'tasks'}
@@ -1277,6 +1341,8 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
     else:
         data['tasks'] = []
 
+    if subject == 'chemistry' and data['tasks']:
+        data['tasks'] = chem_check_tasks(data['tasks'])
     data['_cached'] = False
     data['_fixed'] = fixed
     return data
@@ -1295,6 +1361,8 @@ def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questi
         n=max(1, min(int(n or 5), 8)),
         seed=random.randint(1000, 9999),
     )
+    if subject == 'chemistry':
+        tasks = chem_check_tasks(tasks)
     return {'tasks': tasks}
 
 

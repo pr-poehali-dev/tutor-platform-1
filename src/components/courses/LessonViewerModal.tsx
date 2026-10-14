@@ -9,6 +9,7 @@ import LessonViewerTheory from "./lessonViewer/LessonViewerTheory";
 import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
 import LessonViewerTasks, { LessonViewerDone } from "./lessonViewer/LessonViewerTasks";
 import LessonVoiceChat from "./LessonVoiceChat";
+import ChemVerifiedNote from "./lessonViewer/ChemVerifiedNote";
 
 interface Props {
   open: boolean;
@@ -308,6 +309,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           {lesson && !isLoading && (
             <>
               <LessonViewerHeader lesson={lesson} topic={topic} phase={phase} />
+              {subjectId === "chemistry" && <ChemVerifiedNote stats={lesson.chem_verified} />}
 
               {phase === "theory" && (
                 <LessonViewerTheory

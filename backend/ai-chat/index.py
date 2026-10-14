@@ -18,6 +18,8 @@ import urllib.parse
 import urllib.error
 from datetime import datetime
 
+from chem import CHEM_RULES, fix_text as chem_fix_text, is_chemistry
+
 try:
     import psycopg2  # есть в окружении; используется только для rate-limit
 except Exception:  # pragma: no cover
@@ -824,6 +826,16 @@ def handler(event, context):
             if is_exact_science or voice_mode:
                 context_lines.append(MATH_VOICE_RULES)
 
+        # Химия: уравнения реакций пишем формулами с коэффициентами (по просьбе репетитора
+        # Юлии Быковой). В голосе формулы не читаются, поэтому правило только для текста.
+        chem_mode = (not voice_mode and not is_psy and not is_mentor
+                     and is_chemistry(subject, course_title, user_message, lesson_notes[:400]))
+        if chem_mode:
+            context_lines.append(
+                CHEM_RULES + '\nЭто правило ВАЖНЕЕ правила «формулы словами»: ответ читают с экрана, '
+                'поэтому уравнения реакций пиши формулами, а не словами.'
+            )
+
         # Адаптивный формат.
         #
         # Голос слушают — там длинный ответ утомляет, поэтому коротко.
@@ -914,14 +926,19 @@ def handler(event, context):
         # там, где как раз начиналось самое полезное (пример и следующий шаг).
         if voice_mode:
             max_tokens = 350
+        elif chem_mode:
+            max_tokens = 1400
         elif expert_mode:
             max_tokens = 1400
         else:
             max_tokens = 900
         temperature = 0.7 if not is_complex else 0.5  # сложные задачи — точнее
+        if chem_mode:
+            temperature = 0.3  # уравнения реакций — нужна точность, а не фантазия
 
         payload = json.dumps({
-            'model': 'openai/gpt-4o-mini',
+            # Химия: у маленькой модели много ошибок в продуктах реакций — берём старшую.
+            'model': 'openai/gpt-4o' if chem_mode else 'openai/gpt-4o-mini',
             'messages': messages,
             'temperature': temperature,
             'max_tokens': max_tokens,
@@ -955,6 +972,13 @@ def handler(event, context):
         if voice_mode:
             reply = clean_reply_for_voice(reply)
 
+        # Проверяем баланс каждого уравнения реакции и исправляем коэффициенты.
+        chem_stats = None
+        if chem_mode:
+            reply, chem_stats = chem_fix_text(reply, pretty=True)
+            if chem_stats['fixed']:
+                print(f"[ai-chat] chem fixed {chem_stats['fixed']} equations: {chem_stats['fixes'][:3]}")
+
         return {
             'statusCode': 200,
             'headers': {
@@ -967,6 +991,8 @@ def handler(event, context):
                 'used_search': used_search,
                 'used_kb': used_kb,
                 'kb_topics': [e['topic'] for e in kb_entries],
+                'chem_checked': (chem_stats or {}).get('checked', 0),
+                'chem_fixed': (chem_stats or {}).get('fixed', 0),
             }, ensure_ascii=False),
         }
 
