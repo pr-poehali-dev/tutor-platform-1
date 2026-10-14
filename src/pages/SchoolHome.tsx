@@ -42,6 +42,7 @@ export default function SchoolHome() {
             { to: "/super-courses", icon: "Mic", title: "Супер-курсы с голосом", text: "8 предметов: наставник ведёт урок вслух, как живой репетитор." },
             { to: "/math-problems", icon: "Sigma", title: "Задачники", text: "Математика, химия, биология — задачи с пошаговыми решениями." },
             { to: "/silent", icon: "Hand", title: "Курс для глухих детей", text: "Субтитры, жестовый язык и визуальная подача.", badge: "Бесплатно" },
+            { to: "/trenazher-mcko", icon: "ListChecks", title: "Тренажёр МЦКО", text: "Математика, русский, читательская и функциональная грамотность с разбором.", badge: "Бесплатно" },
             { to: "/marafon-skorochtenie-dlya-detej", icon: "BookOpen", title: "Скорочтение для детей", text: "Бесплатный 3-дневный марафон для родителей и тест скорости чтения.", badge: "Бесплатно" },
           ],
         },
