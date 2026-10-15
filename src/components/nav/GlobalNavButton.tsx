@@ -4,7 +4,7 @@ import Icon from "@/components/ui/icon";
 import MobileMenu from "./MobileMenu";
 
 /** Страницы, где меню уже есть в своей шапке — кнопку не дублируем. */
-const SKIP_PREFIXES = ["/admin", "/kids", "/draw", "/silent", "/school/learning", "/checkout", "/course-checkout"];
+const SKIP_PREFIXES = ["/start", "/admin", "/kids", "/draw", "/silent", "/school/learning", "/checkout", "/course-checkout"];
 
 /** Единая точка входа в разделы для всех страниц, кроме главной.
  *  Без неё человек, пришедший из поиска на внутреннюю страницу,

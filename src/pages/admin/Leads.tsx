@@ -42,6 +42,7 @@ const AUDIENCE_LABELS: Record<string, string> = {
   school: "Онлайн-школа",
   business: "Компания",
   edu: "Учебное заведение",
+  parent: "Родитель / ученик",
 };
 
 const PLAN_LABELS: Record<string, string> = {

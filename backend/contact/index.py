@@ -403,7 +403,7 @@ def handle_feedback_submit(token: str, body: dict, source_ip: str) -> dict:
         conn.close()
 
 
-ALLOWED_AUDIENCE = {'author', 'school', 'business', 'edu'}
+ALLOWED_AUDIENCE = {'author', 'school', 'business', 'edu', 'parent'}
 ALLOWED_PLAN = {'start', 'pro', 'scale'}
 
 
@@ -475,9 +475,11 @@ def handle_partner_lead(token: str, body: dict) -> dict:
             conn.commit()
 
             aud_labels = {'author': 'Автор/эксперт', 'school': 'Онлайн-школа',
-                          'business': 'Компания', 'edu': 'Учебное заведение'}
+                          'business': 'Компания', 'edu': 'Учебное заведение', 'parent': 'Родитель/ученик'}
             plan_labels = {'start': 'Старт (8%)', 'pro': 'Про (5%)', 'scale': 'Масштаб (3%)'}
-            lines = [f"🚀 Новая заявка на конструктор школ #{lid}", ""]
+            title = (f"🎓 Новая заявка от родителя/ученика #{lid} — перезвонить сегодня"
+                     if audience == 'parent' else f"🚀 Новая заявка на конструктор школ #{lid}")
+            lines = [title, ""]
             lines.append(f"👤 Имя: {name}")
             if company:
                 lines.append(f"🏢 Компания: {company}")
@@ -507,7 +509,9 @@ def handle_partner_lead(token: str, body: dict) -> dict:
 
             return ok({
                 'ok': True, 'id': lid,
-                'message': 'Спасибо! Мы свяжемся с вами в течение рабочего дня и покажем платформу.',
+                'message': ('Спасибо! Мы напишем вам в течение дня и подберём план занятий.'
+                            if audience == 'parent' else
+                            'Спасибо! Мы свяжемся с вами в течение рабочего дня и покажем платформу.'),
             })
     finally:
         conn.close()
