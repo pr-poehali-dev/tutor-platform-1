@@ -113,6 +113,16 @@ export default defineConfig(({mode}) => ({
             "@": path.resolve(__dirname, "./src"),
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                // Хэш в именах файлов — только 0-9a-f. В base64-хэше случайно
+                // складывались «php», «sql», «cgi» (например, -DEs7gpHp.js),
+                // и защита хранилища отклоняла загрузку таких файлов при публикации.
+                hashCharacters: 'hex',
+            },
+        },
+    },
     server: {
         host: '0.0.0.0',
         port: 5173,
