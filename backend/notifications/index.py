@@ -31,7 +31,7 @@ import psycopg2
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
 
-SITE_URL = 'https://xn--80ahdri7a.xn--p1ai'
+SITE_URL = 'https://xn--h1amcedk2a6b.xn--p1ai'
 SITE_NAME = 'УЧИСЬПРО'
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.yandex.ru')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))

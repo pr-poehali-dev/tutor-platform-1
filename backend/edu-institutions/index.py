@@ -9,6 +9,8 @@ import csv
 import io
 import psycopg2
 
+import outreach
+
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 TABLE = f'{SCHEMA}.edu_institutions'
 
@@ -51,18 +53,26 @@ def row_to_item(r) -> dict:
         'status': r[8], 'note': r[9],
         'created_at': r[10].isoformat() if r[10] else None,
         'updated_at': r[11].isoformat() if r[11] else None,
+        'address': r[12] or '', 'segment': r[13] or '', 'source': r[14] or '',
+        'unsubscribed': bool(r[15]), 'last_mailed_at': r[16].isoformat() if r[16] else None,
+        'mail_count': r[17] or 0,
     }
 
 
 COLS = ('id, org_name, kind, contact_name, phone, email, city, website, '
-        'status, note, created_at, updated_at')
+        'status, note, created_at, updated_at, address, segment, source, '
+        'unsubscribed_at, last_mailed_at, mail_count')
 
 
 def handle_list(qs: dict) -> dict:
     kind = (qs.get('kind') or '').strip()
     status = (qs.get('status') or '').strip()
     search = (qs.get('q') or '').strip()
+    city = (qs.get('city') or '').strip()
     where, args = [], []
+    if city:
+        where.append('city = %s')
+        args.append(city)
     if kind in KINDS:
         where.append('kind = %s')
         args.append(kind)
@@ -70,9 +80,10 @@ def handle_list(qs: dict) -> dict:
         where.append('status = %s')
         args.append(status)
     if search:
-        where.append('(org_name ILIKE %s OR contact_name ILIKE %s OR phone ILIKE %s OR email ILIKE %s OR city ILIKE %s)')
+        where.append('(org_name ILIKE %s OR contact_name ILIKE %s OR phone ILIKE %s OR email ILIKE %s '
+                     'OR city ILIKE %s OR address ILIKE %s)')
         like = f'%{search}%'
-        args.extend([like, like, like, like, like])
+        args.extend([like, like, like, like, like, like])
     clause = ('WHERE ' + ' AND '.join(where)) if where else ''
     conn = get_db()
     try:
@@ -250,6 +261,193 @@ def handle_import(body: dict) -> dict:
         conn.close()
 
 
+# ─────────────── Рассылка директорам (пилот Самары) ───────────────
+
+def _inst_by_id(cur, rid):
+    cur.execute(f'SELECT {COLS}, unsubscribe_token FROM {TABLE} WHERE id=%s', (rid,))
+    r = cur.fetchone()
+    if not r:
+        return None, None
+    return row_to_item(r), r[18]
+
+
+def _ensure_token(cur, rid, token):
+    if token:
+        return token
+    cur.execute(f"UPDATE {TABLE} SET unsubscribe_token=md5(random()::text||clock_timestamp()::text) "
+                f"WHERE id=%s RETURNING unsubscribe_token", (rid,))
+    return cur.fetchone()[0]
+
+
+def _unsub_url(event, token):
+    return f'{outreach.SITE}/unsubscribe?t={token}'
+
+
+def _audience_where():
+    return (f"city='Самара' AND email<>'' AND unsubscribed_at IS NULL AND status NOT IN ('declined','partner') "
+            f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
+            f"AND s.campaign_code='{outreach.CAMPAIGN}' AND s.status='sent' AND s.is_test=FALSE)")
+
+
+def handle_outreach_status() -> dict:
+    user, password = outreach.smtp_creds()
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT count(*) FROM {TABLE} WHERE city='Самара'")
+            total = cur.fetchone()[0]
+            cur.execute(f"SELECT count(*) FROM {TABLE} WHERE city='Самара' AND email<>''")
+            with_email = cur.fetchone()[0]
+            cur.execute(f"SELECT count(*) FROM {TABLE} WHERE city='Самара' AND unsubscribed_at IS NOT NULL")
+            unsub = cur.fetchone()[0]
+            cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {_audience_where()}')
+            pending = cur.fetchone()[0]
+            cur.execute(f"SELECT status, is_test, count(*) FROM {SCHEMA}.edu_campaign_sends "
+                        f"WHERE campaign_code=%s GROUP BY 1,2", (outreach.CAMPAIGN,))
+            sends = [{'status': a, 'is_test': b, 'count': c} for a, b, c in cur.fetchall()]
+            cur.execute(f"SELECT s.to_email, s.status, left(coalesce(s.error,''),200), s.is_test, s.created_at, "
+                        f"coalesce(i.org_name,'') FROM {SCHEMA}.edu_campaign_sends s "
+                        f"LEFT JOIN {TABLE} i ON i.id=s.institution_id WHERE s.campaign_code=%s "
+                        f"ORDER BY s.id DESC LIMIT 25", (outreach.CAMPAIGN,))
+            last = [{'to': a, 'status': b, 'error': c, 'is_test': d, 'at': e, 'org': f}
+                    for a, b, c, d, e, f in cur.fetchall()]
+        return ok({'smtp_configured': bool(user and password), 'sender': user or None,
+                   'subject': outreach.SUBJECT, 'total': total, 'with_email': with_email,
+                   'unsubscribed': unsub, 'pending': pending, 'sends': sends, 'last': last,
+                   'batch_max': outreach.BATCH_MAX})
+    finally:
+        conn.close()
+
+
+def handle_outreach_preview(qs, event) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            rid = qs.get('id')
+            if rid:
+                inst, token = _inst_by_id(cur, int(rid))
+            else:
+                cur.execute(f"SELECT id FROM {TABLE} WHERE city='Самара' AND email<>'' ORDER BY id LIMIT 1")
+                r = cur.fetchone()
+                inst, token = _inst_by_id(cur, r[0]) if r else ({'org_name': 'МБОУ СОШ № 1 г.о. Самара',
+                                                                   'contact_name': 'Иванова Мария Петровна'}, 'demo')
+            if not inst:
+                return err('Учреждение не найдено', 404)
+            subject, html, text, _ = outreach.build_letter(inst, _unsub_url(event, token or 'demo'))
+            return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
+    finally:
+        conn.close()
+
+
+def handle_outreach_test(body, event) -> dict:
+    to = str(body.get('email') or '').strip()
+    if '@' not in to or len(to) > 200:
+        return err('Укажите корректный email для проверки', 400)
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT id FROM {TABLE} WHERE city='Самара' AND email<>'' ORDER BY id LIMIT 1")
+            r = cur.fetchone()
+            inst, token = _inst_by_id(cur, r[0]) if r else ({'org_name': 'Тестовая школа', 'contact_name': ''}, 'demo')
+            subject, html, text, reply = outreach.build_letter(inst, _unsub_url(event, token or 'demo'))
+            status, error = 'sent', None
+            try:
+                smtp = outreach.open_smtp()
+                try:
+                    outreach.send_one(smtp, to, '[ТЕСТ] ' + subject, html, text, _unsub_url(event, 'demo'), reply)
+                finally:
+                    smtp.quit()
+            except Exception as e:
+                status, error = 'failed', f'{type(e).__name__}: {str(e)[:300]}'
+            cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error, is_test) "
+                        f"VALUES (%s, NULL, %s, %s, %s, TRUE)", (outreach.CAMPAIGN, to, status, error))
+            conn.commit()
+            if status != 'sent':
+                return ok({'ok': False, 'error': error})
+            return ok({'ok': True, 'to': to})
+    finally:
+        conn.close()
+
+
+def handle_outreach_send(body, event) -> dict:
+    if body.get('confirm') != 'SEND':
+        return err('Нужно подтверждение отправки', 400)
+    try:
+        limit = max(1, min(int(body.get('limit') or 10), outreach.BATCH_MAX))
+    except (TypeError, ValueError):
+        limit = 10
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    sent, failed, errors = 0, 0, []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f'SELECT id FROM {TABLE} WHERE {_audience_where()} ORDER BY id LIMIT %s', (limit,))
+            ids = [r[0] for r in cur.fetchall()]
+            if not ids:
+                return ok({'sent': 0, 'failed': 0, 'left': 0, 'done': True})
+            try:
+                smtp = outreach.open_smtp()
+            except Exception as e:
+                return err(f'Не удалось подключиться к почте: {type(e).__name__}: {str(e)[:200]}', 502)
+            try:
+                for rid in ids:
+                    inst, token = _inst_by_id(cur, rid)
+                    token = _ensure_token(cur, rid, token)
+                    unsub = _unsub_url(event, token)
+                    subject, html, text, reply = outreach.build_letter(inst, unsub)
+                    try:
+                        outreach.send_one(smtp, inst['email'], subject, html, text, unsub, reply)
+                        cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status) "
+                                    f"VALUES (%s,%s,%s,'sent')", (outreach.CAMPAIGN, rid, inst['email']))
+                        cur.execute(f"UPDATE {TABLE} SET last_mailed_at=now(), mail_count=mail_count+1, "
+                                    f"status=CASE WHEN status='new' THEN 'contacted' ELSE status END, updated_at=now() "
+                                    f"WHERE id=%s", (rid,))
+                        sent += 1
+                    except Exception as e:
+                        msg = f'{type(e).__name__}: {str(e)[:300]}'
+                        cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error) "
+                                    f"VALUES (%s,%s,%s,'failed',%s)", (outreach.CAMPAIGN, rid, inst['email'], msg))
+                        failed += 1
+                        errors.append({'org': inst['org_name'], 'email': inst['email'], 'error': msg})
+                        if 'SMTPDataError' in msg or 'SMTPSenderRefused' in msg or 'quota' in msg.lower():
+                            break
+                    conn.commit()
+                    outreach.pause()
+            finally:
+                try:
+                    smtp.quit()
+                except Exception:
+                    pass
+            cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {_audience_where()}')
+            left = cur.fetchone()[0]
+            return ok({'sent': sent, 'failed': failed, 'errors': errors[:5], 'left': left, 'done': left == 0})
+    finally:
+        conn.close()
+
+
+def handle_unsubscribe(qs) -> dict:
+    token = (qs.get('t') or '').strip()
+    if len(token) < 16:
+        return err('Ссылка недействительна', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"UPDATE {TABLE} SET unsubscribed_at=coalesce(unsubscribed_at, now()), updated_at=now() "
+                        f"WHERE unsubscribe_token=%s RETURNING org_name", (token,))
+            r = cur.fetchone()
+            conn.commit()
+            if not r:
+                return err('Ссылка недействительна', 404)
+            return ok({'ok': True, 'org': r[0]})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Кабинет администратора: база учебных заведений (CRUD + импорт + экспорт)."""
     method = event.get('httpMethod', 'GET')
@@ -257,11 +455,15 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': cors(), 'body': ''}
 
     headers = event.get('headers') or {}
-    if not check_admin(headers):
-        return err('Нет доступа', 403)
-
     qs = event.get('queryStringParameters') or {}
     action = (qs.get('action') or 'list').strip()
+
+    # Отписка — публичная, по личной ссылке из письма.
+    if action == 'unsubscribe':
+        return handle_unsubscribe(qs)
+
+    if not check_admin(headers):
+        return err('Нет доступа', 403)
 
     try:
         body = json.loads(event.get('body') or '{}')
@@ -280,4 +482,12 @@ def handler(event: dict, context) -> dict:
         return handle_update(body)
     if action == 'delete':
         return handle_delete(body)
+    if action == 'outreach_status':
+        return handle_outreach_status()
+    if action == 'outreach_preview':
+        return handle_outreach_preview(qs, event)
+    if action == 'outreach_test' and method == 'POST':
+        return handle_outreach_test(body, event)
+    if action == 'outreach_send' and method == 'POST':
+        return handle_outreach_send(body, event)
     return err('Неизвестное действие', 400)

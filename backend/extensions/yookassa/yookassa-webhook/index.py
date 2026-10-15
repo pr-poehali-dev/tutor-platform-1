@@ -20,7 +20,7 @@ def send_paid_email(cur, S: str, to_email: str, name: str, amount: float, order_
 
     smtp_user = os.environ.get('SMTP_USER', '').strip()
     smtp_pass = os.environ.get('SMTP_PASSWORD', '').strip()
-    site = 'https://xn--80ahdri7a.xn--p1ai'
+    site = 'https://xn--h1amcedk2a6b.xn--p1ai'
     subject = 'Оплата прошла — доступ открыт'
 
     if not smtp_user or not smtp_pass:

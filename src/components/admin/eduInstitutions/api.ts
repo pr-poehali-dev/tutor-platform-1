@@ -19,6 +19,12 @@ export interface EduInstitution {
   note: string;
   created_at: string | null;
   updated_at: string | null;
+  address?: string;
+  segment?: string;
+  source?: string;
+  unsubscribed?: boolean;
+  last_mailed_at?: string | null;
+  mail_count?: number;
 }
 
 export const KIND_LABELS: Record<EduKind, string> = {
@@ -83,15 +89,16 @@ export interface ListResponse {
   by_kind: Record<string, number>;
 }
 
-export function listInstitutions(query: { kind?: string; status?: string; q?: string }) {
+export function listInstitutions(query: { kind?: string; status?: string; q?: string; city?: string }) {
   const q: Record<string, string> = {};
+  if (query.city) q.city = query.city;
   if (query.kind) q.kind = query.kind;
   if (query.status) q.status = query.status;
   if (query.q) q.q = query.q;
   return req<ListResponse>("list", { query: q });
 }
 
-export type EduInput = Omit<EduInstitution, "id" | "created_at" | "updated_at"> & { id?: number };
+export type EduInput = Omit<EduInstitution, "id" | "created_at" | "updated_at" | "address" | "segment" | "source" | "unsubscribed" | "last_mailed_at" | "mail_count"> & { id?: number };
 
 export function createInstitution(body: EduInput) {
   return req<{ item: EduInstitution }>("create", { method: "POST", body });
@@ -125,4 +132,44 @@ export function importInstitutions(rows: ImportRow[]) {
     method: "POST",
     body: { rows },
   });
+}
+export interface OutreachSend {
+  to: string;
+  status: string;
+  error: string;
+  is_test: boolean;
+  at: string;
+  org: string;
+}
+
+export interface OutreachStatus {
+  smtp_configured: boolean;
+  sender: string | null;
+  subject: string;
+  total: number;
+  with_email: number;
+  unsubscribed: number;
+  pending: number;
+  sends: { status: string; is_test: boolean; count: number }[];
+  last: OutreachSend[];
+  batch_max: number;
+}
+
+export function outreachStatus() {
+  return req<OutreachStatus>("outreach_status");
+}
+
+export function outreachPreview() {
+  return req<{ subject: string; html: string; text: string; to: string }>("outreach_preview");
+}
+
+export function outreachTest(email: string) {
+  return req<{ ok: boolean; to?: string; error?: string }>("outreach_test", { method: "POST", body: { email } });
+}
+
+export function outreachSend(limit: number) {
+  return req<{ sent: number; failed: number; left: number; done: boolean; errors?: { org: string; email: string; error: string }[] }>(
+    "outreach_send",
+    { method: "POST", body: { limit, confirm: "SEND" } },
+  );
 }

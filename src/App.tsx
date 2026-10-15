@@ -123,6 +123,8 @@ const Payouts = lazy(() => import("./pages/admin/Payouts"));
 const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
 const EduInstitutions = lazy(() => import("./pages/admin/EduInstitutions"));
 const EduOutreach = lazy(() => import("./pages/admin/EduOutreach"));
+const SamaraOutreach = lazy(() => import("./pages/admin/SamaraOutreach"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
 const MaxChannelDashboard = lazy(() => import("./pages/admin/MaxChannelDashboard"));
 const MetrikaGoals = lazy(() => import("./pages/admin/MetrikaGoals"));
@@ -359,6 +361,8 @@ const App = () => (
                     <Route path="/admin/grants" element={<GrantApplications />} />
                     <Route path="/admin/edu-institutions" element={<EduInstitutions />} />
                     <Route path="/admin/edu-outreach" element={<EduOutreach />} />
+                    <Route path="/admin/samara-outreach" element={<SamaraOutreach />} />
+                    <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />
                     <Route path="/admin/max-channel" element={<MaxChannelDashboard />} />
                     <Route path="/admin/metrika-goals" element={<MetrikaGoals />} />

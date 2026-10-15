@@ -31,6 +31,7 @@ const SECTIONS: Section[] = [
       { label: "Выплаты школам", path: "/admin/payouts", icon: "Wallet", description: "Заявки на вывод, реестр начислений и доля школ к выплате" },
       { label: "Дашборд продаж", path: "/admin/sales", icon: "BarChart3", description: "KPI, выручка, воронка, конверсия и динамика по дням" },
       { label: "База клиентов", path: "/admin/sales", icon: "Users", description: "Поиск по email/телефону, сегменты, LTV, история покупок" },
+      { label: "Пилот Самары: школы и рассылка", path: "/admin/samara-outreach", icon: "Send", description: "187 школ Самары из официального реестра, письмо директорам с промокодом САМАРА, тест, отправка партиями и журнал" },
       { label: "База учебных заведений", path: "/admin/edu-institutions", icon: "Building2", description: "Онлайн-школы, колледжи и техникумы: контакты, радар-импорт и письмо о сотрудничестве" },
     ],
   },

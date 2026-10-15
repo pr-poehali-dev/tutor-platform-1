@@ -32,7 +32,7 @@ EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 MIN_PASSWORD_LEN = 6
 MAX_PASSWORD_LEN = 128
 
-SITE_URL = 'https://xn--80ahdri7a.xn--p1ai'
+SITE_URL = 'https://xn--h1amcedk2a6b.xn--p1ai'
 
 
 def send_welcome_email(cur, to_email: str, name: str, user_id: int) -> None:

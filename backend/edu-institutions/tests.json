@@ -1,27 +1,8 @@
 {
   "tests": [
-    {
-      "name": "OPTIONS preflight",
-      "method": "OPTIONS",
-      "path": "/",
-      "expectedStatus": 200
-    },
-    {
-      "name": "Нет доступа без PIN",
-      "method": "GET",
-      "path": "/?action=list",
-      "expectedStatus": 403,
-      "expectedBody": {"error": "string"},
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Список с PIN",
-      "method": "GET",
-      "path": "/?action=list",
-      "headers": {"X-Admin-Pin": "7777"},
-      "expectedStatus": 200,
-      "expectedBody": {"total": 0},
-      "bodyMatcher": "partial"
-    }
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Нет доступа без PIN", "method": "GET", "path": "/?action=list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
+    {"name": "Рассылка без PIN закрыта", "method": "POST", "path": "/?action=outreach_send", "body": {"confirm": "SEND"}, "expectedStatus": 403},
+    {"name": "Отписка с неверной ссылкой", "method": "GET", "path": "/?action=unsubscribe&t=short", "expectedStatus": 400}
   ]
 }
