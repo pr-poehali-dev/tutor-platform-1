@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import outreach
+import registry_extra
 import registry_regions
 import registry_samara_region
 import registry_wave1
@@ -27,7 +28,7 @@ def get_city(cur, slug: str):
 
 
 def all_cities(cur) -> list:
-    cur.execute(f'SELECT {CITY_COLS} FROM {SCHEMA}.pilot_cities ORDER BY wave, name')
+    cur.execute(f'SELECT {CITY_COLS} FROM {SCHEMA}.pilot_cities ORDER BY queue_order, wave, name')
     return [_city(r) for r in cur.fetchall()]
 
 
@@ -159,7 +160,8 @@ def registry_size() -> int:
     return sum(len(r.ROWS) for r in REGISTRIES.values())
 
 
-REGISTRIES = {'wave1': registry_wave1, 'wave2': registry_wave2, 'samara_region': registry_samara_region}
+REGISTRIES = {'wave1': registry_wave1, 'wave2': registry_wave2, 'samara_region': registry_samara_region,
+              'extra': registry_extra}
 
 
 def import_registry(cur, conn, name: str = 'wave1') -> dict:
