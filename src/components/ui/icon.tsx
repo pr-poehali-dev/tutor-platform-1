@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import { LucideProps } from 'lucide-react';
-import dynamicIconImports from 'lucide-react/dynamicIconImports';
+import { iconGroupIndex, iconGroupLoaders } from './icon-groups';
 
 interface IconProps extends LucideProps {
   name: string;
@@ -43,20 +43,28 @@ function toKebab(name: string): string {
 }
 
 type IconLoader = () => Promise<{ default: React.ComponentType<LucideProps> }>;
-const imports = dynamicIconImports as unknown as Record<string, IconLoader>;
+
+function groupLoader(key: string): IconLoader | null {
+  const gi = iconGroupIndex[key];
+  if (gi === undefined) return null;
+  return () =>
+    iconGroupLoaders[gi]().then((m) => ({
+      default: (m.default[key] as React.ComponentType<LucideProps>) || EmptyIcon,
+    }));
+}
 
 // Кэш ленивых компонентов, чтобы не пересоздавать их на каждый рендер.
 const cache = new Map<string, React.LazyExoticComponent<React.ComponentType<LucideProps>>>();
 
 function getLazyIcon(name: string): React.LazyExoticComponent<React.ComponentType<LucideProps>> | null {
   const key = toKebab(name);
-  const loader = imports[key];
+  const loader = groupLoader(key);
   if (!loader) return null;
   if (!cache.has(key)) cache.set(key, lazy(safeLoader(loader)));
   return cache.get(key)!;
 }
 
-/** Универсальная иконка. Каждая иконка грузится отдельным чанком по требованию —
+/** Универсальная иконка. Иконки грузятся по требованию небольшими группами (по 26) —
  *  это убирает всю библиотеку lucide-react (~220 КБ) из главного бандла и
  *  заметно ускоряет первую загрузку сайта. */
 const Icon: React.FC<IconProps> = ({ name, fallback = 'CircleAlert', ...props }) => {
