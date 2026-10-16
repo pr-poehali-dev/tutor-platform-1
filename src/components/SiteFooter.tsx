@@ -58,6 +58,8 @@ const FOOTER_LINKS: Record<LearnerDirection, FooterLink[]> = {
     { to: "/business-2026", label: "Бизнес 2026: где открываться" },
     { to: "/reyting-onlayn-shkol", label: "Рейтинг онлайн-школ 2026" },
     { to: "/reyting-onlayn-shkol-dlya-shkolnikov", label: "Онлайн-школы для школьников" },
+    { to: "/shkoly", label: "Справочник школ" },
+    { to: "/shkoly/reyting", label: "Рейтинг школ 2026" },
     { to: "/bizlab", label: "Проверка бизнес-идеи" },
     { to: "/klinicheskiy-psiholog", label: "Профессия психолога" },
     { to: "/nlp-master", label: "Курс НЛП-практик" },

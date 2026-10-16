@@ -13,6 +13,7 @@ import psycopg2
 
 import outreach
 import pilot
+import wave2
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 TABLE = f'{SCHEMA}.edu_institutions'
@@ -554,6 +555,80 @@ def handle_pilot_send(body, event) -> dict:
         conn.close()
 
 
+def handle_wave2_status() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT count(*) FILTER (WHERE status='sent'), count(*) FILTER (WHERE status='failed') "
+                        f"FROM {SCHEMA}.edu_campaign_sends WHERE campaign_code=%s AND is_test=FALSE", (wave2.CAMPAIGN,))
+            sent, failed = cur.fetchone()
+            cur.execute(f"SELECT status, count(*) FROM {SCHEMA}.school_profiles GROUP BY status")
+            profiles = dict(cur.fetchall())
+            return ok({'enabled': pilot.wave2_enabled(cur), 'first_wave_pending': pilot.first_wave_pending(cur),
+                       'pending': pilot.wave2_pending(cur), 'sent': sent, 'failed': failed, 'wait_days': wave2.WAIT_DAYS,
+                       'profiles': profiles})
+    finally:
+        conn.close()
+
+
+def handle_wave2_settings(body) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"UPDATE {SCHEMA}.outreach_settings SET wave2_enabled=%s, updated_at=now() WHERE id=1",
+                        (bool(body.get('enabled')),))
+            conn.commit()
+            return ok({'enabled': bool(body.get('enabled'))})
+    finally:
+        conn.close()
+
+
+def _wave2_sample(cur, event):
+    cur.execute(f"SELECT id FROM {TABLE} WHERE slug IS NOT NULL AND email<>'' ORDER BY rating_score DESC, id LIMIT 1")
+    rid = cur.fetchone()[0]
+    inst, token = _inst_by_id(cur, rid)
+    cur.execute(f"SELECT slug FROM {TABLE} WHERE id=%s", (rid,))
+    slug = cur.fetchone()[0]
+    page = f'{outreach.SITE}/shkoly/{slug}'
+    form = f'{outreach.SITE}/shkoly/anketa?t=demo'
+    return inst, wave2.build(inst, page, form, _unsub_url(event, 'demo'), wave2.ratings_line(cur, rid))
+
+
+def handle_wave2_preview(event) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            inst, (subject, html, text, _) = _wave2_sample(cur, event)
+            return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
+    finally:
+        conn.close()
+
+
+def handle_wave2_test(body, event) -> dict:
+    to = str(body.get('email') or '').strip()
+    if '@' not in to or len(to) > 200:
+        return err('Укажите корректный email для проверки', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            _, (subject, html, text, reply) = _wave2_sample(cur, event)
+            status, error = 'sent', None
+            try:
+                smtp = outreach.open_smtp()
+                try:
+                    outreach.send_one(smtp, to, '[ТЕСТ] ' + subject, html, text, _unsub_url(event, 'demo'), reply)
+                finally:
+                    smtp.quit()
+            except Exception as e:
+                status, error = 'failed', f'{type(e).__name__}: {str(e)[:300]}'
+            cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error, is_test) "
+                        f"VALUES (%s, NULL, %s, %s, %s, TRUE)", (wave2.CAMPAIGN, to, status, error))
+            conn.commit()
+            return ok({'ok': status == 'sent', 'to': to, 'error': error})
+    finally:
+        conn.close()
+
+
 def handle_pilot_settings(body) -> dict:
     conn = get_db()
     try:
@@ -656,6 +731,14 @@ def handler(event: dict, context) -> dict:
         return handle_outreach_send(body, event)
     if action == 'pilot_overview':
         return handle_pilot_overview()
+    if action == 'wave2_status':
+        return handle_wave2_status()
+    if action == 'wave2_settings' and method == 'POST':
+        return handle_wave2_settings(body)
+    if action == 'wave2_preview':
+        return handle_wave2_preview(event)
+    if action == 'wave2_test' and method == 'POST':
+        return handle_wave2_test(body, event)
     if action == 'pilot_preview':
         return handle_pilot_preview(qs, event)
     if action == 'pilot_test' and method == 'POST':

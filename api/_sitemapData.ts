@@ -25,6 +25,7 @@ import { KIDS_TOPICS } from "../src/components/kids/kidsTopicData";
 import { LIBRARY } from "../src/components/kids/libraryData";
 import { KIDS_GAMES } from "../src/components/kids/games/gamesData";
 import { MY_RUSSIA } from "../src/components/kids/myRussiaData";
+import { DIRECTORY_CITY_SLUGS, DIRECTORY_RATED_SCHOOL_SLUGS } from "./_schoolsDirectory";
 
 export const SITE = "https://учисьпро.рф";
 const FEED_API =
@@ -58,6 +59,9 @@ const STATIC: Entry[] = [
   { loc: "/business-2026", changefreq: "weekly", priority: "0.9" },
   { loc: "/reyting-onlayn-shkol", changefreq: "monthly", priority: "0.9" },
   { loc: "/reyting-onlayn-shkol-dlya-shkolnikov", changefreq: "monthly", priority: "0.9" },
+  { loc: "/shkoly", changefreq: "weekly", priority: "0.9" },
+  { loc: "/shkoly/reyting", changefreq: "weekly", priority: "0.9" },
+  { loc: "/shkoly/dlya-shkol", changefreq: "monthly", priority: "0.6" },
   { loc: "/exam-bank", changefreq: "weekly", priority: "0.9" },
   { loc: "/exam-checklist", changefreq: "monthly", priority: "0.7" },
   { loc: "/score-calculator", changefreq: "monthly", priority: "0.8" },
@@ -154,6 +158,8 @@ function urlTag(e: Entry, today: string): string {
 export function staticEntries(): Entry[] {
   return [
     ...STATIC,
+    ...DIRECTORY_CITY_SLUGS.map((s) => ({ loc: `/shkoly/gorod/${s}`, changefreq: "weekly", priority: "0.7" })),
+    ...DIRECTORY_RATED_SCHOOL_SLUGS.map((s) => ({ loc: `/shkoly/${s}`, changefreq: "monthly", priority: "0.6" })),
     ...SUBJECTS.map((s) => ({
       loc: `/courses/${s}`,
       changefreq: "weekly",

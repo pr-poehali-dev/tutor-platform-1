@@ -1,0 +1,40 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Города справочника",
+      "method": "GET",
+      "path": "/?action=cities",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Список без города",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Неизвестная школа",
+      "method": "GET",
+      "path": "/?action=school&slug=net-takoy-shkoly",
+      "expectedStatus": 404
+    },
+    {
+      "name": "Анкета по неверной ссылке",
+      "method": "GET",
+      "path": "/?action=profile_form&t=bad",
+      "expectedStatus": 404
+    },
+    {
+      "name": "Админка без PIN закрыта",
+      "method": "GET",
+      "path": "/?action=admin_profiles",
+      "expectedStatus": 403
+    }
+  ]
+}

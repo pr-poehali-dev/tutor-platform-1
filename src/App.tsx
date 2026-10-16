@@ -155,6 +155,13 @@ const BizReport = lazy(() => import("./pages/BizReport"));
 const Business2026 = lazy(() => import("./pages/Business2026"));
 const RatingOnlineSchools = lazy(() => import("./pages/RatingOnlineSchools"));
 const RatingKidsSchools = lazy(() => import("./pages/RatingKidsSchools"));
+const SchoolsHome = lazy(() => import("./pages/schools/SchoolsHome"));
+const SchoolsCity = lazy(() => import("./pages/schools/SchoolsCity"));
+const SchoolsRating = lazy(() => import("./pages/schools/SchoolsRating"));
+const SchoolsForSchools = lazy(() => import("./pages/schools/SchoolsForSchools"));
+const SchoolProfileForm = lazy(() => import("./pages/schools/SchoolProfileForm"));
+const SchoolPage = lazy(() => import("./pages/schools/SchoolPage"));
+const SchoolProfilesAdmin = lazy(() => import("./pages/admin/SchoolProfilesAdmin"));
 const Orchestrator = lazy(() => import("./pages/Orchestrator"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
 const Partners = lazy(() => import("./pages/Partners"));
@@ -249,6 +256,12 @@ const App = () => (
                     <Route path="/business-2026" element={<Business2026 />} />
                     <Route path="/reyting-onlayn-shkol" element={<RatingOnlineSchools />} />
                     <Route path="/reyting-onlayn-shkol-dlya-shkolnikov" element={<RatingKidsSchools />} />
+                    <Route path="/shkoly" element={<SchoolsHome />} />
+                    <Route path="/shkoly/reyting" element={<SchoolsRating />} />
+                    <Route path="/shkoly/dlya-shkol" element={<SchoolsForSchools />} />
+                    <Route path="/shkoly/anketa" element={<SchoolProfileForm />} />
+                    <Route path="/shkoly/gorod/:city" element={<SchoolsCity />} />
+                    <Route path="/shkoly/:slug" element={<SchoolPage />} />
                     <Route path="/orchestrator" element={<Orchestrator />} />
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/samara" element={<SamaraPilot />} />
@@ -374,6 +387,7 @@ const App = () => (
                     <Route path="/admin/edu-outreach" element={<EduOutreach />} />
                     <Route path="/admin/samara-outreach" element={<SamaraOutreach />} />
                     <Route path="/admin/pilot-outreach" element={<PilotOutreach />} />
+                    <Route path="/admin/school-profiles" element={<SchoolProfilesAdmin />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/start" element={<TryLanding />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />

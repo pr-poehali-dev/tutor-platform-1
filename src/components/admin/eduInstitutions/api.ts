@@ -230,6 +230,32 @@ export function pilotSettings(body: { enabled?: boolean; daily_limit?: number })
 }
 
 /** Шаг авторассылки: публичный, без PIN. Сервер сам решает, слать ли сейчас. */
+export interface Wave2Status {
+  enabled: boolean;
+  first_wave_pending: number;
+  pending: number;
+  sent: number;
+  failed: number;
+  wait_days: number;
+  profiles: Record<string, number>;
+}
+
+export function wave2Status() {
+  return req<Wave2Status>("wave2_status");
+}
+
+export function wave2Settings(enabled: boolean) {
+  return req<{ enabled: boolean }>("wave2_settings", { method: "POST", body: { enabled } });
+}
+
+export function wave2Preview() {
+  return req<{ subject: string; html: string; text: string; to: string }>("wave2_preview");
+}
+
+export function wave2Test(email: string) {
+  return req<{ ok: boolean; to: string; error: string | null }>("wave2_test", { method: "POST", body: { email } });
+}
+
 export function pilotTick() {
   return fetch(`${URL}?action=pilot_tick`).catch(() => undefined);
 }

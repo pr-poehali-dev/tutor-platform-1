@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import outreach
+import wave2
 import registry_extra
 import registry_regions
 import registry_samara_region
@@ -241,6 +242,68 @@ def batch_interval_min(limit: int) -> int:
     return max(5, int(1440 * outreach.AUTO_BATCH / max(1, limit)))
 
 
+def first_wave_pending(cur) -> int:
+    total = 0
+    for city in all_cities(cur):
+        if not city['active']:
+            continue
+        cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {audience_where(city)}')
+        total += cur.fetchone()[0]
+    return total
+
+
+def wave2_pending(cur) -> int:
+    cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {wave2.audience_where()}')
+    return cur.fetchone()[0]
+
+
+def wave2_enabled(cur) -> bool:
+    cur.execute(f'SELECT wave2_enabled FROM {SCHEMA}.outreach_settings WHERE id=1')
+    r = cur.fetchone()
+    return bool(r and r[0])
+
+
+def send_wave2(cur, conn, limit: int, unsub_url, inst_by_id, ensure_token, started: float) -> dict:
+    """Письма «Расскажите о школе». Те же правила осторожности, что и у первой волны."""
+    cur.execute(f'SELECT id FROM {TABLE} WHERE {wave2.audience_where()} ORDER BY rating_score DESC, id LIMIT %s', (limit,))
+    ids = [r[0] for r in cur.fetchall()]
+    sent, failed, errors, stop = 0, 0, [], False
+    if not ids:
+        return {'sent': 0, 'failed': 0, 'errors': [], 'stop': False}
+    smtp = outreach.open_smtp()
+    try:
+        for rid in ids:
+            if time.time() - started > TIME_BUDGET_SEC:
+                break
+            inst, token = inst_by_id(cur, rid)
+            token = ensure_token(cur, rid, token)
+            subject, html, text, reply = wave2.letter_for(cur, rid, inst, unsub_url(token))
+            try:
+                outreach.send_one(smtp, inst['email'], subject, html, text, unsub_url(token), reply)
+                cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status) "
+                            f"VALUES (%s,%s,%s,'sent')", (wave2.CAMPAIGN, rid, inst['email']))
+                cur.execute(f"UPDATE {TABLE} SET last_mailed_at=now(), mail_count=mail_count+1, updated_at=now() WHERE id=%s", (rid,))
+                sent += 1
+            except Exception as e:
+                msg = f'{type(e).__name__}: {str(e)[:300]}'
+                cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error) "
+                            f"VALUES (%s,%s,%s,'failed',%s)", (wave2.CAMPAIGN, rid, inst['email'], msg))
+                failed += 1
+                errors.append({'org': inst['org_name'], 'email': inst['email'], 'error': msg})
+                if 'SMTPDataError' in msg or 'SMTPSenderRefused' in msg or 'quota' in msg.lower():
+                    stop = 'spam' if outreach.is_spam_reject(msg) else 'blocked'
+                    conn.commit()
+                    break
+            conn.commit()
+            outreach.pause()
+    finally:
+        try:
+            smtp.quit()
+        except Exception:
+            pass
+    return {'sent': sent, 'failed': failed, 'errors': errors[:5], 'stop': stop}
+
+
 def auto_tick(cur, conn, unsub_url, inst_by_id, ensure_token) -> dict:
     """Шаг авторассылки 24/7: вызывается планировщиком и с сайта при посещениях. Шлёт маленькую партию,
     равномерно по суткам, не превышая лимит Яндекса за последние 24 часа."""
@@ -296,4 +359,13 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
             break
         if time.time() - started > TIME_BUDGET_SEC:
             break
+    # Первая волна пуста (ничего не ушло) — партия уходит второй волне «Расскажите о школе».
+    if total['sent'] == 0 and total['failed'] == 0 and not total.get('stopped') and wave2_enabled(cur):
+        r = send_wave2(cur, conn, batch, unsub_url, inst_by_id, ensure_token, started)
+        if r['sent'] or r['failed']:
+            total['cities'].append({'city': 'Вторая волна', 'sent': r['sent'], 'failed': r['failed']})
+        total['sent'] += r['sent']
+        total['failed'] += r['failed']
+        if r['stop']:
+            total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
     return total
