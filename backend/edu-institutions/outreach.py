@@ -21,8 +21,17 @@ def subject_for(city: dict) -> str:
             f"— пилотный проект 2026/27")
 
 
+# Области пользуются страницей и презентацией своего областного центра.
+SHARED_PAGE = {'samara-region': 'samara'}
+
+
+def page_slug(city: dict) -> str:
+    return SHARED_PAGE.get(city['slug'], city['slug'])
+
+
 def city_path(city: dict) -> str:
-    return '/samara' if city['slug'] == 'samara' else f"/pilot/{city['slug']}"
+    slug = page_slug(city)
+    return '/samara' if slug == 'samara' else f"/pilot/{slug}"
 # Отправка «как человек»: небольшие партии и пауза между письмами.
 # 16.10 при ~25 письмах в минуту Яндекс начал отклонять письма как спам (554 5.7.1).
 BATCH_MAX = 10
@@ -59,7 +68,7 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
     gen = city['name_gen']
     g = greeting(inst.get('contact_name', ''))
     school = inst.get('org_name') or 'вашей школы'
-    deck = f'{SITE}/for-schools/presentation' + ('' if city['slug'] == 'samara' else f"/{city['slug']}")
+    deck = f'{SITE}/for-schools/presentation' + ('' if page_slug(city) == 'samara' else f"/{page_slug(city)}")
     path = city_path(city)
     page = f'{SITE}{path}'
     page_label = f'{SITE_LABEL}{path}'

@@ -563,11 +563,11 @@ def handle_pilot_settings(body) -> dict:
         conn.close()
 
 
-def handle_pilot_import() -> dict:
+def handle_pilot_import(body) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            return ok(pilot.import_registry(cur, conn))
+            return ok(pilot.import_registry(cur, conn, str(body.get('registry') or 'wave1')))
     finally:
         conn.close()
 
@@ -663,5 +663,5 @@ def handler(event: dict, context) -> dict:
     if action == 'pilot_settings' and method == 'POST':
         return handle_pilot_settings(body)
     if action == 'pilot_import' and method == 'POST':
-        return handle_pilot_import()
+        return handle_pilot_import(body)
     return err('Неизвестное действие', 400)

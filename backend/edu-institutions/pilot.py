@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import outreach
+import registry_samara_region
 import registry_wave1
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
@@ -114,12 +115,18 @@ def sent_today(cur) -> int:
 
 
 def registry_size() -> int:
-    return len(registry_wave1.ROWS)
+    return sum(len(r.ROWS) for r in REGISTRIES.values())
 
 
-def import_registry(cur, conn) -> dict:
-    """Загружает школы волны 1 из реестра одним запросом. Повторный запуск ничего не дублирует (ключ — город + ИНН)."""
-    rows = registry_wave1.ROWS
+REGISTRIES = {'wave1': registry_wave1, 'samara_region': registry_samara_region}
+
+
+def import_registry(cur, conn, name: str = 'wave1') -> dict:
+    """Загружает школы из реестра одним запросом. Повторный запуск ничего не дублирует (ключ — город + ИНН)."""
+    reg = REGISTRIES.get(name)
+    if not reg:
+        return {'error': 'Неизвестный реестр'}
+    rows = reg.ROWS
     cur.execute(f'SELECT count(*) FROM {TABLE}')
     before = cur.fetchone()[0]
     values = ','.join(cur.mogrify('(%s,%s,%s,%s,%s,%s,%s,%s)', r).decode('utf-8') for r in rows)
@@ -130,7 +137,7 @@ def import_registry(cur, conn) -> dict:
         f"%s, 'ИНН ' || v.i, md5(random()::text || clock_timestamp()::text || v.n || v.c) "
         f"FROM (VALUES {values}) AS v(n, d, p, e, c, a, s, i) "
         f"WHERE NOT EXISTS (SELECT 1 FROM {TABLE} x WHERE x.city = v.c AND x.note = 'ИНН ' || v.i)",
-        (registry_wave1.SOURCE[:300],))
+        (reg.SOURCE[:300],))
     conn.commit()
     cur.execute(f'SELECT count(*) FROM {TABLE}')
     inserted = cur.fetchone()[0] - before

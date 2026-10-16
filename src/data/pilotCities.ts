@@ -24,7 +24,7 @@ const city = (slug: string, name: string, nameIn: string, nameGen: string, promo
 });
 
 export const PILOT_CITIES: PilotCity[] = [
-  city("samara", "Самара", "в Самаре", "Самары", "САМАРА"),
+  city("samara", "Самара и область", "в Самаре и Самарской области", "Самары и области", "САМАРА"),
   city("novosibirsk", "Новосибирск", "в Новосибирске", "Новосибирска", "НОВОСИБИРСК"),
   city("ekaterinburg", "Екатеринбург", "в Екатеринбурге", "Екатеринбурга", "ЕКАТЕРИНБУРГ"),
   city("kazan", "Казань", "в Казани", "Казани", "КАЗАНЬ"),

@@ -89,7 +89,8 @@ export default function PilotOutreach() {
   }
 
   const cur = data?.cities.find((c) => c.slug === city);
-  const pc = findPilotCity(city);
+  // Область пользуется страницей, листовкой и презентацией Самары.
+  const pc = findPilotCity(city === "samara-region" ? "samara" : city);
   const totals = data?.cities.reduce(
     (a, c) => ({ schools: a.schools + c.total, pending: a.pending + c.pending, sent: a.sent + c.sent, act: a.act + c.activations }),
     { schools: 0, pending: 0, sent: 0, act: 0 },
@@ -140,7 +141,7 @@ export default function PilotOutreach() {
         {data && totals && (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <Stat label={`Школ в ${data.cities.length} городах`} value={totals.schools} />
+              <Stat label={`Школ в базе`} value={totals.schools} />
               <Stat label="Отправлено писем" value={totals.sent} tone="text-emerald-300" />
               <Stat label="Осталось отправить" value={totals.pending} tone="text-cyan-300" />
               <Stat label="Активаций промокодов" value={totals.act} tone="text-amber-300" />
