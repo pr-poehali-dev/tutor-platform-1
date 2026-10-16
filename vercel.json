@@ -21,6 +21,17 @@
       "destination": "/api/crawler?path=/business-2026"
     },
     {
+      "source": "/reyting-onlayn-shkol",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/reyting-onlayn-shkol"
+    },
+    {
       "source": "/tutor",
       "has": [
         {
