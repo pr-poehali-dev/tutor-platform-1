@@ -536,9 +536,11 @@ def handle_pilot_send(body, event) -> dict:
                 return err(f'Яндекс недавно отклонил письмо как подозрительное. Чтобы ящик не заблокировали, '
                            f'отправка на паузе ещё {wait} мин.', 429)
             st = pilot.settings(cur)
-            left_today = st['daily_limit'] - pilot.sent_today(cur)
+            limit_day = pilot.effective_limit(cur, st)
+            left_today = limit_day - pilot.sent_today(cur)
             if left_today <= 0:
-                return err(f"Дневной лимит {st['daily_limit']} писем исчерпан — продолжим завтра, чтобы ящик не заблокировали", 429)
+                return err(f"За последние 24 часа ушло {limit_day} писем — это предел, чтобы Яндекс не заблокировал ящик. "
+                           f"Авторассылка продолжит по мере освобождения лимита", 429)
             limit = min(limit, left_today)
             try:
                 r = pilot.send_for_city(cur, conn, city, limit, lambda t: _unsub_url(event, t),

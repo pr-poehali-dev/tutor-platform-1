@@ -95,21 +95,23 @@ export default function PilotOutreach() {
     (a, c) => ({ schools: a.schools + c.total, pending: a.pending + c.pending, sent: a.sent + c.sent, act: a.act + c.activations }),
     { schools: 0, pending: 0, sent: 0, act: 0 },
   );
-  const leftToday = data ? Math.max(0, data.auto.daily_limit - data.sent_today) : 0;
-  const daysLeft = data && totals ? Math.ceil(totals.pending / Math.max(1, data.auto.daily_limit)) : 0;
+  const leftToday = data ? Math.max(0, data.effective_limit - data.sent_today) : 0;
+  const daysLeft = data && totals ? Math.ceil(totals.pending / Math.max(1, data.effective_limit)) : 0;
+  const tickAgoMin = data?.auto.last_tick_at ? Math.round((Date.now() - new Date(data.auto.last_tick_at).getTime()) / 60000) : null;
+  const schedulerOk = tickAgoMin !== null && tickAgoMin <= 15;
 
   const toggleAuto = async () => {
     if (!data) return;
     const next = !data.auto.enabled;
-    if (next && !window.confirm(`Включить авторассылку? Письма будут уходить сами — по будням с 9 до 19 по Москве, не больше ${data.auto.daily_limit} в день, по городам по очереди. Всего осталось ${totals?.pending}.`)) return;
+    if (next && !window.confirm(`Включить авторассылку? Письма будут уходить сами круглосуточно, равномерно — не больше ${data.effective_limit} за 24 часа, по городам по очереди. Всего осталось ${totals?.pending}.`)) return;
     const r = await pilotSettings({ enabled: next });
     if (r.ok) load();
   };
 
   const saveLimit = async () => {
-    const r = await pilotSettings({ daily_limit: Number(limitInput) || 200 });
+    const r = await pilotSettings({ daily_limit: Number(limitInput) || 250 });
     if (r.ok) {
-      setMsg(`Дневной лимит: ${r.data!.daily_limit} писем`);
+      setMsg(`Лимит: ${r.data!.daily_limit} писем за 24 часа (у Яндекса — 300, запас оставлен для писем сайта)`);
       load();
     }
   };
@@ -155,18 +157,30 @@ export default function PilotOutreach() {
                     Авторассылка {data.auto.enabled ? "включена" : "выключена"}
                   </p>
                   <p className="text-white/60 text-sm mt-1">
-                    По будням с 9:00 до 19:00 МСК, партиями по {data.batch_max} раз в 5 минут, города по очереди. Сегодня ушло {data.sent_today} из {data.auto.daily_limit}
-                    {data.auto.enabled && totals.pending > 0 && <> · вся база — примерно за {daysLeft} раб. дн.</>}
+                    Круглосуточно, без выходных: по 4 письма раз в {data.interval_min} мин., города по очереди. За последние 24 часа ушло {data.sent_today} из {data.effective_limit}
+                    {data.auto.enabled && totals.pending > 0 && <> · вся база — примерно за {daysLeft} дн.</>}
                   </p>
+                  {data.effective_limit < data.auto.daily_limit && (
+                    <p className="text-amber-300 text-sm mt-1">После отказа Яндекса лимит на сутки снижен вдвое — до {data.effective_limit}, чтобы восстановилась репутация ящика.</p>
+                  )}
+                  {data.auto.enabled && (
+                    <p className={`text-sm mt-1 ${schedulerOk ? "text-white/50" : "text-amber-300"}`}>
+                      {schedulerOk
+                        ? `Планировщик работает: последняя проверка ${tickAgoMin} мин. назад.`
+                        : tickAgoMin === null
+                          ? "Планировщик ещё не запускался — письма пойдут после публикации сайта."
+                          : `Планировщик не отвечал ${tickAgoMin} мин. — письма уходят только при посещениях сайта.`}
+                    </p>
+                  )}
                   {!data.smtp_configured && <p className="text-rose-300 text-sm mt-1">Почта не подключена — заполните секреты SMTP_USER и SMTP_PASSWORD.</p>}
                   {data.cooldown_min > 0 && (
                     <p className="text-amber-300 text-sm mt-1">
-                      Яндекс отклонил письмо как подозрительное — отправка на паузе ещё {data.cooldown_min} мин., потом продолжится сама.
+                      Яндекс ограничил отправку — пауза ещё {data.cooldown_min} мин., потом продолжится сама.
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-white/60">Лимит в день</span>
+                  <span className="text-sm text-white/60">Лимит за 24 ч</span>
                   <Input value={limitInput} onChange={(e) => setLimitInput(e.target.value.replace(/\D/g, ""))} className="w-20" />
                   <Button variant="outline" className="border-white/15 bg-white/5 text-white" onClick={saveLimit}>Сохранить</Button>
                   <Button
@@ -179,7 +193,7 @@ export default function PilotOutreach() {
                 </div>
               </div>
               <p className="text-white/40 text-xs mt-3">
-                Авторассылка запускается, когда сайт открывают посетители (как ежедневный отчёт): партия раз в 5 минут, пауза между письмами. Если Яндекс заподозрит спам — пауза на час. Школа, письмо которой не прошло 3 раза, убирается из очереди.
+                Единственное ограничение — правила Яндекса: не больше 300 писем за 24 часа через почтовую программу, иначе отправка блокируется на сутки. Рассылке отдано до 270, остальное — письмам сайта. Письма идут маленькими партиями круглые сутки, с паузой между письмами. Если Яндекс заподозрит спам — пауза 1 час, при повторе за сутки 6 часов, затем 24 часа, а лимит на сутки снижается вдвое. Школа, письмо которой не прошло 3 раза, убирается из очереди.
               </p>
             </Card>
 
@@ -269,7 +283,7 @@ export default function PilotOutreach() {
                 </Card>
                 <Card className="p-5 bg-white/[0.04] border-violet-400/30">
                   <p className="text-xs text-white/50 uppercase font-bold tracking-wider mb-2">Отправить вручную</p>
-                  <p className="text-sm text-white/70 mb-3">Партия {Math.min(data.batch_max, cur.pending, leftToday)} писем школам: {cur.name}. Сегодня можно ещё {leftToday}.</p>
+                  <p className="text-sm text-white/70 mb-3">Партия {Math.min(data.batch_max, cur.pending, leftToday)} писем школам: {cur.name}. За 24 часа можно ещё {leftToday}.</p>
                   <Button
                     disabled={busy || !data.smtp_configured || cur.pending === 0 || leftToday === 0 || data.cooldown_min > 0}
                     className="w-full bg-gradient-to-r from-violet-500 to-cyan-500 text-white"

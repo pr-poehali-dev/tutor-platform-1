@@ -194,9 +194,11 @@ export interface PilotCityStat {
 
 export interface PilotOverview {
   cities: PilotCityStat[];
-  auto: { enabled: boolean; daily_limit: number };
+  auto: { enabled: boolean; daily_limit: number; last_tick_at: string | null };
   sent_today: number;
   cooldown_min: number;
+  effective_limit: number;
+  interval_min: number;
   registry_rows: number;
   smtp_configured: boolean;
   sender: string | null;
@@ -224,7 +226,7 @@ export function pilotSend(city: string, limit: number) {
 }
 
 export function pilotSettings(body: { enabled?: boolean; daily_limit?: number }) {
-  return req<{ enabled: boolean; daily_limit: number }>("pilot_settings", { method: "POST", body });
+  return req<{ enabled: boolean; daily_limit: number; last_tick_at: string | null }>("pilot_settings", { method: "POST", body });
 }
 
 /** Шаг авторассылки: публичный, без PIN. Сервер сам решает, слать ли сейчас. */

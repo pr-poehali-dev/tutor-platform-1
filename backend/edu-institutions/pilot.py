@@ -43,7 +43,10 @@ def audience_where(city: dict) -> str:
             f"AND (SELECT count(*) FROM {SCHEMA}.edu_campaign_sends f WHERE f.institution_id={TABLE}.id "
             f"AND f.campaign_code='{camp}' AND f.status='failed' AND f.is_test=FALSE "
             f"AND coalesce(f.error,'') NOT ILIKE '%%spam%%' AND coalesce(f.error,'') NOT LIKE '%%5.7.1%%') "
-            f"< {outreach.MAX_ATTEMPTS}")
+            f"< {outreach.MAX_ATTEMPTS} "
+            f"AND (SELECT count(*) FROM {SCHEMA}.edu_campaign_sends f WHERE f.institution_id={TABLE}.id "
+            f"AND f.status='failed' AND f.is_test=FALSE "
+            f"AND (f.error ILIKE '%%spam%%' OR f.error LIKE '%%5.7.1%%')) < {outreach.SPAM_PER_ADDRESS_MAX}")
 
 
 def failed_order(city: dict) -> str:
@@ -53,15 +56,40 @@ def failed_order(city: dict) -> str:
             f"AND f.campaign_code='{camp}' AND f.status='failed' AND f.is_test=FALSE), id")
 
 
+# Отказ «спам» по адресу, на который уже был такой отказ, — проблема адреса, в паузу всей рассылки не идёт.
+SPAM_SQL = (f"((error ILIKE '%%spam%%' OR error LIKE '%%5.7.1%%') AND NOT EXISTS (SELECT 1 FROM "
+            f"{SCHEMA}.edu_campaign_sends p WHERE p.to_email = edu_campaign_sends.to_email "
+            "AND p.status='failed' AND p.created_at < edu_campaign_sends.created_at "
+            "AND (p.error ILIKE '%%spam%%' OR p.error LIKE '%%5.7.1%%')))")
+QUOTA_SQL = ("(error ILIKE '%%quota%%' OR error ILIKE '%%limit%%' OR error LIKE '%%SMTPSenderRefused%%' "
+             "OR error LIKE '%%5.4.%%' OR error LIKE '%%4.2.%%')")
+
+
 def spam_cooldown_min(cur) -> int:
-    """Сколько минут ещё ждать после последнего отказа «подозрение на спам» (0 — можно слать)."""
-    cur.execute(f"SELECT max(created_at) FROM {SCHEMA}.edu_campaign_sends WHERE status='failed' "
-                f"AND (error ILIKE '%%spam%%' OR error LIKE '%%5.7.1%%')")
-    last = cur.fetchone()[0]
-    if not last:
-        return 0
-    left = outreach.SPAM_COOLDOWN_MIN - (datetime.now(timezone.utc) - last).total_seconds() / 60
+    """Сколько минут ещё ждать после отказа Яндекса (0 — можно слать).
+    Пауза растёт с числом отказов «спам» за сутки, а при упоре в суточный лимит — 24 часа."""
+    cur.execute(f"SELECT max(created_at) FILTER (WHERE {SPAM_SQL} AND NOT {QUOTA_SQL}), "
+                f"count(*) FILTER (WHERE {SPAM_SQL} AND NOT {QUOTA_SQL}), "
+                f"max(created_at) FILTER (WHERE {QUOTA_SQL}) "
+                f"FROM {SCHEMA}.edu_campaign_sends WHERE status='failed' AND created_at > now() - interval '48 hours'")
+    last_spam, spam_n, last_quota = cur.fetchone()
+    now = datetime.now(timezone.utc)
+    left = 0.0
+    if last_spam:
+        cur.execute(f"SELECT count(*) FROM {SCHEMA}.edu_campaign_sends WHERE status='failed' AND {SPAM_SQL} "
+                    f"AND NOT {QUOTA_SQL} AND created_at > %s - interval '24 hours'", (last_spam,))
+        n = cur.fetchone()[0]
+        step = outreach.SPAM_COOLDOWN_STEPS_MIN[min(n, len(outreach.SPAM_COOLDOWN_STEPS_MIN)) - 1]
+        left = max(left, step - (now - last_spam).total_seconds() / 60)
+    if last_quota:
+        left = max(left, outreach.QUOTA_COOLDOWN_MIN - (now - last_quota).total_seconds() / 60)
     return max(0, int(left + 0.999))
+
+
+def spam_rejects_24h(cur) -> int:
+    cur.execute(f"SELECT count(*) FROM {SCHEMA}.edu_campaign_sends WHERE status='failed' AND {SPAM_SQL} "
+                f"AND created_at > now() - interval '24 hours'")
+    return cur.fetchone()[0]
 
 
 def overview(cur) -> dict:
@@ -88,13 +116,23 @@ def overview(cur) -> dict:
                     'activations': 0 if c.get('page_slug') else used.get(c['promo_code'], 0)})
     st = settings(cur)
     return {'cities': out, 'auto': st, 'sent_today': sent_today(cur), 'cooldown_min': spam_cooldown_min(cur),
+            'effective_limit': effective_limit(cur, st), 'interval_min': batch_interval_min(effective_limit(cur, st)),
             'registry_rows': registry_size()}
 
 
 def settings(cur) -> dict:
-    cur.execute(f'SELECT auto_enabled, daily_limit FROM {SCHEMA}.outreach_settings WHERE id=1')
-    r = cur.fetchone() or (False, 200)
-    return {'enabled': bool(r[0]), 'daily_limit': int(r[1])}
+    cur.execute(f'SELECT auto_enabled, daily_limit, last_tick_at FROM {SCHEMA}.outreach_settings WHERE id=1')
+    r = cur.fetchone() or (False, 250, None)
+    return {'enabled': bool(r[0]), 'daily_limit': min(int(r[1]), outreach.DAILY_LIMIT_MAX),
+            'last_tick_at': r[2].isoformat() if r[2] else None}
+
+
+def effective_limit(cur, st: dict) -> int:
+    """Лимит на ближайшие сутки: после отказов «спам» вдвое ниже, пока репутация ящика не восстановится."""
+    limit = st['daily_limit']
+    if spam_rejects_24h(cur) > 0:
+        limit = limit // 2
+    return max(10, limit)
 
 
 def save_settings(cur, body: dict) -> dict:
@@ -104,16 +142,16 @@ def save_settings(cur, body: dict) -> dict:
         limit = int(body.get('daily_limit') or cur_s['daily_limit'])
     except (TypeError, ValueError):
         limit = cur_s['daily_limit']
-    limit = max(10, min(limit, 300))
+    limit = max(10, min(limit, outreach.DAILY_LIMIT_MAX))
     cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET auto_enabled=%s, daily_limit=%s, updated_at=now() WHERE id=1',
                 (enabled, limit))
-    return {'enabled': enabled, 'daily_limit': limit}
+    return {'enabled': enabled, 'daily_limit': limit, 'last_tick_at': cur_s['last_tick_at']}
 
 
 def sent_today(cur) -> int:
-    """Писем, ушедших сегодня (по московской дате) — и вручную, и автоматически, включая тесты."""
+    """Писем за последние 24 часа — так считает Яндекс. И вручную, и автоматически, включая тесты."""
     cur.execute(f"SELECT count(*) FROM {SCHEMA}.edu_campaign_sends WHERE status='sent' "
-                f"AND (created_at AT TIME ZONE 'Europe/Moscow')::date = (now() AT TIME ZONE 'Europe/Moscow')::date")
+                f"AND created_at > now() - interval '24 hours'")
     return cur.fetchone()[0]
 
 
@@ -196,15 +234,19 @@ def send_for_city(cur, conn, city: dict, limit: int, unsub_url, inst_by_id, ensu
     return {'sent': sent, 'failed': failed, 'errors': errors[:5], 'stop': stop}
 
 
+def batch_interval_min(limit: int) -> int:
+    """Через сколько минут следующая партия, чтобы письма шли равномерно круглые сутки."""
+    return max(5, int(1440 * outreach.AUTO_BATCH / max(1, limit)))
+
+
 def auto_tick(cur, conn, unsub_url, inst_by_id, ensure_token) -> dict:
-    """Шаг авторассылки: вызывается с сайта при посещениях. Шлёт небольшую партию,
-    если авторассылка включена, сейчас 9:00–19:00 МСК в будний день и дневной лимит не исчерпан."""
+    """Шаг авторассылки 24/7: вызывается планировщиком и с сайта при посещениях. Шлёт маленькую партию,
+    равномерно по суткам, не превышая лимит Яндекса за последние 24 часа."""
+    cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET last_tick_at=now() WHERE id=1')
+    conn.commit()
     st = settings(cur)
     if not st['enabled']:
         return {'skipped': 'disabled'}
-    now_msk = datetime.now(timezone.utc) + timedelta(hours=3)
-    if now_msk.weekday() >= 5 or not (9 <= now_msk.hour < 19):
-        return {'skipped': 'off_hours'}
     user, password = outreach.smtp_creds()
     if not (user and password):
         return {'skipped': 'smtp_not_configured'}
@@ -226,14 +268,15 @@ def auto_tick(cur, conn, unsub_url, inst_by_id, ensure_token) -> dict:
 def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
     if spam_cooldown_min(cur) > 0:
         return {'skipped': 'spam_cooldown'}
+    limit = effective_limit(cur, st)
     cur.execute(f"SELECT max(created_at) FROM {SCHEMA}.edu_campaign_sends WHERE is_test=FALSE")
     last = cur.fetchone()[0]
-    if last and datetime.now(timezone.utc) - last < timedelta(minutes=5):
+    if last and datetime.now(timezone.utc) - last < timedelta(minutes=batch_interval_min(limit)):
         return {'skipped': 'too_soon'}
-    left_today = st['daily_limit'] - sent_today(cur)
+    left_today = limit - sent_today(cur)
     if left_today <= 0:
         return {'skipped': 'daily_limit'}
-    batch = min(outreach.BATCH_MAX, left_today)
+    batch = min(outreach.AUTO_BATCH, left_today)
     started = time.time()
     total = {'sent': 0, 'failed': 0, 'cities': []}
     for city in all_cities(cur):
@@ -245,14 +288,9 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
         total['sent'] += r['sent']
         total['failed'] += r['failed']
         batch -= r['sent'] + r['failed']
-        if r['stop'] == 'spam':
-            # Временная мера Яндекса: ждём час, авторассылка продолжит сама.
-            total['stopped'] = f'Яндекс заподозрил спам — пауза {outreach.SPAM_COOLDOWN_MIN} минут'
-            break
         if r['stop']:
-            cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET auto_enabled=FALSE, updated_at=now() WHERE id=1')
-            conn.commit()
-            total['stopped'] = 'Почтовый сервер ограничил отправку — авторассылка выключена, проверьте ящик'
+            # Пауза считается по журналу отказов (spam_cooldown_min), авторассылка продолжит сама.
+            total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
             break
         if time.time() - started > TIME_BUDGET_SEC:
             break
