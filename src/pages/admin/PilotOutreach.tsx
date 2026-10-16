@@ -89,8 +89,8 @@ export default function PilotOutreach() {
   }
 
   const cur = data?.cities.find((c) => c.slug === city);
-  // Область пользуется страницей, листовкой и презентацией Самары.
-  const pc = findPilotCity(city === "samara-region" ? "samara" : city);
+  // Регион пользуется страницей, листовкой и презентацией своего областного центра.
+  const pc = findPilotCity(cur?.page_slug || city);
   const totals = data?.cities.reduce(
     (a, c) => ({ schools: a.schools + c.total, pending: a.pending + c.pending, sent: a.sent + c.sent, act: a.act + c.activations }),
     { schools: 0, pending: 0, sent: 0, act: 0 },

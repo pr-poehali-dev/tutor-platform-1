@@ -21,12 +21,9 @@ def subject_for(city: dict) -> str:
             f"— пилотный проект 2026/27")
 
 
-# Области пользуются страницей и презентацией своего областного центра.
-SHARED_PAGE = {'samara-region': 'samara'}
-
-
 def page_slug(city: dict) -> str:
-    return SHARED_PAGE.get(city['slug'], city['slug'])
+    """Регионы пользуются страницей, листовкой и презентацией своего областного центра."""
+    return city.get('page_slug') or city['slug']
 
 
 def city_path(city: dict) -> str:

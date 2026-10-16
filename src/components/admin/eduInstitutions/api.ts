@@ -181,6 +181,7 @@ export interface PilotCityStat {
   promo_code: string;
   campaign_code: string;
   wave: number;
+  page_slug: string | null;
   active: boolean;
   total: number;
   with_email: number;
