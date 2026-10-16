@@ -76,6 +76,20 @@ export default function RatingOnlineSchools() {
           </p>
         </section>
 
+        <Link
+          to="/reyting-onlayn-shkol-dlya-shkolnikov"
+          className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-primary/40 bg-primary/10 p-4 transition hover:bg-primary/15"
+        >
+          <span className="flex items-center gap-3">
+            <Icon name="Backpack" fallback="GraduationCap" size={22} className="shrink-0 text-primary" />
+            <span>
+              <span className="block font-semibold">Ищете школу для ребёнка?</span>
+              <span className="block text-sm text-white/65">Отдельный рейтинг для 1–11 класса и ОГЭ/ЕГЭ — с подбором за 4 вопроса</span>
+            </span>
+          </span>
+          <Icon name="ArrowRight" size={18} className="shrink-0" />
+        </Link>
+
         <section className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {CRITERIA.map((c) => (
             <div key={c.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">

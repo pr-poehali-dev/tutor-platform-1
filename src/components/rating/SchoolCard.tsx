@@ -27,8 +27,10 @@ export default function SchoolCard({ school: s, place }: Props) {
               <p className="font-semibold">{s.revenue}</p>
               <p className="text-emerald-300">{s.growth} за год</p>
             </>
-          ) : (
+          ) : s.own ? (
             <p className="rounded-full border border-primary/30 px-3 py-1 text-xs text-primary">Наша платформа</p>
+          ) : (
+            <p className="text-xs text-white/40">Выручка не раскрыта</p>
           )}
         </div>
       </div>

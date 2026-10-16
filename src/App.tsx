@@ -154,6 +154,7 @@ const BizLab = lazy(() => import("./pages/BizLab"));
 const BizReport = lazy(() => import("./pages/BizReport"));
 const Business2026 = lazy(() => import("./pages/Business2026"));
 const RatingOnlineSchools = lazy(() => import("./pages/RatingOnlineSchools"));
+const RatingKidsSchools = lazy(() => import("./pages/RatingKidsSchools"));
 const Orchestrator = lazy(() => import("./pages/Orchestrator"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
 const Partners = lazy(() => import("./pages/Partners"));
@@ -247,6 +248,7 @@ const App = () => (
                     <Route path="/biz-report" element={<BizReport />} />
                     <Route path="/business-2026" element={<Business2026 />} />
                     <Route path="/reyting-onlayn-shkol" element={<RatingOnlineSchools />} />
+                    <Route path="/reyting-onlayn-shkol-dlya-shkolnikov" element={<RatingKidsSchools />} />
                     <Route path="/orchestrator" element={<Orchestrator />} />
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/samara" element={<SamaraPilot />} />

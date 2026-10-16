@@ -32,6 +32,17 @@
       "destination": "/api/crawler?path=/reyting-onlayn-shkol"
     },
     {
+      "source": "/reyting-onlayn-shkol-dlya-shkolnikov",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|yandex|bingbot|slurp|duckduckbot|baiduspider|applebot|petalbot|seznambot|google-inspectiontool).*"
+        }
+      ],
+      "destination": "/api/crawler?path=/reyting-onlayn-shkol-dlya-shkolnikov"
+    },
+    {
       "source": "/tutor",
       "has": [
         {
