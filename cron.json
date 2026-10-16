@@ -95,6 +95,13 @@
       "schedule": "*/5 * * * *",
       "method": "GET",
       "url": "https://functions.poehali.dev/43b18448-1101-4f05-a722-a6b0d1010c2d?action=pilot_tick"
+    },
+    {
+      "name": "school-rating-monthly",
+      "description": "1-го числа каждого месяца в 03:15 по Москве (00:15 UTC): фиксирует ежемесячный рейтинг школ справочника (места и движение к прошлому месяцу). Подстраховка: снимок создаётся и сам при первом открытии рейтинга в новом месяце",
+      "schedule": "15 0 1 * *",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/f7ac7701-c185-4bf0-a3f9-4f8843dd5bfd?action=top&limit=10"
     }
   ]
 }

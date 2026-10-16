@@ -57,8 +57,8 @@ export default function SchoolsHome() {
       <section className="mb-10 grid gap-3 sm:grid-cols-3">
         <Link to="/shkoly/reyting" className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 transition hover:bg-amber-400/15">
           <Icon name="Trophy" size={20} className="text-amber-300" />
-          <p className="mt-2 font-semibold">Рейтинг школ 2026</p>
-          <p className="mt-1 text-sm text-white/60">Лучшие школы по открытым рейтингам RAEX</p>
+          <p className="mt-2 font-semibold">Рейтинг школ месяца</p>
+          <p className="mt-1 text-sm text-white/60">Обновляется 1-го числа каждого месяца</p>
         </Link>
         <a href="#cities" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.07]">
           <Icon name="MapPin" size={20} className="text-primary" />

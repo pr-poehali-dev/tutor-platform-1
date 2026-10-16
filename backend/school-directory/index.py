@@ -6,7 +6,7 @@
 GET  /?action=cities                          -> города справочника с числом школ и школ в рейтингах
 GET  /?action=list&city=..&q=..&kind=..&page=  -> школы города (сначала из рейтингов)
 GET  /?action=school&slug=..                  -> карточка школы: адрес, сайт, телефон, рейтинги, одобренная анкета
-GET  /?action=top&limit=                      -> общий рейтинг: школы из открытых рейтингов + отмеченные анкеты
+GET  /?action=top&limit=&month=YYYY-MM        -> рейтинг месяца (снимок мест на 1-е число) с движением к прошлому месяцу
 GET  /?action=profile_form&t=..               -> данные школы для анкеты по личной ссылке
 POST /?action=profile_submit  body: {t, ...}  -> анкета школы (на модерацию)
 POST /?action=claim           body: {slug, ...} -> анкета без личной ссылки (на строгую модерацию)
@@ -16,6 +16,7 @@ GET  /?action=admin_profiles&status=pending   -> анкеты на модера�
 POST /?action=admin_review    body: {id, decision: approve|reject, note?}
 POST /?action=admin_seed      body: {part}     -> загрузка отметок рейтингов RAEX
 POST /?action=admin_hide      body: {id, hidden}
+POST /?action=admin_snapshot                  -> пересчитать рейтинг текущего месяца
 """
 import json
 import os
@@ -38,6 +39,8 @@ TEXT_LIMITS = {'about': 1500, 'achievements': 3000, 'methods': 3000, 'profiles':
 FEDERAL_WEIGHT = 100
 REGIONAL_WEIGHT = 40
 PROFILE_BONUS = 15
+M = f'{SCHEMA}.school_rating_months'
+MONTHS_RU = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 
 def cors():
@@ -223,26 +226,65 @@ def h_school(cur, qs):
     return ok(s, cache=300)
 
 
+def month_label(d) -> str:
+    return f'{MONTHS_RU[d.month - 1]} {d.year}'
+
+
+def snapshot_month(cur, force=False) -> dict:
+    """Фиксирует места на текущий месяц (по Москве). Без force — только если снимка ещё нет."""
+    cur.execute("SELECT date_trunc('month', now() AT TIME ZONE 'Europe/Moscow')::date")
+    month = cur.fetchone()[0]
+    cur.execute(f"SELECT count(*) FROM {M} WHERE month=%s", (month,))
+    if cur.fetchone()[0] and not force:
+        return {'month': str(month), 'created': False}
+    cur.execute(f"DELETE FROM {M} WHERE month=%s", (month,))
+    cur.execute(f"INSERT INTO {M} (month, institution_id, place, score, verified) "
+                f"SELECT %s, id, row_number() OVER (ORDER BY rating_score DESC, org_name), rating_score, profile_verified "
+                f"FROM {T} WHERE {PUBLIC_WHERE} AND rating_score > 0", (month,))
+    return {'month': str(month), 'created': True, 'schools': cur.rowcount}
+
+
+def months_list(cur):
+    cur.execute(f"SELECT month FROM {M} GROUP BY month ORDER BY month DESC LIMIT 24")
+    return [r[0] for r in cur.fetchall()]
+
+
 def h_top(cur, qs):
+    """Рейтинг месяца. Без month — текущий: снимок создаётся сам при первом запросе в новом месяце."""
+    snapshot_month(cur)
+    months = months_list(cur)
+    want = (qs.get('month') or '').strip()[:7]
+    month = next((m for m in months if str(m)[:7] == want), months[0] if months else None)
     try:
         limit = max(10, min(int(qs.get('limit') or 100), 300))
     except ValueError:
         limit = 100
-    city = (qs.get('city') or '').strip()
-    where = f"{PUBLIC_WHERE} AND rating_score > 0" + (" AND city=%s" if city else '')
-    args = [city] if city else []
-    cur.execute(f"SELECT {CARD_COLS} FROM {T} WHERE {where} ORDER BY rating_score DESC, org_name LIMIT %s", args + [limit])
-    items = [card(r) for r in cur.fetchall()]
+    if not month:
+        return ok({'items': [], 'months': [], 'month': None, 'rated': 0, 'verified': 0, 'lists': 0})
+    prev = next((m for m in months if m < month), None)
+    cur.execute(f"SELECT {', '.join('e.' + c.strip() for c in CARD_COLS.split(','))}, m.place, p.place "
+                f"FROM {M} m JOIN {T} e ON e.id=m.institution_id "
+                f"LEFT JOIN {M} p ON p.institution_id=m.institution_id AND p.month=%s "
+                f"WHERE m.month=%s AND e.hidden_in_directory = FALSE AND e.unsubscribed_at IS NULL AND e.slug IS NOT NULL "
+                f"ORDER BY m.place LIMIT %s", (prev, month, limit))
+    items = []
+    for r in cur.fetchall():
+        c = card(r[:10])
+        c['place'] = r[10]
+        c['prev_place'] = r[11]
+        c['is_new'] = prev is not None and r[11] is None
+        items.append(c)
     rt = ratings_for(cur, [i['id'] for i in items])
     for i in items:
         i['ratings'] = rt.get(i['id'], [])
-    cur.execute(f"SELECT count(*) FROM {T} WHERE {PUBLIC_WHERE} AND rating_score > 0")
-    rated = cur.fetchone()[0]
-    cur.execute(f"SELECT count(*) FROM {T} WHERE {PUBLIC_WHERE} AND profile_verified")
-    verified = cur.fetchone()[0]
+    cur.execute(f"SELECT count(*), count(*) FILTER (WHERE verified) FROM {M} WHERE month=%s", (month,))
+    rated, verified = cur.fetchone()
     cur.execute(f"SELECT count(DISTINCT list_url) FROM {R}")
     lists = cur.fetchone()[0]
-    return ok({'items': items, 'rated': rated, 'verified': verified, 'lists': lists}, cache=600)
+    return ok({'items': items, 'rated': rated, 'verified': verified, 'lists': lists,
+               'month': str(month)[:7], 'month_label': month_label(month),
+               'prev_month': str(prev)[:7] if prev else None,
+               'months': [{'v': str(m)[:7], 'label': month_label(m)} for m in months]}, cache=600)
 
 
 def by_token(cur, token):
@@ -435,7 +477,7 @@ def handler(event: dict, context) -> dict:
 
     public_get = {'cities': h_cities, 'list': h_list, 'school': h_school, 'top': h_top, 'profile_form': h_profile_form}
     public_post = {'profile_submit': h_profile_submit, 'claim': h_claim}
-    admin = {'admin_profiles', 'admin_review', 'admin_seed', 'admin_seed_slugs', 'admin_hide'}
+    admin = {'admin_profiles', 'admin_review', 'admin_seed', 'admin_seed_slugs', 'admin_hide', 'admin_snapshot'}
 
     if action not in public_get and action not in public_post and action not in admin:
         return err('Неизвестное действие', 404)
@@ -457,6 +499,8 @@ def handler(event: dict, context) -> dict:
                 res = h_admin_review(cur, body)
             elif action == 'admin_seed':
                 res = h_admin_seed(cur, body)
+            elif action == 'admin_snapshot':
+                res = ok(snapshot_month(cur, force=True))
             elif action == 'admin_seed_slugs':
                 res = h_admin_seed_slugs(cur, body)
             else:

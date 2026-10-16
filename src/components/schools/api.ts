@@ -26,6 +26,20 @@ export interface SchoolCard {
   score: number;
   verified: boolean;
   ratings?: SchoolRating[];
+  place?: number;
+  prev_place?: number | null;
+  is_new?: boolean;
+}
+
+export interface TopResponse {
+  items: SchoolCard[];
+  rated: number;
+  verified: number;
+  lists: number;
+  month: string | null;
+  month_label?: string;
+  prev_month: string | null;
+  months: { v: string; label: string }[];
 }
 
 export interface SchoolProfile {
@@ -122,7 +136,7 @@ export const dirApi = {
       params: Object.fromEntries(Object.entries(p).filter(([, v]) => v !== undefined && v !== "")) as Record<string, string>,
     }),
   school: (slug: string) => call<SchoolDetails>("school", { params: { slug } }),
-  top: (limit = 100) => call<{ items: SchoolCard[]; rated: number; verified: number; lists: number }>("top", { params: { limit } }),
+  top: (limit = 100, month?: string) => call<TopResponse>("top", { params: month ? { limit, month } : { limit } }),
   profileForm: (t: string) =>
     call<{ school: SchoolCard & { ratings: SchoolRating[] }; last: (Partial<ProfileFields> & { status: string }) | null }>("profile_form", { params: { t } }),
   submit: (t: string, f: ProfileFields) => call<{ ok: boolean; message: string }>("profile_submit", { body: { t, ...f } }),

@@ -8,6 +8,18 @@ interface Props {
   showCity?: boolean;
 }
 
+function Move({ school: s }: { school: SchoolCard }) {
+  if (s.is_new) return <span className="text-[10px] font-semibold text-cyan-300">новая</span>;
+  if (!s.prev_place || !s.place || s.prev_place === s.place) return null;
+  const up = s.prev_place > s.place;
+  return (
+    <span className={`flex items-center text-[10px] font-semibold ${up ? "text-emerald-300" : "text-rose-300"}`} title={`В прошлом месяце: ${s.prev_place}`}>
+      <Icon name={up ? "ArrowUp" : "ArrowDown"} size={10} />
+      {Math.abs(s.prev_place - s.place)}
+    </span>
+  );
+}
+
 function shortAddress(address: string, city: string): string {
   const parts = address
     .replace(/^\d{6},\s*/, "")
@@ -25,8 +37,11 @@ export default function SchoolRow({ school: s, place, showCity }: Props) {
       className="group flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-primary/40 hover:bg-white/[0.07]"
     >
       {place !== undefined && (
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-sm font-bold ${place <= 3 ? "bg-amber-400/20 text-amber-200" : "bg-white/10"}`}>
-          {place}
+        <span className="flex shrink-0 flex-col items-center gap-0.5">
+          <span className={`grid h-10 w-10 place-items-center rounded-xl text-sm font-bold ${place <= 3 ? "bg-amber-400/20 text-amber-200" : "bg-white/10"}`}>
+            {place}
+          </span>
+          <Move school={s} />
         </span>
       )}
       <div className="min-w-0 flex-1">
