@@ -173,3 +173,59 @@ export function outreachSend(limit: number) {
     { method: "POST", body: { limit, confirm: "SEND" } },
   );
 }
+
+export interface PilotCityStat {
+  slug: string;
+  name: string;
+  name_gen: string;
+  promo_code: string;
+  campaign_code: string;
+  wave: number;
+  active: boolean;
+  total: number;
+  with_email: number;
+  unsubscribed: number;
+  pending: number;
+  sent: number;
+  failed: number;
+  activations: number;
+}
+
+export interface PilotOverview {
+  cities: PilotCityStat[];
+  auto: { enabled: boolean; daily_limit: number };
+  sent_today: number;
+  registry_rows: number;
+  smtp_configured: boolean;
+  sender: string | null;
+  batch_max: number;
+  last: (OutreachSend & { city: string })[];
+}
+
+export function pilotOverview() {
+  return req<PilotOverview>("pilot_overview");
+}
+
+export function pilotPreview(city: string) {
+  return req<{ subject: string; html: string; text: string; to: string }>("pilot_preview", { query: { city } });
+}
+
+export function pilotTest(city: string, email: string) {
+  return req<{ ok: boolean; to?: string; error?: string }>("pilot_test", { method: "POST", body: { city, email } });
+}
+
+export function pilotSend(city: string, limit: number) {
+  return req<{ sent: number; failed: number; left: number; done: boolean; errors?: { org: string; email: string; error: string }[] }>(
+    "pilot_send",
+    { method: "POST", body: { city, limit, confirm: "SEND" } },
+  );
+}
+
+export function pilotSettings(body: { enabled?: boolean; daily_limit?: number }) {
+  return req<{ enabled: boolean; daily_limit: number }>("pilot_settings", { method: "POST", body });
+}
+
+/** Шаг авторассылки: публичный, без PIN. Сервер сам решает, слать ли сейчас. */
+export function pilotTick() {
+  return fetch(`${URL}?action=pilot_tick`).catch(() => undefined);
+}

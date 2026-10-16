@@ -1,17 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import { DEFAULT_PILOT_CITY, PilotCity, SITE_LABEL, findPilotCity } from "@/data/pilotCities";
 
 const NAVY = "#0f1f3d";
 const BLUE = "#1d4ed8";
 const AMBER = "#f59e0b";
 
-/** QR ведёт на учисьпро.рф/samara с меткой «листовка» — в Метрике видно,
- *  сколько учеников пришло именно с бумаги. Файл сгенерирован один раз. */
-const QR_SRC = "/qr-samara.svg";
-
-const STEPS = [
-  { icon: "ScanLine", title: "Наведи камеру на QR-код", text: "или открой учисьпро.рф/samara" },
+/** QR ведёт на страницу пилота города с меткой «листовка» — в Метрике видно,
+ *  сколько учеников пришло именно с бумаги. Файлы сгенерированы один раз. */
+const steps = (c: PilotCity) => [
+  { icon: "ScanLine", title: "Наведи камеру на QR-код", text: `или открой ${SITE_LABEL}${c.path}` },
   { icon: "UserPlus", title: "Войди или зарегистрируйся", text: "по почте или через Яндекс ID" },
   { icon: "Unlock", title: "Нажми «Активировать»", text: "промокод уже подставлен" },
 ];
@@ -24,7 +23,7 @@ const BENEFITS = [
 ];
 
 /** Листовка формата А5 (148×210 мм). На альбомный лист А4 помещаются две. */
-function Leaflet() {
+function Leaflet({ city }: { city: PilotCity }) {
   return (
     <div
       className="relative bg-white text-slate-800 font-golos overflow-hidden flex flex-col"
@@ -33,7 +32,7 @@ function Leaflet() {
       <div className="px-[10mm] pt-[8mm] pb-[6mm] text-white" style={{ background: NAVY }}>
         <div className="flex items-center justify-between mb-[4mm]">
           <span className="font-montserrat font-black text-[13pt] tracking-wide">УЧИСЬПРО</span>
-          <span className="text-[7.5pt] uppercase tracking-[0.18em] text-blue-200 font-bold">Пилот школ Самары</span>
+          <span className="text-[7.5pt] uppercase tracking-[0.18em] text-blue-200 font-bold">Пилот школ {city.nameGen}</span>
         </div>
         <p className="font-montserrat font-extrabold text-[21pt] leading-[1.1]">
           Курсы для школьников — <span style={{ color: AMBER }}>бесплатно</span> весь учебный год
@@ -42,18 +41,18 @@ function Leaflet() {
 
       <div className="px-[10mm] pt-[6mm] flex gap-[6mm] items-center">
         <div className="flex-shrink-0 rounded-[3mm] border-[0.6mm] p-[2mm]" style={{ borderColor: BLUE }}>
-          <img src={QR_SRC} alt="QR-код на учисьпро.рф/samara" style={{ width: "40mm", height: "40mm" }} className="block" />
+          <img src={city.qr} alt={`QR-код на ${SITE_LABEL}${city.path}`} style={{ width: "40mm", height: "40mm" }} className="block" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[8pt] uppercase tracking-[0.16em] font-bold mb-[1.5mm]" style={{ color: BLUE }}>Твой промокод</p>
           <div className="rounded-[2.5mm] border-[0.5mm] border-dashed px-[3mm] py-[2.5mm] text-center mb-[2.5mm]" style={{ borderColor: AMBER, background: "#fffbeb" }}>
-            <p className="font-montserrat font-black text-[24pt] tracking-[0.08em] leading-none" style={{ color: NAVY }}>САМАРА</p>
+            <p className="font-montserrat font-black text-[24pt] tracking-[0.08em] leading-none" style={{ color: NAVY, fontSize: city.promo.length > 11 ? "16pt" : undefined }}>{city.promo}</p>
           </div>
           <p className="text-[8.5pt] text-slate-500 leading-snug">
             Действует до <b className="text-slate-800">31.05.2027</b>
           </p>
           <p className="text-[8.5pt] text-slate-500 leading-snug mt-[1mm]">
-            Сайт: <b className="text-slate-800">учисьпро.рф/samara</b>
+            Сайт: <b className="text-slate-800">{SITE_LABEL}{city.path}</b>
           </p>
         </div>
       </div>
@@ -61,7 +60,7 @@ function Leaflet() {
       <div className="px-[10mm] pt-[6mm]">
         <p className="font-montserrat font-extrabold text-[11.5pt] mb-[3mm]" style={{ color: NAVY }}>Как подключиться за 2 минуты</p>
         <div className="space-y-[2.5mm]">
-          {STEPS.map((s, i) => (
+          {steps(city).map((s, i) => (
             <div key={s.title} className="flex items-center gap-[3mm]">
               <span
                 className="w-[7mm] h-[7mm] rounded-full flex items-center justify-center text-white font-montserrat font-black text-[10pt] flex-shrink-0"
@@ -102,12 +101,16 @@ function Leaflet() {
  * Лист А4 (альбомная ориентация) = две листовки А5 рядом, между ними — линия отреза.
  */
 export default function SamaraLeaflet() {
+  const { city: citySlug } = useParams();
+  const city = citySlug ? findPilotCity(citySlug) : DEFAULT_PILOT_CITY;
+  if (!city) return <Navigate to="/pilot" replace />;
+  const deckPath = city.slug === "samara" ? "/for-schools/presentation" : `/for-schools/presentation/${city.slug}`;
   return (
     <div className="min-h-screen bg-slate-200 font-golos">
       <Seo
         title="Листовка для учеников школ-участниц пилота"
-        description="Печатная памятка для учеников школ — участниц пилотного проекта УЧИСЬПРО в Самаре."
-        canonical="https://учисьпро.рф/samara/leaflet"
+        description={`Печатная памятка для учеников школ — участниц пилотного проекта УЧИСЬПРО ${city.nameIn}.`}
+        canonical={`https://учисьпро.рф${city.path}/leaflet`}
         noindex
       />
       <style>{`
@@ -133,16 +136,16 @@ export default function SamaraLeaflet() {
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
                 <li><Link to="/for-schools" className="hover:text-slate-900">Для школ</Link></li>
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
-                <li><Link to="/samara" className="hover:text-slate-900">Пилот школ Самары</Link></li>
+                <li><Link to={city.path} className="hover:text-slate-900">Пилот школ {city.nameGen}</Link></li>
                 <li aria-hidden><Icon name="ChevronRight" size={12} className="text-slate-300" /></li>
                 <li className="text-slate-800 font-medium">Листовка</li>
               </ol>
             </nav>
-            <h1 className="font-bold text-slate-800 text-sm md:text-base">Листовка для учеников — промокод САМАРА</h1>
+            <h1 className="font-bold text-slate-800 text-sm md:text-base">Листовка для учеников — промокод {city.promo}</h1>
             <p className="text-slate-500 text-xs md:text-sm">Лист А4 = 2 листовки. Печать: масштаб 100%, без полей, «Фон» включён.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/for-schools/presentation" className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+            <Link to={deckPath} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
               <Icon name="Presentation" size={16} /> Презентация
             </Link>
             <button
@@ -157,12 +160,12 @@ export default function SamaraLeaflet() {
 
       <div className="leaflet-wrap py-8 px-4 flex justify-start lg:justify-center overflow-x-auto">
         <div className="leaflet-sheet bg-white shadow-xl flex relative flex-shrink-0" style={{ width: "297mm", height: "210mm" }}>
-          <Leaflet />
+          <Leaflet city={city} />
           <div className="relative" style={{ width: "1mm" }}>
             <div className="absolute inset-y-0 left-1/2 border-l border-dashed border-slate-400" />
             <span className="leaflet-scissors absolute left-1/2 -translate-x-1/2 top-[3mm] bg-white text-slate-400 text-[9pt] leading-none">✂</span>
           </div>
-          <Leaflet />
+          <Leaflet city={city} />
         </div>
       </div>
     </div>

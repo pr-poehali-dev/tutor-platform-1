@@ -7,6 +7,7 @@ POST /?action=confirm_demo          body: {purchase_id, kind?} -> демо-ак�
 POST /?action=redeem_access         body: {code} -> активирует промокод доступа (напр. «САМАРА» — курсы раздела «Школьникам»)
 """
 import json
+import re
 import os
 import uuid
 import base64
@@ -493,16 +494,22 @@ def get_access_grant(cur, user_id: int, scope: str):
     return row[0] if row else None
 
 
+def norm_code(code: str) -> str:
+    """«Нижний Новгород», «нижний-новгород», «НИЖНИЙНОВГОРОД» → «НИЖНИЙНОВГОРОД»."""
+    return re.sub(r'[^А-ЯA-Z0-9]', '', (code or '').upper().replace('Ё', 'Е'))
+
+
 def find_access_promo(cur, code: str):
-    """Действующий промокод доступа: (id, scope, expires_at) или None."""
-    code = (code or '').strip()
-    if not code:
+    """Действующий промокод доступа: (id, scope, expires_at) или None.
+    Сравнение без учёта регистра, пробелов, дефисов и буквы Ё."""
+    norm = norm_code(code)
+    if not norm:
         return None
     cur.execute(
         "SELECT id, scope, expires_at FROM access_promo_codes "
-        "WHERE UPPER(code) = UPPER(%s) AND active = TRUE AND expires_at > NOW() "
+        "WHERE (code_norm = %s OR UPPER(code) = UPPER(%s)) AND active = TRUE AND expires_at > NOW() "
         "AND (max_uses IS NULL OR used_count < max_uses) LIMIT 1",
-        (code,)
+        (norm, (code or '').strip())
     )
     return cur.fetchone()
 
@@ -980,7 +987,7 @@ def handle_validate_coupon(token: str, body: dict) -> dict:
 
             promo_id, percent = lookup_promo(cur, coupon_code)
             if not promo_id and find_access_promo(cur, coupon_code):
-                return ok({'valid': False, 'message': 'Это промокод бесплатного доступа к курсам «Школьникам» — активируйте его на странице учисьпро.рф/samara'})
+                return ok({'valid': False, 'message': 'Это промокод бесплатного доступа к курсам «Школьникам» — активируйте его на странице пилота вашего города (учисьпро.рф/pilot)'})
             if not promo_id:
                 # Персональный купон требует авторизации
                 if not user_id:

@@ -1,8 +1,51 @@
 {
   "tests": [
-    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
-    {"name": "Нет доступа без PIN", "method": "GET", "path": "/?action=list", "expectedStatus": 403, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"},
-    {"name": "Рассылка без PIN закрыта", "method": "POST", "path": "/?action=outreach_send", "body": {"confirm": "SEND"}, "expectedStatus": 403},
-    {"name": "Отписка с неверной ссылкой", "method": "GET", "path": "/?action=unsubscribe&t=short", "expectedStatus": 400}
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Нет доступа без PIN",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 403,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Рассылка без PIN закрыта",
+      "method": "POST",
+      "path": "/?action=outreach_send",
+      "body": {
+        "confirm": "SEND"
+      },
+      "expectedStatus": 403
+    },
+    {
+      "name": "Отписка с неверной ссылкой",
+      "method": "GET",
+      "path": "/?action=unsubscribe&t=short",
+      "expectedStatus": 400
+    },
+    {
+      "name": "Шаг авторассылки публичный и безопасный",
+      "method": "GET",
+      "path": "/?action=pilot_tick",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "ok": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Обзор пилота без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=pilot_overview",
+      "expectedStatus": 403
+    }
   ]
 }

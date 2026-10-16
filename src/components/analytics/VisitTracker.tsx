@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import func2url from "../../../backend/func2url.json";
 import { tickReminders } from "@/components/marathon/api";
+import { pilotTick } from "@/components/admin/eduInstitutions/api";
 
 const ANALYTICS_URL = (func2url as Record<string, string>).analytics;
 const VISITOR_KEY = "up_visitor_id";
@@ -37,6 +38,18 @@ function tickDailyReport() {
   }
 }
 
+/** Шаг авторассылки директорам школ — раз за сессию вкладки, с задержкой,
+ *  чтобы не мешать загрузке страницы. Сервер сам решает, слать ли сейчас:
+ *  только если админ включил авторассылку, в рабочее время и в пределах дневного лимита. */
+let pilotTicked = false;
+function tickPilotOutreach() {
+  if (pilotTicked) return;
+  pilotTicked = true;
+  setTimeout(() => {
+    pilotTick();
+  }, 4000);
+}
+
 /**
  * Учёт посещений всех страниц (включая анонимных гостей).
  * Отправляет визит в backend при каждой смене URL.
@@ -47,6 +60,7 @@ export default function VisitTracker() {
   useEffect(() => {
     tickDailyReport();
     tickReminders();
+    tickPilotOutreach();
   }, []);
 
   useEffect(() => {

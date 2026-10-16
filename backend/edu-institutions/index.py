@@ -7,9 +7,12 @@ import json
 import os
 import csv
 import io
+import time
+
 import psycopg2
 
 import outreach
+import pilot
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 TABLE = f'{SCHEMA}.edu_institutions'
@@ -430,6 +433,154 @@ def handle_outreach_send(body, event) -> dict:
         conn.close()
 
 
+# ─────────────── Пилот по городам ───────────────
+
+def _city_or_err(cur, slug):
+    c = pilot.get_city(cur, (slug or '').strip())
+    return c
+
+
+def handle_pilot_overview() -> dict:
+    user, password = outreach.smtp_creds()
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            data = pilot.overview(cur)
+            cur.execute(f"SELECT s.to_email, s.status, left(coalesce(s.error,''),200), s.is_test, s.created_at, "
+                        f"coalesce(i.org_name,''), coalesce(i.city,'') FROM {SCHEMA}.edu_campaign_sends s "
+                        f"LEFT JOIN {TABLE} i ON i.id=s.institution_id ORDER BY s.id DESC LIMIT 30")
+            data['last'] = [{'to': a, 'status': b, 'error': c, 'is_test': d, 'at': e, 'org': f, 'city': g}
+                            for a, b, c, d, e, f, g in cur.fetchall()]
+        data.update({'smtp_configured': bool(user and password), 'sender': user or None,
+                     'batch_max': outreach.BATCH_MAX})
+        return ok(data)
+    finally:
+        conn.close()
+
+
+def _sample_inst(cur, city):
+    cur.execute(f"SELECT id FROM {TABLE} WHERE city=%s AND email<>'' ORDER BY id LIMIT 1", (city['name'],))
+    r = cur.fetchone()
+    if r:
+        return _inst_by_id(cur, r[0])
+    return {'org_name': 'МБОУ «Школа № 1»', 'contact_name': 'Иванова Мария Петровна'}, 'demo'
+
+
+def handle_pilot_preview(qs, event) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            city = _city_or_err(cur, qs.get('city'))
+            if not city:
+                return err('Город не найден', 404)
+            inst, token = _sample_inst(cur, city)
+            subject, html, text, _ = outreach.build_letter(inst, _unsub_url(event, token or 'demo'), city)
+            return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
+    finally:
+        conn.close()
+
+
+def handle_pilot_test(body, event) -> dict:
+    to = str(body.get('email') or '').strip()
+    if '@' not in to or len(to) > 200:
+        return err('Укажите корректный email для проверки', 400)
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            city = _city_or_err(cur, body.get('city'))
+            if not city:
+                return err('Город не найден', 404)
+            inst, _ = _sample_inst(cur, city)
+            subject, html, text, reply = outreach.build_letter(inst, _unsub_url(event, 'demo'), city)
+            status, error = 'sent', None
+            try:
+                smtp = outreach.open_smtp()
+                try:
+                    outreach.send_one(smtp, to, '[ТЕСТ] ' + subject, html, text, _unsub_url(event, 'demo'), reply)
+                finally:
+                    smtp.quit()
+            except Exception as e:
+                status, error = 'failed', f'{type(e).__name__}: {str(e)[:300]}'
+            cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error, is_test) "
+                        f"VALUES (%s, NULL, %s, %s, %s, TRUE)", (city['campaign_code'], to, status, error))
+            conn.commit()
+            return ok({'ok': status == 'sent', 'to': to, 'error': error})
+    finally:
+        conn.close()
+
+
+def handle_pilot_send(body, event) -> dict:
+    if body.get('confirm') != 'SEND':
+        return err('Нужно подтверждение отправки', 400)
+    try:
+        limit = max(1, min(int(body.get('limit') or 10), outreach.BATCH_MAX))
+    except (TypeError, ValueError):
+        limit = 10
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            city = _city_or_err(cur, body.get('city'))
+            if not city:
+                return err('Город не найден', 404)
+            st = pilot.settings(cur)
+            left_today = st['daily_limit'] - pilot.sent_today(cur)
+            if left_today <= 0:
+                return err(f"Дневной лимит {st['daily_limit']} писем исчерпан — продолжим завтра, чтобы ящик не заблокировали", 429)
+            limit = min(limit, left_today)
+            try:
+                r = pilot.send_for_city(cur, conn, city, limit, lambda t: _unsub_url(event, t),
+                                        _inst_by_id, _ensure_token, time.time())
+            except Exception as e:
+                return err(f'Не удалось подключиться к почте: {type(e).__name__}: {str(e)[:200]}', 502)
+            cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {pilot.audience_where(city)}')
+            left = cur.fetchone()[0]
+            return ok({'sent': r['sent'], 'failed': r['failed'], 'errors': r['errors'], 'left': left, 'done': left == 0})
+    finally:
+        conn.close()
+
+
+def handle_pilot_settings(body) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            st = pilot.save_settings(cur, body)
+            conn.commit()
+            return ok(st)
+    finally:
+        conn.close()
+
+
+def handle_pilot_import() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            return ok(pilot.import_registry(cur, conn))
+    finally:
+        conn.close()
+
+
+def handle_pilot_tick(event) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            try:
+                r = pilot.auto_tick(cur, conn, lambda t: _unsub_url(event, t), _inst_by_id, _ensure_token)
+            except Exception as e:
+                conn.rollback()
+                print(f'pilot_tick failed: {type(e).__name__}: {e}')
+                return ok({'ok': False})
+            conn.commit()
+            return ok({'ok': True, 'sent': r.get('sent', 0)})
+    finally:
+        conn.close()
+
+
 def handle_unsubscribe(qs) -> dict:
     token = (qs.get('t') or '').strip()
     if len(token) < 16:
@@ -461,6 +612,10 @@ def handler(event: dict, context) -> dict:
     # Отписка — публичная, по личной ссылке из письма.
     if action == 'unsubscribe':
         return handle_unsubscribe(qs)
+    # Шаг авторассылки — публичный: дёргается с сайта при посещениях.
+    # Сам ничего не раскрывает и шлёт только если авторассылку включил админ.
+    if action == 'pilot_tick':
+        return handle_pilot_tick(event)
 
     if not check_admin(headers):
         return err('Нет доступа', 403)
@@ -490,4 +645,16 @@ def handler(event: dict, context) -> dict:
         return handle_outreach_test(body, event)
     if action == 'outreach_send' and method == 'POST':
         return handle_outreach_send(body, event)
+    if action == 'pilot_overview':
+        return handle_pilot_overview()
+    if action == 'pilot_preview':
+        return handle_pilot_preview(qs, event)
+    if action == 'pilot_test' and method == 'POST':
+        return handle_pilot_test(body, event)
+    if action == 'pilot_send' and method == 'POST':
+        return handle_pilot_send(body, event)
+    if action == 'pilot_settings' and method == 'POST':
+        return handle_pilot_settings(body)
+    if action == 'pilot_import' and method == 'POST':
+        return handle_pilot_import()
     return err('Неизвестное действие', 400)

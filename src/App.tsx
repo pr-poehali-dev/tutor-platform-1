@@ -35,6 +35,7 @@ const CoursePublic = lazy(() => import("./pages/CoursePublic"));
 const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
+const PilotCities = lazy(() => import("./pages/PilotCities"));
 const SamaraLeaflet = lazy(() => import("./pages/SamaraLeaflet"));
 const TutorsDeck = lazy(() => import("./pages/decks/TutorsDeck"));
 const ParentsDeck = lazy(() => import("./pages/decks/ParentsDeck"));
@@ -124,6 +125,7 @@ const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
 const EduInstitutions = lazy(() => import("./pages/admin/EduInstitutions"));
 const EduOutreach = lazy(() => import("./pages/admin/EduOutreach"));
 const SamaraOutreach = lazy(() => import("./pages/admin/SamaraOutreach"));
+const PilotOutreach = lazy(() => import("./pages/admin/PilotOutreach"));
 const TryLanding = lazy(() => import("./pages/TryLanding"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const MarketingDashboard = lazy(() => import("./pages/admin/MarketingDashboard"));
@@ -247,7 +249,11 @@ const App = () => (
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/samara" element={<SamaraPilot />} />
                     <Route path="/samara/leaflet" element={<SamaraLeaflet />} />
+                    <Route path="/pilot" element={<PilotCities />} />
+                    <Route path="/pilot/:city" element={<SamaraPilot />} />
+                    <Route path="/pilot/:city/leaflet" element={<SamaraLeaflet />} />
                     <Route path="/for-schools/presentation" element={<SchoolPilotDeck />} />
+                    <Route path="/for-schools/presentation/:city" element={<SchoolPilotDeck />} />
                     <Route path="/repetitoram/presentation" element={<TutorsDeck />} />
                     <Route path="/parents/presentation" element={<ParentsDeck />} />
                     <Route path="/partner/presentation" element={<PartnersDeck />} />
@@ -363,6 +369,7 @@ const App = () => (
                     <Route path="/admin/edu-institutions" element={<EduInstitutions />} />
                     <Route path="/admin/edu-outreach" element={<EduOutreach />} />
                     <Route path="/admin/samara-outreach" element={<SamaraOutreach />} />
+                    <Route path="/admin/pilot-outreach" element={<PilotOutreach />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/start" element={<TryLanding />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />

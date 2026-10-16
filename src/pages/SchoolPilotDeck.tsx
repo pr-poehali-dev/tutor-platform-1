@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
+import { DEFAULT_PILOT_CITY, PilotCity, SITE_LABEL, findPilotCity } from "@/data/pilotCities";
+
+/** Город пилота, для которого показывается презентация. */
+const CityCtx = createContext<PilotCity>(DEFAULT_PILOT_CITY);
+const CityGen = () => <>{useContext(CityCtx).nameGen}</>;
+const CityPromo = ({ big }: { big?: number }) => {
+  const c = useContext(CityCtx);
+  return <span style={big && c.promo.length > 10 ? { fontSize: Math.round(big * 10 / c.promo.length) } : undefined}>{c.promo}</span>;
+};
+const CityPath = () => <>{SITE_LABEL}{useContext(CityCtx).path}</>;
 
 const HERO_IMG =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/2ef9e081-945a-452c-9400-bf3c03b0eb2b.jpg";
@@ -25,7 +35,7 @@ function Frame({ n, section, children }: { n: number; section: string; children:
       </div>
       <div className="absolute inset-0 left-[10px] px-16 pt-[88px] pb-[64px]">{children}</div>
       <div className="absolute bottom-0 left-[10px] right-0 flex items-center justify-between px-16 pb-7 text-[12px] text-slate-400">
-        <span>учисьпро.рф · Пилотный проект для школ Самары · 2026/27</span>
+        <span>учисьпро.рф · Пилотный проект для школ <CityGen /> · 2026/27</span>
         <span className="tabular-nums">{String(n).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}</span>
       </div>
     </div>
@@ -77,7 +87,7 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
           </p>
         </div>
         <div className="flex items-center gap-8 text-[14px] text-slate-400">
-          <span>Пилотный проект · школы Самары</span>
+          <span>Пилотный проект · школы <CityGen /></span>
           <span>2026/27 учебный год</span>
         </div>
       </div>
@@ -201,7 +211,7 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
       <div className="grid grid-cols-[1fr_1.15fr] gap-10 items-stretch">
         <div className="rounded-xl px-10 py-9 text-white flex flex-col justify-center" style={{ background: NAVY }}>
           <p className="text-[15px] uppercase tracking-[0.2em] text-blue-300 font-bold mb-3">Промокод для учеников</p>
-          <p className="font-montserrat font-black text-[64px] tracking-[0.08em] leading-none mb-5">САМАРА</p>
+          <p className="font-montserrat font-black text-[64px] tracking-[0.08em] leading-none mb-5"><CityPromo big={64} /></p>
           <p className="text-[20px] leading-snug text-slate-200">Бесплатный доступ ко всем курсам раздела «Школьникам»</p>
           <div className="mt-6 pt-5 border-t border-white/15 flex items-baseline gap-3">
             <span className="text-[15px] text-slate-400">Действует до</span>
@@ -232,11 +242,11 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
     <Frame n={n} section="Запуск">
       <H2 sub="От школы — только рассказать ученикам. Всё остальное делаем мы.">Запуск за одну неделю</H2>
       <div className="grid grid-cols-3 gap-6 mb-8">
-        {[
+        {([
           ["1", "Школа", "Назначает ответственного и публикует ссылку и промокод в школьных чатах и на сайте."],
           ["2", "Классные руководители", "Рассказывают о пилоте на классном часе и родительском собрании — 5 минут."],
-          ["3", "Ученик", "Открывает учисьпро.рф/samara, входит и нажимает «Активировать» — меньше 2 минут."],
-        ].map(([num, who, what]) => (
+          ["3", "Ученик", <>Открывает <CityPath />, входит и нажимает «Активировать» — меньше 2 минут.</>],
+        ] as [string, string, ReactNode][]).map(([num, who, what]) => (
           <div key={num} className="relative rounded-xl border border-slate-200 p-7 pt-9">
             <span className="absolute -top-5 left-7 w-10 h-10 rounded-full flex items-center justify-center font-montserrat font-black text-white text-[18px]" style={{ background: BLUE }}>{num}</span>
             <p className="font-bold text-[20px] mb-2" style={{ color: NAVY }}>{who}</p>
@@ -304,10 +314,10 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
         </div>
         <div className="bg-white rounded-xl p-9 text-center" style={{ color: NAVY }}>
           <p className="text-[14px] font-bold uppercase tracking-[0.18em]" style={{ color: BLUE }}>Страница для учеников</p>
-          <p className="font-montserrat font-extrabold text-[34px] mt-3 mb-5">учисьпро.рф/samara</p>
+          <p className="font-montserrat font-extrabold text-[34px] mt-3 mb-5"><CityPath /></p>
           <div className="h-px bg-slate-200 mb-5" />
           <p className="text-[15px] text-slate-500">Промокод</p>
-          <p className="font-montserrat font-black text-[40px] tracking-[0.08em]">САМАРА</p>
+          <p className="font-montserrat font-black text-[40px] tracking-[0.08em]"><CityPromo big={40} /></p>
           <p className="text-[15px] text-slate-500 mt-1">до 31.05.2027</p>
         </div>
       </div>
@@ -322,6 +332,17 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
  * по одному на страницу 16:9 без обрезки.
  */
 export default function SchoolPilotDeck() {
+  const { city: citySlug } = useParams();
+  const city = citySlug ? findPilotCity(citySlug) : DEFAULT_PILOT_CITY;
+  if (!city) return <Navigate to="/pilot" replace />;
+  return (
+    <CityCtx.Provider value={city}>
+      <Deck city={city} />
+    </CityCtx.Provider>
+  );
+}
+
+function Deck({ city }: { city: PilotCity }) {
   const [i, setI] = useState(0);
   const go = useCallback((d: number) => setI((v) => Math.min(TOTAL - 1, Math.max(0, v + d))), []);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -359,8 +380,8 @@ export default function SchoolPilotDeck() {
     <div className="h-screen flex flex-col bg-slate-200 text-slate-800 font-golos">
       <Seo
         title="Презентация УЧИСЬПРО для школ: помощник, а не конкурент"
-        description="Как платформа УЧИСЬПРО помогает школе, учителям и ученикам. Условия пилотного проекта для школ Самары и промокод САМАРА."
-        canonical="https://учисьпро.рф/for-schools/presentation"
+        description={`Как платформа УЧИСЬПРО помогает школе, учителям и ученикам. Условия пилотного проекта для школ ${city.nameGen} и промокод ${city.promo}.`}
+        canonical={`https://учисьпро.рф/for-schools/presentation${city.slug === "samara" ? "" : "/" + city.slug}`}
         noindex
       />
       <style>{`
@@ -388,7 +409,7 @@ export default function SchoolPilotDeck() {
             </ol>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/samara/leaflet" className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
+            <Link to={`${city.path}/leaflet`} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
               <Icon name="QrCode" size={15} /> <span className="hidden sm:inline">Листовка</span>
             </Link>
             <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">

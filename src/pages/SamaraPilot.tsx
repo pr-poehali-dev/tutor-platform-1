@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { useAuth } from "@/context/AuthContext";
 import { useAccess } from "@/context/AccessContext";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import { DEFAULT_PILOT_CITY, findPilotCity } from "@/data/pilotCities";
 
 export const SAMARA_PROMO_CODE = "САМАРА";
 
@@ -21,14 +22,22 @@ function formatDate(iso: string | null | undefined) {
 }
 
 /**
- * Пилотный проект школ Самары: ученик вводит промокод «САМАРА» и получает
+ * Пилотный проект школ (Самара и другие города): ученик вводит промокод — название города — и получает
  * бесплатный доступ к курсам раздела «Школьникам». Взрослые курсы, «Малыш»
  * и подписка «Репетитор» промокодом не открываются — это проверяет сервер.
  */
 export default function SamaraPilot() {
+  const { city: citySlug } = useParams();
+  const city = citySlug ? findPilotCity(citySlug) : DEFAULT_PILOT_CITY;
+  if (!city) return <Navigate to="/pilot" replace />;
+  return <PilotActivation key={city.slug} slug={city.slug} />;
+}
+
+function PilotActivation({ slug }: { slug: string }) {
+  const city = findPilotCity(slug)!;
   const { isAuthenticated, openLogin } = useAuth();
   const { schoolAccessUntil, redeemAccessCode } = useAccess();
-  const [code, setCode] = useState(SAMARA_PROMO_CODE);
+  const [code, setCode] = useState(city.promo);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneUntil, setDoneUntil] = useState<string | null>(null);
@@ -48,16 +57,16 @@ export default function SamaraPilot() {
       setError(res.message || "Не удалось активировать промокод");
       return;
     }
-    trackGoal("samara_promo_activated", { already: !!res.alreadyActive });
+    trackGoal("samara_promo_activated", { already: !!res.alreadyActive, city: city.slug });
     setDoneUntil(res.expiresAt || null);
   };
 
   return (
     <div className="min-h-screen bg-mesh text-white font-golos">
       <Seo
-        title="Пилотный проект для школ Самары: активация доступа"
-        description="Страница активации доступа для учеников школ — участниц пилотного проекта УЧИСЬПРО в Самаре."
-        canonical="https://учисьпро.рф/samara"
+        title={`Пилотный проект для школ ${city.nameGen}: активация доступа`}
+        description={`Страница активации доступа для учеников школ — участниц пилотного проекта УЧИСЬПРО ${city.nameIn}. Промокод ${city.promo}.`}
+        canonical={`https://учисьпро.рф${city.path}`}
         noindex
       />
 
@@ -77,13 +86,13 @@ export default function SamaraPilot() {
           items={[
             { label: "Главная", href: "/" },
             { label: "Школьникам", href: "/shkola" },
-            { label: "Пилот школ Самары", href: "/samara" },
+            { label: `Пилот школ ${city.nameGen}`, href: city.path },
           ]}
         />
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-cyan-500/15 border border-cyan-500/35 rounded-full px-4 py-1.5 mb-5">
             <Icon name="School" size={13} className="text-cyan-300" />
-            <span className="text-xs text-cyan-100 font-bold uppercase tracking-wider">Пилотный проект школ Самары</span>
+            <span className="text-xs text-cyan-100 font-bold uppercase tracking-wider">Пилотный проект школ {city.nameGen}</span>
           </div>
           <h1 className="font-montserrat font-black text-3xl md:text-5xl leading-tight mb-4">
             Курсы для школьников —{" "}
@@ -162,7 +171,7 @@ export default function SamaraPilot() {
         </section>
 
         <p className="text-white/45 text-xs leading-relaxed">
-          Промокод действует до 31.05.2027 включительно и только для раздела «Школьникам». Курсы для взрослых, раздел «Малыш» и подписка «Репетитор» оплачиваются отдельно. Один аккаунт — одна активация.
+          Промокод {city.promo} действует до 31.05.2027 включительно и только для раздела «Школьникам». Название города можно вводить в любом написании. Курсы для взрослых, раздел «Малыш» и подписка «Репетитор» оплачиваются отдельно. Один аккаунт — одна активация.
         </p>
       </main>
     </div>

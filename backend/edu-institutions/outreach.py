@@ -11,6 +11,18 @@ SITE = 'https://xn--h1amcedk2a6b.xn--p1ai'
 SITE_LABEL = 'учисьпро.рф'
 CAMPAIGN = 'samara_pilot_2026'
 SUBJECT = 'Директору школы: бесплатный доступ для учеников по промокоду САМАРА — пилотный проект 2026/27'
+
+SAMARA = {'slug': 'samara', 'name': 'Самара', 'name_in': 'в Самаре', 'name_gen': 'Самары',
+          'promo_code': 'САМАРА', 'campaign_code': CAMPAIGN}
+
+
+def subject_for(city: dict) -> str:
+    return (f"Директору школы: бесплатный доступ для учеников по промокоду {city['promo_code']} "
+            f"— пилотный проект 2026/27")
+
+
+def city_path(city: dict) -> str:
+    return '/samara' if city['slug'] == 'samara' else f"/pilot/{city['slug']}"
 BATCH_MAX = 15
 PAUSE_SEC = 0.25
 
@@ -31,20 +43,25 @@ def greeting(director: str) -> str:
     return 'Уважаемый руководитель!'
 
 
-def build_letter(inst: dict, unsub_url: str):
+def build_letter(inst: dict, unsub_url: str, city: dict = None):
+    city = city or SAMARA
+    promo = city['promo_code']
+    gen = city['name_gen']
     g = greeting(inst.get('contact_name', ''))
     school = inst.get('org_name') or 'вашей школы'
-    deck = f'{SITE}/for-schools/presentation'
-    samara = f'{SITE}/samara'
+    deck = f'{SITE}/for-schools/presentation' + ('' if city['slug'] == 'samara' else f"/{city['slug']}")
+    path = city_path(city)
+    page = f'{SITE}{path}'
+    page_label = f'{SITE_LABEL}{path}'
     reply = smtp_creds()[0]
 
     chat = (f'Ученики нашей школы участвуют в пилотном проекте УЧИСЬПРО. До 31 мая 2027 года бесплатно доступны '
             f'ИИ-наставник по школьным предметам и курсы 1–11 класса с подготовкой к ОГЭ и ЕГЭ. '
-            f'Как подключиться: откройте {SITE_LABEL}/samara, зарегистрируйтесь и введите промокод САМАРА.')
+            f'Как подключиться: откройте {page_label}, зарегистрируйтесь и введите промокод {promo}.')
 
     text = f"""{g}
 
-Обращаюсь к вам как к руководителю {school}. Образовательная платформа УЧИСЬПРО ({SITE_LABEL}) проводит в 2026/27 учебном году пилотный проект для школ Самары и предлагает бесплатный доступ для всех учеников вашей школы.
+Обращаюсь к вам как к руководителю {school}. Образовательная платформа УЧИСЬПРО ({SITE_LABEL}) проводит в 2026/27 учебном году пилотный проект для школ {gen} и предлагает бесплатный доступ для всех учеников вашей школы.
 
 ЧТО ПОЛУЧАЮТ УЧЕНИКИ — БЕСПЛАТНО ДО 31 МАЯ 2027 ГОДА
 — ИИ-наставник по школьным предметам 24/7: объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;
@@ -52,9 +69,9 @@ def build_letter(inst: dict, unsub_url: str):
 — курсы 1–11 класса: математика, русский язык, физика, химия, биология, информатика, история; подготовка к ОГЭ и ЕГЭ.
 
 КАК УЧЕНИКУ ПОЛУЧИТЬ ДОСТУП (2 минуты)
-1. Открыть {SITE_LABEL}/samara
+1. Открыть {page_label}
 2. Зарегистрироваться (email или Яндекс ID)
-3. Ввести промокод САМАРА — доступ откроется сразу до 31.05.2027
+3. Ввести промокод {promo} — доступ откроется сразу до 31.05.2027
 
 ЧТО НУЖНО ОТ ШКОЛЫ
 Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: без договоров, закупок и абонентской платы; дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.
@@ -71,7 +88,7 @@ def build_letter(inst: dict, unsub_url: str):
 {SITE_LABEL}
 
 —
-Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций Самары. Больше не присылать письма: {unsub_url}
+Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций. Больше не присылать письма: {unsub_url}
 """
 
     li = lambda s: f'<li style="margin:0 0 6px">{s}</li>'
@@ -80,10 +97,10 @@ def build_letter(inst: dict, unsub_url: str):
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
 <tr><td style="background:#6d28d9;background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:22px 28px;color:#fff">
 <div style="font-size:20px;font-weight:bold">УЧИСЬПРО</div>
-<div style="font-size:14px;opacity:.9;margin-top:4px">Пилотный проект для школ Самары · 2026/27 учебный год</div></td></tr>
+<div style="font-size:14px;opacity:.9;margin-top:4px">Пилотный проект для школ {escape(gen)} · 2026/27 учебный год</div></td></tr>
 <tr><td style="padding:26px 28px;font-size:15px;line-height:1.55">
 <p style="margin:0 0 14px">{escape(g)}</p>
-<p style="margin:0 0 16px">Обращаюсь к вам как к руководителю <b>{escape(school)}</b>. Образовательная платформа УЧИСЬПРО проводит в 2026/27 учебном году пилотный проект для школ Самары и предлагает <b>бесплатный доступ для всех учеников вашей школы</b>.</p>
+<p style="margin:0 0 16px">Обращаюсь к вам как к руководителю <b>{escape(school)}</b>. Образовательная платформа УЧИСЬПРО проводит в 2026/27 учебном году пилотный проект для школ {gen} и предлагает <b>бесплатный доступ для всех учеников вашей школы</b>.</p>
 <p style="margin:0 0 8px"><b>Что получают ученики — бесплатно до 31 мая 2027 года:</b></p>
 <ul style="margin:0 0 18px;padding-left:20px">
 {li('<b>ИИ-наставник по школьным предметам 24/7</b> — объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;')}
@@ -92,9 +109,9 @@ def build_letter(inst: dict, unsub_url: str):
 </ul>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;margin:0 0 18px"><tr><td style="padding:16px 18px;font-size:14px;line-height:1.6">
 <div style="font-size:15px;font-weight:bold;margin:0 0 8px">Как ученику получить доступ — 2 минуты</div>
-1. Открыть <a href="{samara}" style="color:#6d28d9;font-weight:bold">{SITE_LABEL}/samara</a><br>
+1. Открыть <a href="{page}" style="color:#6d28d9;font-weight:bold">{escape(page_label)}</a><br>
 2. Зарегистрироваться (email или Яндекс ID)<br>
-3. Ввести промокод <span style="display:inline-block;background:#7c3aed;color:#fff;font-weight:bold;letter-spacing:1px;padding:2px 10px;border-radius:6px">САМАРА</span> — доступ откроется сразу до 31.05.2027
+3. Ввести промокод <span style="display:inline-block;background:#7c3aed;color:#fff;font-weight:bold;letter-spacing:1px;padding:2px 10px;border-radius:6px">{escape(promo)}</span> — доступ откроется сразу до 31.05.2027
 </td></tr></table>
 <p style="margin:0 0 8px"><b>Что нужно от школы</b></p>
 <p style="margin:0 0 16px">Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: <b>без договоров, закупок и абонентской платы</b>, дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.</p>
@@ -106,10 +123,10 @@ def build_letter(inst: dict, unsub_url: str):
 <p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
 </td></tr>
 <tr><td style="padding:16px 28px;background:#faf9fd;color:#8a849c;font-size:12px;line-height:1.5">
-Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций Самары.
+Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций.
 <a href="{unsub_url}" style="color:#8a849c">Больше не присылать письма</a>.</td></tr>
 </table></td></tr></table></body></html>"""
-    return SUBJECT, html, text, reply
+    return subject_for(city), html, text, reply
 
 
 def send_one(smtp, to_email: str, subject: str, html: str, text: str, unsub_url: str, reply_to: str):
