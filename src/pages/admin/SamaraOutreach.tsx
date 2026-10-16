@@ -31,10 +31,18 @@ export default function SamaraOutreach() {
   const [msg, setMsg] = useState<string | null>(null);
   const [batch, setBatch] = useState(10);
   const [autoRun, setAutoRun] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [s, l] = await Promise.all([outreachStatus(), listInstitutions({ city: "Самара", q })]);
     if (!s.ok) {
+      if (s.error === "Нет доступа") {
+        sessionStorage.removeItem(PIN_KEY);
+        localStorage.removeItem(PIN_KEY);
+        setPin("");
+        setPinError("Неверный PIN. Введите PIN администратора ещё раз.");
+        return;
+      }
       setError(s.error || "Ошибка");
       return;
     }
@@ -81,16 +89,22 @@ export default function SamaraOutreach() {
       <div className="min-h-screen bg-mesh flex items-center justify-center p-6 font-golos">
         <Card className="p-6 bg-white/[0.04] border-white/10 w-full max-w-sm">
           <p className="text-white font-bold mb-3">Введите PIN администратора</p>
-          <Input type="password" value={pinInput} onChange={(e) => setPinInput(e.target.value)} className="mb-3" />
-          <Button
-            className="w-full"
-            onClick={() => {
-              sessionStorage.setItem(PIN_KEY, pinInput);
-              setPin(pinInput);
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const v = pinInput.trim();
+              if (!v) return;
+              setPinError(null);
+              sessionStorage.setItem(PIN_KEY, v);
+              setPin(v);
             }}
           >
-            Войти
-          </Button>
+            <Input type="password" autoFocus value={pinInput} onChange={(e) => setPinInput(e.target.value)} className="mb-3" />
+            {pinError && <p className="text-rose-300 text-sm mb-3">{pinError}</p>}
+            <Button type="submit" className="w-full">
+              Войти
+            </Button>
+          </form>
         </Card>
       </div>
     );
