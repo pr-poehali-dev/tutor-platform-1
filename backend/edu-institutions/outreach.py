@@ -10,7 +10,7 @@ from html import escape
 SITE = 'https://xn--h1amcedk2a6b.xn--p1ai'
 SITE_LABEL = 'учисьпро.рф'
 CAMPAIGN = 'samara_pilot_2026'
-SUBJECT = 'Бесплатный ИИ-помощник для учеников вашей школы — пилотный проект в Самаре'
+SUBJECT = 'Директору школы: бесплатный доступ для учеников по промокоду САМАРА — пилотный проект 2026/27'
 BATCH_MAX = 15
 PAUSE_SEC = 0.25
 
@@ -33,28 +33,38 @@ def greeting(director: str) -> str:
 
 def build_letter(inst: dict, unsub_url: str):
     g = greeting(inst.get('contact_name', ''))
+    school = inst.get('org_name') or 'вашей школы'
     deck = f'{SITE}/for-schools/presentation'
-    article = f'{SITE}/feed/pilotnyy-proekt-uchispro-dlya-shkol-samary'
     samara = f'{SITE}/samara'
     reply = smtp_creds()[0]
 
+    chat = (f'Ученики нашей школы участвуют в пилотном проекте УЧИСЬПРО. До 31 мая 2027 года бесплатно доступны '
+            f'ИИ-наставник по школьным предметам и курсы 1–11 класса с подготовкой к ОГЭ и ЕГЭ. '
+            f'Как подключиться: откройте {SITE_LABEL}/samara, зарегистрируйтесь и введите промокод САМАРА.')
+
     text = f"""{g}
 
-Пишу вам от образовательной платформы УЧИСЬПРО ({SITE_LABEL}). В 2026/27 учебном году мы проводим пилотный проект со школами Самары и приглашаем {inst.get('org_name') or 'вашу школу'} принять участие.
+Обращаюсь к вам как к руководителю {school}. Образовательная платформа УЧИСЬПРО ({SITE_LABEL}) проводит в 2026/27 учебном году пилотный проект для школ Самары и предлагает бесплатный доступ для всех учеников вашей школы.
 
-Что получают ученики — бесплатно до 31 мая 2027 года:
-— ИИ-наставник 24/7: объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;
-— разбор домашнего задания по фото — по шагам, чтобы понять ход решения;
-— курсы 1–11 класса по основным предметам, подготовка к ОГЭ и ЕГЭ.
+ЧТО ПОЛУЧАЮТ УЧЕНИКИ — БЕСПЛАТНО ДО 31 МАЯ 2027 ГОДА
+— ИИ-наставник по школьным предметам 24/7: объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;
+— разбор домашнего задания по фото — по шагам;
+— курсы 1–11 класса: математика, русский язык, физика, химия, биология, информатика, история; подготовка к ОГЭ и ЕГЭ.
 
-Для школы участие тоже бесплатное: без договоров, закупок и абонентской платы. Учителям не добавляется работы — достаточно один раз рассказать классу о пилоте. Персональные данные обрабатываются по 152-ФЗ.
+КАК УЧЕНИКУ ПОЛУЧИТЬ ДОСТУП (2 минуты)
+1. Открыть {SITE_LABEL}/samara
+2. Зарегистрироваться (email или Яндекс ID)
+3. Ввести промокод САМАРА — доступ откроется сразу до 31.05.2027
 
-Как подключиться: ученик открывает {SITE_LABEL}/samara, входит и активирует промокод САМАРА.
+ЧТО НУЖНО ОТ ШКОЛЫ
+Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: без договоров, закупок и абонентской платы; дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.
+
+Готовый текст для школьных и родительских чатов:
+«{chat}»
 
 Презентация для директора (5 минут): {deck}
-Подробнее о пилоте: {article}
 
-Если идея вам интересна, ответьте на это письмо — пришлём готовые тексты для школьных чатов и памятку для родителей, назначим удобное время для короткого звонка.
+Если хотите подключить школу официально, получить памятку для родителей или задать вопросы — просто ответьте на это письмо.
 
 С уважением,
 команда УЧИСЬПРО
@@ -68,26 +78,31 @@ def build_letter(inst: dict, unsub_url: str):
     html = f"""<!doctype html><html><body style="margin:0;background:#f4f2fb;font-family:Arial,Helvetica,sans-serif;color:#1f1b2e">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2fb;padding:24px 0"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
-<tr><td style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:22px 28px;color:#fff">
+<tr><td style="background:#6d28d9;background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:22px 28px;color:#fff">
 <div style="font-size:20px;font-weight:bold">УЧИСЬПРО</div>
-<div style="font-size:14px;opacity:.9;margin-top:4px">Пилотный проект для школ Самары · 2026/27</div></td></tr>
+<div style="font-size:14px;opacity:.9;margin-top:4px">Пилотный проект для школ Самары · 2026/27 учебный год</div></td></tr>
 <tr><td style="padding:26px 28px;font-size:15px;line-height:1.55">
 <p style="margin:0 0 14px">{escape(g)}</p>
-<p style="margin:0 0 14px">Пишу вам от образовательной платформы УЧИСЬПРО. В 2026/27 учебном году мы проводим пилотный проект со школами Самары и приглашаем <b>{escape(inst.get('org_name') or 'вашу школу')}</b> принять участие.</p>
+<p style="margin:0 0 16px">Обращаюсь к вам как к руководителю <b>{escape(school)}</b>. Образовательная платформа УЧИСЬПРО проводит в 2026/27 учебном году пилотный проект для школ Самары и предлагает <b>бесплатный доступ для всех учеников вашей школы</b>.</p>
 <p style="margin:0 0 8px"><b>Что получают ученики — бесплатно до 31 мая 2027 года:</b></p>
-<ul style="margin:0 0 14px;padding-left:20px">
-{li('<b>ИИ-наставник 24/7</b> — объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;')}
-{li('<b>разбор домашнего задания по фото</b> — по шагам, чтобы понять ход решения;')}
-{li('<b>курсы 1–11 класса</b> по основным предметам, подготовка к ОГЭ и ЕГЭ.')}
+<ul style="margin:0 0 18px;padding-left:20px">
+{li('<b>ИИ-наставник по школьным предметам 24/7</b> — объясняет тему простыми словами и ведёт к ответу наводящими вопросами, а не выдаёт готовое решение;')}
+{li('<b>разбор домашнего задания по фото</b> — по шагам;')}
+{li('<b>курсы 1–11 класса</b>: математика, русский язык, физика, химия, биология, информатика, история; подготовка к ОГЭ и ЕГЭ.')}
 </ul>
-<p style="margin:0 0 14px">Для школы участие тоже бесплатное: <b>без договоров, закупок и абонентской платы</b>. Учителям не добавляется работы — достаточно один раз рассказать классу о пилоте. Персональные данные обрабатываются по 152-ФЗ.</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 16px;font-size:14px">
-Как подключиться: ученик открывает <a href="{samara}" style="color:#6d28d9">{SITE_LABEL}/samara</a>, входит и активирует промокод
-<span style="display:inline-block;background:#7c3aed;color:#fff;font-weight:bold;letter-spacing:1px;padding:3px 10px;border-radius:6px">САМАРА</span></td></tr></table>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;margin:0 0 18px"><tr><td style="padding:16px 18px;font-size:14px;line-height:1.6">
+<div style="font-size:15px;font-weight:bold;margin:0 0 8px">Как ученику получить доступ — 2 минуты</div>
+1. Открыть <a href="{samara}" style="color:#6d28d9;font-weight:bold">{SITE_LABEL}/samara</a><br>
+2. Зарегистрироваться (email или Яндекс ID)<br>
+3. Ввести промокод <span style="display:inline-block;background:#7c3aed;color:#fff;font-weight:bold;letter-spacing:1px;padding:2px 10px;border-radius:6px">САМАРА</span> — доступ откроется сразу до 31.05.2027
+</td></tr></table>
+<p style="margin:0 0 8px"><b>Что нужно от школы</b></p>
+<p style="margin:0 0 16px">Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: <b>без договоров, закупок и абонентской платы</b>, дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.</p>
+<p style="margin:0 0 6px;font-size:13px;color:#5b5670">Готовый текст для школьных и родительских чатов:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-left:4px solid #06b6d4;margin:0 0 20px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.55;color:#334155">{escape(chat)}</td></tr></table>
 <p style="margin:0 0 20px;text-align:center">
-<a href="{deck}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:10px">Смотреть презентацию для директора</a></p>
-<p style="margin:0 0 14px">Подробнее о пилоте — в <a href="{article}" style="color:#6d28d9">статье на сайте</a>.</p>
-<p style="margin:0 0 14px">Если идея вам интересна, просто <b>ответьте на это письмо</b> — пришлём готовые тексты для школьных чатов и памятку для родителей, назначим удобное время для короткого звонка.</p>
+<a href="{deck}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:10px">Презентация для директора — 5 минут</a></p>
+<p style="margin:0 0 14px">Если хотите подключить школу официально, получить памятку для родителей или задать вопросы — просто <b>ответьте на это письмо</b>.</p>
 <p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
 </td></tr>
 <tr><td style="padding:16px 28px;background:#faf9fd;color:#8a849c;font-size:12px;line-height:1.5">
