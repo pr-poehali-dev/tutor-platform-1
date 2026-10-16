@@ -23,8 +23,18 @@ def subject_for(city: dict) -> str:
 
 def city_path(city: dict) -> str:
     return '/samara' if city['slug'] == 'samara' else f"/pilot/{city['slug']}"
-BATCH_MAX = 15
-PAUSE_SEC = 0.25
+# Отправка «как человек»: небольшие партии и пауза между письмами.
+# 16.10 при ~25 письмах в минуту Яндекс начал отклонять письма как спам (554 5.7.1).
+BATCH_MAX = 10
+PAUSE_SEC = 1.5
+# После отказа «подозрение на спам» — пауза во всей рассылке, чтобы восстановилась репутация ящика.
+SPAM_COOLDOWN_MIN = 60
+# Сколько раз пробовать одну школу, прежде чем убрать её из очереди.
+MAX_ATTEMPTS = 3
+
+
+def is_spam_reject(msg: str) -> bool:
+    return '5.7.1' in msg or 'spam' in msg.lower()
 
 
 def smtp_creds():

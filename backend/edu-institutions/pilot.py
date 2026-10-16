@@ -35,7 +35,30 @@ def audience_where(city: dict) -> str:
     camp = city['campaign_code'].replace("'", "''")
     return (f"city='{name}' AND email<>'' AND unsubscribed_at IS NULL AND status NOT IN ('declined','partner') "
             f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
-            f"AND s.campaign_code='{camp}' AND s.status='sent' AND s.is_test=FALSE)")
+            f"AND s.campaign_code='{camp}' AND s.status='sent' AND s.is_test=FALSE) "
+            # Отказы «подозрение на спам» — про репутацию ящика, а не про адрес школы: их не считаем.
+            f"AND (SELECT count(*) FROM {SCHEMA}.edu_campaign_sends f WHERE f.institution_id={TABLE}.id "
+            f"AND f.campaign_code='{camp}' AND f.status='failed' AND f.is_test=FALSE "
+            f"AND coalesce(f.error,'') NOT ILIKE '%%spam%%' AND coalesce(f.error,'') NOT LIKE '%%5.7.1%%') "
+            f"< {outreach.MAX_ATTEMPTS}")
+
+
+def failed_order(city: dict) -> str:
+    """Школы с неудачными попытками — в конец очереди, чтобы одна не блокировала остальные."""
+    camp = city['campaign_code'].replace("'", "''")
+    return (f"(SELECT count(*) FROM {SCHEMA}.edu_campaign_sends f WHERE f.institution_id={TABLE}.id "
+            f"AND f.campaign_code='{camp}' AND f.status='failed' AND f.is_test=FALSE), id")
+
+
+def spam_cooldown_min(cur) -> int:
+    """Сколько минут ещё ждать после последнего отказа «подозрение на спам» (0 — можно слать)."""
+    cur.execute(f"SELECT max(created_at) FROM {SCHEMA}.edu_campaign_sends WHERE status='failed' "
+                f"AND (error ILIKE '%%spam%%' OR error LIKE '%%5.7.1%%')")
+    last = cur.fetchone()[0]
+    if not last:
+        return 0
+    left = outreach.SPAM_COOLDOWN_MIN - (datetime.now(timezone.utc) - last).total_seconds() / 60
+    return max(0, int(left + 0.999))
 
 
 def overview(cur) -> dict:
@@ -60,7 +83,7 @@ def overview(cur) -> dict:
                     'sent': s.get('sent', 0), 'failed': s.get('failed', 0),
                     'activations': used.get(c['promo_code'], 0)})
     st = settings(cur)
-    return {'cities': out, 'auto': st, 'sent_today': sent_today(cur),
+    return {'cities': out, 'auto': st, 'sent_today': sent_today(cur), 'cooldown_min': spam_cooldown_min(cur),
             'registry_rows': registry_size()}
 
 
@@ -116,7 +139,7 @@ def import_registry(cur, conn) -> dict:
 
 def send_for_city(cur, conn, city: dict, limit: int, unsub_url, inst_by_id, ensure_token, started: float) -> dict:
     """Отправляет до limit писем школам города. Останавливается при сбое почты или нехватке времени."""
-    cur.execute(f'SELECT id FROM {TABLE} WHERE {audience_where(city)} ORDER BY id LIMIT %s', (limit,))
+    cur.execute(f'SELECT id FROM {TABLE} WHERE {audience_where(city)} ORDER BY {failed_order(city)} LIMIT %s', (limit,))
     ids = [r[0] for r in cur.fetchall()]
     sent, failed, errors, stop = 0, 0, [], False
     if not ids:
@@ -146,7 +169,7 @@ def send_for_city(cur, conn, city: dict, limit: int, unsub_url, inst_by_id, ensu
                 errors.append({'org': inst['org_name'], 'email': inst['email'], 'error': msg})
                 # Почтовый сервер ограничил отправку — дальше не пытаемся, иначе ящик заблокируют.
                 if 'SMTPDataError' in msg or 'SMTPSenderRefused' in msg or 'quota' in msg.lower():
-                    stop = True
+                    stop = 'spam' if outreach.is_spam_reject(msg) else 'blocked'
                     conn.commit()
                     break
             conn.commit()
@@ -172,20 +195,26 @@ def auto_tick(cur, conn, unsub_url, inst_by_id, ensure_token) -> dict:
     if not (user and password):
         return {'skipped': 'smtp_not_configured'}
     # Одна партия за раз и не чаще раза в 3 минуты: защищает от параллельных вызовов из многих вкладок.
-    cur.execute("SELECT pg_try_advisory_lock(774411)")
-    if not cur.fetchone()[0]:
+    # Захват «замка» одной строкой: сработает только у одного из параллельных вызовов.
+    cur.execute(f"UPDATE {SCHEMA}.outreach_settings SET locked_until = now() + interval '1 minute' "
+                f"WHERE id=1 AND (locked_until IS NULL OR locked_until < now()) RETURNING id")
+    got = cur.fetchone()
+    conn.commit()
+    if not got:
         return {'skipped': 'busy'}
     try:
         return _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token)
     finally:
-        cur.execute("SELECT pg_advisory_unlock(774411)")
+        cur.execute(f"UPDATE {SCHEMA}.outreach_settings SET locked_until = NULL WHERE id=1")
         conn.commit()
 
 
 def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
+    if spam_cooldown_min(cur) > 0:
+        return {'skipped': 'spam_cooldown'}
     cur.execute(f"SELECT max(created_at) FROM {SCHEMA}.edu_campaign_sends WHERE is_test=FALSE")
     last = cur.fetchone()[0]
-    if last and datetime.now(timezone.utc) - last < timedelta(minutes=3):
+    if last and datetime.now(timezone.utc) - last < timedelta(minutes=5):
         return {'skipped': 'too_soon'}
     left_today = st['daily_limit'] - sent_today(cur)
     if left_today <= 0:
@@ -202,6 +231,10 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
         total['sent'] += r['sent']
         total['failed'] += r['failed']
         batch -= r['sent'] + r['failed']
+        if r['stop'] == 'spam':
+            # Временная мера Яндекса: ждём час, авторассылка продолжит сама.
+            total['stopped'] = f'Яндекс заподозрил спам — пауза {outreach.SPAM_COOLDOWN_MIN} минут'
+            break
         if r['stop']:
             cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET auto_enabled=FALSE, updated_at=now() WHERE id=1')
             conn.commit()

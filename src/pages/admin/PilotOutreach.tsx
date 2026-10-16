@@ -154,10 +154,15 @@ export default function PilotOutreach() {
                     Авторассылка {data.auto.enabled ? "включена" : "выключена"}
                   </p>
                   <p className="text-white/60 text-sm mt-1">
-                    По будням с 9:00 до 19:00 МСК, партиями по {data.batch_max}, города по очереди. Сегодня ушло {data.sent_today} из {data.auto.daily_limit}
+                    По будням с 9:00 до 19:00 МСК, партиями по {data.batch_max} раз в 5 минут, города по очереди. Сегодня ушло {data.sent_today} из {data.auto.daily_limit}
                     {data.auto.enabled && totals.pending > 0 && <> · вся база — примерно за {daysLeft} раб. дн.</>}
                   </p>
                   {!data.smtp_configured && <p className="text-rose-300 text-sm mt-1">Почта не подключена — заполните секреты SMTP_USER и SMTP_PASSWORD.</p>}
+                  {data.cooldown_min > 0 && (
+                    <p className="text-amber-300 text-sm mt-1">
+                      Яндекс отклонил письмо как подозрительное — отправка на паузе ещё {data.cooldown_min} мин., потом продолжится сама.
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-white/60">Лимит в день</span>
@@ -173,7 +178,7 @@ export default function PilotOutreach() {
                 </div>
               </div>
               <p className="text-white/40 text-xs mt-3">
-                Авторассылка запускается, когда сайт открывают посетители (как ежедневный отчёт), поэтому отправка идёт небольшими партиями в течение дня. Если почтовый сервер ограничит отправку, авторассылка выключится сама.
+                Авторассылка запускается, когда сайт открывают посетители (как ежедневный отчёт): партия раз в 5 минут, пауза между письмами. Если Яндекс заподозрит спам — пауза на час. Школа, письмо которой не прошло 3 раза, убирается из очереди.
               </p>
             </Card>
 
@@ -265,7 +270,7 @@ export default function PilotOutreach() {
                   <p className="text-xs text-white/50 uppercase font-bold tracking-wider mb-2">Отправить вручную</p>
                   <p className="text-sm text-white/70 mb-3">Партия {Math.min(data.batch_max, cur.pending, leftToday)} писем школам: {cur.name}. Сегодня можно ещё {leftToday}.</p>
                   <Button
-                    disabled={busy || !data.smtp_configured || cur.pending === 0 || leftToday === 0}
+                    disabled={busy || !data.smtp_configured || cur.pending === 0 || leftToday === 0 || data.cooldown_min > 0}
                     className="w-full bg-gradient-to-r from-violet-500 to-cyan-500 text-white"
                     onClick={async () => {
                       const n = Math.min(data.batch_max, cur.pending, leftToday);

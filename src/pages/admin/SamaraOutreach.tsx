@@ -80,7 +80,7 @@ export default function SamaraOutreach() {
     if (!autoRun || busy) return;
     const t = setTimeout(async () => {
       await sendBatch();
-    }, 20000);
+    }, 120000);
     return () => clearTimeout(t);
   }, [autoRun, busy, sendBatch, st?.pending]);
 
@@ -221,7 +221,7 @@ export default function SamaraOutreach() {
                     className="border-white/15 bg-white/5 text-white"
                     onClick={() => {
                       if (autoRun) setAutoRun(false);
-                      else if (window.confirm(`Запустить авторассылку: по ${batch} писем каждые 20 секунд, пока страница открыта. Всего осталось ${st.pending}. Продолжить?`)) {
+                      else if (window.confirm(`Запустить авторассылку: по ${batch} писем каждые 2 минуты, пока страница открыта. Всего осталось ${st.pending}. Продолжить?`)) {
                         setAutoRun(true);
                         sendBatch();
                       }

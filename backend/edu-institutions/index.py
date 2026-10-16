@@ -287,9 +287,7 @@ def _unsub_url(event, token):
 
 
 def _audience_where():
-    return (f"city='Самара' AND email<>'' AND unsubscribed_at IS NULL AND status NOT IN ('declined','partner') "
-            f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
-            f"AND s.campaign_code='{outreach.CAMPAIGN}' AND s.status='sent' AND s.is_test=FALSE)")
+    return pilot.audience_where({'name': 'Самара', 'campaign_code': outreach.CAMPAIGN})
 
 
 def handle_outreach_status() -> dict:
@@ -389,7 +387,12 @@ def handle_outreach_send(body, event) -> dict:
     sent, failed, errors = 0, 0, []
     try:
         with conn.cursor() as cur:
-            cur.execute(f'SELECT id FROM {TABLE} WHERE {_audience_where()} ORDER BY id LIMIT %s', (limit,))
+            wait = pilot.spam_cooldown_min(cur)
+            if wait > 0:
+                return err(f'Яндекс недавно отклонил письмо как подозрительное. Чтобы ящик не заблокировали, '
+                           f'отправка на паузе ещё {wait} мин.', 429)
+            cur.execute(f"SELECT id FROM {TABLE} WHERE {_audience_where()} ORDER BY "
+                        f"{pilot.failed_order({'campaign_code': outreach.CAMPAIGN})} LIMIT %s", (limit,))
             ids = [r[0] for r in cur.fetchall()]
             if not ids:
                 return ok({'sent': 0, 'failed': 0, 'left': 0, 'done': True})
@@ -528,6 +531,10 @@ def handle_pilot_send(body, event) -> dict:
             city = _city_or_err(cur, body.get('city'))
             if not city:
                 return err('Город не найден', 404)
+            wait = pilot.spam_cooldown_min(cur)
+            if wait > 0:
+                return err(f'Яндекс недавно отклонил письмо как подозрительное. Чтобы ящик не заблокировали, '
+                           f'отправка на паузе ещё {wait} мин.', 429)
             st = pilot.settings(cur)
             left_today = st['daily_limit'] - pilot.sent_today(cur)
             if left_today <= 0:

@@ -195,6 +195,7 @@ export interface PilotOverview {
   cities: PilotCityStat[];
   auto: { enabled: boolean; daily_limit: number };
   sent_today: number;
+  cooldown_min: number;
   registry_rows: number;
   smtp_configured: boolean;
   sender: string | null;
