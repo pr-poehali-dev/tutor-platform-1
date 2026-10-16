@@ -9,7 +9,7 @@ const CityCtx = createContext<PilotCity>(DEFAULT_PILOT_CITY);
 const CityGen = () => <>{useContext(CityCtx).nameGen}</>;
 const CityPromo = ({ big }: { big?: number }) => {
   const c = useContext(CityCtx);
-  return <span style={big && c.promo.length > 10 ? { fontSize: Math.round(big * 10 / c.promo.length) } : undefined}>{c.promo}</span>;
+  return <span style={big && c.promo.length > 8 ? { fontSize: Math.round(big * 8 / c.promo.length) } : undefined}>{c.promo}</span>;
 };
 const CityPath = () => <>{SITE_LABEL}{useContext(CityCtx).path}</>;
 

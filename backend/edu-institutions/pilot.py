@@ -7,6 +7,7 @@ import outreach
 import registry_regions
 import registry_samara_region
 import registry_wave1
+import registry_wave2
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 TABLE = f'{SCHEMA}.edu_institutions'
@@ -120,7 +121,7 @@ def registry_size() -> int:
     return sum(len(r.ROWS) for r in REGISTRIES.values())
 
 
-REGISTRIES = {'wave1': registry_wave1, 'samara_region': registry_samara_region}
+REGISTRIES = {'wave1': registry_wave1, 'wave2': registry_wave2, 'samara_region': registry_samara_region}
 
 
 def import_registry(cur, conn, name: str = 'wave1') -> dict:

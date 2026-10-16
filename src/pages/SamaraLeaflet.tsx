@@ -32,7 +32,7 @@ function Leaflet({ city }: { city: PilotCity }) {
       <div className="px-[10mm] pt-[8mm] pb-[6mm] text-white" style={{ background: NAVY }}>
         <div className="flex items-center justify-between mb-[4mm]">
           <span className="font-montserrat font-black text-[13pt] tracking-wide">УЧИСЬПРО</span>
-          <span className="text-[7.5pt] uppercase tracking-[0.18em] text-blue-200 font-bold">Пилот школ {city.nameGen}</span>
+          <span className="text-[7.5pt] uppercase tracking-[0.18em] text-blue-200 font-bold text-right whitespace-nowrap ml-[4mm]" style={{ letterSpacing: city.nameGen.length > 22 ? "0.08em" : undefined }}>Пилот школ {city.nameGen}</span>
         </div>
         <p className="font-montserrat font-extrabold text-[21pt] leading-[1.1]">
           Курсы для школьников — <span style={{ color: AMBER }}>бесплатно</span> весь учебный год
@@ -46,7 +46,7 @@ function Leaflet({ city }: { city: PilotCity }) {
         <div className="flex-1 min-w-0">
           <p className="text-[8pt] uppercase tracking-[0.16em] font-bold mb-[1.5mm]" style={{ color: BLUE }}>Твой промокод</p>
           <div className="rounded-[2.5mm] border-[0.5mm] border-dashed px-[3mm] py-[2.5mm] text-center mb-[2.5mm]" style={{ borderColor: AMBER, background: "#fffbeb" }}>
-            <p className="font-montserrat font-black text-[24pt] tracking-[0.08em] leading-none" style={{ color: NAVY, fontSize: city.promo.length > 11 ? "16pt" : undefined }}>{city.promo}</p>
+            <p className="font-montserrat font-black text-[24pt] tracking-[0.08em] leading-none" style={{ color: NAVY, fontSize: city.promo.length > 13 ? "15pt" : city.promo.length > 9 ? "18pt" : undefined }}>{city.promo}</p>
           </div>
           <p className="text-[8.5pt] text-slate-500 leading-snug">
             Действует до <b className="text-slate-800">31.05.2027</b>

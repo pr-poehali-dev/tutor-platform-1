@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -6,6 +7,11 @@ import { PILOT_CITIES } from "@/data/pilotCities";
 
 /** Список городов пилотного проекта: ученик выбирает свой город и активирует промокод. */
 export default function PilotCities() {
+  const [q, setQ] = useState("");
+  const query = q.trim().toLowerCase().replace(/ё/g, "е");
+  const list = query
+    ? PILOT_CITIES.filter((c) => (c.name + " " + c.nameGen).toLowerCase().replace(/ё/g, "е").includes(query))
+    : PILOT_CITIES;
   return (
     <div className="min-h-screen bg-mesh text-white font-golos">
       <Seo
@@ -43,8 +49,20 @@ export default function PilotCities() {
           </p>
         </div>
 
+        <div className="relative mb-5">
+          <Icon name="Search" size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Найти свой город"
+            aria-label="Поиск города"
+            className="w-full rounded-xl bg-white/[0.05] border border-white/15 pl-11 pr-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-violet-400"
+          />
+        </div>
+
         <div className="grid sm:grid-cols-2 gap-3">
-          {PILOT_CITIES.map((c) => (
+          {list.length === 0 && <p className="text-white/50 text-sm sm:col-span-2">Такого города пока нет в пилоте.</p>}
+          {list.map((c) => (
             <Link
               key={c.slug}
               to={c.path}
