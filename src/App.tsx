@@ -163,6 +163,7 @@ const SchoolsForSchools = lazy(() => import("./pages/schools/SchoolsForSchools")
 const SchoolProfileForm = lazy(() => import("./pages/schools/SchoolProfileForm"));
 const SchoolPage = lazy(() => import("./pages/schools/SchoolPage"));
 const SchoolProfilesAdmin = lazy(() => import("./pages/admin/SchoolProfilesAdmin"));
+const MaxBotAdmin = lazy(() => import("./pages/admin/MaxBotAdmin"));
 const Orchestrator = lazy(() => import("./pages/Orchestrator"));
 const ForSchools = lazy(() => import("./pages/ForSchools"));
 const Partners = lazy(() => import("./pages/Partners"));
@@ -390,6 +391,7 @@ const App = () => (
                     <Route path="/admin/samara-outreach" element={<SamaraOutreach />} />
                     <Route path="/admin/pilot-outreach" element={<PilotOutreach />} />
                     <Route path="/admin/school-profiles" element={<SchoolProfilesAdmin />} />
+                    <Route path="/admin/max-bot" element={<MaxBotAdmin />} />
                     <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/start" element={<TryLanding />} />
                     <Route path="/admin/marketing" element={<MarketingDashboard />} />

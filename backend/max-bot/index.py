@@ -7,6 +7,10 @@ POST /?action=update_settings header X-Auth-Token  -> {notify_daily_report, noti
 POST /?action=unlink          header X-Auth-Token  -> отвязать MAX
 POST /?action=webhook                              -> приём апдейтов от MAX (обработка /start CODE)
 POST /?action=cron            header Authorization: Bearer CRON_SECRET -> ежедневная рассылка
+POST /?action=daily           header Authorization: Bearer CRON_SECRET -> «задание дня» подписчикам (с 17:00 МСК)
+GET  /?action=admin_status    header X-Admin-Pin  -> подписчики, настройки, журнал рассылок
+POST /?action=admin_save      header X-Admin-Pin  body: {daily_enabled?, welcome_text?}
+POST /?action=admin_test      header X-Admin-Pin  body: {max_user_id, kind: welcome|daily} -> тестовое сообщение
 """
 import json
 import os
@@ -18,6 +22,8 @@ import urllib.parse
 from datetime import datetime, timezone, date
 import psycopg2
 
+import daily
+
 MAX_API_BASE = "https://botapi.max.ru"
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 
@@ -26,7 +32,7 @@ def cors_headers() -> dict:
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token, X-Admin-Pin, Authorization',
         'Access-Control-Max-Age': '86400',
         'Content-Type': 'application/json',
     }
@@ -38,6 +44,11 @@ def ok(data: dict, status: int = 200) -> dict:
 
 def err(message: str, status: int = 400) -> dict:
     return ok({'error': message}, status)
+
+
+def is_admin(headers: dict) -> bool:
+    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
+    return bool(pin) and pin == (os.environ.get('ADMIN_PIN') or '7777')
 
 
 def get_db():
@@ -94,7 +105,10 @@ def max_api(method: str, path: str, payload: dict = None) -> tuple:
 def handle_setup() -> dict:
     """Регистрирует webhook-подписку бота в MAX и возвращает диагностику."""
     ok_me, me = max_api('GET', '/me')
-    ok_sub, sub = max_api('POST', '/subscriptions', {'url': WEBHOOK_URL})
+    ok_sub, sub = daily.api('POST', '/subscriptions', {
+        'url': WEBHOOK_URL,
+        'update_types': ['message_created', 'bot_started', 'bot_stopped', 'message_callback'],
+    })
     print(f'[setup] me ok={ok_me} {me}')
     print(f'[setup] subscribe ok={ok_sub} {sub}')
     return ok({'me_ok': ok_me, 'me': me, 'subscribe_ok': ok_sub, 'subscribe': sub,
@@ -263,7 +277,13 @@ def handle_unlink(conn, user_id: int) -> dict:
 
 
 def handle_webhook(conn, body: dict) -> dict:
-    """Приём апдейтов от MAX. Обрабатываем команду /start CODE для привязки."""
+    """Приём апдейтов от MAX: старт бота, нажатия кнопок, /start CODE для привязки родителя."""
+    try:
+        if daily.handle_update(conn, body):
+            return ok({'ok': True})
+    except Exception as e:
+        print(f'[webhook] update error: {str(e)[:300]}')
+        conn.rollback()
     msg = body.get('message') or body.get('message_created') or {}
     # MAX update формат: {update_type, message:{ body:{text}, sender:{user_id, name}, recipient:{chat_id} }}
     if not msg and body.get('update_type') == 'message_created':
@@ -289,6 +309,7 @@ def handle_webhook(conn, body: dict) -> dict:
     low = text.lower().strip()
     if low in ('/id', 'chatid', 'chat id', 'мой id', '/chatid'):
         max_send_message(chat_id,
+                         f"Ваш ID в MAX: {(msg.get('sender') or {}).get('user_id')}\n"
                          f"Ваш chat_id: {chat_id}\n\n"
                          "Впишите это число в секрет MAX_ADMIN_CHAT_ID на сайте — "
                          "и сюда начнут приходить новые заявки на конструктор школ.")
@@ -301,10 +322,13 @@ def handle_webhook(conn, body: dict) -> dict:
             code = parts[1].strip().upper()
 
     if not code:
-        max_send_message(chat_id,
-                         "Привет! Я бот УЧИСЬПРО 🦊\n\n"
-                         "Чтобы получать отчёты о занятиях ребёнка, привяжите аккаунт: "
-                         "откройте Настройки родителя на сайте и нажмите «Подключить MAX».")
+        sender = msg.get('sender') or {}
+        if sender.get('user_id'):
+            with conn.cursor() as cur:
+                daily.welcome(cur, sender, chat_id)
+                conn.commit()
+        else:
+            max_send_message(chat_id, "Привет! Я бот УЧИСЬПРО. Нажмите /start, чтобы открыть приложение.")
         return ok({'ok': True})
 
     # Коды марафона скорочтения начинаются с «M» и хранятся у участника марафона.
@@ -435,6 +459,8 @@ def handler(event: dict, context) -> dict:
 
     # Настройка вебхука/подписки бота в MAX (одноразово)
     if action == 'setup':
+        if not is_admin(headers):
+            return err('Нет доступа', 403)
         return handle_setup()
     if action == 'check':
         return handle_check()
@@ -456,6 +482,40 @@ def handler(event: dict, context) -> dict:
         conn = get_db()
         try:
             return handle_cron(conn)
+        finally:
+            conn.close()
+
+    if action == 'daily':
+        auth = headers.get('Authorization') or headers.get('authorization') or headers.get('X-Authorization') or headers.get('x-authorization') or ''
+        if auth != 'Bearer ' + os.environ.get('CRON_SECRET', '___') and not is_admin(headers):
+            return err('forbidden', 403)
+        conn = get_db()
+        try:
+            return ok(daily.run_daily(conn, force=bool(body.get('force')) and is_admin(headers)))
+        finally:
+            conn.close()
+
+    if action in ('admin_status', 'admin_save', 'admin_test'):
+        if not is_admin(headers):
+            return err('Нет доступа', 403)
+        conn = get_db()
+        try:
+            if action == 'admin_status':
+                return ok(daily.admin_status(conn))
+            if action == 'admin_save':
+                r = daily.admin_save(conn, body)
+                return err(r['error']) if 'error' in r else ok(r)
+            uid = int(body.get('max_user_id') or 0)
+            if not uid:
+                return err('Укажите ID пользователя MAX')
+            if body.get('kind') == 'daily':
+                task = daily.daily_task_for(daily.datetime.now(daily.MSK).date())
+                sent, res = daily.send(uid, daily.daily_text(task), daily.daily_rows())
+            else:
+                with conn.cursor() as cur:
+                    sent, res = daily.welcome(cur, {'user_id': uid})
+                    conn.commit()
+            return ok({'ok': sent, 'result': res})
         finally:
             conn.close()
 

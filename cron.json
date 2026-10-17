@@ -102,6 +102,16 @@
       "schedule": "15 0 1 * *",
       "method": "GET",
       "url": "https://functions.poehali.dev/f7ac7701-c185-4bf0-a3f9-4f8843dd5bfd?action=top&limit=10"
+    },
+    {
+      "name": "max-bot-daily-task",
+      "description": "«Задание дня» подписчикам бота MAX: с 17:00 по Москве (14:00 UTC), запуск каждые 5 минут до 18:55 МСК — партиями по 200, каждому не больше раза в день. Выключатель — в админке «MAX-бот»",
+      "schedule": "*/5 14-15 * * *",
+      "method": "POST",
+      "url": "https://functions.poehali.dev/63e9b695-9607-4b29-aa00-b08e1fa1b7be?action=daily",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     }
   ]
 }

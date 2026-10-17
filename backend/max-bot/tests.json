@@ -5,7 +5,10 @@
       "method": "GET",
       "path": "/?action=ping",
       "expectedStatus": 200,
-      "expectedBody": {"ok": true, "service": "max-bot"},
+      "expectedBody": {
+        "ok": true,
+        "service": "max-bot"
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -19,7 +22,9 @@
       "method": "GET",
       "path": "/?action=link_status",
       "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -28,7 +33,9 @@
       "path": "/?action=cron",
       "body": {},
       "expectedStatus": 403,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -37,8 +44,33 @@
       "path": "/?action=webhook",
       "body": {},
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Админ-статус без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=admin_status",
+      "expectedStatus": 403
+    },
+    {
+      "name": "Задание дня без ключа закрыто",
+      "method": "POST",
+      "path": "/?action=daily",
+      "body": {},
+      "expectedStatus": 403
+    },
+    {
+      "name": "Нажатие кнопки без данных",
+      "method": "POST",
+      "path": "/?action=webhook",
+      "body": {
+        "update_type": "message_callback",
+        "callback": {}
+      },
+      "expectedStatus": 200
     }
   ]
 }
