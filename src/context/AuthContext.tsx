@@ -13,6 +13,7 @@ export interface AuthUser {
   email?: string | null;
   avatar_url?: string | null;
   created_at?: string | null;
+  grade?: string | null;
 }
 
 export interface AuthSubscription {
@@ -34,6 +35,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>;
   loginWithYandex: () => Promise<void>;
   completeYandexLogin: (code: string) => Promise<{ ok: boolean; message?: string }>;
+  loginWithMax: (initData: string, platform?: string) => Promise<{ ok: boolean; message?: string; isNew?: boolean; startParam?: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -194,6 +196,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSubscription(null);
   }, []);
 
+  const loginWithMax = useCallback(async (initData: string, platform?: string) => {
+    try {
+      const res = await fetch(`${AUTH_URL}?action=max-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ init_data: initData, platform }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) return { ok: false, message: data.error || "Не удалось войти через MAX" };
+      saveToken(data.token);
+      setToken(data.token);
+      setUser(data.user ?? null);
+      trackGoal("user_login", { via: "max" });
+      await refresh();
+      return { ok: true, isNew: !!data.is_new, startParam: data.start_param || "" };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [refresh]);
+
   const value: AuthState = {
     token,
     user,
@@ -207,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     loginWithYandex,
     completeYandexLogin,
+    loginWithMax,
     logout,
     refresh,
   };
@@ -232,6 +255,7 @@ const AUTH_FALLBACK: AuthState = {
   login: async () => ({ ok: false, message: "Контекст ещё не готов" }),
   loginWithYandex: async () => {},
   completeYandexLogin: async () => ({ ok: false, message: "Контекст ещё не готов" }),
+  loginWithMax: async () => ({ ok: false, message: "Контекст ещё не готов" }),
   logout: async () => {},
   refresh: async () => {},
 };

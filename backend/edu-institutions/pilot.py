@@ -94,6 +94,28 @@ def spam_rejects_24h(cur) -> int:
     return cur.fetchone()[0]
 
 
+def pending_by_city(cur, cities: list) -> dict:
+    """Очередь первой волны по всем городам одним запросом (раньше — запрос на город, упирались в лимит базы)."""
+    if not cities:
+        return {}
+    pairs = ','.join(cur.mogrify('(%s,%s)', (c['name'], c['campaign_code'])).decode() for c in cities)
+    cur.execute(
+        f"WITH c(name, camp) AS (VALUES {pairs}), "
+        f"f AS (SELECT institution_id, campaign_code, "
+        f"count(*) FILTER (WHERE status='sent') AS sent, "
+        f"count(*) FILTER (WHERE status='failed' AND coalesce(error,'') NOT ILIKE '%%spam%%' AND coalesce(error,'') NOT LIKE '%%5.7.1%%') AS fails "
+        f"FROM {SCHEMA}.edu_campaign_sends WHERE is_test=FALSE GROUP BY 1,2), "
+        f"sp AS (SELECT institution_id, count(*) AS spam FROM {SCHEMA}.edu_campaign_sends "
+        f"WHERE is_test=FALSE AND status='failed' AND (error ILIKE '%%spam%%' OR error LIKE '%%5.7.1%%') GROUP BY 1) "
+        f"SELECT c.name, count(e.id) FROM c JOIN {TABLE} e ON e.city=c.name "
+        f"LEFT JOIN f ON f.institution_id=e.id AND f.campaign_code=c.camp "
+        f"LEFT JOIN sp ON sp.institution_id=e.id "
+        f"WHERE e.email<>'' AND e.unsubscribed_at IS NULL AND e.status NOT IN ('declined','partner') "
+        f"AND coalesce(f.sent,0)=0 AND coalesce(f.fails,0) < {outreach.MAX_ATTEMPTS} "
+        f"AND coalesce(sp.spam,0) < {outreach.SPAM_PER_ADDRESS_MAX} GROUP BY c.name")
+    return dict(cur.fetchall())
+
+
 def overview(cur) -> dict:
     cities = all_cities(cur)
     cur.execute(f"SELECT city, count(*), count(*) FILTER (WHERE email<>''), "
@@ -106,10 +128,10 @@ def overview(cur) -> dict:
         sends.setdefault(camp, {})[st] = n
     cur.execute(f"SELECT code, used_count FROM {SCHEMA}.access_promo_codes")
     used = {c: n for c, n in cur.fetchall()}
+    queue = pending_by_city(cur, cities)
     out = []
     for c in cities:
-        cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {audience_where(c)}')
-        pending = cur.fetchone()[0]
+        pending = queue.get(c['name'], 0)
         t, e, u = base.get(c['name'], (0, 0, 0))
         s = sends.get(c['campaign_code'], {})
         out.append({**c, 'total': t, 'with_email': e, 'unsubscribed': u, 'pending': pending,
@@ -243,13 +265,7 @@ def batch_interval_min(limit: int) -> int:
 
 
 def first_wave_pending(cur) -> int:
-    total = 0
-    for city in all_cities(cur):
-        if not city['active']:
-            continue
-        cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {audience_where(city)}')
-        total += cur.fetchone()[0]
-    return total
+    return sum(pending_by_city(cur, [c for c in all_cities(cur) if c['active']]).values())
 
 
 def wave2_pending(cur) -> int:

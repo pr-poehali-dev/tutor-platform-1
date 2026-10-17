@@ -4,7 +4,7 @@ Business: Модуль «Домашка» — школьник фотограф�
 Фото грузится в S3, разбор кэшируется по хэшу фото (чтобы не генерировать заново), история — в БД.
 Доступ только авторизованным (X-Auth-Token).
 Действия:
-  POST /?action=check   body: {image_base64, mode, subject, grade}  -> {result, is_correct, image_url, from_cache, check_id}
+  POST /?action=check   body: {image_base64, mode: solve|review|explain, subject, grade}  -> {result, is_correct, image_url, from_cache, check_id}
   GET  /?action=history                                            -> {items: [...]}
 Args: event с httpMethod, headers (X-Auth-Token), body; context (object с request_id)
 Returns: HTTP-ответ с JSON
@@ -148,6 +148,16 @@ def build_prompt(mode: str, subject: str, grade: str, image_count: int = 1) -> s
             "4) В самом конце добавь отдельной строкой ровно один из вердиктов: "
             "«ВЕРДИКТ: ВЕРНО» или «ВЕРДИКТ: ЕСТЬ ОШИБКИ»."
         )
+    if mode == 'explain':
+        return common + (
+            "\n\nРЕЖИМ «ОБЪЯСНИ ХОД РЕШЕНИЯ». Ученик хочет понять, как решать, а не получить готовый ответ. "
+            "Сделай так:\n"
+            "1) Объясни, к какой теме относится задание и какое правило или формула здесь нужны.\n"
+            "2) Опиши план решения по шагам: что сделать первым, что вторым и зачем. "
+            "Покажи первый шаг целиком на примере этого задания.\n"
+            "3) НЕ доводи вычисления до конца и НЕ пиши итоговый ответ — оставь последние шаги ученику.\n"
+            "4) В конце дай одну подсказку для самопроверки: как ученик поймёт, что решил верно."
+        )
     return common + (
         "\n\nРЕЖИМ РЕШЕНИЯ ЗАДАЧИ. Реши задание с фото ПОШАГОВО: "
         "объясни каждый шаг и зачем он, затем дай итоговый ответ. "
@@ -241,7 +251,7 @@ MAX_IMAGES = 5
 
 def handle_check(token: str, body: dict) -> dict:
     mode = body.get('mode', 'solve')
-    if mode not in ('solve', 'review'):
+    if mode not in ('solve', 'review', 'explain'):
         mode = 'solve'
     subject = (body.get('subject') or '')[:40]
     grade = (body.get('grade') or '')[:20]

@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Без входа — 401", "method": "GET", "path": "/?action=summary", "expectedStatus": 401},
+    {"name": "Ответ без входа — 401", "method": "POST", "path": "/?action=answer", "body": {"task_id": "x"}, "expectedStatus": 401}
+  ]
+}

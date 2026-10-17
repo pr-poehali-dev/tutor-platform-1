@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { isPromoActive, timeLeft, PROMO_CODE } from "./dobroConfig";
 
@@ -10,6 +10,7 @@ import { isPromoActive, timeLeft, PROMO_CODE } from "./dobroConfig";
 const HIDE_KEY = "uchispro_dobro_top_hidden_until";
 
 export default function DobroTopBar() {
+  const { pathname } = useLocation();
   const [active, setActive] = useState(false);
   const [tick, setTick] = useState(0);
   const [hidden, setHidden] = useState(false);
@@ -24,7 +25,7 @@ export default function DobroTopBar() {
     return () => clearInterval(t);
   }, []);
 
-  if (!active || hidden) return null;
+  if (!active || hidden || pathname === "/max") return null;
 
   const tl = timeLeft();
   if (tl.expired) return null;

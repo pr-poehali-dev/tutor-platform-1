@@ -5,6 +5,7 @@ Disallow: /vc/
 Disallow: /api/
 Disallow: /cabinet
 Disallow: /checkout
+Disallow: /max
 Disallow: /course-checkout
 Disallow: /admin
 Disallow: /ads/

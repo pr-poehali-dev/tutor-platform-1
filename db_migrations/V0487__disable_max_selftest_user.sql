@@ -1,0 +1,3 @@
+-- Отключаем тестового пользователя MAX, созданного при проверке входа: сессии отозваны, привязка к MAX снята.
+UPDATE t_p78828167_tutor_platform_1.auth_sessions SET revoked_at = now() WHERE user_id IN (SELECT id FROM t_p78828167_tutor_platform_1.auth_users WHERE max_user_id = 999000111);
+UPDATE t_p78828167_tutor_platform_1.auth_users SET max_user_id = NULL, name = 'тест MAX (отключён)' WHERE max_user_id = 999000111;

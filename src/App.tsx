@@ -156,6 +156,7 @@ const Business2026 = lazy(() => import("./pages/Business2026"));
 const RatingOnlineSchools = lazy(() => import("./pages/RatingOnlineSchools"));
 const RatingKidsSchools = lazy(() => import("./pages/RatingKidsSchools"));
 const SchoolsHome = lazy(() => import("./pages/schools/SchoolsHome"));
+const MaxApp = lazy(() => import("./pages/MaxApp"));
 const SchoolsCity = lazy(() => import("./pages/schools/SchoolsCity"));
 const SchoolsRating = lazy(() => import("./pages/schools/SchoolsRating"));
 const SchoolsForSchools = lazy(() => import("./pages/schools/SchoolsForSchools"));
@@ -256,6 +257,7 @@ const App = () => (
                     <Route path="/business-2026" element={<Business2026 />} />
                     <Route path="/reyting-onlayn-shkol" element={<RatingOnlineSchools />} />
                     <Route path="/reyting-onlayn-shkol-dlya-shkolnikov" element={<RatingKidsSchools />} />
+                    <Route path="/max" element={<MaxApp />} />
                     <Route path="/shkoly" element={<SchoolsHome />} />
                     <Route path="/shkoly/reyting" element={<SchoolsRating />} />
                     <Route path="/shkoly/dlya-shkol" element={<SchoolsForSchools />} />

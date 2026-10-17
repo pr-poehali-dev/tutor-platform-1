@@ -10,6 +10,8 @@ import os
 import re
 import secrets
 import hashlib
+import hmac
+import time
 import base64
 import urllib.request
 import urllib.parse
@@ -348,7 +350,7 @@ def handle_me(token: str) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT s.user_id, s.expires_at, s.revoked_at, u.phone, u.name, u.email, u.created_at, u.avatar_url "
+                "SELECT s.user_id, s.expires_at, s.revoked_at, u.phone, u.name, u.email, u.created_at, u.avatar_url, u.grade "
                 "FROM auth_sessions s JOIN auth_users u ON u.id = s.user_id "
                 "WHERE s.token = %s",
                 (token,)
@@ -356,7 +358,7 @@ def handle_me(token: str) -> dict:
             row = cur.fetchone()
             if not row:
                 return err('Сессия не найдена', 401)
-            user_id, expires_at, revoked_at, phone, name, email, created_at, avatar_url = row
+            user_id, expires_at, revoked_at, phone, name, email, created_at, avatar_url, grade = row
             if revoked_at is not None or expires_at < datetime.now(timezone.utc):
                 return err('Сессия истекла', 401)
 
@@ -382,6 +384,7 @@ def handle_me(token: str) -> dict:
                     'name': name,
                     'email': email,
                     'avatar_url': avatar_url,
+                    'grade': grade,
                     'created_at': created_at.isoformat() if created_at else None
                 },
                 'subscription': subscription
@@ -552,6 +555,103 @@ def handle_yandex_callback(body: dict, user_agent: str, ip: str) -> dict:
         conn.close()
 
 
+MAX_INITDATA_TTL_SEC = 24 * 3600
+
+
+def verify_max_init_data(init_data: str, bot_token: str):
+    """Проверка подписи данных запуска мини-приложения MAX (dev.max.ru/docs/webapps/validation).
+    secret_key = HMAC_SHA256(key="WebAppData", msg=BOT_TOKEN); hash = hex(HMAC_SHA256(secret_key, launch_params)),
+    launch_params — пары key=value без hash, значения URL-декодированы, ключи по алфавиту, разделитель \n."""
+    if not init_data or not bot_token or len(init_data) > 8192:
+        return None
+    pairs = [p.split('=', 1) for p in init_data.split('&') if p]
+    if any(len(p) != 2 for p in pairs):
+        return None
+    keys = [k for k, _ in pairs]
+    if keys.count('hash') != 1 or len(keys) != len(set(keys)):
+        return None
+    original = next(v for k, v in pairs if k == 'hash')
+    decoded = sorted(((k, urllib.parse.unquote(v)) for k, v in pairs if k != 'hash'), key=lambda x: x[0])
+    launch_params = '\n'.join(f'{k}={v}' for k, v in decoded)
+    secret_key = hmac.new(b'WebAppData', bot_token.encode(), hashlib.sha256).digest()
+    calc = hmac.new(secret_key, launch_params.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(calc, original.lower()):
+        return None
+    data = dict(decoded)
+    try:
+        auth_date = int(data.get('auth_date') or 0)
+    except ValueError:
+        return None
+    if not auth_date or time.time() - auth_date > MAX_INITDATA_TTL_SEC:
+        return None
+    try:
+        user = json.loads(data.get('user') or '{}')
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(user, dict) or not user.get('id'):
+        return None
+    return {'user': user, 'start_param': data.get('start_param') or '', 'auth_date': auth_date}
+
+
+def handle_max_login(body: dict, user_agent: str, ip: str) -> dict:
+    """Вход из мини-приложения MAX: проверяем подпись данных запуска, находим или создаём аккаунт, выдаём сессию."""
+    bot_token = os.environ.get('MAX_BOT_TOKEN', '').strip()
+    if not bot_token:
+        return err('Вход через MAX ещё не настроен', 503)
+    v = verify_max_init_data(str(body.get('init_data') or ''), bot_token)
+    if not v:
+        return err('Не удалось подтвердить вход через MAX. Закройте и откройте приложение заново.', 401)
+    u = v['user']
+    max_id = int(u['id'])
+    name = ' '.join(x for x in [str(u.get('first_name') or '').strip(), str(u.get('last_name') or '').strip()] if x)[:100] or None
+    avatar = str(u.get('photo_url') or '')[:500] or None
+    platform = str(body.get('platform') or '')[:20]
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, name, email, grade FROM auth_users WHERE max_user_id = %s LIMIT 1", (max_id,))
+            row = cur.fetchone()
+            is_new = row is None
+            if row:
+                user_id, cur_name, email, grade = row
+                cur.execute("UPDATE auth_users SET last_login_at = NOW(), "
+                            "avatar_url = COALESCE(avatar_url, %s), name = COALESCE(name, %s) WHERE id = %s",
+                            (avatar, name, user_id))
+                name = cur_name or name
+            else:
+                cur.execute("INSERT INTO auth_users (email, name, max_user_id, avatar_url, phone, last_login_at) "
+                            "VALUES (NULL, %s, %s, %s, '', NOW()) RETURNING id", (name, max_id, avatar))
+                user_id = cur.fetchone()[0]
+                email, grade = None, None
+            token = create_session(cur, user_id, ('MAX ' + platform + ' ' + user_agent)[:500], ip)
+            cur.execute("INSERT INTO max_app_opens (user_id, platform, start_param) VALUES (%s, %s, %s)",
+                        (user_id, platform or None, v['start_param'][:200] or None))
+            conn.commit()
+            return ok({'token': token, 'is_new': is_new, 'start_param': v['start_param'],
+                       'user': {'id': user_id, 'name': name, 'email': email, 'grade': grade, 'avatar_url': avatar}})
+    finally:
+        conn.close()
+
+
+def handle_set_grade(token: str, body: dict) -> dict:
+    grade = str(body.get('grade') or '').strip()
+    if grade not in [str(i) for i in range(1, 12)]:
+        return err('Класс — число от 1 до 11')
+    if not token:
+        return err('Не авторизован', 401)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE auth_users u SET grade = %s FROM auth_sessions s WHERE s.token = %s "
+                        "AND s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > NOW() RETURNING u.id", (grade, token))
+            if not cur.fetchone():
+                return err('Сессия истекла', 401)
+            conn.commit()
+            return ok({'grade': grade})
+    finally:
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """Авторизация по email и паролю: регистрация, вход, профиль, выход"""
     method = event.get('httpMethod', 'GET')
@@ -581,6 +681,10 @@ def handler(event: dict, context) -> dict:
             return handle_logout(token)
         if action == 'me' and method == 'GET':
             return handle_me(token)
+        if action == 'max-login' and method == 'POST':
+            return handle_max_login(body, user_agent, ip)
+        if action == 'set-grade' and method == 'POST':
+            return handle_set_grade(token, body)
         if action == 'yandex-url' and method == 'GET':
             return handle_yandex_url()
         if action == 'yandex-callback' and method == 'POST':
