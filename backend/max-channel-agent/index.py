@@ -9,6 +9,9 @@ GET      /?action=tick                                                     -> л
 POST     /?action=channel_webhook                                          -> автодетект chat_id канала
 GET      /?action=status          header Authorization: Bearer CRON_SECRET -> диагностика
 GET      /?action=ping                                                     -> health-check
+POST     /?action=post_article_now  header X-Admin-Pin                     -> опубликовать статью сейчас (в окне 9–21 МСК)
+
+Статьи Ленты: одна в день, пост = заголовок + 2–3 предложения + ссылка, под постом кнопка «Попробовать бесплатно» (мини-приложение).
 """
 import json
 import os
@@ -16,14 +19,21 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import date, datetime, timedelta, timezone
+import ssl
 import psycopg2
+
+from certs import RUSSIAN_TRUSTED_CA
 
 # Окно публикаций по Москве (UTC+3): постим с 9:00 до 21:00 МСК
 MSK = timezone(timedelta(hours=3))
 POST_HOUR_FROM = 9
 POST_HOUR_TO = 21
 
-MAX_API_BASE = "https://botapi.max.ru"
+# Домен API по документации MAX (dev.max.ru/docs-api): platform-api2.max.ru, сертификат Минцифры — в certs.py
+MAX_API_BASE = "https://platform-api2.max.ru"
+# Кнопка под постом ведёт в мини-приложение через бота (диплинк max.ru/<бот>?startapp=…, dev.max.ru/docs/webapps/bridge)
+MINIAPP_DEEPLINK = "https://max.ru/id631205241205_bot?startapp=channel"
+ARTICLES_PER_DAY = 1
 POLZA_URL = "https://api.polza.ai/api/v1/chat/completions"
 POLZA_MODEL = "openai/gpt-4o-mini"
 SITE_URL = "https://учисьпро.рф"
@@ -158,32 +168,59 @@ def make_post_image(scene: str, ref: str) -> str:
 
 # ---------- MAX Bot API ----------
 
-def max_send_to_channel(chat_id: int, text: str, image_url: str = '') -> tuple:
-    """Публикация поста в канал MAX (с картинкой, если задана). Возвращает (ok, error)."""
+_SSL = None
+
+
+def ssl_ctx():
+    global _SSL
+    if _SSL is None:
+        _SSL = ssl.create_default_context()
+        _SSL.load_verify_locations(cadata=RUSSIAN_TRUSTED_CA)
+    return _SSL
+
+
+def try_button() -> list:
+    return [{'type': 'inline_keyboard', 'payload': {'buttons': [[
+        {'type': 'link', 'text': 'Попробовать бесплатно', 'url': MINIAPP_DEEPLINK}]]}}]
+
+
+def max_send_to_channel(chat_id: int, text: str, image_url: str = '', with_button: bool = False, fmt: str = '') -> tuple:
+    """Публикация поста в канал MAX (с картинкой и кнопкой, если заданы). Возвращает (ok, error)."""
     token = os.environ.get('MAX_BOT_TOKEN', '')
     if not token:
         return False, 'MAX_BOT_TOKEN not set'
     url = f"{MAX_API_BASE}/messages?chat_id={chat_id}"
     body_obj = {'text': sanitize_message(text)}
+    attachments = []
     if image_url:
-        body_obj['attachments'] = [{'type': 'image', 'payload': {'url': image_url}}]
+        attachments.append({'type': 'image', 'payload': {'url': image_url}})
+    if with_button:
+        attachments += try_button()
+    if attachments:
+        body_obj['attachments'] = attachments
+    if fmt:
+        body_obj['format'] = fmt
     payload = json.dumps(body_obj).encode('utf-8')
     req = urllib.request.Request(url, data=payload, method='POST',
                                  headers={'Content-Type': 'application/json',
                                           'Authorization': token})
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=20, context=ssl_ctx()) as resp:
             resp.read()
         return True, None
     except urllib.error.HTTPError as e:
         err_body = e.read().decode('utf-8', 'ignore')
-        # если картинка не принялась — повторяем без неё, чтобы пост точно вышел
+        print(f'[channel] send error {e.code}: {err_body[:300]}')
+        # пост должен выйти: сначала без картинки, затем без кнопки и разметки
         if image_url:
-            return max_send_to_channel(chat_id, text, '')
+            return max_send_to_channel(chat_id, text, '', with_button, fmt)
+        if with_button or fmt:
+            ok_, e2 = max_send_to_channel(chat_id, text.replace('**', ''), '', False, '')
+            return ok_, (None if ok_ else e2)
         return False, f'HTTP {e.code}: {err_body[:300]}'
     except Exception as e:
         if image_url:
-            return max_send_to_channel(chat_id, text, '')
+            return max_send_to_channel(chat_id, text, '', with_button, fmt)
         return False, str(e)[:300]
 
 
@@ -198,7 +235,7 @@ def max_send_to_user(user_id: int, text: str) -> tuple:
                                  headers={'Content-Type': 'application/json',
                                           'Authorization': token})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15, context=ssl_ctx()) as resp:
             resp.read()
         return True, None
     except urllib.error.HTTPError as e:
@@ -255,6 +292,30 @@ SMM_SYSTEM = (
     "1–3 коротких абзаца, добавляй 1–3 уместных эмодзи для настроения. Без хэштегов. "
     "Не выдумывай фактов сверх данных. Пиши только на русском языке."
 )
+
+
+def two_three_sentences(text: str) -> str:
+    """Первые 2–3 предложения описания (не длиннее ~400 знаков)."""
+    import re
+    parts = [p.strip() for p in re.split(r'(?<=[.!?…])\s+', (text or '').strip()) if p.strip()]
+    out = ''
+    for i, p in enumerate(parts):
+        if i >= 3 or (i >= 2 and len(out) + len(p) > 400):
+            break
+        out = (out + ' ' + p).strip()
+    return out
+
+
+def make_daily_article_post(title: str, summary: str, content: str, category: str, url: str) -> str:
+    """Пост по ТЗ: заголовок, 2–3 предложения и ссылка. Текст — из самой статьи, без переписывания ИИ."""
+    import re
+    lead = two_three_sentences(summary)
+    if len(lead) < 80:
+        plain = re.sub(r'[#>*_`\[\]]|\(/[^)]*\)', '', content or '')
+        lead = two_three_sentences((lead + ' ' + plain).strip())
+    emoji = CATEGORY_EMOJI.get(category, '📰')
+    safe_title = title.replace('*', '')
+    return f"{emoji} **{safe_title}**\n\n{lead}\n\nЧитать статью: {url}"
 
 
 def make_article_post(title: str, summary: str, category: str, url: str) -> str:
@@ -641,30 +702,10 @@ def handle_cron(conn) -> dict:
     posted_articles = 0
     skipped = 0
 
-    # 1) Анонсы новых статей Ленты
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT a.id, a.slug, a.title, a.summary, a.category "
-            "FROM " + t('feed_articles') + " a "
-            "WHERE a.status='published' AND a.published_at IS NOT NULL "
-            "AND a.published_at > NOW() - INTERVAL '7 days' AND a.published_at <= NOW() "
-            "AND NOT EXISTS (SELECT 1 FROM " + t('max_channel_posts') + " p "
-            "  WHERE p.kind='feed_article' AND p.ref_key = a.slug) "
-            "ORDER BY a.published_at ASC LIMIT %s",
-            (MAX_ARTICLES_PER_RUN,)
-        )
-        rows = cur.fetchall()
-
-    for aid, slug, title, summary, category in rows:
-        url = f"{SITE_URL}/feed/{slug}"
-        text = make_article_post(title, summary, category, url)
-        img = make_post_image(f"illustration about: {title}", f"article-{slug}")
-        success, error = max_send_to_channel(chat_id, text, img)
-        log_post(conn, 'feed_article', slug, aid, chat_id, text, success, error)
-        if success:
-            posted_articles += 1
-        else:
-            skipped += 1
+    # 1) Статья дня: не больше ARTICLES_PER_DAY в сутки (по Москве)
+    r = post_article_of_day(conn, chat_id)
+    posted_articles = 1 if r.get('posted') else 0
+    skipped = 1 if r.get('error') else 0
 
     # 2) Еженедельный дайджест (по понедельникам, один раз в неделю)
     digest_posted = False
@@ -714,6 +755,41 @@ def handle_cron(conn) -> dict:
                'contest_started': contest_started,
                'contest_reminded': contest_reminded,
                'contest_finished': contest_finished})
+
+
+def articles_posted_today(conn) -> int:
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM " + t('max_channel_posts') + " WHERE kind='feed_article' AND ok "
+                    "AND (created_at AT TIME ZONE 'Europe/Moscow')::date = (NOW() AT TIME ZONE 'Europe/Moscow')::date")
+        return cur.fetchone()[0]
+
+
+def post_article_of_day(conn, chat_id: int, force: bool = False) -> dict:
+    """Публикует одну новую статью Ленты: свежую, ещё не выходившую в канале. force — в обход дневного лимита (кнопка в админке)."""
+    if not force and articles_posted_today(conn) >= ARTICLES_PER_DAY:
+        return {'posted': False, 'reason': 'daily_limit'}
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT a.id, a.slug, a.title, a.summary, a.content, a.category, a.cover_url "
+            "FROM " + t('feed_articles') + " a "
+            "WHERE a.status='published' AND a.published_at IS NOT NULL "
+            "AND a.published_at > NOW() - INTERVAL '14 days' AND a.published_at <= NOW() "
+            "AND NOT EXISTS (SELECT 1 FROM " + t('max_channel_posts') + " p "
+            "  WHERE p.kind='feed_article' AND p.ref_key = a.slug AND p.ok) "
+            "ORDER BY a.is_pinned DESC NULLS LAST, a.published_at DESC LIMIT 1")
+        row = cur.fetchone()
+    if not row:
+        return {'posted': False, 'reason': 'no_new_articles'}
+    aid, slug, title, summary, content, category, cover = row
+    url = f"{SITE_URL}/feed/{slug}"
+    text = make_daily_article_post(title, summary, content, category, url)
+    success, error = max_send_to_channel(chat_id, text, cover or '', with_button=True, fmt='markdown')
+    with conn.cursor() as cur:
+        # неудачную попытку перезаписываем, чтобы статья могла выйти при следующем запуске
+        cur.execute("DELETE FROM " + t('max_channel_posts') + " WHERE kind='feed_article' AND ref_key=%s AND NOT ok", (slug,))
+        conn.commit()
+    log_post(conn, 'feed_article', slug, aid, chat_id, text, success, error)
+    return {'posted': success, 'slug': slug, 'title': title, 'error': error}
 
 
 def handle_tick(conn) -> dict:
@@ -873,10 +949,15 @@ def handle_dashboard(conn) -> dict:
         posted = cur.fetchone()[0]
         cur.execute("SELECT count(*) FROM " + t('max_welcomed_users'))
         welcomed = cur.fetchone()[0]
-        cur.execute("SELECT kind, ok, created_at, ref_key FROM " + t('max_channel_posts') +
-                    " ORDER BY id DESC LIMIT 8")
-        recent = [{'kind': r[0], 'ok': r[1], 'at': r[2].isoformat() if r[2] else None, 'ref': r[3]}
-                  for r in cur.fetchall()]
+        cur.execute("SELECT p.kind, p.ok, p.created_at, p.ref_key, a.title, left(coalesce(p.error,''), 200) "
+                    "FROM " + t('max_channel_posts') + " p LEFT JOIN " + t('feed_articles') + " a ON a.id = p.article_id "
+                    "ORDER BY p.id DESC LIMIT 30")
+        recent = [{'kind': r[0], 'ok': r[1], 'at': r[2].isoformat() if r[2] else None, 'ref': r[3],
+                   'title': r[4], 'error': r[5] or None} for r in cur.fetchall()]
+        cur.execute("SELECT count(*) FROM " + t('feed_articles') + " a WHERE a.status='published' "
+                    "AND a.published_at > NOW() - INTERVAL '14 days' AND a.published_at <= NOW() "
+                    "AND NOT EXISTS (SELECT 1 FROM " + t('max_channel_posts') + " p WHERE p.kind='feed_article' AND p.ref_key=a.slug AND p.ok)")
+        queue = cur.fetchone()[0]
         # активный конкурс
         cur.execute("SELECT id, week_ref, prize_label, started_at FROM " + t('max_contests') +
                     " WHERE status='active' ORDER BY id DESC LIMIT 1")
@@ -906,6 +987,9 @@ def handle_dashboard(conn) -> dict:
         'welcomed_users': welcomed,
         'has_bot_token': bool(os.environ.get('MAX_BOT_TOKEN')),
         'post_window': f'{POST_HOUR_FROM}:00–{POST_HOUR_TO}:00 МСК',
+        'articles_per_day': ARTICLES_PER_DAY,
+        'posted_today': articles_posted_today(conn),
+        'articles_queue': queue,
         'recent': recent,
         'active_contest': active,
         'contest_history': history,
@@ -936,6 +1020,12 @@ def handle_admin_action(conn, action: str) -> dict:
         return seed_second_posts(conn, chat_id)
     if action == 'post_referral':
         return post_referral(conn, chat_id)
+    if action == 'post_article_now':
+        now_msk = datetime.now(MSK)
+        if not (POST_HOUR_FROM <= now_msk.hour < POST_HOUR_TO):
+            return ok({'ok': False, 'reason': 'quiet_hours'})
+        r = post_article_of_day(conn, chat_id, force=True)
+        return ok({'ok': r.get('posted', False), **r})
     return err('Неизвестное действие', 404)
 
 
@@ -983,7 +1073,7 @@ def handler(event: dict, context) -> dict:
         finally:
             conn.close()
 
-    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts', 'seed_posts_2', 'post_referral'):
+    if action in ('dashboard', 'toggle', 'start_now', 'finish_now', 'seed_posts', 'seed_posts_2', 'post_referral', 'post_article_now'):
         if not is_admin(headers):
             return err('forbidden', 403)
         conn = get_db()

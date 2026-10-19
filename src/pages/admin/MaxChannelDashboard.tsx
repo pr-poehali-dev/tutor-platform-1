@@ -33,6 +33,8 @@ interface RecentPost {
   ok: boolean;
   at: string | null;
   ref: string | null;
+  title?: string | null;
+  error?: string | null;
 }
 interface Dashboard {
   channel_linked: boolean;
@@ -43,6 +45,9 @@ interface Dashboard {
   welcomed_users: number;
   has_bot_token: boolean;
   post_window: string;
+  articles_per_day?: number;
+  posted_today?: number;
+  articles_queue?: number;
   recent: RecentPost[];
   active_contest: ActiveContest | null;
   contest_history: HistoryItem[];
@@ -122,14 +127,28 @@ export default function MaxChannelDashboard() {
     }
   };
 
+  const [note, setNote] = useState("");
   const act = async (action: string) => {
     setBusy(action);
+    setNote("");
     try {
-      await fetch(`${AGENT_URL}?action=${action}`, {
+      const r = await fetch(`${AGENT_URL}?action=${action}`, {
         method: "POST",
         headers: { "X-Admin-Pin": pin, "Content-Type": "application/json" },
         body: "{}",
       });
+      if (action === "post_article_now") {
+        const d = await r.json().catch(() => ({}));
+        setNote(
+          d.posted
+            ? `Опубликовано: «${d.title}»`
+            : d.reason === "no_new_articles"
+              ? "Новых статей за 14 дней нет — всё уже опубликовано"
+              : d.reason === "quiet_hours"
+                ? "Сейчас тихие часы: публикуем с 9:00 до 21:00 по Москве"
+                : `Не удалось опубликовать: ${d.error || d.reason || "ошибка"}`,
+        );
+      }
       await load(pin);
     } finally {
       setBusy("");
@@ -356,19 +375,53 @@ export default function MaxChannelDashboard() {
                 )}
               </Card>
 
-              {/* Последние посты */}
-              <Card className="border border-white/10 bg-white/[0.03] p-5">
+              {/* Статья дня */}
+              <Card className="border border-sky-400/25 bg-sky-500/[0.06] p-5 md:col-span-2">
+                <h2 className="font-montserrat font-bold text-white mb-2 flex items-center gap-2">
+                  <Icon name="Newspaper" size={16} className="text-sky-300" />
+                  Статья дня из Ленты
+                </h2>
+                <p className="text-sm text-white/65">
+                  Одна новая статья в день, с 9:00 до 21:00 по Москве: заголовок, 2–3 предложения и ссылка. Под постом — кнопка
+                  «Попробовать бесплатно», она открывает мини-приложение УЧИСЬПРО в MAX.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                  <span>
+                    Сегодня: <b>{data.posted_today ?? 0}</b> из {data.articles_per_day ?? 1}
+                  </span>
+                  <span>
+                    Ждут публикации: <b>{data.articles_queue ?? 0}</b>
+                  </span>
+                  <Button
+                    onClick={() => act("post_article_now")}
+                    disabled={busy === "post_article_now" || !data.enabled}
+                    className="ml-auto bg-sky-500 text-white hover:bg-sky-600"
+                  >
+                    {busy === "post_article_now" ? "Публикую…" : "Опубликовать статью сейчас"}
+                  </Button>
+                </div>
+                {note && <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-sm">{note}</p>}
+              </Card>
+
+              {/* Журнал публикаций */}
+              <Card className="border border-white/10 bg-white/[0.03] p-5 md:col-span-2">
                 <h2 className="font-montserrat font-bold text-white mb-3 flex items-center gap-2">
-                  <Icon name="Newspaper" size={16} className="text-white/60" />
-                  Последние публикации
+                  <Icon name="ScrollText" size={16} className="text-white/60" />
+                  Журнал публикаций
                 </h2>
                 {data.recent.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="divide-y divide-white/5">
                     {data.recent.map((p, i) => (
-                      <div key={`${p.kind}-${i}`} className="flex items-center gap-2 text-sm">
-                        <Icon name={p.ok ? "CheckCircle2" : "XCircle"} size={14} className={p.ok ? "text-emerald-400" : "text-rose-400"} />
-                        <span className="flex-1 text-white/80">{KIND_LABELS[p.kind] || p.kind}</span>
-                        <span className="text-white/35 text-xs">{fmtDate(p.at)}</span>
+                      <div key={`${p.kind}-${i}`} className="flex items-start gap-2 py-2 text-sm">
+                        <Icon name={p.ok ? "CheckCircle2" : "XCircle"} size={14} className={`mt-0.5 shrink-0 ${p.ok ? "text-emerald-400" : "text-rose-400"}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-white/80">
+                            {KIND_LABELS[p.kind] || p.kind}
+                            {p.title && <span className="text-white/55"> · {p.title}</span>}
+                          </p>
+                          {!p.ok && p.error && <p className="mt-0.5 truncate text-xs text-rose-300/80">{p.error}</p>}
+                        </div>
+                        <span className="shrink-0 text-xs text-white/35">{fmtDate(p.at)}</span>
                       </div>
                     ))}
                   </div>
