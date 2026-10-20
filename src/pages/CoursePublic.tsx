@@ -172,6 +172,22 @@ export default function CoursePublic() {
           {copy?.lead ?? course.description}
         </p>
 
+        {course.id === 98 && (
+          <Link
+            to="/test-rukovoditelya"
+            className="flex items-center gap-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 hover:bg-emerald-500/15 transition-colors p-4 md:p-5 mb-6 max-w-3xl"
+          >
+            <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+              <Icon name="ClipboardCheck" size={22} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold text-white">Бесплатный тест: какой вы руководитель?</span>
+              <span className="block text-white/60 text-sm">5 минут, 20 вопросов — профиль по пяти компетенциям и модули, с которых стоит начать</span>
+            </span>
+            <Icon name="ArrowRight" size={20} className="text-emerald-300 flex-shrink-0" />
+          </Link>
+        )}
+
         {/* Доход в профессии — то, ради чего человек и открывает страницу.
             Там, где заработок непредсказуем, честно пишем об этом. */}
         {copy?.income && (

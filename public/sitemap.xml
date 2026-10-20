@@ -367,6 +367,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://учисьпро.рф/test-rukovoditelya</loc>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://учисьпро.рф/trenazher-mcko</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>monthly</changefreq>
@@ -4345,6 +4351,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://учисьпро.рф/feed/kurs-rukovoditel-novoy-formacii-mini-mba-s-ii</loc>
+    <lastmod>2026-10-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://учисьпро.рф/feed/sber2b-kak-sber-pomogaet-molodym-kompaniyam-opyt-mat-labs</loc>
     <lastmod>2026-10-20</lastmod>
     <changefreq>monthly</changefreq>
@@ -4423,13 +4435,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kak-bystro-vyuchit-angliyskie-slova-i-nepravilnye-glagoly</loc>
+    <loc>https://учисьпро.рф/feed/kak-reshat-zadachi-po-fizike-algoritm-i-formuly-7-9-klass</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://учисьпро.рф/feed/kak-reshat-zadachi-po-fizike-algoritm-i-formuly-7-9-klass</loc>
+    <loc>https://учисьпро.рф/feed/kak-bystro-vyuchit-angliyskie-slova-i-nepravilnye-glagoly</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

@@ -184,6 +184,7 @@ const SubjectTutor = lazy(() => import("./pages/SubjectTutor"));
 const Silent = lazy(() => import("./pages/Silent"));
 const ReadingMarathon = lazy(() => import("./pages/ReadingMarathon"));
 const ReadingSpeedTest = lazy(() => import("./pages/ReadingSpeedTest"));
+const LeaderTest = lazy(() => import("./pages/LeaderTest"));
 const McKoTrainer = lazy(() => import("./pages/McKoTrainer"));
 const SilentLesson = lazy(() => import("./pages/SilentLesson"));
 const SignDictionary = lazy(() => import("./pages/SignDictionary"));
@@ -328,6 +329,7 @@ const App = () => (
                     <Route path="/psychology" element={<Psychology />} />
                     <Route path="/silent" element={<Silent />} />
                     <Route path="/test-skorosti-chteniya" element={<ReadingSpeedTest />} />
+                    <Route path="/test-rukovoditelya" element={<LeaderTest />} />
                     <Route path="/trenazher-mcko" element={<McKoTrainer />} />
                     <Route path="/marafon-skorochtenie-pedagogam" element={<ReadingMarathon track="teacher" />} />
                     <Route path="/marafon-skorochtenie-pedagogam/kabinet" element={<ReadingMarathon track="teacher" cabinet />} />
