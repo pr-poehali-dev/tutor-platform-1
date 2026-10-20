@@ -101,6 +101,8 @@ export interface Course {
   description: string;
   /** Курс бесплатен навсегда — доступ открыт всем без оплаты, вне зависимости от акций. */
   freeForever?: boolean;
+  /** Обложка курса (путь от корня сайта или полный URL): шапка карточки, страница курса, превью ссылки. */
+  cover?: string;
 }
 
 // Флаги доступа вынесены в лёгкий модуль courseAccessFlags.ts, чтобы
@@ -3042,6 +3044,7 @@ export const COURSES: Course[] = [
     tags: ["Управление собой", "Системное мышление", "OKR и KPI", "Делегирование", "Обратная связь", "Управление изменениями ADKAR", "Scrum и канбан", "ИИ для руководителя", "Менторинг"],
     color: "from-emerald-500 to-teal-600",
     emoji: "🧭",
+    cover: "/covers/rukovoditel-novoy-formacii.jpg",
     isNew: true,
     isHit: false,
     isSale: false,

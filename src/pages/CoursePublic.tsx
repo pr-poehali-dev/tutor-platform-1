@@ -131,6 +131,7 @@ export default function CoursePublic() {
         description={description}
         canonical={`${SITE}${canonicalPath}`}
         type="product"
+        image={course.cover ? (course.cover.startsWith("http") ? course.cover : `${SITE}${course.cover}`) : undefined}
         keywords={
           copy?.keywords ??
           [course.title, ...course.tags, `курс ${audience}`, "онлайн-обучение"].join(", ")
@@ -158,6 +159,14 @@ export default function CoursePublic() {
             <h1 className="font-montserrat font-black text-2xl md:text-4xl leading-tight">{course.title}</h1>
           </div>
         </div>
+
+        {course.cover && (
+          <img
+            src={course.cover}
+            alt={course.title}
+            className="w-full max-w-3xl aspect-[16/9] object-cover rounded-2xl border border-white/10 mb-6"
+          />
+        )}
 
         <p className="text-white/70 text-base md:text-lg leading-relaxed mb-6 max-w-3xl">
           {copy?.lead ?? course.description}

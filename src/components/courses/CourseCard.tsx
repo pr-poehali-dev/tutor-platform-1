@@ -108,6 +108,12 @@ export default function CourseCard({ course, isExpanded, onToggleExpand, onOpenD
       )}
       {/* Top gradient bar */}
       <div className={`h-1 bg-gradient-to-r ${course.color}`} />
+      {course.cover && (
+        <div className="relative aspect-[16/9] overflow-hidden">
+          <img src={course.cover} alt={course.title} loading="lazy" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" aria-hidden="true" />
+        </div>
+      )}
 
       <div className="p-5 flex flex-col flex-1">
         {/* Badges row */}
