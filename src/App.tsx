@@ -37,6 +37,7 @@ const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
 const PilotCities = lazy(() => import("./pages/PilotCities"));
 const SamaraLeaflet = lazy(() => import("./pages/SamaraLeaflet"));
+const StudentLeaflet = lazy(() => import("./pages/StudentLeaflet"));
 const TutorsDeck = lazy(() => import("./pages/decks/TutorsDeck"));
 const ParentsDeck = lazy(() => import("./pages/decks/ParentsDeck"));
 const PartnersDeck = lazy(() => import("./pages/decks/PartnersDeck"));
@@ -269,6 +270,7 @@ const App = () => (
                     <Route path="/for-schools" element={<ForSchools />} />
                     <Route path="/samara" element={<SamaraPilot />} />
                     <Route path="/samara/leaflet" element={<SamaraLeaflet />} />
+                    <Route path="/leaflet/shkolniki" element={<StudentLeaflet />} />
                     <Route path="/pilot" element={<PilotCities />} />
                     <Route path="/pilot/:city" element={<SamaraPilot />} />
                     <Route path="/pilot/:city/leaflet" element={<SamaraLeaflet />} />
