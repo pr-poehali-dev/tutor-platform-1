@@ -213,6 +213,7 @@ export default function Contacts() {
             <dt className="text-white/50">КПП</dt><dd className="text-white">631201001</dd>
             <dt className="text-white/50">ОГРН</dt><dd className="text-white">1266300004288</dd>
             <dt className="text-white/50">Регистрация</dt><dd className="text-white">27.02.2026, Самара</dd>
+            <dt className="text-white/50">Телефон</dt><dd><a href="tel:+79277486868" className="text-purple-300 hover:underline">+7 927 748-68-68</a></dd>
           </dl>
           <p className="text-white/50 text-xs mt-3">
             Платежи принимаются через ЮKassa, чек приходит на почту. Условия оплаты и возврата — в{" "}

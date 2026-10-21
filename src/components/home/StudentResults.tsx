@@ -79,7 +79,7 @@ export default function StudentResults() {
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold">ООО «МАТ-ЛАБС» · партнёр Точка Банка</p>
           <p className="text-white/55 text-sm mt-0.5">
-            ИНН 6312223437 · ОГРН 1266300004288 · Самара. Оплата через ЮKassa, чек на почту, возврат по оферте.
+            ИНН 6312223437 · ОГРН 1266300004288 · Самара · <a href="tel:+79277486868" className="text-white/80 hover:text-white whitespace-nowrap">+7 927 748-68-68</a>. Оплата через ЮKassa, чек на почту, возврат по оферте.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

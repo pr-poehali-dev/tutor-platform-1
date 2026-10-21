@@ -62,6 +62,7 @@ export default function Offer() {
           <p><strong className="text-white">КПП:</strong> 631201001</p>
           <p><strong className="text-white">ОГРН:</strong> 1266300004288</p>
           <p><strong className="text-white">Дата регистрации:</strong> 27.02.2026</p>
+          <p><strong className="text-white">Телефон:</strong> <a href="tel:+79277486868" className="text-purple-300 hover:underline">+7 927 748-68-68</a></p>
           <p className="text-white/55 text-xs mt-2">Юридический адрес и банковские реквизиты предоставляются по запросу через форму обратной связи на Платформе.</p>
         </div>
 
