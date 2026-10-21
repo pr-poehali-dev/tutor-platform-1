@@ -37,7 +37,7 @@ export default function AITeacher({ showSuperCourses = false, hasCourseAccess, o
   // Ограничение бесплатных вопросов: без входа — немного, после входа — больше,
   // с подпиской — без лимита. Счётчик обнуляется каждые сутки.
   const { isAuthenticated } = useAuth();
-  const { hasSubscription } = useAccess();
+  const { hasTutorAccess: hasSubscription } = useAccess();
   const [paywall, setPaywall] = useState<PaywallReason | null>(null);
   const [askedCount, setAskedCount] = useState(() => aiUsed());
   const questionsLeft = Math.max(0, aiLimit(isAuthenticated) - askedCount);

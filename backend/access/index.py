@@ -5,6 +5,7 @@ POST /?action=buy_course            body: {course_id, grade, title, return_url} 
 POST /?action=buy_subscription      body: {plan_id, return_url, email?} -> создаёт платёж ЮKassa за подписку
 POST /?action=confirm_demo          body: {purchase_id, kind?} -> демо-активация без оплаты (для тестов)
 POST /?action=redeem_access         body: {code} -> активирует промокод доступа (напр. «САМАРА» — курсы раздела «Школьникам»)
+POST /?action=tutor_start_trial     body: {source?} -> 7 дней ИИ-репетитора бесплатно, без карты, один раз на аккаунт
 """
 import json
 import re
@@ -403,6 +404,49 @@ def get_subscription_active(cur, user_id: int) -> bool:
 # Бесплатный доступ к «Малышу» на старте: 3 месяца, карта не нужна.
 KIDS_TRIAL_DAYS = 90
 
+# Пробная неделя ИИ-репетитора для школьников: 7 дней, карта не нужна, один раз на аккаунт.
+TUTOR_TRIAL_DAYS = 7
+
+
+def get_tutor_trial(cur, user_id: int):
+    """(expires_at, active) пробной недели репетитора или (None, False), если её не было."""
+    cur.execute("SELECT expires_at FROM tutor_trials WHERE user_id = %s LIMIT 1", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        return None, False
+    return row[0], bool(row[0] and row[0] > datetime.now(timezone.utc))
+
+
+def handle_tutor_start_trial(token: str, body: dict) -> dict:
+    """Включает 7 бесплатных дней ИИ-репетитора и школьных курсов. Повторно срок не продлевается."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+            if get_subscription_active(cur, user_id):
+                return ok({'ok': True, 'has_subscription': True})
+            expires, _active = get_tutor_trial(cur, user_id)
+            if expires:
+                return ok({'ok': True, 'already_started': True, 'expires_at': expires.isoformat()})
+            source = str((body or {}).get('source') or '')[:60] or None
+            cur.execute(
+                "INSERT INTO tutor_trials (user_id, expires_at, source) "
+                "VALUES (%s, NOW() + (%s || ' days')::interval, %s) "
+                "ON CONFLICT (user_id) DO NOTHING RETURNING expires_at",
+                (user_id, str(TUTOR_TRIAL_DAYS), source)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            if not row:
+                expires, _ = get_tutor_trial(cur, user_id)
+                return ok({'ok': True, 'already_started': True, 'expires_at': expires.isoformat() if expires else None})
+            return ok({'ok': True, 'already_started': False, 'trial_days': TUTOR_TRIAL_DAYS,
+                       'expires_at': row[0].isoformat()})
+    finally:
+        conn.close()
+
 
 def get_kids_access(cur, user_id: int) -> dict:
     """Доступ к модулю «Малыш»: платная подписка 'kids' или бесплатный триал.
@@ -597,14 +641,18 @@ def handle_check(token: str, course_id: int | None) -> dict:
                     'kids_expires_at': None,
                     'kids_trial_used': False,
                     'school_access_until': None,
+                    'tutor_trial_until': None,
+                    'tutor_trial_active': False,
+                    'tutor_trial_used': False,
                 })
             has_sub = get_subscription_active(cur, user_id)
             purchased = get_purchased_courses(cur, user_id)
             school_until = get_access_grant(cur, user_id, 'school')
+            trial_until, trial_active = get_tutor_trial(cur, user_id)
             course_access = promo or free_forever
             if not course_access and course_id is not None:
                 course_access = has_sub or (course_id in purchased) or (
-                    school_until is not None and course_id in SCHOOL_COURSE_IDS)
+                    (school_until is not None or trial_active) and course_id in SCHOOL_COURSE_IDS)
             return ok({
                 'authenticated': True,
                 'has_subscription': has_sub,
@@ -613,6 +661,10 @@ def handle_check(token: str, course_id: int | None) -> dict:
                 'promo_active': promo,
                 # Доступ к курсам «Школьникам» по промокоду (пилот школ).
                 'school_access_until': school_until.isoformat() if school_until else None,
+                # Пробная неделя репетитора: открывает репетитора и школьные курсы, без карты.
+                'tutor_trial_until': trial_until.isoformat() if trial_until else None,
+                'tutor_trial_active': trial_active,
+                'tutor_trial_used': trial_until is not None,
                 # Детский модуль изолирован: свой доступ, своя дата окончания.
                 **get_kids_access(cur, user_id),
             })
@@ -720,6 +772,12 @@ def handle_sync_payment(token: str, body: dict) -> dict:
                     sub_row = cur.fetchone()
                     if sub_row:
                         # Подписка «Малыш» закрывает бесплатный период — отмечаем конверсию.
+                        if sub_row[0] != 'kids':
+                            cur.execute(
+                                "UPDATE tutor_trials SET converted_at = COALESCE(converted_at, NOW()) "
+                                "WHERE user_id = %s",
+                                (user_id,)
+                            )
                         if sub_row[0] == 'kids':
                             cur.execute(
                                 "UPDATE kids_trials SET converted_at = COALESCE(converted_at, NOW()) "
@@ -1298,6 +1356,8 @@ def handler(event: dict, context) -> dict:
             return handle_redeem_access(token, body)
         if action == 'kids_start_trial' and method == 'POST':
             return handle_kids_start_trial(token)
+        if action == 'tutor_start_trial' and method == 'POST':
+            return handle_tutor_start_trial(token, body)
         return err('Unknown action', 404)
     except psycopg2.Error as e:
         print(f'[access] DB error: {str(e)[:500]}')

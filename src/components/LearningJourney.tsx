@@ -39,7 +39,7 @@ export default function LearningJourney() {
   const progress = useUserProgress();
   const navigate = useNavigate();
   const { isAuthenticated, openLogin } = useAuth();
-  const { hasSubscription } = useAccess();
+  const { hasTutorAccess: hasSubscription } = useAccess();
 
   // Load journeys when user logs in
   useEffect(() => {

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import Icon from "@/components/ui/icon";
 import DirectionDoors from "@/components/home/DirectionDoors";
+import TrialHero from "@/components/home/TrialHero";
 import HeroTryTutor from "@/components/home/HeroTryTutor";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 import AiNavigator from "@/components/home/AiNavigator";
@@ -33,7 +34,7 @@ export default function HomeSections() {
 
   return (
     <main id="main-content">
-      <DirectionDoors />
+      <TrialHero />
 
       {/* Флагман платформы — ИИ-репетитор. Живая проба прямо на главной:
           вопрос → настоящий ответ за пару секунд, без регистрации. */}
@@ -41,13 +42,13 @@ export default function HomeSections() {
         <div className="grid lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-5">
             <span className="inline-flex items-center gap-1.5 text-[11px] text-purple-200 font-bold uppercase tracking-wider mb-2">
-              <Icon name="Sparkles" size={12} /> Флагман · первый урок бесплатно
+              <Icon name="Sparkles" size={12} /> Попробуйте прямо сейчас — без регистрации
             </span>
             <h2 id="tutor-title" className="font-montserrat font-black text-2xl md:text-4xl leading-tight mb-3">
-              ИИ-репетитор, который доводит <span className="gradient-text-pink">до 90+ баллов</span>
+              Задайте вопрос <span className="gradient-text-pink">как ваш ребёнок</span>
             </h2>
             <p className="text-white/70 text-sm md:text-base mb-5">
-              Все предметы 1–11 класса. Находит пробелы за 5 минут, объясняет голосом и ведёт по личному плану — 24/7, без записи.
+              Напишите тему, которая не даётся, — репетитор ответит за пару секунд. Так же он объясняет ребёнку: по шагам и без готовых ответов.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -68,6 +69,9 @@ export default function HomeSections() {
         </div>
       </section>
 
+
+      {/* Остальные направления — ниже пробной недели */}
+      <DirectionDoors />
 
       {/* Вошедшему — сразу его обучение */}
       {isAuthenticated && (

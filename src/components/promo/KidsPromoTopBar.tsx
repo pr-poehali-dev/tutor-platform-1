@@ -43,7 +43,9 @@ export default function KidsPromoTopBar() {
   const dir = directionForPath(pathname);
   const isOtherDirection = dir === "adult" || dir === "business";
 
-  if (hidden || isCheckout || isWrongAudience || isInsideKids || isOtherDirection) return null;
+  // На главной первым экраном идёт пробная неделя для школьников — второе предложение сверху сбивает.
+  const isHome = pathname === "/";
+  if (hidden || isHome || isCheckout || isWrongAudience || isInsideKids || isOtherDirection) return null;
 
   const handleClose = () => {
     try {

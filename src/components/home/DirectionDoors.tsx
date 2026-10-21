@@ -29,7 +29,7 @@ export default function DirectionDoors() {
   useEffect(() => setSaved(getSavedDirection()), []);
 
   return (
-    <section id="hero" className="relative px-4 pt-6 md:pt-10 pb-12">
+    <section id="directions" className="relative px-4 pt-6 md:pt-10 pb-12">
       <div className="max-w-6xl mx-auto">
         {saved && (
           <Link
@@ -44,13 +44,12 @@ export default function DirectionDoors() {
         )}
 
         <div className="text-center max-w-3xl mx-auto mb-8 md:mb-10">
-          {/* Знак доверия на первом экране — как было до разделения на направления */}
           <TochkaPartnerBadge className="mb-4" />
-          <h1 className="font-montserrat font-black text-3xl sm:text-4xl lg:text-5xl leading-[1.08] mb-3">
+          <h2 className="font-montserrat font-black text-3xl sm:text-4xl leading-[1.08] mb-3">
             Учёба для всей семьи —{" "}
             <span className="gradient-text-purple">с ИИ-наставником</span>
-          </h1>
-          <p className="text-white/70 text-base md:text-lg">Кто будет учиться? Выберите — покажем только то, что нужно именно ему.</p>
+          </h2>
+          <p className="text-white/70 text-base md:text-lg">Есть малыш или учитесь сами? Выберите раздел — покажем только нужное.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 md:gap-5">
@@ -79,10 +78,10 @@ export default function DirectionDoors() {
                   </span>
                 </div>
                 <div className="p-5 pt-2 flex-1 flex flex-col">
-                  <h2 className="font-montserrat font-black text-2xl text-white flex items-center gap-2">
+                  <h3 className="font-montserrat font-black text-2xl text-white flex items-center gap-2">
                     <span aria-hidden="true">{d.emoji}</span>
                     {d.label}
-                  </h2>
+                  </h3>
                   <p className="text-white/65 text-sm mt-1 mb-4">{d.tagline}</p>
                   <ul className="space-y-1.5 mb-5">
                     {DOOR_POINTS[id].map((p) => (

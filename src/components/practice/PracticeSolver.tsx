@@ -43,7 +43,7 @@ export default function PracticeSolver({
   const [showSolutionUnlocked, setShowSolutionUnlocked] = useState(false);
 
   const { isAuthenticated } = useAuth();
-  const { hasSubscription } = useAccess();
+  const { hasTutorAccess: hasSubscription } = useAccess();
   const [paywall, setPaywall] = useState<PaywallReason | null>(null);
 
   const totalSteps = problem.steps.length;

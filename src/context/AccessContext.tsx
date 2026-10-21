@@ -42,9 +42,21 @@ export interface KidsAccessState {
   trialUsed: boolean;
 }
 
+/** Пробная неделя ИИ-репетитора: 7 дней без карты, один раз на аккаунт. */
+export interface TutorTrialState {
+  active: boolean;
+  until: string | null;
+  used: boolean;
+}
+
 interface AccessState {
   loading: boolean;
   hasSubscription: boolean;
+  /** Репетитор и школьные курсы открыты: подписка ИЛИ идёт пробная неделя. */
+  hasTutorAccess: boolean;
+  tutorTrial: TutorTrialState;
+  /** Включает 7 бесплатных дней репетитора. Карта не нужна. */
+  startTutorTrial: (source?: string) => Promise<{ ok: boolean; expiresAt?: string; already?: boolean; message?: string }>;
   purchasedCourseIds: number[];
   /** До какой даты открыты курсы «Школьникам» по промокоду (пилот школ). */
   schoolAccessUntil: string | null;
@@ -69,6 +81,8 @@ function readToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
+const TRIAL_EMPTY: TutorTrialState = { active: false, until: null, used: false };
+
 const KIDS_EMPTY: KidsAccessState = {
   access: false,
   source: null,
@@ -83,6 +97,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const [purchasedCourseIds, setPurchasedCourseIds] = useState<number[]>([]);
   const [kids, setKids] = useState<KidsAccessState>(KIDS_EMPTY);
   const [schoolAccessUntil, setSchoolAccessUntil] = useState<string | null>(null);
+  const [tutorTrial, setTutorTrial] = useState<TutorTrialState>(TRIAL_EMPTY);
 
   const refreshAccess = useCallback(async () => {
     const authToken = token || readToken();
@@ -91,6 +106,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       setPurchasedCourseIds([]);
       setKids(KIDS_EMPTY);
       setSchoolAccessUntil(null);
+      setTutorTrial(TRIAL_EMPTY);
       return;
     }
     setLoading(true);
@@ -102,6 +118,9 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       kids_expires_at?: string | null;
       kids_trial_used?: boolean;
       school_access_until?: string | null;
+      tutor_trial_until?: string | null;
+      tutor_trial_active?: boolean;
+      tutor_trial_used?: boolean;
     }>(
       `${ACCESS_URL}?action=check`,
       { method: "GET", headers: { "X-Auth-Token": authToken } }
@@ -118,6 +137,11 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         trialUsed: !!res.data.kids_trial_used,
       });
       setSchoolAccessUntil(res.data.school_access_until ?? null);
+      setTutorTrial({
+        active: !!res.data.tutor_trial_active,
+        until: res.data.tutor_trial_until ?? null,
+        used: !!res.data.tutor_trial_used,
+      });
     }
     // При сбое/таймауте мягко считаем, что доступа нет — без падения и без зависания.
     setLoading(false);
@@ -141,6 +165,24 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token, refreshAccess]);
 
+  const startTutorTrial = useCallback(async (source?: string) => {
+    const authToken = token || readToken();
+    if (!authToken) return { ok: false, message: "Сначала войдите в аккаунт" };
+    try {
+      const res = await fetch(`${ACCESS_URL}?action=tutor_start_trial`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": authToken },
+        body: JSON.stringify({ source: source || "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, message: data.error || "Не удалось включить пробную неделю" };
+      await refreshAccess();
+      return { ok: true, expiresAt: data.expires_at, already: !!data.already_started };
+    } catch {
+      return { ok: false, message: "Нет связи с сервером" };
+    }
+  }, [token, refreshAccess]);
+
   useEffect(() => {
     if (isAuthenticated) {
       refreshAccess();
@@ -149,6 +191,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       setPurchasedCourseIds([]);
       setKids(KIDS_EMPTY);
       setSchoolAccessUntil(null);
+      setTutorTrial(TRIAL_EMPTY);
     }
   }, [isAuthenticated, refreshAccess]);
 
@@ -176,8 +219,8 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     (courseId: number) =>
       isCourseFreeForever(courseId) || isPromoActive() || hasSubscription || purchasedCourseIds.includes(courseId) ||
       !!getSavedAccess(`course-${courseId}`) ||
-      (!!schoolAccessUntil && new Date(schoolAccessUntil) > new Date() && isSchoolCourse(courseId)),
-    [hasSubscription, purchasedCourseIds, schoolAccessUntil]
+      (((!!schoolAccessUntil && new Date(schoolAccessUntil) > new Date()) || tutorTrial.active) && isSchoolCourse(courseId)),
+    [hasSubscription, purchasedCourseIds, schoolAccessUntil, tutorTrial.active]
   );
 
   const buyCourse = useCallback(async (courseId: number, grade: string, title: string, returnUrl: string, email?: string, promoCode?: string): Promise<BuyCourseResult> => {
@@ -292,6 +335,9 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const value: AccessState = {
     loading,
     hasSubscription,
+    hasTutorAccess: hasSubscription || tutorTrial.active,
+    tutorTrial,
+    startTutorTrial,
     purchasedCourseIds,
     schoolAccessUntil,
     redeemAccessCode,
@@ -315,6 +361,9 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 const ACCESS_FALLBACK: AccessState = {
   loading: false,
   hasSubscription: false,
+  hasTutorAccess: false,
+  tutorTrial: TRIAL_EMPTY,
+  startTutorTrial: async () => ({ ok: false, message: "Доступ недоступен" }),
   purchasedCourseIds: [],
   schoolAccessUntil: null,
   redeemAccessCode: async () => ({ ok: false, message: "Доступ недоступен" }),

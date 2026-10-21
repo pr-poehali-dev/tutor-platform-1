@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -44,7 +45,10 @@ const JSON_LD = [
 ];
 
 export default function TutorHub() {
-  const { hasAccess, loading } = useTutorAccess();
+  const { hasAccess, loading, tutorTrial, hasSubscription } = useTutorAccess();
+  const trialDaysLeft = tutorTrial.until
+    ? Math.max(0, Math.ceil((new Date(tutorTrial.until).getTime() - Date.now()) / 86400000))
+    : 0;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
@@ -64,9 +68,25 @@ export default function TutorHub() {
         </div>
       ) : hasAccess ? (
         // ── Доступ оплачен: рабочее пространство модуля ──
-        <Suspense fallback={<div className="py-24 text-center text-white/40 text-sm">Открываю модуль…</div>}>
-          <TutorWorkspace />
-        </Suspense>
+        <>
+          {tutorTrial.active && !hasSubscription && (
+            <div className="max-w-6xl mx-auto px-4 pt-4">
+              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <Icon name="Gift" size={20} className="text-emerald-300 flex-shrink-0" />
+                <p className="text-sm text-white/85 flex-1">
+                  <b className="text-white">Пробная неделя:</b> осталось {trialDaysLeft} {trialDaysLeft === 1 ? "день" : trialDaysLeft < 5 ? "дня" : "дней"} — все предметы без ограничений.
+                  Карта не привязана, списаний не будет.
+                </p>
+                <Link to="/pricing" className="text-sm font-bold text-emerald-200 hover:text-white whitespace-nowrap">
+                  Оформить подписку →
+                </Link>
+              </div>
+            </div>
+          )}
+          <Suspense fallback={<div className="py-24 text-center text-white/40 text-sm">Открываю модуль…</div>}>
+            <TutorWorkspace />
+          </Suspense>
+        </>
       ) : (
         // ── Лендинг модуля: промо, бесплатный тест-крючок и цены ──
         <>

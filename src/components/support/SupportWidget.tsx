@@ -8,6 +8,17 @@ const HIDDEN_PREFIXES = ["/admin", "/h/", "/max", "/kids", "/malysh", "/silent/l
   "/repetitoram/presentation", "/parents/presentation", "/partner/presentation", "/pilot/", "/samara/leaflet", "/leaflet/"];
 const QUICK = ["Сколько стоит подписка?", "Не открылся доступ после оплаты", "Как восстановить пароль?", "Хочу вернуть деньги"];
 const STORE = "uchispro_support_chat_v1";
+const PHONE = "+7 927 748-68-68";
+const PHONE_HREF = "tel:+79277486868";
+const HOURS = "пн–пт, 8:00–17:00 мск";
+
+/** Сейчас рабочее время по Москве (UTC+3): пн–пт, 8:00–17:00. */
+function isWorkingHours(): boolean {
+  const msk = new Date(Date.now() + (new Date().getTimezoneOffset() + 180) * 60000);
+  const d = msk.getDay();
+  const h = msk.getHours();
+  return d >= 1 && d <= 5 && h >= 8 && h < 17;
+}
 
 /** Плавающая кнопка поддержки: ИИ отвечает сразу, сложные вопросы уходят команде. */
 export default function SupportWidget() {
@@ -66,6 +77,19 @@ export default function SupportWidget() {
           <Icon name="X" size={18} />
         </button>
       </div>
+
+      <a href={PHONE_HREF} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
+        <span className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
+          <Icon name="Phone" size={15} className="text-emerald-300" />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-bold">Позвонить: {PHONE}</span>
+          <span className="block text-[11px] text-white/55">
+            {isWorkingHours() ? "Сейчас на связи · " : "Сейчас не рабочее время · "}{HOURS}
+          </span>
+        </span>
+        <Icon name="ChevronRight" size={16} className="text-white/40" />
+      </a>
 
       <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 text-sm">
         <Bubble role="assistant" text="Здравствуйте! Я помогу с вопросами об оплате, доступе, курсах и работе сайта. Если не смогу ответить — передам вопрос команде." />

@@ -121,6 +121,19 @@
       "path": "/?action=redeem_access",
       "body": {},
       "expectedStatus": 400
+    },
+    {
+      "name": "Пробная неделя без входа — 401",
+      "method": "POST",
+      "path": "/?action=tutor_start_trial",
+      "body": {
+        "source": "home"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

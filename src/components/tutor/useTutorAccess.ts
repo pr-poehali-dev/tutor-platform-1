@@ -8,11 +8,12 @@ export const TUTOR_COURSE_IDS = [9001, 9002, 9003];
  * Открыт, если есть активная подписка ЛИБО куплен любой супер-курс.
  */
 export function useTutorAccess() {
-  const { hasSubscription, purchasedCourseIds, loading } = useAccess();
+  const { hasSubscription, hasTutorAccess, tutorTrial, purchasedCourseIds, loading } = useAccess();
   const hasPurchasedSubject = TUTOR_COURSE_IDS.some((id) => purchasedCourseIds.includes(id));
   return {
     loading,
-    hasAccess: hasSubscription || hasPurchasedSubject,
+    hasAccess: hasTutorAccess || hasPurchasedSubject,
+    tutorTrial,
     hasSubscription,
     hasPurchasedSubject,
   };
