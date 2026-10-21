@@ -18,6 +18,7 @@ import {
 const TITLES: Record<KidsAudience, { title: string; icon: string; deck: string; page: string; promo: string }> = {
   kindergarten: { title: "Детские сады", icon: "Baby", deck: "/for-kindergartens/presentation", page: "/malysh", promo: "МАЛЫШ · до 31.05.2027" },
   care: { title: "Детские дома и интернаты", icon: "HeartHandshake", deck: "/for-kindergartens/presentation/care", page: "/kazhdyj-rebenok", promo: "КАЖДЫЙ РЕБЁНОК · бессрочно" },
+  fund: { title: "Фонды и волонтёры", icon: "HandHeart", deck: "/for-kindergartens/presentation/care", page: "/kazhdyj-rebenok", promo: "просьба рассказать" },
 };
 
 /** Пилот «Малыш»: база садов и детских домов, письма, тест и включение авторассылки. */
@@ -47,7 +48,7 @@ export default function KidsPilotPanel({ defaultEmail, onPreview }: { defaultEma
     }
   };
 
-  const total = data ? data.kindergarten.total + data.care.total : 0;
+  const total = data ? data.kindergarten.total + data.care.total + data.fund.total : 0;
 
   return (
     <Card className="p-5 mb-6 bg-gradient-to-br from-pink-500/10 to-amber-500/5 border-pink-400/25">
@@ -57,7 +58,7 @@ export default function KidsPilotPanel({ defaultEmail, onPreview }: { defaultEma
             <Icon name="Baby" size={20} className="text-pink-300" /> Пилот «Малыш»: сады и детские дома
           </p>
           <p className="text-white/55 text-sm mt-1">
-            Письма уходят в общем дневном лимите почты вместе со школами — половина каждой партии. Детские дома — первыми.
+            Письма уходят в общем дневном лимите почты вместе со школами — половина каждой партии. Порядок: фонды, детские дома, сады.
           </p>
         </div>
         {data && (
@@ -94,8 +95,8 @@ export default function KidsPilotPanel({ defaultEmail, onPreview }: { defaultEma
       )}
 
       {data && (
-        <div className="grid md:grid-cols-2 gap-4 mb-4">
-          {(["kindergarten", "care"] as KidsAudience[]).map((aud) => {
+        <div className="grid md:grid-cols-3 gap-4 mb-4">
+          {(["fund", "care", "kindergarten"] as KidsAudience[]).map((aud) => {
             const s = data[aud];
             const t = TITLES[aud];
             return (

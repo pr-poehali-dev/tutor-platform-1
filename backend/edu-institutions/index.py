@@ -77,7 +77,7 @@ def handle_list(qs: dict) -> dict:
     city = (qs.get('city') or '').strip()
     audience = (qs.get('audience') or '').strip()
     where, args = [], []
-    if audience in ('school', 'kindergarten', 'care'):
+    if audience in ('school', 'kindergarten', 'care', 'fund'):
         where.append('audience = %s')
         args.append(audience)
     if city:
@@ -713,7 +713,7 @@ def _kids_sample(cur, audience):
     r = kids_pilot.sample(cur, audience)
     if r:
         return _inst_by_id(cur, r[0])
-    demo = {'kindergarten': 'МБДОУ «Детский сад № 1»', 'care': 'ГКУ «Детский дом № 1»'}[audience]
+    demo = {'kindergarten': 'МБДОУ «Детский сад № 1»', 'care': 'ГКУ «Детский дом № 1»', 'fund': 'Благотворительный фонд «Пример»'}[audience]
     return {'org_name': demo, 'contact_name': 'Иванова Мария Петровна'}, 'demo'
 
 

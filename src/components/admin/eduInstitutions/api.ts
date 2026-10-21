@@ -25,7 +25,7 @@ export interface EduInstitution {
   unsubscribed?: boolean;
   last_mailed_at?: string | null;
   mail_count?: number;
-  audience?: "school" | "kindergarten" | "care";
+  audience?: "school" | "kindergarten" | "care" | "fund";
 }
 
 export const KIND_LABELS: Record<EduKind, string> = {
@@ -264,7 +264,7 @@ export function pilotTick() {
   return fetch(`${URL}?action=pilot_tick`).catch(() => undefined);
 }
 
-export type KidsAudience = "kindergarten" | "care";
+export type KidsAudience = "kindergarten" | "care" | "fund";
 
 export interface KidsAudienceStat {
   cities: { city: string; total: number; with_email: number; unsubscribed: number; to_enrich: number }[];
@@ -280,6 +280,7 @@ export interface KidsAudienceStat {
 export interface KidsOverview {
   kindergarten: KidsAudienceStat;
   care: KidsAudienceStat;
+  fund: KidsAudienceStat;
   enabled: boolean;
   registry_rows: number;
 }

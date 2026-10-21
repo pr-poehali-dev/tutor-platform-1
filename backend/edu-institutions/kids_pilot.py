@@ -15,7 +15,7 @@ import registry_kids_kg
 
 SCHEMA = os.environ.get('MAIN_DB_SCHEMA', 't_p78828167_tutor_platform_1')
 TABLE = f'{SCHEMA}.edu_institutions'
-AUDIENCES = ('kindergarten', 'care')
+AUDIENCES = ('kindergarten', 'care', 'fund')
 EIS = 'https://zakupki.gov.ru'
 EMAIL_RE = re.compile(r'[\w.+\-]+@[\w\-]+(?:\.[\w\-]+)+')
 # Реестр закупок блокирует частые запросы — за один вызов берём немного карточек.
@@ -179,11 +179,11 @@ def overview(cur) -> dict:
     cur.execute(f"SELECT audience, city, count(*), count(*) FILTER (WHERE email<>''), "
                 f"count(*) FILTER (WHERE unsubscribed_at IS NOT NULL), "
                 f"count(*) FILTER (WHERE coalesce(email,'')='' AND ext_ref IS NOT NULL AND enrich_attempts < {ENRICH_MAX_ATTEMPTS}) "
-                f"FROM {TABLE} WHERE audience IN ('kindergarten','care') GROUP BY 1,2 ORDER BY 1, 3 DESC")
+                f"FROM {TABLE} WHERE audience IN ('kindergarten','care','fund') GROUP BY 1,2 ORDER BY 1, 3 DESC")
     rows = cur.fetchall()
     cur.execute(f"SELECT campaign_code, status, count(*) FROM {SCHEMA}.edu_campaign_sends "
-                f"WHERE is_test=FALSE AND campaign_code IN (%s,%s) GROUP BY 1,2",
-                (kids_letters.KIDS_CAMPAIGN, kids_letters.CARE_CAMPAIGN))
+                f"WHERE is_test=FALSE AND campaign_code IN (%s,%s,%s) GROUP BY 1,2",
+                (kids_letters.KIDS_CAMPAIGN, kids_letters.CARE_CAMPAIGN, kids_letters.FUND_CAMPAIGN))
     sends = {}
     for camp, st, n in cur.fetchall():
         sends.setdefault(camp, {})[st] = n
@@ -205,6 +205,7 @@ def overview(cur) -> dict:
         out[aud].update({'sent': s.get('sent', 0), 'failed': s.get('failed', 0), 'pending': pending[aud]})
     out['kindergarten']['activations'] = used.get('МАЛЫШ', 0)
     out['care']['activations'] = used.get('КАЖДЫЙРЕБЕНОК', 0)
+    out['fund']['activations'] = 0
     out['enabled'] = settings(cur)
     out['registry_rows'] = registry_size()
     return out
@@ -217,7 +218,8 @@ def send_batch(cur, conn, limit: int, unsub_url, inst_by_id, ensure_token, start
         return total
     smtp = None
     try:
-        for aud in ('care', 'kindergarten'):
+        # Фонды — первыми: их мало, и каждый может привести десятки детских домов.
+        for aud in ('fund', 'care', 'kindergarten'):
             if limit <= 0:
                 break
             camp = kids_letters.campaign_for(aud)

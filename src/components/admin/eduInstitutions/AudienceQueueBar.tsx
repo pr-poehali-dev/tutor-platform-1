@@ -4,19 +4,21 @@ import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { KidsOverview, kidsOverview, kidsSettings } from "./api";
 
-export type AudienceTab = "" | "school" | "kindergarten" | "care";
+export type AudienceTab = "" | "school" | "kindergarten" | "care" | "fund";
 
 export const AUDIENCE_TABS: { id: AudienceTab; label: string; icon: string }[] = [
   { id: "", label: "Все", icon: "Database" },
   { id: "school", label: "Школы", icon: "School" },
   { id: "kindergarten", label: "Детские сады", icon: "Baby" },
   { id: "care", label: "Детские дома и интернаты", icon: "HeartHandshake" },
+  { id: "fund", label: "Фонды и волонтёры", icon: "HandHeart" },
 ];
 
 export const AUDIENCE_LABEL: Record<string, string> = {
   school: "Школа",
   kindergarten: "Детский сад",
   care: "Детский дом / интернат",
+  fund: "Фонд / волонтёры",
 };
 
 interface Props {
@@ -53,7 +55,7 @@ export default function AudienceQueueBar({ tab, onTab, counts }: Props) {
   const total = (id: AudienceTab) =>
     id === "" ? Object.values(counts).reduce((a, c) => a + c.total, 0) : counts[id]?.total || 0;
 
-  const kidsQueue = kids ? kids.kindergarten.pending + kids.care.pending : 0;
+  const kidsQueue = kids ? kids.kindergarten.pending + kids.care.pending + kids.fund.pending : 0;
   const kidsToEnrich = kids ? kids.kindergarten.to_enrich + kids.care.to_enrich : 0;
 
   return (
@@ -80,11 +82,11 @@ export default function AudienceQueueBar({ tab, onTab, counts }: Props) {
           <div className="min-w-0">
             <p className="font-bold flex items-center gap-2">
               <Icon name={kids.enabled ? "CheckCircle2" : "Clock"} size={17} className={kids.enabled ? "text-emerald-300" : "text-pink-300"} />
-              Очередь писем: детские сады и детские дома {kids.enabled ? "— отправляются" : "— не запущена"}
+              Очередь писем: сады, детские дома и фонды {kids.enabled ? "— отправляются" : "— не запущена"}
             </p>
             <p className="text-white/60 text-sm mt-1">
-              В очереди {kidsQueue} писем (сады — {kids.kindergarten.pending}, детские дома — {kids.care.pending}).
-              Отправлено: {kids.kindergarten.sent + kids.care.sent}.
+              В очереди {kidsQueue} писем (фонды — {kids.fund.pending}, детские дома — {kids.care.pending}, сады — {kids.kindergarten.pending}).
+              Отправлено: {kids.kindergarten.sent + kids.care.sent + kids.fund.sent}.
               {kidsToEnrich > 0 && <> Ещё у {kidsToEnrich} учреждений ищем почту — найденные встают в очередь сами.</>}
             </p>
           </div>
