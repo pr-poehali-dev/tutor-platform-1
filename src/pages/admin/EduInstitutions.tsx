@@ -17,6 +17,7 @@ import {
 } from "@/components/admin/eduInstitutions/api";
 import EduFormModal from "@/components/admin/eduInstitutions/EduFormModal";
 import EduImportModal from "@/components/admin/eduInstitutions/EduImportModal";
+import AudienceQueueBar, { AUDIENCE_LABEL, AudienceTab } from "@/components/admin/eduInstitutions/AudienceQueueBar";
 
 const PIN_KEY = "uchispro_admin_pin_v1";
 
@@ -26,6 +27,9 @@ export default function EduInstitutions() {
   const [items, setItems] = useState<EduInstitution[]>([]);
   const [total, setTotal] = useState(0);
   const [byKind, setByKind] = useState<Record<string, number>>({});
+  const [found, setFound] = useState(0);
+  const [audience, setAudience] = useState<AudienceTab>("");
+  const [byAudience, setByAudience] = useState<Record<string, { total: number; with_email: number; mailed: number }>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +44,7 @@ export default function EduInstitutions() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await listInstitutions({ kind, status, q });
+    const res = await listInstitutions({ kind, status, q, audience });
     setLoading(false);
     if (!res.ok || !res.data) {
       setError(res.error || "Не удалось загрузить");
@@ -49,7 +53,9 @@ export default function EduInstitutions() {
     setItems(res.data.items);
     setTotal(res.data.total);
     setByKind(res.data.by_kind);
-  }, [kind, status, q]);
+    setFound(res.data.found ?? res.data.items.length);
+    setByAudience(res.data.by_audience || {});
+  }, [kind, status, q, audience]);
 
   useEffect(() => {
     if (!hasPin) return;
@@ -99,7 +105,7 @@ export default function EduInstitutions() {
               <Icon name="ChevronLeft" size={15} /> В кабинет
             </Link>
             <h1 className="font-montserrat font-black text-2xl">База учебных заведений</h1>
-            <p className="text-white/55 text-sm">Онлайн-школы, колледжи и техникумы для предложений о сотрудничестве</p>
+            <p className="text-white/55 text-sm">Школы, детские сады, детские дома и интернаты, колледжи и онлайн-школы — в одном списке</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link to="/admin/edu-outreach">
@@ -118,6 +124,8 @@ export default function EduInstitutions() {
             </Button>
           </div>
         </div>
+
+        <AudienceQueueBar tab={audience} onTab={setAudience} counts={byAudience} />
 
         {/* Статистика */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
@@ -144,6 +152,9 @@ export default function EduInstitutions() {
         </div>
 
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+        {!loading && found > items.length && (
+          <p className="text-white/50 text-xs mb-2">Показаны первые {items.length} из {found}. Уточните поиск или выберите вкладку.</p>
+        )}
 
         {/* Таблица */}
         <Card className="overflow-hidden">
@@ -167,7 +178,10 @@ export default function EduInstitutions() {
                       <p className="font-semibold">{r.org_name || "—"}</p>
                       {r.city && <p className="text-white/45 text-xs">{r.city}</p>}
                     </td>
-                    <td className="px-3 py-2.5 text-white/70">{KIND_LABELS[r.kind]}</td>
+                    <td className="px-3 py-2.5 text-white/70">
+                      {r.audience && r.audience !== "school" ? AUDIENCE_LABEL[r.audience] : KIND_LABELS[r.kind]}
+                      {!!r.mail_count && <p className="text-emerald-300/80 text-[11px]">письмо отправлено</p>}
+                    </td>
                     <td className="px-3 py-2.5 text-white/70">{r.contact_name || "—"}</td>
                     <td className="px-3 py-2.5">
                       {r.phone ? <a href={`tel:${r.phone}`} className="text-violet-300 hover:underline">{r.phone}</a> : "—"}

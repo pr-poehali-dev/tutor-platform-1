@@ -25,6 +25,7 @@ export interface EduInstitution {
   unsubscribed?: boolean;
   last_mailed_at?: string | null;
   mail_count?: number;
+  audience?: "school" | "kindergarten" | "care";
 }
 
 export const KIND_LABELS: Record<EduKind, string> = {
@@ -86,11 +87,14 @@ async function req<T>(
 export interface ListResponse {
   items: EduInstitution[];
   total: number;
+  found?: number;
   by_kind: Record<string, number>;
+  by_audience?: Record<string, { total: number; with_email: number; mailed: number }>;
 }
 
-export function listInstitutions(query: { kind?: string; status?: string; q?: string; city?: string }) {
+export function listInstitutions(query: { kind?: string; status?: string; q?: string; city?: string; audience?: string }) {
   const q: Record<string, string> = {};
+  if (query.audience) q.audience = query.audience;
   if (query.city) q.city = query.city;
   if (query.kind) q.kind = query.kind;
   if (query.status) q.status = query.status;

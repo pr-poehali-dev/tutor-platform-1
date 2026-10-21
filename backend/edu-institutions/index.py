@@ -75,7 +75,11 @@ def handle_list(qs: dict) -> dict:
     status = (qs.get('status') or '').strip()
     search = (qs.get('q') or '').strip()
     city = (qs.get('city') or '').strip()
+    audience = (qs.get('audience') or '').strip()
     where, args = [], []
+    if audience in ('school', 'kindergarten', 'care'):
+        where.append('audience = %s')
+        args.append(audience)
     if city:
         where.append('city = %s')
         args.append(city)
@@ -94,13 +98,19 @@ def handle_list(qs: dict) -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute(f'SELECT {COLS} FROM {TABLE} {clause} ORDER BY created_at DESC LIMIT 2000', tuple(args))
-            items = [row_to_item(r) for r in cur.fetchall()]
+            cur.execute(f'SELECT {COLS}, audience FROM {TABLE} {clause} ORDER BY created_at DESC LIMIT 2000', tuple(args))
+            items = [{**row_to_item(r), 'audience': r[18]} for r in cur.fetchall()]
+            # Сводка по аудиториям: сколько в базе, с почтой и уже получили письмо.
+            cur.execute(f"SELECT audience, count(*), count(*) FILTER (WHERE email<>'' AND unsubscribed_at IS NULL), "
+                        f"count(*) FILTER (WHERE mail_count > 0) FROM {TABLE} GROUP BY audience")
+            by_audience = {a: {'total': t, 'with_email': e, 'mailed': m} for a, t, e, m in cur.fetchall()}
             cur.execute(f'SELECT kind, COUNT(*) FROM {TABLE} GROUP BY kind')
             by_kind = {k: c for k, c in cur.fetchall()}
             cur.execute(f'SELECT COUNT(*) FROM {TABLE}')
             total = cur.fetchone()[0]
-            return ok({'items': items, 'total': total, 'by_kind': by_kind})
+            cur.execute(f'SELECT count(*) FROM {TABLE} {clause}', tuple(args))
+            found = cur.fetchone()[0]
+            return ok({'items': items, 'total': total, 'found': found, 'by_kind': by_kind, 'by_audience': by_audience})
     finally:
         conn.close()
 
