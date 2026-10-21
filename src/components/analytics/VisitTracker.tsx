@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import func2url from "../../../backend/func2url.json";
 import { tickReminders } from "@/components/marathon/api";
 import { kidsEnrichTick, pilotTick } from "@/components/admin/eduInstitutions/api";
+import { monitorTick } from "@/components/support/api";
 
 const ANALYTICS_URL = (func2url as Record<string, string>).analytics;
 const VISITOR_KEY = "up_visitor_id";
@@ -65,6 +66,7 @@ export default function VisitTracker() {
     tickDailyReport();
     tickReminders();
     tickPilotOutreach();
+    monitorTick();
   }, []);
 
   useEffect(() => {

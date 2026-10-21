@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import SiteFooter from "@/components/SiteFooter";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import { PlanLimits } from "./api";
 import HelperChat from "./HelperChat";
 
@@ -31,7 +32,10 @@ export default function HelperLanding({ onStart, loading, limits, price }: Props
   const pro = limits?.pro;
   return (
     <div className="min-h-screen bg-background text-white">
-      <section className="max-w-6xl mx-auto px-4 pt-14 pb-12 text-center">
+      <div className="max-w-6xl mx-auto px-4 pt-5">
+        <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Для взрослых", href: "/vzroslym" }, { label: "Свой ИИ-помощник" }]} />
+      </div>
+      <section className="max-w-6xl mx-auto px-4 pt-8 pb-12 text-center">
         <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-violet-400/30 bg-violet-500/10 text-violet-200 text-xs font-semibold mb-5">
           <Icon name="Sparkles" size={14} /> Без программирования · 10 минут
         </span>

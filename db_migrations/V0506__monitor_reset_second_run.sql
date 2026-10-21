@@ -1,0 +1,2 @@
+-- Повторный сброс отметки запуска мониторинга после обновления: обход стартует при первом визите.
+UPDATE t_p78828167_tutor_platform_1.monitor_state SET last_run_at = NULL, locked_until = NULL WHERE id = 1;

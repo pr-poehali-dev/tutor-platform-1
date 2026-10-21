@@ -1,6 +1,7 @@
 import func2url from "../../../backend/func2url.json";
 
 const URL = (func2url as Record<string, string>)["contact"];
+const SUPPORT_URL = (func2url as Record<string, string>)["support"];
 const TOKEN_KEY = "uchispro_auth_token_v1";
 
 function token(): string | null {
@@ -64,10 +65,10 @@ export async function submitFeedback(payload: FeedbackPayload): Promise<{ ok: bo
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const t = token();
     if (t) headers["X-Auth-Token"] = t;
-    const res = await fetch(`${URL}?action=feedback_submit`, {
+    const res = await fetch(`${SUPPORT_URL}?action=ticket`, {
       method: "POST",
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, source: "contacts", page: window.location.pathname }),
     });
     const data = await res.json();
     if (!res.ok) return { ok: false, message: data.error };

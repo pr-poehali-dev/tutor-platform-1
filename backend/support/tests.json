@@ -1,0 +1,73 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Пустой вопрос в чат",
+      "method": "POST",
+      "path": "/?action=chat",
+      "body": {
+        "question": ""
+      },
+      "expectedStatus": 400
+    },
+    {
+      "name": "Обращение без контактов",
+      "method": "POST",
+      "path": "/?action=ticket",
+      "body": {
+        "contact_name": "Тест",
+        "message": "Проверка формы"
+      },
+      "expectedStatus": 400
+    },
+    {
+      "name": "Тестовое обращение (без уведомлений)",
+      "method": "POST",
+      "path": "/?action=ticket",
+      "body": {
+        "contact_name": "Тест",
+        "contact_email": "monitor@example.com",
+        "message": "Проверка работы формы поддержки",
+        "source": "widget"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "ok": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Список без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 403
+    },
+    {
+      "name": "Шаг мониторинга публичный",
+      "method": "GET",
+      "path": "/?action=monitor_tick",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "ok": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Статус мониторинга без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=monitor_status",
+      "expectedStatus": 403
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/?action=zzz",
+      "expectedStatus": 404
+    }
+  ]
+}

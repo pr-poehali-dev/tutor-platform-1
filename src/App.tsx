@@ -123,6 +123,8 @@ const SalesPlaybook = lazy(() => import("./pages/admin/SalesPlaybook"));
 const CityPlan = lazy(() => import("./pages/admin/CityPlan"));
 const WebmasterGuide = lazy(() => import("./pages/admin/WebmasterGuide"));
 const Leads = lazy(() => import("./pages/admin/Leads"));
+const SupportInbox = lazy(() => import("./pages/admin/SupportInbox"));
+const SupportWidget = lazy(() => import("./components/support/SupportWidget"));
 const Payouts = lazy(() => import("./pages/admin/Payouts"));
 const GrantApplications = lazy(() => import("./pages/admin/GrantApplications"));
 const EduInstitutions = lazy(() => import("./pages/admin/EduInstitutions"));
@@ -398,6 +400,7 @@ const App = () => (
                     <Route path="/admin/city-plan" element={<CityPlan />} />
                     <Route path="/admin/webmaster" element={<WebmasterGuide />} />
                     <Route path="/admin/leads" element={<Leads />} />
+                    <Route path="/admin/support" element={<SupportInbox />} />
                     <Route path="/admin/payouts" element={<Payouts />} />
                     <Route path="/admin/grants" element={<GrantApplications />} />
                     <Route path="/admin/edu-institutions" element={<EduInstitutions />} />
@@ -418,6 +421,7 @@ const App = () => (
                 </Suspense>
                 </ErrorBoundary>
                 <GlobalNavButton />
+                <Suspense fallback={null}><SupportWidget /></Suspense>
                 <InstallBanner />
                 <LoginModal />
               </AccessProvider>
