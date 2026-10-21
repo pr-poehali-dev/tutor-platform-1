@@ -686,6 +686,18 @@ def handler(event: dict, context) -> dict:
         return ok({'ok': True, 'service': 'tg-channel-agent',
                    'token_set': bool(os.environ.get('TELEGRAM_BOT_TOKEN'))})
 
+    if action == 'netcheck':
+        import socket, time as _t
+        res = {}
+        for host in ['api.telegram.org', 'botapi.max.ru', 'ya.ru']:
+            st = _t.time()
+            try:
+                socket.create_connection((host, 443), timeout=2.5).close()
+                res[host] = f'ok {int((_t.time() - st) * 1000)} мс'
+            except Exception as e:
+                res[host] = f'{type(e).__name__} {int((_t.time() - st) * 1000)} мс'
+        return ok({'ok': True, 'tcp': res})
+
     if action == 'whoami':
         success, res = tg_api('getMe', {}, timeout=15)
         if not success:
