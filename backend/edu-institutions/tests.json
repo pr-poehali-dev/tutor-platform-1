@@ -71,6 +71,12 @@
         "X-Admin-Pin": "7777"
       },
       "expectedStatus": 403
+    },
+    {
+      "name": "Предпросмотр письма об ИИ-помощнике без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=helper_letter_preview&audience=school",
+      "expectedStatus": 403
     }
   ]
 }

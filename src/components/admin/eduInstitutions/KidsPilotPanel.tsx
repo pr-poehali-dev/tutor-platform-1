@@ -13,6 +13,8 @@ import {
   kidsPreview,
   kidsSettings,
   kidsTest,
+  helperLetterPreview,
+  helperLetterTest,
 } from "./api";
 
 const TITLES: Record<KidsAudience, { title: string; icon: string; deck: string; page: string; promo: string }> = {
@@ -157,6 +159,57 @@ export default function KidsPilotPanel({ defaultEmail, onPreview }: { defaultEma
               </div>
             );
           })}
+        </div>
+      )}
+
+      {data?.parents_helper && (
+        <div className="rounded-xl border border-violet-400/25 bg-violet-500/[0.06] p-4 mb-4">
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+            <p className="font-bold flex items-center gap-2">
+              <Icon name="Bot" size={17} className="text-violet-300" /> Второе письмо: ИИ-помощник для родителей
+            </p>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-200 border border-violet-400/25">
+              школы и сады · после «Малыша»
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center mb-3">
+            {[
+              ["Готовы к отправке", data.parents_helper.pending, "text-amber-300"],
+              [`Ждут ${data.parents_helper.wait_days} дней после 1-го письма`, data.parents_helper.waiting, "text-white/80"],
+              ["Отправлено", data.parents_helper.sent, "text-emerald-300"],
+              ["Ошибки", data.parents_helper.failed, "text-rose-300"],
+            ].map(([label, v, tone]) => (
+              <div key={label as string} className="rounded-lg bg-white/[0.04] py-2">
+                <p className={`font-montserrat font-black text-lg ${tone}`}>{v as number}</p>
+                <p className="text-[11px] text-white/45 px-1">{label as string}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-white/50 mb-3">
+            Уходит школам и садам, которые уже получили первое письмо, не раньше чем через {data.parents_helper.wait_days} дней.
+            В очереди — только когда письма о «Малыше» в партии закончились; пауза очереди «Малыша» останавливает и его.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(["kindergarten", "school"] as const).map((aud) => (
+              <span key={aud} className="inline-flex gap-2">
+                <Button size="sm" variant="outline" disabled={busy} className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => run(async () => {
+                    const r = await helperLetterPreview(aud);
+                    if (r.ok) onPreview(r.data!.html);
+                    return r.ok ? "" : r.error || "Ошибка";
+                  })}>
+                  <Icon name="Eye" size={14} /> {aud === "kindergarten" ? "Письмо саду" : "Письмо школе"}
+                </Button>
+                <Button size="sm" variant="outline" disabled={busy || !testEmail} className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => run(async () => {
+                    const r = await helperLetterTest(aud, testEmail);
+                    return r.ok && r.data!.ok ? `Тестовое письмо отправлено на ${r.data!.to}` : r.data?.error || r.error || "Ошибка";
+                  })}>
+                  <Icon name="Send" size={14} /> Тест себе
+                </Button>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

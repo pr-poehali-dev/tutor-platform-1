@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 
+import helper_letters
 import kids_pilot
 import outreach
 import wave2
@@ -370,6 +371,19 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
         total['failed'] += kr['failed']
         batch -= kr['sent'] + kr['failed']
         if kr['stop']:
+            total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
+            return total
+    # Второе письмо «ИИ-помощник для родителей»: только когда писем о «Малыше» в этой партии уже нет,
+    # и не больше половины партии — школьная очередь первой волны не останавливается.
+    if total['sent'] == 0 and total['failed'] == 0 and batch > 0 and kids_pilot.settings(cur):
+        hr = helper_letters.send_batch(cur, conn, (batch + 1) // 2, unsub_url, inst_by_id, ensure_token,
+                                       started, TIME_BUDGET_SEC)
+        if hr['sent'] or hr['failed']:
+            total['cities'].append({'city': 'ИИ-помощник для родителей', 'sent': hr['sent'], 'failed': hr['failed']})
+        total['sent'] += hr['sent']
+        total['failed'] += hr['failed']
+        batch -= hr['sent'] + hr['failed']
+        if hr['stop']:
             total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
             return total
     for city in all_cities(cur):

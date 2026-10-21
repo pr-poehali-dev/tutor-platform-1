@@ -283,6 +283,7 @@ export interface KidsOverview {
   fund: KidsAudienceStat;
   enabled: boolean;
   registry_rows: number;
+  parents_helper?: { sent: number; failed: number; pending: number; waiting: number; wait_days: number };
 }
 
 export function kidsOverview() {
@@ -303,6 +304,14 @@ export function kidsPreview(audience: KidsAudience) {
 
 export function kidsTest(audience: KidsAudience, email: string) {
   return req<{ ok: boolean; to: string; error: string | null }>("kids_test", { method: "POST", body: { audience, email } });
+}
+
+export function helperLetterPreview(audience: "school" | "kindergarten") {
+  return req<{ subject: string; html: string; text: string; to: string }>("helper_letter_preview", { query: { audience } });
+}
+
+export function helperLetterTest(audience: "school" | "kindergarten", email: string) {
+  return req<{ ok: boolean; to: string; error: string | null }>("helper_letter_test", { method: "POST", body: { audience, email } });
 }
 
 export function kidsEnrich() {

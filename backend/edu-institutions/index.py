@@ -13,6 +13,7 @@ import time
 import psycopg2
 
 import kids_letters
+import helper_letters
 import kids_pilot
 import outreach
 import pilot
@@ -684,7 +685,61 @@ def handle_kids_overview() -> dict:
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            return ok(kids_pilot.overview(cur))
+            out = kids_pilot.overview(cur)
+            out['parents_helper'] = helper_letters.stats(cur)
+            return ok(out)
+    finally:
+        conn.close()
+
+
+def _helper_sample(cur, audience):
+    cur.execute(f"SELECT id FROM {TABLE} WHERE audience=%s AND email<>'' ORDER BY id LIMIT 1", (audience,))
+    r = cur.fetchone()
+    inst, token = _inst_by_id(cur, r[0]) if r else ({'org_name': 'МБДОУ «Детский сад № 1»' if audience == 'kindergarten'
+                                                      else 'МБОУ «Школа № 1»', 'contact_name': 'Иванова Мария Петровна'}, 'demo')
+    inst['audience'] = audience
+    return inst, token
+
+
+def handle_helper_letter_preview(qs, event) -> dict:
+    audience = 'school' if qs.get('audience') == 'school' else 'kindergarten'
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            inst, token = _helper_sample(cur, audience)
+            subject, html, text, _ = helper_letters.letter(inst, _unsub_url(event, token or 'demo'))
+            return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
+    finally:
+        conn.close()
+
+
+def handle_helper_letter_test(body, event) -> dict:
+    to = str(body.get('email') or '').strip()
+    audience = 'school' if body.get('audience') == 'school' else 'kindergarten'
+    if '@' not in to or len(to) > 200:
+        return err('Укажите корректный email для проверки', 400)
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            inst, _ = _helper_sample(cur, audience)
+            subject, html, text, reply = helper_letters.letter(inst, _unsub_url(event, 'demo'))
+            status, error = 'sent', None
+            try:
+                smtp = outreach.open_smtp()
+                try:
+                    outreach.send_one(smtp, to, '[ТЕСТ] ' + subject, html, text, _unsub_url(event, 'demo'), reply)
+                finally:
+                    smtp.quit()
+            except Exception as e:
+                print(f'[error] {type(e).__name__}: {e}')
+                status, error = 'failed', 'Не удалось отправить. Проверьте почту в настройках'
+            cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error, is_test) "
+                        f"VALUES (%s, NULL, %s, %s, %s, TRUE)", (helper_letters.CAMPAIGN, to, status, error))
+            conn.commit()
+            return ok({'ok': status == 'sent', 'to': to, 'error': error})
     finally:
         conn.close()
 
@@ -849,6 +904,10 @@ def handler(event: dict, context) -> dict:
         return handle_kids_import(body)
     if action == 'kids_preview':
         return handle_kids_preview(qs, event)
+    if action == 'helper_letter_preview':
+        return handle_helper_letter_preview(qs, event)
+    if action == 'helper_letter_test' and method == 'POST':
+        return handle_helper_letter_test(body, event)
     if action == 'kids_test' and method == 'POST':
         return handle_kids_test(body, event)
     if action == 'kids_enrich' and method == 'POST':

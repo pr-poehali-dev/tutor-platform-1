@@ -18,6 +18,8 @@ SUBJECT = 'Страница вашей школы в справочнике УЧ
 def audience_where() -> str:
     """Получили первое письмо ≥ WAIT_DAYS назад, не отписались, ещё не получили это и не заполнили анкету."""
     return (f"{TABLE}.audience='school' AND {TABLE}.email<>'' AND {TABLE}.unsubscribed_at IS NULL AND {TABLE}.status NOT IN ('declined') "
+            # Не чаще одного письма в 3 дня — даже если между волнами ушло письмо об ИИ-помощнике.
+            f"AND ({TABLE}.last_mailed_at IS NULL OR {TABLE}.last_mailed_at < now() - interval '3 days') "
             f"AND {TABLE}.slug IS NOT NULL AND {TABLE}.hidden_in_directory = FALSE "
             f"AND EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
             f"AND s.status='sent' AND s.is_test=FALSE AND s.campaign_code<>'{CAMPAIGN}' "
