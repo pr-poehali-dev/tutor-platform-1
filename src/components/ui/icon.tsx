@@ -56,8 +56,21 @@ function groupLoader(key: string): IconLoader | null {
 // Кэш ленивых компонентов, чтобы не пересоздавать их на каждый рендер.
 const cache = new Map<string, React.LazyExoticComponent<React.ComponentType<LucideProps>>>();
 
+/** Старые имена lucide → новые (библиотека переименовала их, а в коде остались прежние). */
+const LEGACY: Record<string, string> = {
+  'code-2': 'code-xml', 'grid3x3': 'grid-3x3', 'loader-2': 'loader-circle', 'check-circle-2': 'circle-check', 'check-circle': 'circle-check-big',
+  'help-circle': 'circle-help', 'unlock': 'lock-open', 'wand-2': 'wand-sparkles', 'home': 'house',
+  'bar-chart-3': 'chart-column', 'alert-circle': 'circle-alert', 'user-circle': 'circle-user',
+  'more-horizontal': 'ellipsis', 'link-off': 'link-2-off', 'alert-triangle': 'triangle-alert', 'play-square': 'square-play',
+  'edit-3': 'pen-line', 'x-circle': 'circle-x', 'file-bar-chart': 'file-chart-column', 'line-chart': 'chart-line',
+  'sliders': 'sliders-vertical', 'mic-2': 'mic-vocal', 'play-circle': 'circle-play',
+};
+
 function getLazyIcon(name: string): React.LazyExoticComponent<React.ComponentType<LucideProps>> | null {
-  const key = toKebab(name);
+  let key = toKebab(name);
+  if (LEGACY[key] && iconGroupIndex[key] === undefined) key = LEGACY[key];
+  // Имена с цифрой («Building2», «Clock3») в lucide пишутся через дефис: building-2, clock-3.
+  if (iconGroupIndex[key] === undefined) key = key.replace(/([a-z])(\d)/g, '$1-$2');
   const loader = groupLoader(key);
   if (!loader) return null;
   if (!cache.has(key)) cache.set(key, lazy(safeLoader(loader)));

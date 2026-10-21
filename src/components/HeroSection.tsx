@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { COURSES } from "@/components/courses/coursesData";
 import TochkaPartnerBadge from "@/components/partners/TochkaPartnerBadge";
 import { TOCHKA_PARTNER_URL } from "@/components/partners/tochkaLinks";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
@@ -162,35 +163,21 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Отзыв-полоса */}
+        {/* Честные факты вместо непроверяемого отзыва */}
         <div className="mt-12 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-5 md:p-6 backdrop-blur-sm animate-fade-in-up animate-delay-500">
-          <div className="flex flex-col md:flex-row md:items-center gap-5">
-            <div className="flex items-center gap-3 md:border-r md:border-white/10 md:pr-5">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center font-montserrat font-black text-white text-lg">
-                А
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {[
+              ["BookOpen", `${COURSES.length} курсов`, "школа, ОГЭ, ЕГЭ, взрослым"],
+              ["Bot", "ИИ-репетитор", "по всем предметам 1–11 класса"],
+              ["Gift", "Первый урок 0 ₽", "без карты и обязательств"],
+              ["Landmark", "ООО «МАТ-ЛАБС»", "партнёр Точка Банка"],
+            ].map(([icon, title, text]) => (
+              <div key={title} className="flex flex-col items-center gap-1.5">
+                <Icon name={icon} size={20} className="text-purple-300" />
+                <p className="font-bold text-white text-sm leading-tight">{title}</p>
+                <p className="text-white/55 text-xs leading-snug">{text}</p>
               </div>
-              <div>
-                <p className="font-bold text-white text-sm">Аня, 11 класс</p>
-                <div className="flex items-center gap-1 text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Icon key={i} name="Star" size={11} fill="currentColor" />
-                  ))}
-                  <span className="text-white/60 text-xs ml-1">5,0</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-white/85 text-sm md:text-base leading-relaxed flex-1">
-              «За 4 месяца с ИИ-репетитором по математике подняла с 62 до 89
-              баллов. Главное — он всегда онлайн, можно спросить даже в 2 часа
-              ночи перед пробником.»
-            </p>
-            <div className="flex items-center gap-2 text-xs text-white/60 md:flex-shrink-0">
-              <Icon name="TrendingUp" size={14} className="text-emerald-400" />
-              <span>
-                <span className="font-bold text-emerald-400">+27 баллов</span>{" "}
-                за 4 месяца
-              </span>
-            </div>
+            ))}
           </div>
         </div>
       </div>

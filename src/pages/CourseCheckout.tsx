@@ -224,13 +224,6 @@ export default function CourseCheckout() {
       educationalLevel: gradeLabel,
       inLanguage: "ru-RU",
       teaches: course.tags.join(", "),
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: course.rating,
-        reviewCount: course.reviews,
-        bestRating: 5,
-        worstRating: 1,
-      },
       offers: {
         "@type": "Offer",
         price: price,

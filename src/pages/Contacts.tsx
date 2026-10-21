@@ -202,6 +202,23 @@ export default function Contacts() {
             Отправить
           </button>
         </div>
+
+        <section id="rekvizity" className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 scroll-mt-24">
+          <h2 className="font-montserrat font-black text-lg text-white mb-3 flex items-center gap-2">
+            <Icon name="Landmark" size={18} className="text-purple-300" /> Реквизиты
+          </h2>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+            <dt className="text-white/50">Организация</dt><dd className="text-white">ООО «МАТ-ЛАБС»</dd>
+            <dt className="text-white/50">ИНН</dt><dd className="text-white">6312223437</dd>
+            <dt className="text-white/50">КПП</dt><dd className="text-white">631201001</dd>
+            <dt className="text-white/50">ОГРН</dt><dd className="text-white">1266300004288</dd>
+            <dt className="text-white/50">Регистрация</dt><dd className="text-white">27.02.2026, Самара</dd>
+          </dl>
+          <p className="text-white/50 text-xs mt-3">
+            Платежи принимаются через ЮKassa, чек приходит на почту. Условия оплаты и возврата — в{" "}
+            <Link to="/legal/offer" className="text-purple-300 hover:underline">оферте</Link>.
+          </p>
+        </section>
       </main>
 
       <SiteFooter />

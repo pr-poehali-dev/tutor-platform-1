@@ -99,14 +99,6 @@ export default function SubjectLanding() {
         name: "УЧИСЬПРО",
         url: SITE_URL,
       },
-      aggregateRating: c.rating
-        ? {
-            "@type": "AggregateRating",
-            ratingValue: String(c.rating),
-            reviewCount: String(c.reviews || 50),
-            bestRating: "5",
-          }
-        : undefined,
       offers: {
         "@type": "Offer",
         price: String(getCoursePrice(c)),

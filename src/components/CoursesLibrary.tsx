@@ -89,9 +89,9 @@ export default function CoursesLibrary() {
           {/* Stats strip */}
           <div className="hidden md:flex gap-5">
             {[
-              { val: "120+", label: "репетиторов", color: "#a855f7" },
-              { val: "50+", label: "предметов", color: "#00d4ff" },
-              { val: "4.9★", label: "средний рейтинг", color: "#ffd60a" },
+              { val: String(COURSES.length), label: "курсов", color: "#a855f7" },
+              { val: String(new Set(COURSES.map(c => c.subject)).size), label: "предметов", color: "#00d4ff" },
+              { val: "24/7", label: "ИИ-наставник на связи", color: "#ffd60a" },
             ].map(s => (
               <div key={s.label} className="text-right">
                 <div className="font-montserrat font-black text-xl" style={{ color: s.color }}>{s.val}</div>

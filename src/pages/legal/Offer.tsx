@@ -58,7 +58,11 @@ export default function Offer() {
         <div className="bg-white/4 border border-white/8 rounded-2xl p-4 mt-2 not-prose">
           <p><strong className="text-white">Наименование:</strong> Общество с ограниченной ответственностью «МАТ-ЛАБС»</p>
           <p><strong className="text-white">Сокращённое наименование:</strong> ООО «МАТ-ЛАБС»</p>
-          <p className="text-white/55 text-xs mt-2">Полные реквизиты (ИНН, ОГРН, юридический адрес, банковские реквизиты) предоставляются по запросу через форму обратной связи на Платформе.</p>
+          <p><strong className="text-white">ИНН:</strong> 6312223437</p>
+          <p><strong className="text-white">КПП:</strong> 631201001</p>
+          <p><strong className="text-white">ОГРН:</strong> 1266300004288</p>
+          <p><strong className="text-white">Дата регистрации:</strong> 27.02.2026</p>
+          <p className="text-white/55 text-xs mt-2">Юридический адрес и банковские реквизиты предоставляются по запросу через форму обратной связи на Платформе.</p>
         </div>
 
       </section>

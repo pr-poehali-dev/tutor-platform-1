@@ -95,16 +95,6 @@ export default function AdultCourses() {
             priceCurrency: "RUB",
             availability: "https://schema.org/InStock",
           },
-          ...(c.reviews > 0
-            ? {
-                aggregateRating: {
-                  "@type": "AggregateRating",
-                  ratingValue: c.rating,
-                  reviewCount: c.reviews,
-                  bestRating: 5,
-                },
-              }
-            : {}),
         },
       })),
     },

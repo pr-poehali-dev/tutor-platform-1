@@ -1,10 +1,11 @@
 import Icon from "@/components/ui/icon";
+import { COURSES } from "@/components/courses/coursesData";
 
 const STATS = [
-  { value: "12 000+", label: "учеников готовятся", icon: "Users", color: "#a78bfa" },
-  { value: "82", label: "средний балл ЕГЭ", icon: "TrendingUp", color: "#34d399" },
+  { value: `${COURSES.length}`, label: "курсов на платформе", icon: "BookOpen", color: "#a78bfa" },
+  { value: "1–11", label: "класс, все предметы", icon: "GraduationCap", color: "#34d399" },
   { value: "24/7", label: "доступ к ИИ-репетитору", icon: "Bot", color: "#60a5fa" },
-  { value: "4.9★", label: "оценка платформы", icon: "Star", color: "#fbbf24" },
+  { value: "0 ₽", label: "первый урок", icon: "Gift", color: "#fbbf24" },
 ];
 
 export default function SocialProofStrip() {

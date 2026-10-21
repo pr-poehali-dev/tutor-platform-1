@@ -33,12 +33,12 @@ export default function MGUHero() {
         </p>
         <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <Icon name="Users" size={16} className="text-cyan-300" />
-            <span className="text-white/85"><b>2 850</b> учеников поступило</span>
+            <Icon name="Bot" size={16} className="text-cyan-300" />
+            <span className="text-white/85"><b>24/7</b> ИИ-стратег на связи</span>
           </div>
           <div className="flex items-center gap-2">
             <Icon name="Trophy" size={16} className="text-amber-300" />
-            <span className="text-white/85"><b>340+</b> БВИ через олимпиады</span>
+            <span className="text-white/85">БВИ через перечневые олимпиады</span>
           </div>
           <div className="flex items-center gap-2">
             <Icon name="Brain" size={16} className="text-purple-300" />

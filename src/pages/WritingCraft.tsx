@@ -38,12 +38,6 @@ export default function WritingCraft() {
         availability: "https://schema.org/InStock",
         url: `${SITE_URL}/writing-craft`,
       },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.99",
-        reviewCount: "127",
-        bestRating: "5",
-      },
     },
     {
       "@context": "https://schema.org",

@@ -56,7 +56,6 @@ export default function FreeVersionCard({ course, freeLessons = 2 }: Props) {
         <div className="flex items-center gap-3 text-white/55 text-xs mb-4">
           <span className="flex items-center gap-1"><Icon name="GraduationCap" size={12} /> {gradeLabel}</span>
           <span className="flex items-center gap-1"><Icon name="BookOpen" size={12} /> {course.lessons} ур.</span>
-          <span className="flex items-center gap-1"><Icon name="Star" size={12} className="text-amber-400" /> {course.rating.toFixed(2)}</span>
         </div>
 
         {/* Список уроков: открытые + под замком */}

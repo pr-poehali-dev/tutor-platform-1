@@ -85,7 +85,6 @@ export default function CourseCardCompact({ course }: Props) {
         <div className="flex items-center gap-3 text-white/55 text-xs mb-4">
           <span className="flex items-center gap-1"><Icon name="GraduationCap" size={12} /> {gradeLabel}</span>
           <span className="flex items-center gap-1"><Icon name="BookOpen" size={12} /> {course.lessons} ур.</span>
-          <span className="flex items-center gap-1"><Icon name="Star" size={12} className="text-amber-400" /> {course.rating.toFixed(2)}</span>
         </div>
 
 
@@ -101,8 +100,8 @@ export default function CourseCardCompact({ course }: Props) {
                 <p className="font-montserrat font-black text-lg text-white">{price.toLocaleString("ru-RU")} ₽</p>
                 {!owned && (
                   <p className="flex items-center gap-1 text-[11px] text-emerald-300/80 leading-none mt-0.5">
-                    <Icon name="Star" size={10} className="text-amber-400" />
-                    {course.rating.toFixed(1)} · первый урок бесплатно
+                    <Icon name="Gift" size={10} className="text-emerald-300" />
+                    Первый урок бесплатно
                   </p>
                 )}
               </>

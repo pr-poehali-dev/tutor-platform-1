@@ -65,7 +65,7 @@ export default function LeaderboardSection() {
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-3xl">🦁</div>
                   <div>
                     <p className="font-montserrat font-black text-2xl text-white">#12</p>
-                    <p className="text-white/50 text-sm">из 1 247 учеников</p>
+                    <p className="text-white/50 text-sm">пример рейтинга</p>
                   </div>
                 </div>
                 <div className="flex justify-between text-sm mb-2">

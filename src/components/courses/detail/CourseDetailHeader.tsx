@@ -21,10 +21,6 @@ export default function CourseDetailHeader({ course, fmt, gradeLabel }: Props) {
         </div>
         <h2 className="font-montserrat font-black text-xl md:text-3xl text-white mb-2 leading-snug">{course.title}</h2>
         <div className="flex flex-wrap items-center gap-3 text-xs text-white/55">
-          <span className="flex items-center gap-1"><span className="text-yellow-400">⭐</span> {course.rating} · {course.reviews.toLocaleString("ru-RU")} оценок</span>
-          <span>•</span>
-          <span>{course.students.toLocaleString("ru-RU")} учеников</span>
-          <span>•</span>
           <span>{course.lessons} уроков по {course.duration}</span>
         </div>
       </div>

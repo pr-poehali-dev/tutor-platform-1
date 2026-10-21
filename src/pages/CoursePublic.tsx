@@ -70,19 +70,6 @@ export default function CoursePublic() {
       teaches: course.tags,
       numberOfCredits: course.lessons,
       timeRequired: `PT${course.lessons * 30}M`,
-      // Рейтинг в разметке указываем только при реальных отзывах:
-      // выдуманные оценки поисковики считают нарушением и снимают сниппет.
-      ...(course.reviews > 0
-        ? {
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: course.rating,
-              reviewCount: course.reviews,
-              bestRating: 5,
-              worstRating: 1,
-            },
-          }
-        : {}),
       offers: {
         "@type": "Offer",
         price: price,
@@ -206,25 +193,14 @@ export default function CoursePublic() {
           </section>
         )}
 
-        {/* Пустые счётчики не показываем: «0 отзывов» отталкивает сильнее,
-            чем их отсутствие, а у новых курсов статистики пока нет. */}
+        {/* Рейтинг, число отзывов и учеников не показываем: проверяемой
+            статистики пока нет (38-ФЗ «О рекламе»). */}
         <div className="flex flex-wrap items-center gap-3 mb-8 text-sm">
-          {course.reviews > 0 && (
-            <span className="flex items-center gap-1.5 text-amber-300">
-              <Icon name="Star" size={15} aria-hidden="true" />
-              {course.rating} · {course.reviews} отзывов
-            </span>
-          )}
-          {course.students > 0 && (
-            <span className="text-white/50">{course.students.toLocaleString("ru-RU")} учеников</span>
-          )}
           <span className="text-white/50">{course.lessons} уроков</span>
-          {course.reviews === 0 && (
-            <span className="text-emerald-300/90 flex items-center gap-1.5">
-              <Icon name="Sparkles" size={14} aria-hidden="true" />
-              Новый курс
-            </span>
-          )}
+          <span className="text-emerald-300/90 flex items-center gap-1.5">
+            <Icon name="Sparkles" size={14} aria-hidden="true" />
+            Первый урок бесплатно
+          </span>
         </div>
 
         {/* Оплата — отдельным шагом, чтобы витрина оставалась открытой поиску */}

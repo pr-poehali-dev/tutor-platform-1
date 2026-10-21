@@ -48,7 +48,7 @@ export default function SupportWidget() {
         aria-label="Написать в поддержку"
         className="fixed left-3 md:left-5 bottom-[max(1rem,env(safe-area-inset-bottom))] md:bottom-5 z-[115] flex items-center gap-2 h-12 pl-3.5 pr-4 rounded-full bg-[#141225] border border-white/15 text-white shadow-xl shadow-black/40 hover:border-violet-400/60 transition-colors"
       >
-        <Icon name="MessageCircleQuestion" fallback="MessageCircle" size={20} className="text-violet-300" />
+        <Icon name="CircleHelp" fallback="MessageCircle" size={20} className="text-violet-300" />
         <span className="text-sm font-semibold hidden sm:inline">Поддержка</span>
       </button>
     );
