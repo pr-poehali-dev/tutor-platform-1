@@ -74,6 +74,12 @@ export default function FeedArticlePage() {
 
   useEffect(() => {
     if (!slug) return;
+    // Мессенджеры приклеивают к ссылке точку, запятую, скобку или кавычку — убираем и открываем статью.
+    const clean = slug.trim().replace(/[\s.,;:!?)\]}»"'…]+$/u, "");
+    if (clean && clean !== slug) {
+      navigate(`/feed/${clean}${window.location.search}`, { replace: true });
+      return;
+    }
     // Защита от гонки при быстрой смене статей: не обновляем состояние после размонтирования/смены slug.
     let cancelled = false;
     setLoading(true);
