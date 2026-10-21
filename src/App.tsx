@@ -144,6 +144,8 @@ const ClinicalPsychologist = lazy(() => import("./pages/ClinicalPsychologist"));
 const TechTrends = lazy(() => import("./pages/TechTrends"));
 const Intensive = lazy(() => import("./pages/Intensive"));
 const AiAssistant = lazy(() => import("./pages/AiAssistant"));
+const AiHelperStudio = lazy(() => import("./pages/AiHelperStudio"));
+const AiHelperPublic = lazy(() => import("./pages/AiHelperPublic"));
 const ForBusiness = lazy(() => import("./pages/ForBusiness"));
 const Corporate = lazy(() => import("./pages/Corporate"));
 const ManagerTools = lazy(() => import("./pages/ManagerTools"));
@@ -250,6 +252,8 @@ const App = () => (
                     <Route path="/tech-trends" element={<TechTrends />} />
                     <Route path="/intensive" element={<Intensive />} />
                     <Route path="/ai-assistant" element={<AiAssistant />} />
+                    <Route path="/ai-helper" element={<AiHelperStudio />} />
+                    <Route path="/h/:slug" element={<AiHelperPublic />} />
                     <Route path="/for-business" element={<ForBusiness />} />
                     <Route path="/corporate" element={<Corporate />} />
                     <Route path="/career-pro" element={<CareerPro />} />

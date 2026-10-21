@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Шаблоны помощников",
+      "method": "GET",
+      "path": "/?action=templates",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Мои помощники без входа",
+      "method": "GET",
+      "path": "/?action=my",
+      "expectedStatus": 401
+    },
+    {
+      "name": "Несуществующий помощник",
+      "method": "GET",
+      "path": "/?action=public&slug=net-takogo-000",
+      "expectedStatus": 404
+    },
+    {
+      "name": "Вопрос без текста",
+      "method": "POST",
+      "path": "/?action=ask",
+      "body": {
+        "slug": "x",
+        "question": ""
+      },
+      "expectedStatus": 400
+    },
+    {
+      "name": "Неизвестное действие",
+      "method": "GET",
+      "path": "/?action=zzz",
+      "expectedStatus": 404
+    }
+  ]
+}

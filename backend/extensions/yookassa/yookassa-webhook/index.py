@@ -360,6 +360,33 @@ def handler(event, context):
                 'body': json.dumps({'status': 'ok', 'kind': 'subscription'})
             }
 
+        # ── Branch H: PRO-тариф ИИ-помощника. Данные берём из ответа ЮKassa, а не из тела уведомления ──
+        vmeta = verified_payment.get('metadata') or {}
+        if vmeta.get('kind') == 'ai_helper_pro':
+            try:
+                hp_id = int(vmeta.get('pay_id') or 0)
+            except (TypeError, ValueError):
+                hp_id = 0
+            paid_amount = str((verified_payment.get('amount') or {}).get('value') or '0')
+            if hp_id and payment_status == 'succeeded':
+                cur.execute(f"""
+                    UPDATE {S}ai_helper_payments SET status='paid', payment_id=%s, paid_at=NOW()
+                    WHERE id=%s AND status <> 'paid' AND amount <= %s::numeric
+                    RETURNING helper_id
+                """, (payment_id, hp_id, paid_amount))
+                row = cur.fetchone()
+                if row:
+                    cur.execute(f"""
+                        UPDATE {S}ai_helpers
+                        SET pro_until = GREATEST(COALESCE(pro_until, NOW()), NOW()) + interval '30 days', updated_at = NOW()
+                        WHERE id=%s
+                    """, (row[0],))
+                conn.commit()
+            elif hp_id and payment_status == 'canceled':
+                cur.execute(f"UPDATE {S}ai_helper_payments SET status='canceled' WHERE id=%s AND status='pending'", (hp_id,))
+                conn.commit()
+            return {'statusCode': 200, 'headers': HEADERS, 'body': json.dumps({'status': 'ok', 'kind': 'ai_helper_pro'})}
+
         # ── Branch SC: покупка курса онлайн-школы (school_course_purchases) ──
         if metadata.get('kind') == 'school_course':
             sc_purchase_raw = metadata.get('purchase_id')

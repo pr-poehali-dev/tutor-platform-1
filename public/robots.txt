@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /h/
 Disallow: /legal/
 Disallow: /vc/
 Disallow: /api/
