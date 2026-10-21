@@ -411,7 +411,8 @@ def handle_outreach_send(body, event) -> dict:
             try:
                 smtp = outreach.open_smtp()
             except Exception as e:
-                return err(f'Не удалось подключиться к почте: {type(e).__name__}: {str(e)[:200]}', 502)
+                print(f'[error] {type(e).__name__}: {e}')
+                return err('Не удалось подключиться к почте. Попробуйте позже', 502)
             try:
                 for rid in ids:
                     inst, token = _inst_by_id(cur, rid)
@@ -558,7 +559,8 @@ def handle_pilot_send(body, event) -> dict:
                 r = pilot.send_for_city(cur, conn, city, limit, lambda t: _unsub_url(event, t),
                                         _inst_by_id, _ensure_token, time.time())
             except Exception as e:
-                return err(f'Не удалось подключиться к почте: {type(e).__name__}: {str(e)[:200]}', 502)
+                print(f'[error] {type(e).__name__}: {e}')
+                return err('Не удалось подключиться к почте. Попробуйте позже', 502)
             cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {pilot.audience_where(city)}')
             left = cur.fetchone()[0]
             return ok({'sent': r['sent'], 'failed': r['failed'], 'errors': r['errors'], 'left': left, 'done': left == 0})

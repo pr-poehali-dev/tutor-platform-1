@@ -631,7 +631,8 @@ def handle_setup_webhook(params: dict) -> dict:
         return ok({'ok': False, 'reason': 'telegram_error',
                    'detail': e.read().decode()[:300]})
     except urllib.error.URLError as e:
-        return ok({'ok': False, 'reason': 'network', 'detail': str(e)[:200]})
+        print(f'[error] {type(e).__name__}: {e}')
+        return ok({'ok': False, 'reason': 'network', 'detail': 'Ошибка сервера. Попробуйте позже'})
 
     return ok({'ok': bool(data.get('ok')), 'webhook_url': hook_url,
                'telegram_response': data})
@@ -648,7 +649,8 @@ def handle_webhook_info() -> dict:
         ) as resp:
             data = json.loads(resp.read().decode())
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        return ok({'ok': False, 'reason': 'request_failed', 'detail': str(e)[:200]})
+        print(f'[error] {type(e).__name__}: {e}')
+        return ok({'ok': False, 'reason': 'request_failed', 'detail': 'Ошибка сервера. Попробуйте позже'})
 
     info = data.get('result') or {}
     return ok({

@@ -980,7 +980,8 @@ def handle_today(headers):
             })
     except Exception as e:
         conn.rollback()
-        return err(f'Не удалось собрать день: {str(e)[:120]}', 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Не удалось собрать день. Попробуйте позже', 500)
     finally:
         conn.close()
 

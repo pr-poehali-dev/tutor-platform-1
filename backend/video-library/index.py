@@ -114,7 +114,8 @@ def handle_save(token: str, body: dict) -> dict:
                 try:
                     video_url = upload_mp4_to_s3(video_bytes, slugify(title))
                 except Exception as e:
-                    return err(f'Не удалось загрузить видео в хранилище: {str(e)[:120]}', 502)
+                    print(f'[error] {type(e).__name__}: {e}')
+                    return err('Не удалось загрузить видео в хранилище. Попробуйте позже', 502)
 
             storyboard = body.get('storyboard') or []
             status = body.get('status') if body.get('status') in ('draft', 'published') else 'draft'
@@ -233,4 +234,5 @@ def handler(event, context):
             return handle_delete(token, body)
         return err(f'Неизвестное действие: {action}. Доступно: save, list, get, delete')
     except Exception as e:
-        return err(f'{type(e).__name__}: {str(e)[:200]}', 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 500)

@@ -377,4 +377,5 @@ def handler(event: dict, context) -> dict:
             return ok(add_screen_time(uid, body.get('minutes') or 1))
         return err(f'неизвестный action: {action}')
     except Exception as e:
-        return err(f'{type(e).__name__}: {str(e)[:200]}', 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 500)

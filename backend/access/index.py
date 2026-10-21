@@ -900,7 +900,8 @@ def handle_buy_course(token: str, body: dict) -> dict:
                     (purchase_id,)
                 )
                 conn.commit()
-                return err(f'Не удалось создать платёж: {str(e)[:200]}', 502)
+                print(f'[error] {type(e).__name__}: {e}')
+                return err('Не удалось создать платёж. Попробуйте позже', 502)
 
             payment_id = yk.get('id', '')
             confirmation_url = (yk.get('confirmation') or {}).get('confirmation_url', '')
@@ -1169,7 +1170,8 @@ def handle_buy_subscription(token: str, body: dict) -> dict:
                     (subscription_id,)
                 )
                 conn.commit()
-                return err(f'Не удалось создать платёж: {str(e)[:200]}', 502)
+                print(f'[error] {type(e).__name__}: {e}')
+                return err('Не удалось создать платёж. Попробуйте позже', 502)
 
             payment_id = yk.get('id', '')
             confirmation_url = (yk.get('confirmation') or {}).get('confirmation_url', '')

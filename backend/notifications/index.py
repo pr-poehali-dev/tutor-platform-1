@@ -364,7 +364,12 @@ def handle_reset_request(body, source_ip):
         cur.execute(
             "SELECT count(*) FROM password_resets WHERE user_id=%s AND created_at > NOW() - interval '15 minutes'",
             (uid,))
-        if cur.fetchone()[0] >= 3:
+        per_user = cur.fetchone()[0]
+        # Не больше 5 писем в час с одного IP — защита от засыпания чужих ящиков.
+        cur.execute(
+            "SELECT count(*) FROM password_resets WHERE request_ip=%s AND created_at > NOW() - interval '1 hour'",
+            ((source_ip or '')[:64],))
+        if per_user >= 3 or cur.fetchone()[0] >= 5:
             conn.commit()
             return ok(neutral)
 

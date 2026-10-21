@@ -465,7 +465,8 @@ def handle_pay(conn, uid: int, body: dict) -> dict:
             {'kind': 'grant_application', 'payment_id': str(pay_id_local),
              'application_id': str(aid), 'user_id': str(uid)})
     except Exception as e:
-        return err(f'Ошибка оплаты: {str(e)[:150]}', 502)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка оплаты. Попробуйте позже', 502)
 
     payment_id = pay.get('id')
     confirmation_url = (pay.get('confirmation') or {}).get('confirmation_url')

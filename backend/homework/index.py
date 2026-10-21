@@ -337,7 +337,8 @@ def handle_check(token: str, body: dict) -> dict:
                 return err(f'Сервис распознавания временно недоступен (код {e.code}). Попробуй ещё раз через минуту.', 502)
             except Exception as e:
                 print(f"[homework] check failed: {type(e).__name__}: {str(e)[:200]}")
-                return err(f'Не удалось распознать фото: {str(e)[:150]}', 502)
+                print(f'[error] {type(e).__name__}: {e}')
+                return err('Не удалось распознать фото. Попробуйте позже', 502)
 
             is_correct = detect_verdict(result_text) if mode == 'review' else None
 
@@ -407,4 +408,5 @@ def handler(event, context):
             return handle_history(token)
         return err(f'Неизвестное действие: {action}. Доступно: check, history')
     except Exception as e:
-        return err(f'{type(e).__name__}: {str(e)[:200]}', 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 500)

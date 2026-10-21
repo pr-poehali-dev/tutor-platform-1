@@ -423,6 +423,7 @@ def handler(event: dict, context) -> dict:
         return out
     except Exception as e:
         conn.rollback()
-        return resp({'error': f'Ошибка сервера: {str(e)}'}, 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return resp({'error': 'Ошибка сервера. Попробуйте позже'}, 500)
     finally:
         conn.close()

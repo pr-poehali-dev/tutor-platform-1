@@ -198,12 +198,12 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
-            'body': json.dumps({'error': f'Некорректный JSON: {e}'}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Некорректные данные запроса'}, ensure_ascii=False),
         }
     except Exception as e:
         log(f"FATAL {type(e).__name__}: {e}")
         return {
             'statusCode': 500,
             'headers': {**CORS_HEADERS, 'Content-Type': 'application/json'},
-            'body': json.dumps({'error': f'{type(e).__name__}: {str(e)[:200]}'}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Ошибка сервера. Попробуйте позже'}, ensure_ascii=False),
         }

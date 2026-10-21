@@ -5,6 +5,7 @@ Business: Генератор фоновых инструменталок для 
 Args: event с httpMethod=POST и queryStringParameters.id (folk|pop|lullaby|ethno|march)
 Returns: HTTP-ответ с CDN-URL сгенерированной мелодии
 """
+import admin_guard
 import json
 import math
 import os
@@ -222,7 +223,7 @@ def upload_vocal(body):
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'S3 upload failed: {e}'}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Не удалось сохранить файл. Попробуйте позже'}, ensure_ascii=False),
         }
 
     cdn_url = f'https://cdn.poehali.dev/projects/{access_key}/bucket/{s3_key}'
@@ -243,7 +244,7 @@ def handler(event, context):
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Pin',
             },
             'body': '',
         }
@@ -263,7 +264,14 @@ def handler(event, context):
             body = json.loads(body_raw)
         except Exception:
             body = {}
-        if body.get('song_id') and body.get('audio_base64'):
+        if body.get('song_id') or body.get('audio_base64'):
+            # Перезапись песен на сайте — только администратору.
+            if not admin_guard.check_pin(event.get('headers') or {}):
+                return {'statusCode': 403, 'headers': {'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Нет доступа'}, ensure_ascii=False)}
+            if len(body.get('audio_base64') or '') > 30 * 1024 * 1024:
+                return {'statusCode': 413, 'headers': {'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Файл слишком большой (максимум 20 МБ)'}, ensure_ascii=False)}
             return upload_vocal(body)
 
     qs = event.get('queryStringParameters') or {}
@@ -299,7 +307,7 @@ def handler(event, context):
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'Synth failed: {e}'}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Не удалось создать мелодию. Попробуйте позже'}, ensure_ascii=False),
         }
 
     s3 = boto3.client(
@@ -321,7 +329,7 @@ def handler(event, context):
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': f'S3 upload failed: {e}'}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Не удалось сохранить файл. Попробуйте позже'}, ensure_ascii=False),
         }
 
     cdn_url = f"https://cdn.poehali.dev/projects/{access_key}/bucket/{s3_key}"

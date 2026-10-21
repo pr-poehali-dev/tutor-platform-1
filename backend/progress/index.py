@@ -354,5 +354,5 @@ def handler(event, context):
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)}, ensure_ascii=False),
+            'body': json.dumps({'error': 'Ошибка сервера. Попробуйте позже'}, ensure_ascii=False),
         }

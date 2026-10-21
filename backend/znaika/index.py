@@ -387,7 +387,8 @@ def handle_spend(cur, user_id: int, body: dict) -> dict:
                         body.get('description') or '',
                         body.get('meta') or {})
     except ValueError as e:
-        return err(str(e), 402)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 402)
     return ok({'ok': True, 'new_balance': new_bal,
                'state': fetch_state(cur, user_id)})
 
@@ -475,7 +476,8 @@ def handle_redeem(cur, user_id: int, body: dict) -> dict:
         debit(cur, user_id, price, 'shop_purchase',
               description=f'Магазин: {title}', meta={'item_code': item_code})
     except ValueError as e:
-        return err(str(e), 402)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 402)
 
     coupon_code = gen_coupon_code() if kind in ('discount_coupon', 'bonus_days') else None
     cur.execute(

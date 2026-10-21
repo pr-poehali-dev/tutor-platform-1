@@ -13,6 +13,31 @@
     <meta http-equiv="Pragma" content="no-cache"/>
     <meta http-equiv="Expires" content="0"/>
 
+    <!-- Безопасность: запрет плагинов и подмены базового адреса, только HTTPS, без утечки полных адресов страниц -->
+    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self' https:; upgrade-insecure-requests"/>
+    <meta name="referrer" content="strict-origin-when-cross-origin"/>
+    <script>
+      (function () {
+        try {
+          var OWN = ["xn--h1amcedk2a6b.xn--p1ai", "www.xn--h1amcedk2a6b.xn--p1ai", "учисьпро.рф", "localhost", "127.0.0.1"];
+          var isOwn = function (h) { return OWN.indexOf(h) >= 0 || /(^|\.)poehali\.dev$/.test(h) || /(^|\.)poehali\.app$/.test(h); };
+          var host = location.hostname;
+          // Зеркало сайта на чужом домене — уводим посетителя на оригинал.
+          if (!isOwn(host)) { location.replace("https://xn--h1amcedk2a6b.xn--p1ai" + location.pathname + location.search); return; }
+          // Встраивание в чужую страницу (кликджекинг) — открываем сайт поверх неё.
+          if (window.top !== window.self) {
+            var parent = "";
+            if (location.ancestorOrigins && location.ancestorOrigins.length) parent = location.ancestorOrigins[location.ancestorOrigins.length - 1];
+            else if (document.referrer) parent = document.referrer;
+            var ph = ""; try { ph = new URL(parent).hostname; } catch (e) {}
+            if (ph && !isOwn(ph) && !/(^|\.)yandex\.(ru|com)$|(^|\.)webvisor\.com$|(^|\.)metrika\.yandex\.ru$/.test(ph)) {
+              window.top.location = location.href;
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Primary SEO -->
     <title>УЧИСЬПРО — обучение для всей семьи: малышам, школьникам, взрослым, руководителям</title>
     <meta name="description" content="Одна платформа для всей семьи. Малышам от 1 года — развивающие занятия, песни и логопед. Школьникам — ИИ-репетитор 24/7, разбор домашки и подготовка к ЕГЭ и ОГЭ. Взрослым — нейросети, запуск бизнеса и удалённые профессии. Руководителям — готовые шаблоны управления. 31 бесплатный мини-курс за вечер, первый урок без регистрации. Официальный партнёр Точка Банк. учисьпро.рф" data-rh="true"/>

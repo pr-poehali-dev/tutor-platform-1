@@ -74,14 +74,18 @@ def upload_logo(school_id: int, base64_data: str, content_type: str) -> str:
     """Загружает логотип школы в S3 и возвращает CDN-URL."""
     if ',' in base64_data:
         base64_data = base64_data.split(',', 1)[1]
+    if len(base64_data) > 4 * 1024 * 1024:
+        raise ValueError('Логотип слишком большой (максимум 3 МБ)')
     raw = base64.b64decode(base64_data)
-    ext = 'png'
-    if 'jpeg' in content_type or 'jpg' in content_type:
-        ext = 'jpg'
-    elif 'webp' in content_type:
-        ext = 'webp'
-    elif 'svg' in content_type:
-        ext = 'svg'
+    # Только настоящие картинки по первым байтам файла. SVG запрещён: в нём можно спрятать скрипт.
+    if raw[:8] == b'\x89PNG\r\n\x1a\n':
+        ext, content_type = 'png', 'image/png'
+    elif raw[:3] == b'\xff\xd8\xff':
+        ext, content_type = 'jpg', 'image/jpeg'
+    elif raw[:4] == b'RIFF' and raw[8:12] == b'WEBP':
+        ext, content_type = 'webp', 'image/webp'
+    else:
+        raise ValueError('Логотип должен быть картинкой PNG, JPG или WEBP')
     key = f"schools/{school_id}/logo-{uuid.uuid4().hex[:8]}.{ext}"
     s3 = boto3.client(
         's3', endpoint_url='https://bucket.poehali.dev',
@@ -607,7 +611,8 @@ def handle_buy_course(conn, uid: int, body: dict) -> dict:
             {'kind': 'school_course', 'purchase_id': str(purchase_id),
              'school_course_id': str(cid), 'user_id': str(uid)})
     except Exception as e:
-        return err(f'Ошибка оплаты: {str(e)[:150]}', 502)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка оплаты. Попробуйте позже', 502)
 
     payment_id = pay.get('id')
     confirmation_url = (pay.get('confirmation') or {}).get('confirmation_url')
@@ -699,8 +704,11 @@ def handle_upload_logo(conn, uid: int, body: dict) -> dict:
             sid = get_school_id(cur, uid)
     try:
         url = upload_logo(sid, data, content_type)
+    except ValueError as e:
+        return err(str(e), 400)
     except Exception as e:
-        return err(f'Ошибка загрузки: {str(e)[:150]}', 502)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка загрузки. Попробуйте позже', 502)
     with conn.cursor() as cur:
         cur.execute("UPDATE " + t('schools') + " SET brand_logo_url=%s, updated_at=now() WHERE id=%s",
                     (url, sid))

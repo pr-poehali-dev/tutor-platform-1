@@ -675,6 +675,7 @@ def handler(event: dict, context) -> dict:
         return err('unknown action', 404)
     except Exception as e:
         conn.rollback()
-        return err(f'internal: {str(e)[:300]}', 500)
+        print(f'[error] {type(e).__name__}: {e}')
+        return err('Ошибка сервера. Попробуйте позже', 500)
     finally:
         conn.close()

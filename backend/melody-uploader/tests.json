@@ -13,11 +13,13 @@
       "expectedStatus": 400
     },
     {
-      "name": "Upload vocal without data returns 400",
+      "name": "Загрузка песни без PIN запрещена",
       "method": "POST",
       "path": "/",
-      "body": {"song_id": "test"},
-      "expectedStatus": 400
+      "body": {
+        "song_id": "test"
+      },
+      "expectedStatus": 403
     }
   ]
 }

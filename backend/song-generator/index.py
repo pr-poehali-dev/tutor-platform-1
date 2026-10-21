@@ -256,7 +256,8 @@ def action_generate(body):
             _db_upsert(song_id, cdn_url, media_id)
             return _resp(200, {'ok': True, 'song_id': song_id, 'audioUrl': cdn_url, 'size': size})
         except Exception as e:
-            return _resp(502, {'error': f'Сохранение не удалось: {e}'})
+            print(f'[error] {type(e).__name__}: {e}')
+            return _resp(502, {'error': 'Сохранение не удалось. Попробуйте позже'})
 
     # Иначе — запоминаем задачу как pending, заберём позже через finalize
     try:
