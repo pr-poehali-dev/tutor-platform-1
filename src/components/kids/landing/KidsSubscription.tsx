@@ -42,7 +42,9 @@ export default function KidsSubscription() {
           <p className="text-white/70 text-sm md:text-base mb-6">
             {kids.source === "trial"
               ? "Идёт бесплатный период. Оплата сама не спишется — карта не привязана."
-              : "Абонемент «Малыш» активен."}
+              : kids.source === "promo"
+                ? "Доступ открыт по промокоду — бесплатно, оплата не нужна."
+                : "Абонемент «Малыш» активен."}
           </p>
           <Link
             to="/kids/cabinet"

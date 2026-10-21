@@ -42,6 +42,8 @@ const TutorsDeck = lazy(() => import("./pages/decks/TutorsDeck"));
 const ParentsDeck = lazy(() => import("./pages/decks/ParentsDeck"));
 const PartnersDeck = lazy(() => import("./pages/decks/PartnersDeck"));
 const SchoolPilotDeck = lazy(() => import("./pages/SchoolPilotDeck"));
+const KidsPilotDeck = lazy(() => import("./pages/KidsPilotDeck"));
+const KidsPilotActivation = lazy(() => import("./pages/KidsPilotActivation"));
 const SubjectLanding = lazy(() => import("./pages/SubjectLanding"));
 const YookassaSetup = lazy(() => import("./pages/admin/YookassaSetup"));
 const AdsManager = lazy(() => import("./pages/admin/AdsManager"));
@@ -277,6 +279,10 @@ const App = () => (
                     <Route path="/pilot/:city/leaflet" element={<SamaraLeaflet />} />
                     <Route path="/for-schools/presentation" element={<SchoolPilotDeck />} />
                     <Route path="/for-schools/presentation/:city" element={<SchoolPilotDeck />} />
+                    <Route path="/for-kindergartens/presentation" element={<KidsPilotDeck />} />
+                    <Route path="/for-kindergartens/presentation/care" element={<KidsPilotDeck mode="care" />} />
+                    <Route path="/malysh" element={<KidsPilotActivation />} />
+                    <Route path="/kazhdyj-rebenok" element={<KidsPilotActivation mode="care" />} />
                     <Route path="/repetitoram/presentation" element={<TutorsDeck />} />
                     <Route path="/parents/presentation" element={<ParentsDeck />} />
                     <Route path="/partner/presentation" element={<PartnersDeck />} />

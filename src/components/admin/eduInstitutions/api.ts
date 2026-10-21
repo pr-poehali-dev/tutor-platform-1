@@ -259,3 +259,51 @@ export function wave2Test(email: string) {
 export function pilotTick() {
   return fetch(`${URL}?action=pilot_tick`).catch(() => undefined);
 }
+
+export type KidsAudience = "kindergarten" | "care";
+
+export interface KidsAudienceStat {
+  cities: { city: string; total: number; with_email: number; unsubscribed: number; to_enrich: number }[];
+  total: number;
+  with_email: number;
+  to_enrich: number;
+  sent: number;
+  failed: number;
+  pending: number;
+  activations: number;
+}
+
+export interface KidsOverview {
+  kindergarten: KidsAudienceStat;
+  care: KidsAudienceStat;
+  enabled: boolean;
+  registry_rows: number;
+}
+
+export function kidsOverview() {
+  return req<KidsOverview>("kids_overview");
+}
+
+export function kidsSettings(enabled: boolean) {
+  return req<{ enabled: boolean }>("kids_settings", { method: "POST", body: { enabled } });
+}
+
+export function kidsImport() {
+  return req<{ inserted: number; updated: number; total: number }>("kids_import", { method: "POST", body: {} });
+}
+
+export function kidsPreview(audience: KidsAudience) {
+  return req<{ subject: string; html: string; text: string; to: string }>("kids_preview", { query: { audience } });
+}
+
+export function kidsTest(audience: KidsAudience, email: string) {
+  return req<{ ok: boolean; to: string; error: string | null }>("kids_test", { method: "POST", body: { audience, email } });
+}
+
+export function kidsEnrich() {
+  return req<{ tried: number; found: number; blocked: boolean }>("kids_enrich", { method: "POST", body: {} });
+}
+
+export function kidsEnrichTick() {
+  return fetch(`${URL}?action=kids_enrich_tick`).catch(() => undefined);
+}

@@ -78,6 +78,8 @@ export default function KidsCabinet() {
 
   const tl = kidsTrialTimeLeft(kids.expiresAt);
   const isTrial = kids.source === "trial";
+  const isPromo = kids.source === "promo";
+  const isForever = isPromo && !!kids.expiresAt && new Date(kids.expiresAt).getFullYear() > 2090;
 
   return shell(
     <>
@@ -102,7 +104,7 @@ export default function KidsCabinet() {
       {kids.access ? (
         <div
           className={`rounded-3xl border p-6 mb-6 ${
-            isTrial
+            isTrial || isPromo
               ? "border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 to-teal-500/10"
               : "border-pink-400/30 bg-gradient-to-br from-pink-500/15 to-rose-500/10"
           }`}
@@ -113,10 +115,14 @@ export default function KidsCabinet() {
                 Абонемент
               </p>
               <h2 className="font-montserrat font-black text-2xl mb-1">
-                {isTrial ? "Бесплатный период" : "Малыш — активен"}
+                {isTrial ? "Бесплатный период" : isPromo ? "Бесплатно по промокоду" : "Малыш — активен"}
               </h2>
               <p className="text-white/70 text-sm">
-                {tl.expired
+                {isForever
+                  ? "Без ограничения срока"
+                  : isPromo && kids.expiresAt
+                    ? `Действует до ${new Date(kids.expiresAt).toLocaleDateString("ru-RU")}`
+                    : tl.expired
                   ? "Срок закончился"
                   : `Осталось ${tl.days} дн. ${String(tl.hours).padStart(2, "0")} ч.`}
               </p>

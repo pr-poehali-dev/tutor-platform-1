@@ -11,6 +11,8 @@ import time
 
 import psycopg2
 
+import kids_letters
+import kids_pilot
 import outreach
 import pilot
 import wave2
@@ -665,6 +667,97 @@ def handle_pilot_tick(event) -> dict:
         conn.close()
 
 
+# ─────────────── Пилот «Малыш»: детские сады и детские дома ───────────────
+
+def handle_kids_overview() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            return ok(kids_pilot.overview(cur))
+    finally:
+        conn.close()
+
+
+def handle_kids_settings(body) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            return ok({'enabled': kids_pilot.save_settings(cur, conn, bool(body.get('enabled')))})
+    finally:
+        conn.close()
+
+
+def handle_kids_import(body) -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            rows = kids_pilot.load_json_rows(body)
+            if rows:
+                return ok(kids_pilot.import_rows(cur, conn, rows))
+            return ok(kids_pilot.import_registry(cur, conn, str(body.get('audience') or '')))
+    finally:
+        conn.close()
+
+
+def _kids_sample(cur, audience):
+    r = kids_pilot.sample(cur, audience)
+    if r:
+        return _inst_by_id(cur, r[0])
+    demo = {'kindergarten': 'МБДОУ «Детский сад № 1»', 'care': 'ГКУ «Детский дом № 1»'}[audience]
+    return {'org_name': demo, 'contact_name': 'Иванова Мария Петровна'}, 'demo'
+
+
+def handle_kids_preview(qs, event) -> dict:
+    audience = qs.get('audience') if qs.get('audience') in kids_pilot.AUDIENCES else 'kindergarten'
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            inst, token = _kids_sample(cur, audience)
+            subject, html, text, _ = kids_letters.letter_for(inst, audience, _unsub_url(event, token or 'demo'))
+            return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
+    finally:
+        conn.close()
+
+
+def handle_kids_test(body, event) -> dict:
+    to = str(body.get('email') or '').strip()
+    audience = body.get('audience') if body.get('audience') in kids_pilot.AUDIENCES else 'kindergarten'
+    if '@' not in to or len(to) > 200:
+        return err('Укажите корректный email для проверки', 400)
+    user, password = outreach.smtp_creds()
+    if not (user and password):
+        return err('Почта не подключена: в секретах проекта не заполнены SMTP_USER и SMTP_PASSWORD', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            inst, _ = _kids_sample(cur, audience)
+            subject, html, text, reply = kids_letters.letter_for(inst, audience, _unsub_url(event, 'demo'))
+            status, error = 'sent', None
+            try:
+                smtp = outreach.open_smtp()
+                try:
+                    outreach.send_one(smtp, to, '[ТЕСТ] ' + subject, html, text, _unsub_url(event, 'demo'), reply)
+                finally:
+                    smtp.quit()
+            except Exception as e:
+                status, error = 'failed', f'{type(e).__name__}: {str(e)[:300]}'
+            cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error, is_test) "
+                        f"VALUES (%s, NULL, %s, %s, %s, TRUE)", (kids_letters.campaign_for(audience), to, status, error))
+            conn.commit()
+            return ok({'ok': status == 'sent', 'to': to, 'error': error})
+    finally:
+        conn.close()
+
+
+def handle_kids_enrich() -> dict:
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            return ok(kids_pilot.enrich_batch(cur, conn))
+    finally:
+        conn.close()
+
+
 def handle_unsubscribe(qs) -> dict:
     token = (qs.get('t') or '').strip()
     if len(token) < 16:
@@ -700,6 +793,10 @@ def handler(event: dict, context) -> dict:
     # Сам ничего не раскрывает и шлёт только если авторассылку включил админ.
     if action == 'pilot_tick':
         return handle_pilot_tick(event)
+    # Дособирание почты садов и детских домов из открытого реестра — публичное, без данных в ответе.
+    if action == 'kids_enrich_tick':
+        r = json.loads(handle_kids_enrich()['body'])
+        return ok({'ok': True, 'found': r.get('found', 0), 'imported': r.get('imported', 0)})
 
     if not check_admin(headers):
         return err('Нет доступа', 403)
@@ -729,6 +826,18 @@ def handler(event: dict, context) -> dict:
         return handle_outreach_test(body, event)
     if action == 'outreach_send' and method == 'POST':
         return handle_outreach_send(body, event)
+    if action == 'kids_overview':
+        return handle_kids_overview()
+    if action == 'kids_settings' and method == 'POST':
+        return handle_kids_settings(body)
+    if action == 'kids_import' and method == 'POST':
+        return handle_kids_import(body)
+    if action == 'kids_preview':
+        return handle_kids_preview(qs, event)
+    if action == 'kids_test' and method == 'POST':
+        return handle_kids_test(body, event)
+    if action == 'kids_enrich' and method == 'POST':
+        return handle_kids_enrich()
     if action == 'pilot_overview':
         return handle_pilot_overview()
     if action == 'wave2_status':

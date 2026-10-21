@@ -14,6 +14,7 @@ import {
   pilotTest,
 } from "@/components/admin/eduInstitutions/api";
 import { findPilotCity } from "@/data/pilotCities";
+import KidsPilotPanel from "@/components/admin/eduInstitutions/KidsPilotPanel";
 
 const PIN_KEY = "uchispro_admin_pin_v1";
 
@@ -306,6 +307,8 @@ export default function PilotOutreach() {
 
             {msg && <Card className="p-3 mb-5 bg-white/[0.06] border-white/10 text-sm">{msg}</Card>}
 
+            <KidsPilotPanel defaultEmail={data.sender || ""} onPreview={setPreview} />
+
             <Card className="p-4 bg-white/[0.03] border-white/10">
               <p className="font-bold mb-3">Журнал отправок</p>
               {data.last.length === 0 && <p className="text-white/45 text-sm">Пока ничего не отправлялось.</p>}
@@ -332,7 +335,7 @@ export default function PilotOutreach() {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
           <div className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center px-4 py-2 border-b">
-              <span className="text-sm text-gray-700 font-bold">Так письмо увидит директор</span>
+              <span className="text-sm text-gray-700 font-bold">Так письмо увидит руководитель</span>
               <button onClick={() => setPreview(null)} className="text-gray-500 hover:text-gray-900"><Icon name="X" size={18} /></button>
             </div>
             <iframe title="preview" srcDoc={preview} className="w-full h-full" sandbox="" />

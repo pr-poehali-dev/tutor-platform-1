@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import func2url from "../../../backend/func2url.json";
 import { tickReminders } from "@/components/marathon/api";
-import { pilotTick } from "@/components/admin/eduInstitutions/api";
+import { kidsEnrichTick, pilotTick } from "@/components/admin/eduInstitutions/api";
 
 const ANALYTICS_URL = (func2url as Record<string, string>).analytics;
 const VISITOR_KEY = "up_visitor_id";
@@ -48,6 +48,10 @@ function tickPilotOutreach() {
   setTimeout(() => {
     pilotTick();
   }, 4000);
+  // Дособирание почты детских садов и детских домов из открытого реестра — маленькими порциями.
+  setTimeout(() => {
+    kidsEnrichTick();
+  }, 9000);
 }
 
 /**

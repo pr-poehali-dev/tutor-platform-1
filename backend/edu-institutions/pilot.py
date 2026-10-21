@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 
+import kids_pilot
 import outreach
 import wave2
 import registry_extra
@@ -38,7 +39,7 @@ def audience_where(city: dict) -> str:
     Значения подставлены из таблицы городов (не из запроса), экранирование — на всякий случай."""
     name = city['name'].replace("'", "''")
     camp = city['campaign_code'].replace("'", "''")
-    return (f"city='{name}' AND email<>'' AND unsubscribed_at IS NULL AND status NOT IN ('declined','partner') "
+    return (f"audience='school' AND city='{name}' AND email<>'' AND unsubscribed_at IS NULL AND status NOT IN ('declined','partner') "
             f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
             f"AND s.campaign_code='{camp}' AND s.status='sent' AND s.is_test=FALSE) "
             # Отказы «подозрение на спам» — про репутацию ящика, а не про адрес школы: их не считаем.
@@ -107,7 +108,7 @@ def pending_by_city(cur, cities: list) -> dict:
         f"FROM {SCHEMA}.edu_campaign_sends WHERE is_test=FALSE GROUP BY 1,2), "
         f"sp AS (SELECT institution_id, count(*) AS spam FROM {SCHEMA}.edu_campaign_sends "
         f"WHERE is_test=FALSE AND status='failed' AND (error ILIKE '%%spam%%' OR error LIKE '%%5.7.1%%') GROUP BY 1) "
-        f"SELECT c.name, count(e.id) FROM c JOIN {TABLE} e ON e.city=c.name "
+        f"SELECT c.name, count(e.id) FROM c JOIN {TABLE} e ON e.city=c.name AND e.audience='school' "
         f"LEFT JOIN f ON f.institution_id=e.id AND f.campaign_code=c.camp "
         f"LEFT JOIN sp ON sp.institution_id=e.id "
         f"WHERE e.email<>'' AND e.unsubscribed_at IS NULL AND e.status NOT IN ('declined','partner') "
@@ -119,7 +120,7 @@ def pending_by_city(cur, cities: list) -> dict:
 def overview(cur) -> dict:
     cities = all_cities(cur)
     cur.execute(f"SELECT city, count(*), count(*) FILTER (WHERE email<>''), "
-                f"count(*) FILTER (WHERE unsubscribed_at IS NOT NULL) FROM {TABLE} GROUP BY city")
+                f"count(*) FILTER (WHERE unsubscribed_at IS NOT NULL) FROM {TABLE} WHERE audience='school' GROUP BY city")
     base = {c: (t, e, u) for c, t, e, u in cur.fetchall()}
     cur.execute(f"SELECT campaign_code, status, count(*) FROM {SCHEMA}.edu_campaign_sends "
                 f"WHERE is_test=FALSE GROUP BY 1,2")
@@ -360,6 +361,17 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
     batch = min(outreach.AUTO_BATCH, left_today)
     started = time.time()
     total = {'sent': 0, 'failed': 0, 'cities': []}
+    # Пилот «Малыш»: детским домам и садам — половина каждой партии, чтобы большая школьная очередь их не вытесняла.
+    if kids_pilot.settings(cur):
+        kr = kids_pilot.send_batch(cur, conn, (batch + 1) // 2, unsub_url, inst_by_id, ensure_token, started)
+        if kr['sent'] or kr['failed']:
+            total['cities'].append({'city': 'Малыш: сады и детские дома', 'sent': kr['sent'], 'failed': kr['failed']})
+        total['sent'] += kr['sent']
+        total['failed'] += kr['failed']
+        batch -= kr['sent'] + kr['failed']
+        if kr['stop']:
+            total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
+            return total
     for city in all_cities(cur):
         if not city['active'] or batch <= 0:
             continue

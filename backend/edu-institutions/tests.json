@@ -46,6 +46,22 @@
       "method": "GET",
       "path": "/?action=pilot_overview",
       "expectedStatus": 403
+    },
+    {
+      "name": "Обзор «Малыша» без PIN закрыт",
+      "method": "GET",
+      "path": "/?action=kids_overview",
+      "expectedStatus": 403
+    },
+    {
+      "name": "Дособирание почты публичное и безопасное",
+      "method": "GET",
+      "path": "/?action=kids_enrich_tick",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "ok": true
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

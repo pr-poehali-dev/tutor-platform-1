@@ -425,6 +425,16 @@ def get_kids_access(cur, user_id: int) -> dict:
             'kids_trial_used': True,
         }
 
+    # Промокод доступа: «МАЛЫШ» (пилот детских садов) или бессрочный доступ детских домов.
+    promo_until = get_access_grant(cur, user_id, 'kids')
+    if promo_until:
+        return {
+            'kids_access': True,
+            'kids_source': 'promo',
+            'kids_expires_at': promo_until.isoformat(),
+            'kids_trial_used': True,
+        }
+
     cur.execute(
         "SELECT expires_at FROM kids_trials WHERE user_id = %s LIMIT 1",
         (user_id,)
@@ -530,17 +540,22 @@ def handle_redeem_access(token: str, body: dict) -> dict:
             if not promo:
                 return err('Промокод не найден или срок его действия закончился', 404)
             promo_id, scope, expires_at = promo
-            existing = get_access_grant(cur, user_id, scope)
-            if existing:
+            # 'care' — детские дома и интернаты: открывает и «Малыш», и «Школьникам».
+            scopes = ['kids', 'school'] if scope == 'care' else [scope]
+            existing = [get_access_grant(cur, user_id, sc) for sc in scopes]
+            if all(e and e >= expires_at for e in existing):
                 return ok({'ok': True, 'already_active': True, 'scope': scope,
-                           'expires_at': existing.isoformat()})
-            cur.execute(
-                "INSERT INTO access_grants (user_id, scope, promo_code_id, expires_at) "
-                "VALUES (%s, %s, %s, %s) "
-                "ON CONFLICT (user_id, scope) DO UPDATE SET promo_code_id = EXCLUDED.promo_code_id, "
-                "expires_at = EXCLUDED.expires_at, created_at = NOW()",
-                (user_id, scope, promo_id, expires_at)
-            )
+                           'expires_at': min(existing).isoformat()})
+            for sc in scopes:
+                # Более длинный доступ не укорачиваем: детский дом мог активировать бессрочный.
+                cur.execute(
+                    "INSERT INTO access_grants (user_id, scope, promo_code_id, expires_at) "
+                    "VALUES (%s, %s, %s, %s) "
+                    "ON CONFLICT (user_id, scope) DO UPDATE SET promo_code_id = EXCLUDED.promo_code_id, "
+                    "expires_at = EXCLUDED.expires_at, created_at = NOW() "
+                    "WHERE access_grants.expires_at < EXCLUDED.expires_at",
+                    (user_id, sc, promo_id, expires_at)
+                )
             cur.execute("UPDATE access_promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
             conn.commit()
             return ok({'ok': True, 'already_active': False, 'scope': scope,

@@ -34,8 +34,8 @@ export interface BuySubscriptionResult {
 export interface KidsAccessState {
   /** Открыт ли детский раздел: платная подписка «Малыш» или бесплатный период. */
   access: boolean;
-  /** Откуда доступ: subscription — оплачен, trial — бесплатные 3 месяца. */
-  source: "subscription" | "trial" | null;
+  /** Откуда доступ: subscription — оплачен, trial — бесплатные 3 месяца, promo — промокод (пилот садов, детские дома). */
+  source: "subscription" | "trial" | "promo" | null;
   /** Когда заканчивается — показываем родителю в кабинете. */
   expiresAt: string | null;
   /** Использован ли уже бесплатный период (повторно его не дают). */
@@ -98,7 +98,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       has_subscription?: boolean;
       purchased_course_ids?: number[];
       kids_access?: boolean;
-      kids_source?: "subscription" | "trial" | null;
+      kids_source?: "subscription" | "trial" | "promo" | null;
       kids_expires_at?: string | null;
       kids_trial_used?: boolean;
       school_access_until?: string | null;
