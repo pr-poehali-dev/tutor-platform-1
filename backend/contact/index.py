@@ -25,6 +25,7 @@ GET  /?action=payouts_history[&school_id=NN]            -> история вып
 GET  /?action=payout_requests                          -> заявки школ на вывод средств
 POST /?action=payout_request_update  body: {id, status, admin_note?}
 """
+import admin_guard
 import json
 import os
 import re
@@ -87,11 +88,7 @@ def cors() -> dict:
 
 
 def check_admin(headers: dict) -> bool:
-    pin_env = os.environ.get('ADMIN_PIN', '')
-    if not pin_env:
-        return False
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == pin_env
+    return admin_guard.check_pin(headers)
 
 
 LEAD_STATUSES = {'new', 'in_progress', 'won', 'lost'}

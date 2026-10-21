@@ -10,6 +10,7 @@ POST /?action=generate  body: {topic, audience?, level?, lessons_count?, lead_id
 GET  /?action=get&id=NN                     -> сгенерированный курс
 GET  /?action=list        X-Admin-Pin       -> список последних генераций (админ)
 """
+import admin_guard
 import json
 import os
 import re
@@ -59,11 +60,7 @@ def t(name: str) -> str:
 
 
 def check_admin(headers: dict) -> bool:
-    pin_env = os.environ.get('ADMIN_PIN', '')
-    if not pin_env:
-        return False
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == pin_env
+    return admin_guard.check_pin(headers)
 
 
 def call_polza(prompt: str, system: str, max_tokens: int = 3000,

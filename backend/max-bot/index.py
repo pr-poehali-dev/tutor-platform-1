@@ -12,6 +12,7 @@ GET  /?action=admin_status    header X-Admin-Pin  -> подписчики, на�
 POST /?action=admin_save      header X-Admin-Pin  body: {daily_enabled?, welcome_text?}
 POST /?action=admin_test      header X-Admin-Pin  body: {max_user_id, kind: welcome|daily} -> тестовое сообщение
 """
+import admin_guard
 import json
 import os
 import secrets
@@ -47,8 +48,7 @@ def err(message: str, status: int = 400) -> dict:
 
 
 def is_admin(headers: dict) -> bool:
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return bool(pin) and pin == (os.environ.get('ADMIN_PIN') or '7777')
+    return admin_guard.check_pin(headers)
 
 
 def get_db():
@@ -476,7 +476,7 @@ def handler(event: dict, context) -> dict:
     # Cron — защищён CRON_SECRET
     if action == 'cron':
         auth = headers.get('Authorization') or headers.get('authorization') or ''
-        expected = 'Bearer ' + os.environ.get('CRON_SECRET', '___')
+        expected = 'Bearer ' + (os.environ.get('CRON_SECRET', '') or secrets.token_hex(32))
         if auth != expected:
             return err('forbidden', 403)
         conn = get_db()
@@ -487,7 +487,7 @@ def handler(event: dict, context) -> dict:
 
     if action == 'daily':
         auth = headers.get('Authorization') or headers.get('authorization') or headers.get('X-Authorization') or headers.get('x-authorization') or ''
-        if auth != 'Bearer ' + os.environ.get('CRON_SECRET', '___') and not is_admin(headers):
+        if auth != 'Bearer ' + (os.environ.get('CRON_SECRET', '') or secrets.token_hex(32)) and not is_admin(headers):
             return err('forbidden', 403)
         conn = get_db()
         try:

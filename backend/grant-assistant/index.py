@@ -14,6 +14,7 @@ POST /?action=pay        X-Auth-Token  body: {id, return_url}   -> {confirmation
 POST /?action=sync       X-Auth-Token   -> опрос ЮKassa по незавершённым платежам
 GET  /?action=admin_list X-Admin-Pin    -> все заявки (админ)
 """
+import admin_guard
 import json
 import os
 import re
@@ -72,11 +73,7 @@ def t(name: str) -> str:
 
 
 def check_admin(headers: dict) -> bool:
-    pin_env = os.environ.get('ADMIN_PIN', '')
-    if not pin_env:
-        return False
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == pin_env
+    return admin_guard.check_pin(headers)
 
 
 def resolve_user(cur, token: str):

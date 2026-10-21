@@ -13,6 +13,7 @@ POST     /?action=post_article_now  header X-Admin-Pin                     -> о
 
 Статьи Ленты: одна в день, пост = заголовок + 2–3 предложения + ссылка, под постом кнопка «Попробовать бесплатно» (мини-приложение).
 """
+import admin_guard
 import json
 import os
 import urllib.request
@@ -936,8 +937,7 @@ def is_cron_authorized(headers: dict) -> bool:
 
 
 def is_admin(headers: dict) -> bool:
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == os.environ.get('ADMIN_PIN', '7777')
+    return admin_guard.check_pin(headers)
 
 
 def handle_dashboard(conn) -> dict:

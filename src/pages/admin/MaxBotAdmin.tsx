@@ -178,7 +178,7 @@ export default function MaxBotAdmin() {
                 Напишите боту /start — вы появитесь в подписчиках. Чтобы прислать себе тест, укажите свой ID в MAX (его покажет бот по команде /id).
               </p>
               <div className="flex flex-wrap gap-2">
-                <Input value={testId} onChange={(e) => setTestId(e.target.value.replace(/\D/g, ""))} placeholder="ID в MAX" className="w-44" inputMode="numeric" />
+                <Input value={testId} onChange={(e) => setTestId(e.target.value.replace(/\D/g, ""))} placeholder="ID в MAX" className="w-44" autoComplete="current-password" />
                 <Button variant="outline" disabled={!testId} onClick={() => test("welcome")} className="border-white/15 bg-white/5 text-white">
                   Приветствие
                 </Button>

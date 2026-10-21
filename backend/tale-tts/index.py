@@ -1,3 +1,4 @@
+import admin_guard
 import json
 import os
 import re
@@ -89,10 +90,9 @@ def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return _cors(200, {})
 
-    admin_pin = os.environ.get('ADMIN_PIN', '')
+    # Озвучка платная — только для админа, даже если PIN в окружении не задан.
     headers = event.get('headers') or {}
-    provided = headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or ''
-    if admin_pin and provided != admin_pin:
+    if not admin_guard.check_pin(headers):
         return _cors(401, {'error': 'Требуется X-Admin-Pin'})
 
     try:

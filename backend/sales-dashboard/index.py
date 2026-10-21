@@ -8,6 +8,7 @@ GET /?action=funnel&days=30     — воронка продаж
 GET /?action=customers&q=...    — клиентская база (поиск, пагинация)
 GET /?action=customer&id=NN     — карточка одного клиента
 """
+import admin_guard
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -44,11 +45,7 @@ def get_db():
 
 
 def check_admin(headers: dict) -> bool:
-    # Без заданного в окружении PIN доступ невозможен.
-    if not ADMIN_PIN:
-        return False
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == ADMIN_PIN
+    return admin_guard.check_pin(headers)
 
 
 def fetch_one(cur, q: str, args: tuple = ()):

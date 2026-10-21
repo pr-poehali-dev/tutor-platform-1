@@ -17,6 +17,7 @@ Business: «Бизнес-тренер и коуч» — индивидуальн
 Args: event (httpMethod, body, queryStringParameters, headers), context
 Returns: JSON
 """
+import admin_guard
 import json
 import os
 import re
@@ -457,9 +458,7 @@ def handle_submit(body):
 
 
 def handle_leads_list(headers):
-    pin_env = os.environ.get('ADMIN_PIN', '')
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    if not pin_env or pin != pin_env:
+    if not admin_guard.check_pin(headers):
         return err('Доступ запрещён', 403)
     conn = get_db()
     if conn is None:

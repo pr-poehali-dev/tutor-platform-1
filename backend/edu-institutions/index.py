@@ -3,6 +3,7 @@
 Actions: list (список с фильтрами), create (добавить), update (изменить), delete (удалить), export (CSV).
 Доступ только по PIN администратора (заголовок X-Admin-Pin).
 """
+import admin_guard
 import json
 import os
 import csv
@@ -47,9 +48,7 @@ def get_db():
 
 
 def check_admin(headers: dict) -> bool:
-    pin_env = os.environ.get('ADMIN_PIN', '') or '7777'
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return bool(pin_env) and pin == pin_env
+    return admin_guard.check_pin(headers)
 
 
 def row_to_item(r) -> dict:
@@ -810,6 +809,10 @@ def handler(event: dict, context) -> dict:
 
     if not check_admin(headers):
         return err('Нет доступа', 403)
+
+    # Проверка PIN при входе в админ-кабинет — сам PIN в коде сайта не хранится.
+    if action == 'admin_login':
+        return ok({'ok': True})
 
     try:
         body = json.loads(event.get('body') or '{}')

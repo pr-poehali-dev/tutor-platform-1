@@ -7,6 +7,7 @@ GET  /?action=runs                   X-Admin-Pin   — история запус
 POST /?action=analyze                X-Admin-Pin   — запустить полный цикл (анализ + постановка задач)
 POST /?action=cron                   Bearer CRON_SECRET — автозапуск по расписанию (раз в день)
 """
+import admin_guard
 import json
 import os
 import urllib.request
@@ -15,7 +16,6 @@ from datetime import datetime, timezone, timedelta
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-ADMIN_PIN = os.environ.get('ADMIN_PIN', '7777')
 CRON_SECRET = os.environ.get('CRON_SECRET', '')
 POLZA_API_KEY = os.environ.get('POLZA_API_KEY', '')
 POLZA_URL = 'https://api.polza.ai/api/v1/chat/completions'
@@ -46,8 +46,7 @@ def get_db():
 
 
 def check_admin(headers: dict) -> bool:
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == ADMIN_PIN
+    return admin_guard.check_pin(headers)
 
 
 def check_cron(headers: dict) -> bool:

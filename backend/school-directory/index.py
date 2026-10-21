@@ -18,6 +18,7 @@ POST /?action=admin_seed      body: {part}     -> загрузка отмето�
 POST /?action=admin_hide      body: {id, hidden}
 POST /?action=admin_snapshot                  -> пересчитать рейтинг текущего месяца
 """
+import admin_guard
 import json
 import os
 import re
@@ -65,9 +66,7 @@ def db():
 
 
 def is_admin(headers):
-    pin_env = os.environ.get('ADMIN_PIN', '') or '7777'
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == pin_env
+    return admin_guard.check_pin(headers)
 
 
 def school_kind(name: str) -> str:

@@ -62,6 +62,15 @@
         "ok": true
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Вход в админку со старым PIN 7777 закрыт",
+      "method": "GET",
+      "path": "/?action=admin_login",
+      "headers": {
+        "X-Admin-Pin": "7777"
+      },
+      "expectedStatus": 403
     }
   ]
 }

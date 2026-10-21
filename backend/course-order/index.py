@@ -11,6 +11,7 @@ Business: «Заказ курса» — человек описывает, че�
 Args: event (httpMethod, body, queryStringParameters, headers), context
 Returns: JSON
 """
+import admin_guard
 import json
 import os
 import re
@@ -290,9 +291,7 @@ def handle_submit(body):
 
 
 def handle_orders_list(headers):
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    real = os.environ.get('ADMIN_PIN', '')
-    if not real or pin != real:
+    if not admin_guard.check_pin(headers):
         return err('Доступ запрещён', 403)
     conn = get_db()
     if conn is None:

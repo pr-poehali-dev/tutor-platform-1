@@ -6,10 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import func2url from "../../../backend/func2url.json";
+import { forgetAdminPin, savedAdminPin, verifyAdminPin } from "@/lib/adminAuth";
 
 const AGENT_URL = (func2url as Record<string, string>)["max-channel-agent"];
 const PIN_KEY = "uchispro_admin_pin_v1";
-const ADMIN_PIN = "7777";
 
 interface Leader {
   name: string;
@@ -108,22 +108,28 @@ export default function MaxChannelDashboard() {
   }, []);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(PIN_KEY) || localStorage.getItem(PIN_KEY);
-    if (saved === ADMIN_PIN) {
+    const saved = savedAdminPin();
+    if (!saved) return;
+    verifyAdminPin(saved).then((r) => {
+      if (r !== "ok") {
+        if (r === "wrong") forgetAdminPin();
+        return;
+      }
       setPin(saved);
       setUnlocked(true);
       load(saved);
-    }
+    });
   }, [load]);
 
-  const tryUnlock = () => {
-    if (pin === ADMIN_PIN) {
-      sessionStorage.setItem(PIN_KEY, pin);
+  const tryUnlock = async () => {
+    const r = await verifyAdminPin(pin);
+    if (r === "ok") {
+      sessionStorage.setItem(PIN_KEY, pin.trim());
       setUnlocked(true);
       setError("");
-      load(pin);
+      load(pin.trim());
     } else {
-      setError("Неверный PIN");
+      setError(r === "network" ? "Нет связи с сервером" : "Неверный PIN");
     }
   };
 
@@ -170,7 +176,7 @@ export default function MaxChannelDashboard() {
           <p className="text-white/55 text-sm text-center mb-5">Введи PIN для входа</p>
           <Input
             type="password"
-            inputMode="numeric"
+            autoComplete="current-password"
             autoFocus
             placeholder="PIN"
             value={pin}

@@ -12,6 +12,7 @@ GET  /?action=tasks&status=...          — список задач
 POST /?action=task_create               — создать задачу для продаж
 POST /?action=task_update               — изменить статус задачи
 """
+import admin_guard
 import json
 import os
 import urllib.request
@@ -21,7 +22,6 @@ from typing import Optional
 import psycopg2
 
 
-ADMIN_PIN = os.environ.get('ADMIN_PIN', '7777')
 POLZA_API_KEY = os.environ.get('POLZA_API_KEY', '')
 POLZA_URL = 'https://api.polza.ai/api/v1/chat/completions'
 POLZA_MODEL = 'gpt-4o-mini'
@@ -51,8 +51,7 @@ def get_db():
 
 
 def check_admin(headers: dict) -> bool:
-    pin = (headers.get('X-Admin-Pin') or headers.get('x-admin-pin') or '').strip()
-    return pin == ADMIN_PIN
+    return admin_guard.check_pin(headers)
 
 
 def fetch_one(cur, q: str, args: tuple = ()):

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import KsushaAvatar from "@/components/kids/games/KsushaAvatar";
 import { KSUSHA_PHRASES, KsushaPhrase } from "@/components/kids/games/ksushaPhrases";
 import func2url from "../../../backend/func2url.json";
+import { forgetAdminPin, savedAdminPin, verifyAdminPin } from "@/lib/adminAuth";
 
 const KSUSHA_VIDEO_URL = (func2url as Record<string, string>)["ksusha-video"];
 const PIN_KEY = "uchispro_admin_pin_v1";
-const ADMIN_PIN = "7777";
 
 type JobStatus = "none" | "processing" | "ready" | "failed";
 
@@ -37,17 +37,18 @@ export default function KsushaEngine() {
   const pollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(PIN_KEY) || localStorage.getItem(PIN_KEY);
-    if (saved === ADMIN_PIN) setUnlocked(true);
+    const saved = savedAdminPin();
+    if (saved) verifyAdminPin(saved).then((r) => (r === "ok" ? setUnlocked(true) : r === "wrong" && forgetAdminPin()));
   }, []);
 
-  const tryUnlock = () => {
-    if (pin === ADMIN_PIN) {
-      sessionStorage.setItem(PIN_KEY, pin);
+  const tryUnlock = async () => {
+    const r = await verifyAdminPin(pin);
+    if (r === "ok") {
+      sessionStorage.setItem(PIN_KEY, pin.trim());
       setUnlocked(true);
       setPinError("");
     } else {
-      setPinError("Неверный PIN");
+      setPinError(r === "network" ? "Нет связи с сервером" : "Неверный PIN");
     }
   };
 
@@ -155,7 +156,7 @@ export default function KsushaEngine() {
           <p className="text-white/55 text-sm text-center mb-5">Введи PIN для входа</p>
           <Input
             type="password"
-            inputMode="numeric"
+            autoComplete="current-password"
             autoFocus
             placeholder="PIN"
             value={pin}
