@@ -1,0 +1,8 @@
+{
+  "tests": [
+    {"name": "Health-check", "method": "GET", "path": "/?action=ping", "expectedStatus": 200, "expectedBody": {"ok": true, "service": "tutor-scout"}, "bodyMatcher": "partial"},
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Список без PIN закрыт", "method": "GET", "path": "/?action=list", "expectedStatus": 403},
+    {"name": "Поиск без PIN закрыт", "method": "POST", "path": "/?action=search", "body": {"source": "web", "query": "репетитор"}, "expectedStatus": 403}
+  ]
+}
