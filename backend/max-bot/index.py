@@ -307,6 +307,14 @@ def handle_webhook(conn, body: dict) -> dict:
         return ok({'ok': True})
 
     low = text.lower().strip()
+    sender_obj = msg.get('sender') or {}
+    import tutors
+    if low.startswith('/start tutor') or low in ('/repetitor', 'репетитор', '/tutor'):
+        src = low.split()[1] if low.startswith('/start') and len(low.split()) > 1 else 'command'
+        tutors.start(conn, sender_obj, src)
+        return ok({'ok': True})
+    if text and not low.startswith('/') and tutors.on_text(conn, sender_obj, text):
+        return ok({'ok': True})
     if low in ('/id', 'chatid', 'chat id', 'мой id', '/chatid'):
         max_send_message(chat_id,
                          f"Ваш ID в MAX: {(msg.get('sender') or {}).get('user_id')}\n"

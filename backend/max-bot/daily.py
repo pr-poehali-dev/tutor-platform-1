@@ -151,11 +151,19 @@ def handle_update(conn, body: dict) -> bool:
     """События нового формата. Возвращает True, если событие обработано здесь."""
     kind = body.get('update_type')
     if kind == 'bot_started':
+        start_payload = str(body.get('payload') or '')
+        if start_payload.startswith('tutor'):
+            import tutors
+            tutors.start(conn, body.get('user') or {}, start_payload)
+            return True
         with conn.cursor() as cur:
             welcome(cur, body.get('user') or {}, body.get('chat_id'))
             conn.commit()
         return True
     if kind == 'message_callback':
+        import tutors
+        if tutors.on_callback(conn, body.get('callback') or {}):
+            return True
         handle_callback(conn, body)
         return True
     if kind == 'bot_stopped':
