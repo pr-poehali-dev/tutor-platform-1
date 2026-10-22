@@ -142,6 +142,37 @@ def channel_link() -> str:
     return f"https://t.me/{name}" if name else ''
 
 
+MAX_TUTOR_LINK = "https://max.ru/id631205241205_bot?start=tutor_telegram"
+
+
+def tutor_text() -> str:
+    return (
+        "Здравствуйте! УЧИСЬПРО ищет репетиторов для сотрудничества:\n\n"
+        "• собрать свой онлайн-курс с ИИ за вечер — бесплатно;\n"
+        "• получать учеников с платформы;\n"
+        "• 20% с оплат семей, которых вы привели.\n\n"
+        f"Условия: {SITE_URL}/repetitoram\n"
+        f"Оставить заявку за минуту (бот в MAX): {MAX_TUTOR_LINK}\n\n"
+        "Или напишите сюда свой предмет и телефон — мы свяжемся пн–пт, 8:00–17:00 мск."
+    )
+
+
+def notify_owner_max(text: str):
+    """Уведомление владельцу в MAX. Ошибки не мешают ответу пользователю."""
+    token = os.environ.get('MAX_BOT_TOKEN', '')
+    chat = os.environ.get('MAX_ADMIN_CHAT_ID', '').strip()
+    if not token or not chat.lstrip('-').isdigit():
+        return
+    try:
+        req = urllib.request.Request(
+            f"https://botapi.max.ru/messages?chat_id={int(chat)}",
+            data=json.dumps({'text': text[:3900]}, ensure_ascii=False).encode(),
+            headers={'Content-Type': 'application/json', 'Authorization': token}, method='POST')
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception as e:
+        print(f'[notify_owner_max] {str(e)[:200]}')
+
+
 def welcome_text() -> str:
     """Приветствие в личке.
 
@@ -156,8 +187,9 @@ def welcome_text() -> str:
         f"🧸 <b>Малыш</b> — занятия для детей 1–6 лет: сказки с озвучкой, "
         f"чтение, игры. Первые 3 месяца бесплатно, карта не нужна.\n"
         f"{SITE_URL}/kids\n",
-        f"📚 <b>ИИ-репетитор</b> — разбор тем, домашка по фото, подготовка "
-        f"к ЕГЭ и ОГЭ.\n{SITE_URL}/courses\n",
+        f"📚 <b>ИИ-репетитор для школьника</b> — 7 дней бесплатно, без карты. Разбор тем, "
+        f"домашка по фото, ОГЭ и ЕГЭ.\n{SITE_URL}/\n",
+        f"👩‍🏫 <b>Вы репетитор?</b> Отправьте слово «репетитор» — расскажем о сотрудничестве.\n",
         f"🎁 <b>Бесплатные мини-курсы</b> — без регистрации и карты.\n"
         f"{SITE_URL}/free-courses\n",
         f"🤝 <b>Партнёрам</b> — 20% с оплат тех, кого вы привели.\n"
@@ -483,6 +515,15 @@ def handle_webhook(conn, body: dict) -> dict:
             )
             return ok({'ok': True, 'stopped': str(uid)})
 
+        if text.startswith('/start tutor') or text in ('/repetitor', 'репетитор', '/tutor'):
+            tg_send_to_user(uid, tutor_text())
+            notify_owner_max(
+                "👩‍🏫 Репетитор открыл Telegram-бота\n"
+                f"Имя: {chat.get('first_name') or '—'} {chat.get('last_name') or ''}\n"
+                f"Telegram: @{chat.get('username') or '—'} (id {uid})")
+            mark_welcomed(conn, uid, chat.get('username') or chat.get('first_name'))
+            return ok({'ok': True, 'tutor': str(uid)})
+
         if not already_welcomed(conn, uid):
             tg_send_to_user(uid, welcome_text())
             mark_welcomed(conn, uid, chat.get('username') or chat.get('first_name'))
@@ -495,10 +536,14 @@ def handle_webhook(conn, body: dict) -> dict:
         # На любое другое сообщение подсказываем, что бот умеет.
         # Молчание в ответ выглядит как поломка.
         if text:
+            raw = (message.get('text') or '').strip()
+            notify_owner_max(
+                "💬 Сообщение в Telegram-боте\n"
+                f"От: {chat.get('first_name') or '—'} @{chat.get('username') or '—'} (id {uid})\n\n{raw[:1500]}")
             tg_send_to_user(
                 uid,
-                "Я показываю разделы платформы и новости. "
-                "Отправьте /help, чтобы увидеть меню."
+                "Спасибо, передал команде — ответим пн–пт, 8:00–17:00 мск. "
+                "Меню — /help."
             )
         return ok({'ok': True, 'seen': str(uid)})
 
@@ -697,6 +742,22 @@ def handler(event: dict, context) -> dict:
             except Exception as e:
                 res[host] = f'{type(e).__name__} {int((_t.time() - st) * 1000)} мс'
         return ok({'ok': True, 'tcp': res})
+
+    # Самопочинка приёма сообщений: адрес вебхука зашит в код (своя функция),
+    # поэтому переключить бота на чужой адрес через этот вызов нельзя.
+    if action == 'ensure_webhook':
+        own = 'https://functions.poehali.dev/5a3a2034-5910-4710-9e27-7f0e92578bae'
+        good, info = tg_api('getWebhookInfo', {}, timeout=15)
+        cur_url = (info or {}).get('url') if good else None
+        fixed = False
+        if good and cur_url != own + '?action=webhook':
+            res = handle_setup_webhook({'url': own})
+            fixed = True
+            good, info = tg_api('getWebhookInfo', {}, timeout=15)
+        info = info if isinstance(info, dict) else {}
+        return ok({'ok': good, 'fixed': fixed, 'was_url_ok': not fixed,
+                   'pending': info.get('pending_update_count'),
+                   'last_error': info.get('last_error_message')})
 
     if action == 'whoami':
         success, res = tg_api('getMe', {}, timeout=15)
