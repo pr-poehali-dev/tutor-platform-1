@@ -1,0 +1,7 @@
+{"tests": [
+ {"name": "Health-check", "method": "GET", "path": "/?action=ping", "expectedStatus": 200, "expectedBody": {"ok": true, "service": "sim-builder"}, "bodyMatcher": "partial"},
+ {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+ {"name": "Короткий запрос отклоняется", "method": "POST", "path": "/?action=generate", "body": {"prompt": "x"}, "expectedStatus": 400},
+ {"name": "Несуществующий тренажёр", "method": "GET", "path": "/?action=get&slug=nope-000", "expectedStatus": 404},
+ {"name": "Статистика без ключа закрыта", "method": "GET", "path": "/?action=stats&slug=nope-000&key=bad", "expectedStatus": 403}
+]}
