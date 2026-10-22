@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
-import Scene3D, { xrStore } from "./Scene3D";
+import Scene3D, { enterVR, vrSupported } from "./Scene3D";
 import { Mistake, RunResult, Simulator, scoreRun } from "./types";
 
 interface Props {
@@ -32,7 +32,7 @@ export default function Player({ sim, onFinish, compact }: Props) {
   const total = sim.steps.length;
 
   useEffect(() => {
-    navigator.xr?.isSessionSupported?.("immersive-vr").then(setVrOk).catch(() => setVrOk(false));
+    vrSupported().then(setVrOk);
   }, []);
 
   const restart = () => {
@@ -153,7 +153,7 @@ export default function Player({ sim, onFinish, compact }: Props) {
             Заново
           </Button>
           {vrOk && (
-            <Button size="sm" onClick={() => xrStore.enterVR()} className="bg-violet-600 text-white hover:bg-violet-700">
+            <Button size="sm" onClick={() => enterVR()} className="bg-violet-600 text-white hover:bg-violet-700">
               <Icon name="Glasses" size={14} className="mr-1" />
               Войти в VR
             </Button>

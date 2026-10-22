@@ -193,6 +193,10 @@ const ReadingMarathon = lazy(() => import("./pages/ReadingMarathon"));
 const ReadingSpeedTest = lazy(() => import("./pages/ReadingSpeedTest"));
 const LeaderTest = lazy(() => import("./pages/LeaderTest"));
 const McKoTrainer = lazy(() => import("./pages/McKoTrainer"));
+const SimCatalog = lazy(() => import("./pages/simulators/SimCatalog"));
+const SimPlay = lazy(() => import("./pages/simulators/SimPlay"));
+const SimBuilder = lazy(() => import("./pages/simulators/SimBuilder"));
+const SimMine = lazy(() => import("./pages/simulators/SimMine"));
 const SilentLesson = lazy(() => import("./pages/SilentLesson"));
 const SignDictionary = lazy(() => import("./pages/SignDictionary"));
 const SignDictionaryItem = lazy(() => import("./pages/SignDictionaryItem"));
@@ -344,6 +348,11 @@ const App = () => (
                     <Route path="/test-skorosti-chteniya" element={<ReadingSpeedTest />} />
                     <Route path="/test-rukovoditelya" element={<LeaderTest />} />
                     <Route path="/trenazher-mcko" element={<McKoTrainer />} />
+                    <Route path="/trenazhery" element={<SimCatalog />} />
+                    <Route path="/trenazhery/konstruktor" element={<SimBuilder />} />
+                    <Route path="/trenazhery/moi" element={<SimMine />} />
+                    <Route path="/trenazhery/t/:slug" element={<SimPlay />} />
+                    <Route path="/trenazhery/p/:slug" element={<SimPlay saved />} />
                     <Route path="/marafon-skorochtenie-pedagogam" element={<ReadingMarathon track="teacher" />} />
                     <Route path="/marafon-skorochtenie-pedagogam/kabinet" element={<ReadingMarathon track="teacher" cabinet />} />
                     <Route path="/marafon-skorochtenie-dlya-detej" element={<ReadingMarathon track="parent" />} />

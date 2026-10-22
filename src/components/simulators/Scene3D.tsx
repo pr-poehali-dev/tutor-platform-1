@@ -1,11 +1,88 @@
-import { Suspense, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Component, ReactNode, Suspense, useEffect, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { ContactShadows, Html, OrbitControls } from "@react-three/drei";
-import { XR, createXRStore } from "@react-three/xr";
+import { ACESFilmicToneMapping } from "three";
 import { LIBRARY, LOCATIONS } from "./library";
 import { SceneObject } from "./types";
 
-export const xrStore = createXRStore({ emulate: false });
+/**
+ * VR-режим через встроенный в браузер WebXR (Quest, Pico и др.): без внешних библиотек.
+ * Сцена регистрирует свой рендерер, кнопка «Войти в VR» запускает сессию.
+ */
+type GL = import("three").WebGLRenderer;
+let activeGl: GL | null = null;
+
+export async function vrSupported(): Promise<boolean> {
+  try {
+    return !!(await navigator.xr?.isSessionSupported("immersive-vr"));
+  } catch {
+    return false;
+  }
+}
+
+export async function enterVR(): Promise<boolean> {
+  if (!activeGl || !navigator.xr) return false;
+  try {
+    const session = await navigator.xr.requestSession("immersive-vr", {
+      optionalFeatures: ["local-floor"],
+    });
+    activeGl.xr.enabled = true;
+    await activeGl.xr.setSession(session);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Есть ли в браузере 3D (WebGL). На старых устройствах и с выключенным ускорением — нет. */
+export function hasWebGL(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+function NoWebGL() {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-950 p-6 text-center text-white">
+      <span className="text-4xl">🖥️</span>
+      <p className="font-bold">Браузер не смог включить 3D-графику</p>
+      <p className="max-w-sm text-sm text-white/60">
+        Откройте тренажёр в Chrome, Яндекс Браузере или Safari последней версии.
+        Если не помогло — включите аппаратное ускорение в настройках браузера.
+      </p>
+    </div>
+  );
+}
+
+class SceneBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(e: Error) {
+    console.warn("[Scene3D] 3D недоступно:", e.message);
+  }
+  render() {
+    return this.state.failed ? <NoWebGL /> : this.props.children;
+  }
+}
+
+function RegisterGl() {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    activeGl = gl;
+    return () => {
+      if (activeGl === gl) activeGl = null;
+    };
+  }, [gl]);
+  return null;
+}
 
 interface Props {
   location: string;
@@ -38,7 +115,18 @@ function Obj({
   const [hover, setHover] = useState(false);
   const item = LIBRARY[o.kind];
   if (!item) return null;
-  const ring = flash === true ? "#22c55e" : flash === false ? "#ef4444" : glow ? "#38bdf8" : selected ? "#a78bfa" : hover ? "#ffffff" : null;
+  const ring =
+    flash === true
+      ? "#22c55e"
+      : flash === false
+        ? "#ef4444"
+        : glow
+          ? "#38bdf8"
+          : selected
+            ? "#a78bfa"
+            : hover
+              ? "#ffffff"
+              : null;
   return (
     <group
       position={o.pos}
@@ -66,8 +154,15 @@ function Obj({
         </mesh>
       )}
       {(showLabel || hover || glow) && o.kind !== "table" && (
-        <Html position={[0, 0.75, 0]} center distanceFactor={6} zIndexRange={[10, 0]}>
-          <div className="pointer-events-none whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-xs text-white">{o.label}</div>
+        <Html
+          position={[0, 0.75, 0]}
+          center
+          distanceFactor={6}
+          zIndexRange={[10, 0]}
+        >
+          <div className="pointer-events-none whitespace-nowrap rounded-md bg-black/70 px-2 py-0.5 text-xs text-white">
+            {o.label}
+          </div>
         </Html>
       )}
     </group>
@@ -99,14 +194,36 @@ function Room({ location }: { location: string }) {
 }
 
 /** 3D-сцена тренажёра: работает мышью, пальцем и в VR-шлеме (контроллером). */
-export default function Scene3D({ location, objects, states, highlight, flash, showLabels = false, onPick, selected }: Props) {
+export default function Scene3D({
+  location,
+  objects,
+  states,
+  highlight,
+  flash,
+  showLabels = false,
+  onPick,
+  selected,
+}: Props) {
   const loc = LOCATIONS[location] || LOCATIONS.lab;
+  const [ok] = useState(hasWebGL);
+  if (!ok) return <NoWebGL />;
   return (
-    <Canvas shadows camera={{ position: [0, 2.4, 3.6], fov: 50 }} dpr={[1, 1.75]}>
-      <XR store={xrStore}>
+    <SceneBoundary>
+      <Canvas
+        shadows
+        camera={{ position: [0, 2.4, 3.6], fov: 50 }}
+        dpr={[1, 1.75]}
+        gl={{ toneMapping: ACESFilmicToneMapping }}
+      >
+        <RegisterGl />
         <color attach="background" args={[loc.sky]} />
         <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 5, 3]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
+        <directionalLight
+          position={[3, 5, 3]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize={[1024, 1024]}
+        />
         <hemisphereLight args={["#ffffff", "#334155", 0.4]} />
         <Suspense fallback={null}>
           <Room location={location} />
@@ -122,10 +239,22 @@ export default function Scene3D({ location, objects, states, highlight, flash, s
               selected={selected === o.id}
             />
           ))}
-          <ContactShadows position={[0, 0.001, 0]} opacity={0.35} scale={8} blur={2} far={3} />
+          <ContactShadows
+            position={[0, 0.001, 0]}
+            opacity={0.35}
+            scale={8}
+            blur={2}
+            far={3}
+          />
         </Suspense>
-        <OrbitControls target={[0, 0.7, 0]} maxPolarAngle={Math.PI / 2.1} minDistance={1.5} maxDistance={7} enablePan={false} />
-      </XR>
-    </Canvas>
+        <OrbitControls
+          target={[0, 0.7, 0]}
+          maxPolarAngle={Math.PI / 2.1}
+          minDistance={1.5}
+          maxDistance={7}
+          enablePan={false}
+        />
+      </Canvas>
+    </SceneBoundary>
   );
 }

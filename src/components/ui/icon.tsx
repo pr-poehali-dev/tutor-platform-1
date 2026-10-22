@@ -68,9 +68,10 @@ const LEGACY: Record<string, string> = {
 
 function getLazyIcon(name: string): React.LazyExoticComponent<React.ComponentType<LucideProps>> | null {
   let key = toKebab(name);
-  if (LEGACY[key] && iconGroupIndex[key] === undefined) key = LEGACY[key];
   // Имена с цифрой («Building2», «Clock3») в lucide пишутся через дефис: building-2, clock-3.
   if (iconGroupIndex[key] === undefined) key = key.replace(/([a-z])(\d)/g, '$1-$2');
+  // Переименования проверяем уже по имени с дефисом: «Wand2» → wand-2 → wand-sparkles.
+  if (LEGACY[key] && iconGroupIndex[key] === undefined) key = LEGACY[key];
   const loader = groupLoader(key);
   if (!loader) return null;
   if (!cache.has(key)) cache.set(key, lazy(safeLoader(loader)));
