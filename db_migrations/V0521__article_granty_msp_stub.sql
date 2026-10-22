@@ -1,0 +1,3 @@
+INSERT INTO t_p78828167_tutor_platform_1.feed_articles (slug, title, summary, content, category, source_kind, source_name, author_display_name, status, reading_time_min, ai_processed)
+SELECT $a$granty-tehnologicheskomu-msp-2024-2026-reyting$a$, $a$Деньги на инновации$a$, $a$черновик$a$, $a$черновик$a$, $a$grants$a$, $a$editorial$a$, $a$МАТ-Лабс$a$, $a$Редакция УЧИСЬПРО$a$, $a$draft$a$, 12, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM t_p78828167_tutor_platform_1.feed_articles WHERE slug = $a$granty-tehnologicheskomu-msp-2024-2026-reyting$a$)

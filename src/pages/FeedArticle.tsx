@@ -306,6 +306,22 @@ export default function FeedArticlePage() {
               );
             }
             const lines = p.split(/\n/);
+            // Иллюстрация: абзац вида ![подпись](адрес) — график или фото с подписью.
+            const img = /^!\[([^\]]*)\]\(([^)\s]+)\)$/.exec(p.trim());
+            if (img) {
+              const [, alt, src] = img;
+              return (
+                <figure key={i} className="my-6">
+                  <img
+                    src={src}
+                    alt={alt}
+                    loading="lazy"
+                    className="w-full rounded-2xl border border-white/10 bg-[#0b0d16]"
+                  />
+                  {alt && <figcaption className="mt-2 text-center text-sm text-white/50">{alt}</figcaption>}
+                </figure>
+              );
+            }
             // Цитата: все строки абзаца начинаются с «>»
             const isQuote = lines.length > 0 && lines.every((l) => /^\s*>\s?/.test(l));
             if (isQuote) {

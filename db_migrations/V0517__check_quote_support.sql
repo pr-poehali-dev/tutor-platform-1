@@ -1,0 +1,1 @@
+UPDATE t_p78828167_tutor_platform_1.feed_articles SET title = title WHERE slug = $q$__no_such_slug__$q$
