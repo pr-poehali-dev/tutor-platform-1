@@ -143,7 +143,31 @@ def overview(cur) -> dict:
     st = settings(cur)
     return {'cities': out, 'auto': st, 'sent_today': sent_today(cur), 'cooldown_min': spam_cooldown_min(cur),
             'effective_limit': effective_limit(cur, st), 'interval_min': batch_interval_min(effective_limit(cur, st)),
-            'registry_rows': registry_size()}
+            'registry_rows': registry_size(), 'joined': joined_summary(cur),
+            'reminder': {'enabled': reminder_enabled(cur), 'pending': reminder_pending(cur), 'sent': reminder_sent(cur)}}
+
+
+def joined_summary(cur) -> dict:
+    """Школы, подключившиеся сами через форму, и их ученики."""
+    cur.execute(f"SELECT count(*), count(*) FILTER (WHERE created_at > now() - interval '7 days') "
+                f"FROM {SCHEMA}.pilot_schools WHERE is_test=FALSE")
+    schools, week = cur.fetchone()
+    cur.execute(f"SELECT count(*) FROM {SCHEMA}.pilot_school_students st JOIN {SCHEMA}.pilot_schools p ON p.id=st.school_id "
+                f"WHERE p.is_test=FALSE")
+    students = cur.fetchone()[0]
+    cur.execute(f"SELECT p.school_name, c.name, p.contact_name, coalesce(p.contact_email, p.contact_phone), p.code, "
+                f"p.source, p.created_at, (SELECT count(*) FROM {SCHEMA}.pilot_school_students st WHERE st.school_id=p.id) "
+                f"FROM {SCHEMA}.pilot_schools p JOIN {SCHEMA}.pilot_cities c ON c.slug=p.city_slug "
+                f"WHERE p.is_test=FALSE ORDER BY p.id DESC LIMIT 100")
+    rows = [{'school': a, 'city': b, 'contact': c, 'reach': d, 'code': e, 'source': f, 'at': g, 'students': h}
+            for a, b, c, d, e, f, g, h in cur.fetchall()]
+    return {'schools': schools, 'week': week, 'students': students, 'list': rows}
+
+
+def reminder_sent(cur) -> int:
+    cur.execute(f"SELECT count(*) FROM {SCHEMA}.edu_campaign_sends WHERE campaign_code=%s AND status='sent' AND is_test=FALSE",
+                (outreach.REMINDER_CAMPAIGN,))
+    return cur.fetchone()[0]
 
 
 def settings(cur) -> dict:
@@ -171,6 +195,8 @@ def save_settings(cur, body: dict) -> dict:
     limit = max(10, min(limit, outreach.DAILY_LIMIT_MAX))
     cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET auto_enabled=%s, daily_limit=%s, updated_at=now() WHERE id=1',
                 (enabled, limit))
+    if 'reminder_enabled' in body:
+        cur.execute(f'UPDATE {SCHEMA}.outreach_settings SET reminder_enabled=%s WHERE id=1', (bool(body['reminder_enabled']),))
     return {'enabled': enabled, 'daily_limit': limit, 'last_tick_at': cur_s['last_tick_at']}
 
 
@@ -231,6 +257,7 @@ def send_for_city(cur, conn, city: dict, limit: int, unsub_url, inst_by_id, ensu
             inst, token = inst_by_id(cur, rid)
             token = ensure_token(cur, rid, token)
             unsub = unsub_url(token)
+            inst['_ref'] = token
             subject, html, text, reply = outreach.build_letter(inst, unsub, city)
             try:
                 outreach.send_one(smtp, inst['email'], subject, html, text, unsub, reply)
@@ -322,6 +349,85 @@ def send_wave2(cur, conn, limit: int, unsub_url, inst_by_id, ensure_token, start
     return {'sent': sent, 'failed': failed, 'errors': errors[:5], 'stop': stop}
 
 
+def reminder_where() -> str:
+    """Получили первое письмо о пилоте до появления кнопки «Подключить школу» (до 24.10.2026) не меньше 2 дней назад,
+    не подключились, не отписались, напоминание ещё не получали. Не чаще одного письма в 3 дня."""
+    camp = outreach.REMINDER_CAMPAIGN
+    return (f"{TABLE}.audience='school' AND {TABLE}.email<>'' AND {TABLE}.unsubscribed_at IS NULL "
+            f"AND {TABLE}.status NOT IN ('declined','partner') "
+            f"AND ({TABLE}.last_mailed_at IS NULL OR {TABLE}.last_mailed_at < now() - interval '3 days') "
+            f"AND EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s JOIN {SCHEMA}.pilot_cities c ON c.campaign_code=s.campaign_code "
+            f"WHERE s.institution_id={TABLE}.id AND s.status='sent' AND s.is_test=FALSE "
+            f"AND s.created_at < '2026-10-24' AND s.created_at < now() - interval '2 days') "
+            f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.pilot_schools p WHERE p.institution_id={TABLE}.id) "
+            f"AND NOT EXISTS (SELECT 1 FROM {SCHEMA}.edu_campaign_sends s WHERE s.institution_id={TABLE}.id "
+            f"AND s.campaign_code='{camp}' AND s.is_test=FALSE AND (s.status='sent' OR (SELECT count(*) FROM "
+            f"{SCHEMA}.edu_campaign_sends f WHERE f.institution_id={TABLE}.id AND f.campaign_code='{camp}' "
+            f"AND f.status='failed') >= {outreach.MAX_ATTEMPTS}))")
+
+
+def reminder_enabled(cur) -> bool:
+    cur.execute(f'SELECT reminder_enabled FROM {SCHEMA}.outreach_settings WHERE id=1')
+    r = cur.fetchone()
+    return bool(r and r[0])
+
+
+def reminder_pending(cur) -> int:
+    cur.execute(f'SELECT count(*) FROM {TABLE} WHERE {reminder_where()}')
+    return cur.fetchone()[0]
+
+
+def reminder_city(cur, rid) -> dict:
+    """Город, из кампании которого школа получила первое письмо — для её промокода и ссылок."""
+    cur.execute(f"SELECT c.slug, c.name, c.name_in, c.name_gen, c.promo_code, c.campaign_code, c.page_slug "
+                f"FROM {SCHEMA}.edu_campaign_sends s JOIN {SCHEMA}.pilot_cities c ON c.campaign_code=s.campaign_code "
+                f"WHERE s.institution_id=%s AND s.status='sent' ORDER BY s.id LIMIT 1", (rid,))
+    r = cur.fetchone()
+    return {'slug': r[0], 'name': r[1], 'name_in': r[2], 'name_gen': r[3], 'promo_code': r[4],
+            'campaign_code': r[5], 'page_slug': r[6]}
+
+
+def send_reminders(cur, conn, limit: int, unsub_url, inst_by_id, ensure_token, started: float) -> dict:
+    """Напоминание «Подключить школу за 1 минуту». Те же правила осторожности, что и у первой волны."""
+    cur.execute(f'SELECT id FROM {TABLE} WHERE {reminder_where()} ORDER BY id LIMIT %s', (limit,))
+    ids = [r[0] for r in cur.fetchall()]
+    sent, failed, stop = 0, 0, False
+    if not ids:
+        return {'sent': 0, 'failed': 0, 'stop': False}
+    smtp = outreach.open_smtp()
+    try:
+        for rid in ids:
+            if time.time() - started > TIME_BUDGET_SEC:
+                break
+            inst, token = inst_by_id(cur, rid)
+            token = ensure_token(cur, rid, token)
+            inst['_ref'] = token
+            subject, html, text, reply = outreach.build_reminder(inst, unsub_url(token), reminder_city(cur, rid))
+            try:
+                outreach.send_one(smtp, inst['email'], subject, html, text, unsub_url(token), reply)
+                cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status) "
+                            f"VALUES (%s,%s,%s,'sent')", (outreach.REMINDER_CAMPAIGN, rid, inst['email']))
+                cur.execute(f"UPDATE {TABLE} SET last_mailed_at=now(), mail_count=mail_count+1, updated_at=now() WHERE id=%s", (rid,))
+                sent += 1
+            except Exception as e:
+                msg = f'{type(e).__name__}: {str(e)[:300]}'
+                cur.execute(f"INSERT INTO {SCHEMA}.edu_campaign_sends (campaign_code, institution_id, to_email, status, error) "
+                            f"VALUES (%s,%s,%s,'failed',%s)", (outreach.REMINDER_CAMPAIGN, rid, inst['email'], msg))
+                failed += 1
+                if 'SMTPDataError' in msg or 'SMTPSenderRefused' in msg or 'quota' in msg.lower():
+                    stop = 'spam' if outreach.is_spam_reject(msg) else 'blocked'
+                    conn.commit()
+                    break
+            conn.commit()
+            outreach.pause()
+    finally:
+        try:
+            smtp.quit()
+        except Exception:
+            pass
+    return {'sent': sent, 'failed': failed, 'stop': stop}
+
+
 def auto_tick(cur, conn, unsub_url, inst_by_id, ensure_token) -> dict:
     """Шаг авторассылки 24/7: вызывается планировщиком и с сайта при посещениях. Шлёт маленькую партию,
     равномерно по суткам, не превышая лимит Яндекса за последние 24 часа."""
@@ -384,6 +490,17 @@ def _auto_batch(cur, conn, st, unsub_url, inst_by_id, ensure_token) -> dict:
         total['failed'] += hr['failed']
         batch -= hr['sent'] + hr['failed']
         if hr['stop']:
+            total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
+            return total
+    # Напоминание «Подключить школу»: до половины партии, очередь первых писем не останавливается.
+    if batch > 0 and reminder_enabled(cur):
+        rr = send_reminders(cur, conn, (batch + 1) // 2, unsub_url, inst_by_id, ensure_token, started)
+        if rr['sent'] or rr['failed']:
+            total['cities'].append({'city': 'Напоминание: подключить школу', 'sent': rr['sent'], 'failed': rr['failed']})
+        total['sent'] += rr['sent']
+        total['failed'] += rr['failed']
+        batch -= rr['sent'] + rr['failed']
+        if rr['stop']:
             total['stopped'] = f'Яндекс ограничил отправку — пауза {spam_cooldown_min(cur)} мин.'
             return total
     for city in all_cities(cur):

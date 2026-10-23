@@ -198,6 +198,72 @@ export default function PilotOutreach() {
               </p>
             </Card>
 
+            {data.joined && (
+              <Card className="p-5 mb-5 bg-emerald-500/[0.06] border-emerald-400/30">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-bold flex items-center gap-2">
+                      <Icon name="School" size={18} className="text-emerald-300" /> Школы подключились сами
+                    </p>
+                    <p className="text-white/60 text-sm mt-1">
+                      {data.joined.schools} школ (+{data.joined.week} за неделю) · {data.joined.students} учеников пришли по ссылкам школ. Форма:{" "}
+                      <a href="/podklyuchit-shkolu" target="_blank" rel="noreferrer" className="text-emerald-200 underline">/podklyuchit-shkolu</a>
+                    </p>
+                  </div>
+                  {data.reminder && (
+                    <div className="text-right">
+                      <p className="text-sm">
+                        Напоминание «Подключить за 1 минуту»: отправлено <b>{data.reminder.sent}</b>, в очереди <b>{data.reminder.pending}</b>
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-1 border-white/15 bg-white/5 text-white"
+                        onClick={async () => {
+                          const r = await pilotSettings({ reminder_enabled: !data.reminder!.enabled });
+                          if (r.ok) load();
+                        }}
+                      >
+                        {data.reminder.enabled ? "Выключить напоминание" : "Включить напоминание"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {data.joined.list.length === 0 ? (
+                  <p className="text-sm text-white/50">Пока нет. Как только школа заполнит форму, она появится здесь и придёт уведомление в MAX.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-white/50 text-xs">
+                          <th className="p-2">Школа</th>
+                          <th className="p-2">Город</th>
+                          <th className="p-2">Контакт</th>
+                          <th className="p-2">Откуда</th>
+                          <th className="p-2 text-right">Учеников</th>
+                          <th className="p-2">Дата</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.joined.list.map((j) => (
+                          <tr key={j.code} className="border-t border-white/5">
+                            <td className="p-2 font-bold">
+                              <a href={`/s/${j.code}`} target="_blank" rel="noreferrer" className="hover:underline">{j.school}</a>
+                            </td>
+                            <td className="p-2 text-white/70">{j.city}</td>
+                            <td className="p-2 text-white/70">{j.contact}, {j.reach}</td>
+                            <td className="p-2 text-white/50 text-xs">{j.source || "сайт"}</td>
+                            <td className="p-2 text-right text-emerald-300 font-bold">{j.students}</td>
+                            <td className="p-2 text-white/50 text-xs">{new Date(j.at).toLocaleDateString("ru-RU")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+            )}
+
             <Card className="p-0 mb-5 bg-white/[0.03] border-white/10 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

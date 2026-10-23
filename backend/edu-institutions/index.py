@@ -491,7 +491,12 @@ def handle_pilot_preview(qs, event) -> dict:
             if not city:
                 return err('Город не найден', 404)
             inst, token = _sample_inst(cur, city)
-            subject, html, text, _ = outreach.build_letter(inst, _unsub_url(event, token or 'demo'), city)
+            # В предпросмотре ссылка без токена школы: иначе админ, открыв кнопку, заполнит форму чужими данными.
+            inst['_ref'] = ''
+            if qs.get('kind') == 'reminder':
+                subject, html, text, _ = outreach.build_reminder(inst, _unsub_url(event, token or 'demo'), city)
+            else:
+                subject, html, text, _ = outreach.build_letter(inst, _unsub_url(event, token or 'demo'), city)
             return ok({'subject': subject, 'html': html, 'text': text, 'to': inst.get('email', '')})
     finally:
         conn.close()

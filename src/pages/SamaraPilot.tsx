@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
@@ -43,10 +43,21 @@ function PilotActivation({ slug }: { slug: string }) {
   const [doneUntil, setDoneUntil] = useState<string | null>(null);
 
   const activeUntil = doneUntil || schoolAccessUntil;
+  const waitingLogin = useRef(false);
+
+  // Ученик нажал «Войти и активировать» и вошёл в окне входа — активируем без второго нажатия.
+  useEffect(() => {
+    if (isAuthenticated && waitingLogin.current) {
+      waitingLogin.current = false;
+      activate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const activate = async () => {
     setError(null);
     if (!isAuthenticated) {
+      waitingLogin.current = true;
       openLogin();
       return;
     }
@@ -155,6 +166,17 @@ function PilotActivation({ slug }: { slug: string }) {
             </>
           )}
         </div>
+
+        <Link
+          to={`/podklyuchit-shkolu?city=${city.slug}&src=city_page`}
+          className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 hover:bg-emerald-500/15 transition-colors"
+        >
+          <Icon name="School" size={22} className="text-emerald-300 flex-shrink-0" />
+          <span className="flex-1 text-sm">
+            <b>Вы учитель или директор?</b> Подключите школу за 1 минуту — получите свою ссылку, QR-код и статистику по классам.
+          </span>
+          <Icon name="ArrowRight" size={18} className="text-emerald-300" />
+        </Link>
 
         <section className="mb-8">
           <h2 className="font-montserrat font-black text-xl mb-4">Что входит</h2>

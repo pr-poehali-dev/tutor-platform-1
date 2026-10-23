@@ -36,6 +36,11 @@ const AdultCourses = lazy(() => import("./pages/AdultCourses"));
 const SuperCourses = lazy(() => import("./pages/SuperCourses"));
 const SamaraPilot = lazy(() => import("./pages/SamaraPilot"));
 const PilotCities = lazy(() => import("./pages/PilotCities"));
+const PilotJoin = lazy(() => import("./pages/pilot/PilotJoin"));
+const PilotStudent = lazy(() => import("./pages/pilot/PilotStudent"));
+const PilotSchoolStats = lazy(() => import("./pages/pilot/PilotSchoolStats"));
+const PilotSchoolLeaflet = lazy(() => import("./pages/pilot/PilotSchoolLeaflet"));
+const PilotPendingJoin = lazy(() => import("./components/pilot/PilotPendingJoin"));
 const SamaraLeaflet = lazy(() => import("./pages/SamaraLeaflet"));
 const StudentLeaflet = lazy(() => import("./pages/StudentLeaflet"));
 const TutorsDeck = lazy(() => import("./pages/decks/TutorsDeck"));
@@ -285,6 +290,10 @@ const App = () => (
                     <Route path="/samara" element={<SamaraPilot />} />
                     <Route path="/samara/leaflet" element={<SamaraLeaflet />} />
                     <Route path="/leaflet/shkolniki" element={<StudentLeaflet />} />
+                    <Route path="/podklyuchit-shkolu" element={<PilotJoin />} />
+                    <Route path="/podklyuchit-shkolu/moya" element={<PilotSchoolStats />} />
+                    <Route path="/s/:code" element={<PilotStudent />} />
+                    <Route path="/s/:code/pamyatka" element={<PilotSchoolLeaflet />} />
                     <Route path="/pilot" element={<PilotCities />} />
                     <Route path="/pilot/:city" element={<SamaraPilot />} />
                     <Route path="/pilot/:city/leaflet" element={<SamaraLeaflet />} />
@@ -433,6 +442,7 @@ const App = () => (
                 </ErrorBoundary>
                 <GlobalNavButton />
                 <Suspense fallback={null}><SupportWidget /></Suspense>
+                <Suspense fallback={null}><PilotPendingJoin /></Suspense>
                 <InstallBanner />
                 <LoginModal />
               </AccessProvider>

@@ -24,8 +24,8 @@ export default function ForSchools() {
   return (
     <div className="min-h-screen bg-mesh text-white font-golos">
       <Seo
-        title="Сотрудничество для школ, колледжей и техникумов — УЧИСЬПРО"
-        description="Запустите онлайн-обучение под своим брендом с ИИ-преподавателем 24/7. Без абонплаты — только процент с продаж. Приём оплат, аналитика и помощь с грантами включены."
+        title="Для школ: бесплатный пилот УЧИСЬПРО на 2026/27 учебный год"
+        description="Бесплатный доступ к ИИ-наставнику и курсам 1–11 класса для всех учеников школы до 31 мая 2027 года. Подключение за 1 минуту, без договоров. Для колледжей — обучение под своим брендом."
         keywords="платформа для школ, обучение для школ, цифровая школа, лицензия для образовательных организаций"
         canonical={`${SITE_URL}/for-schools`}
       />
@@ -37,7 +37,7 @@ export default function ForSchools() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-lg">🎓</div>
             <span className="font-montserrat font-black gradient-text-purple">УЧИСЬПРО</span>
           </Link>
-          <a href="#contact" className="text-sm font-bold text-violet-200 hover:text-white transition-colors">Связаться</a>
+          <Link to="/podklyuchit-shkolu?src=for_schools" className="text-sm font-bold text-emerald-200 hover:text-white transition-colors">Подключить школу</Link>
         </div>
       </header>
 
@@ -46,33 +46,67 @@ export default function ForSchools() {
           className="mb-6"
           items={[{ label: "Главная", href: "/" }, { label: "Для школ" }]}
         />
-        {/* Hero */}
-        <section className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-violet-500/15 border border-violet-500/35 rounded-full px-4 py-1.5 mb-5">
-            <Icon name="Handshake" size={13} className="text-violet-300" />
-            <span className="text-xs text-violet-200 font-bold uppercase tracking-wider">Партнёрам</span>
+        {/* Пилот — главное предложение для школ */}
+        <section className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/35 rounded-full px-4 py-1.5 mb-5">
+            <Icon name="School" size={13} className="text-emerald-300" />
+            <span className="text-xs text-emerald-100 font-bold uppercase tracking-wider">Пилотный проект · 2026/27 учебный год</span>
           </div>
           <h1 className="font-montserrat font-black text-3xl md:text-5xl mb-4 leading-tight">
-            Онлайн-обучение под вашим брендом{" "}
-            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">с ИИ-преподавателем</span>
+            ИИ-наставник для каждого ученика —{" "}
+            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">бесплатно для школы</span>
           </h1>
           <p className="text-white/65 text-base md:text-lg max-w-2xl mx-auto mb-6">
-            Помогаем онлайн-школам, колледжам и техникумам запускать курсы и зарабатывать на них.
-            Без абонплаты — вы платите только процент с реальных продаж.
+            Все ученики школы получают доступ к ИИ-наставнику по предметам, разбору домашки по фото и курсам 1–11 класса до 31 мая 2027 года.
+            Без договоров, закупок и нагрузки на учителей.
           </p>
-          <a href="#contact">
-            <span className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black py-3.5 px-7 rounded-xl hover:scale-[1.02] transition-transform">
-              <Icon name="Sparkles" size={18} /> Обсудить сотрудничество
-            </span>
-          </a>
-          <Link to="/for-schools/presentation" className="ml-0 sm:ml-3 mt-3 sm:mt-0 inline-flex items-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 px-7 rounded-xl transition-colors">
-            <Icon name="Presentation" size={18} /> Презентация для школ
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to="/podklyuchit-shkolu?src=for_schools"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-black py-3.5 px-7 rounded-xl hover:scale-[1.02] transition-transform"
+            >
+              <Icon name="Rocket" size={18} /> Подключить школу — 1 минута
+            </Link>
+            <Link
+              to="/for-schools/presentation"
+              className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 px-7 rounded-xl transition-colors"
+            >
+              <Icon name="Presentation" size={18} /> Презентация для директора
+            </Link>
+          </div>
+        </section>
+
+        <section className="mb-14 grid sm:grid-cols-3 gap-4">
+          {[
+            ["1", "Подключаете школу", "Форма из 4 полей. Сразу получаете свою ссылку, QR-код и тексты для чатов."],
+            ["2", "Классные руководители пересылают", "Готовые тексты для чатов учеников и родителей, памятка для печати."],
+            ["3", "Видите результат", "Сколько учеников подключилось — по классам и по дням. Итоговый отчёт — в июне 2027."],
+          ].map(([n, title, text]) => (
+            <div key={n} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <span className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-200 font-bold flex items-center justify-center mb-3">{n}</span>
+              <h3 className="font-bold mb-1">{title}</h3>
+              <p className="text-white/60 text-sm">{text}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-violet-500/15 border border-violet-500/35 rounded-full px-4 py-1.5 mb-4">
+            <Icon name="Handshake" size={13} className="text-violet-300" />
+            <span className="text-xs text-violet-200 font-bold uppercase tracking-wider">Колледжам, учебным центрам и онлайн-школам</span>
+          </div>
+          <h2 className="font-montserrat font-black text-2xl md:text-4xl mb-3 leading-tight">
+            Онлайн-обучение под вашим брендом{" "}
+            <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">с ИИ-преподавателем</span>
+          </h2>
+          <p className="text-white/65 max-w-2xl mx-auto">
+            Если вы хотите запускать свои платные курсы — дадим платформу без абонплаты: вы платите только процент с реальных продаж.
+          </p>
         </section>
 
         {/* Возможности */}
         <section className="mb-14">
-          <h2 className="font-montserrat font-black text-2xl md:text-3xl text-center mb-8">Что получает ваше заведение</h2>
+          <h2 className="font-montserrat font-black text-xl md:text-2xl text-center mb-6">Что входит в платформу</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {CAPABILITIES.map((c) => (
               <div key={c.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex gap-4">
@@ -128,15 +162,24 @@ export default function ForSchools() {
         {/* Контакт / CTA */}
         <section id="contact" className="text-center">
           <div className="rounded-2xl border border-white/10 bg-card/60 p-6 md:p-10">
-            <h2 className="font-montserrat font-black text-2xl md:text-3xl mb-3">Покажем платформу за 15 минут</h2>
+            <h2 className="font-montserrat font-black text-2xl md:text-3xl mb-3">С чего начать?</h2>
             <p className="text-white/65 max-w-xl mx-auto mb-6">
-              Проведём короткую бесплатную презентацию и предложим условия под ваши задачи. Оставьте заявку — мы свяжемся.
+              Школам — бесплатный пилот, подключение за минуту. Колледжам и учебным центрам, которым нужны свои платные курсы, — заявка на сотрудничество.
             </p>
-            <Link to="/for-business">
-              <span className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black py-3.5 px-7 rounded-xl hover:scale-[1.02] transition-transform">
-                <Icon name="Send" size={18} /> Оставить заявку
-              </span>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to="/podklyuchit-shkolu?src=for_schools_bottom"
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-black py-3.5 px-7 rounded-xl hover:scale-[1.02] transition-transform"
+              >
+                <Icon name="Rocket" size={18} /> Подключить школу бесплатно
+              </Link>
+              <Link
+                to="/for-business"
+                className="inline-flex items-center justify-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 px-7 rounded-xl transition-colors"
+              >
+                <Icon name="Send" size={18} /> Заявка на сотрудничество
+              </Link>
+            </div>
             <p className="text-white/40 text-sm mt-5">
               Или напишите нам — сайт <span className="text-white/70">учисьпро.рф</span>
             </p>

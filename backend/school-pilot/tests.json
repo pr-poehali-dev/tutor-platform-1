@@ -1,0 +1,10 @@
+{"tests": [
+ {"name": "Health-check", "method": "GET", "path": "/?action=ping", "expectedStatus": 200, "expectedBody": {"ok": true, "service": "school-pilot"}, "bodyMatcher": "partial"},
+ {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+ {"name": "Список городов", "method": "GET", "path": "/?action=cities", "expectedStatus": 200, "expectedBody": {"ok": true}, "bodyMatcher": "partial"},
+ {"name": "Заявка без названия школы", "method": "POST", "path": "/?action=join", "body": {"school_name": "", "contact_name": "Иван", "contact": "a@b.ru", "city": "samara"}, "expectedStatus": 400},
+ {"name": "Заявка без контакта", "method": "POST", "path": "/?action=join", "body": {"school_name": "Школа 1", "contact_name": "Иван", "contact": "abc", "city": "samara"}, "expectedStatus": 400},
+ {"name": "Неизвестная школа", "method": "GET", "path": "/?action=school&code=ZZZZZZ", "expectedStatus": 404},
+ {"name": "Активация без входа", "method": "POST", "path": "/?action=activate", "body": {"code": "ZZZZZZ"}, "expectedStatus": 401},
+ {"name": "Статистика без ключа", "method": "GET", "path": "/?action=stats&code=ZZZZZZ&key=bad", "expectedStatus": 403}
+]}

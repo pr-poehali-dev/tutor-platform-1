@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { DEFAULT_PILOT_CITY, PilotCity, SITE_LABEL, findPilotCity } from "@/data/pilotCities";
@@ -12,6 +13,10 @@ const CityPromo = ({ big }: { big?: number }) => {
   return <span style={big && c.promo.length > 8 ? { fontSize: Math.round(big * 8 / c.promo.length) } : undefined}>{c.promo}</span>;
 };
 const CityPath = () => <>{SITE_LABEL}{useContext(CityCtx).path}</>;
+const JoinQr = () => {
+  const c = useContext(CityCtx);
+  return <QRCodeSVG value={`https://учисьпро.рф/podklyuchit-shkolu?city=${c.slug}&src=deck`} size={170} level="M" />;
+};
 
 const HERO_IMG =
   "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/2ef9e081-945a-452c-9400-bf3c03b0eb2b.jpg";
@@ -301,9 +306,9 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
           <h2 className="font-montserrat font-extrabold text-[48px] leading-[1.1] mb-8">Начнём пилот на этой неделе</h2>
           <ol className="space-y-4">
             {[
-              "Назначить ответственного за пилот в школе",
-              "Получить от нас готовые тексты для чатов и собраний",
-              "Согласовать дату промежуточной встречи",
+              "Подключить школу на учисьпро.рф/podklyuchit-shkolu — 1 минута",
+              "Сразу получить ссылку и QR-код школы, тексты для чатов и памятку",
+              "Видеть, сколько учеников подключилось, — по классам",
             ].map((s, i) => (
               <li key={s} className="flex items-center gap-4 text-[20px] text-slate-200">
                 <span className="w-9 h-9 rounded-full bg-white/10 border border-white/25 flex items-center justify-center font-bold text-[16px] flex-shrink-0">{i + 1}</span>
@@ -312,13 +317,12 @@ const SLIDES: ((n: number, print?: boolean) => ReactNode)[] = [
             ))}
           </ol>
         </div>
-        <div className="bg-white rounded-xl p-9 text-center" style={{ color: NAVY }}>
-          <p className="text-[14px] font-bold uppercase tracking-[0.18em]" style={{ color: BLUE }}>Страница для учеников</p>
-          <p className="font-montserrat font-extrabold text-[34px] mt-3 mb-5"><CityPath /></p>
-          <div className="h-px bg-slate-200 mb-5" />
-          <p className="text-[15px] text-slate-500">Промокод</p>
-          <p className="font-montserrat font-black text-[40px] tracking-[0.08em]"><CityPromo big={40} /></p>
-          <p className="text-[15px] text-slate-500 mt-1">до 31.05.2027</p>
+        <div className="bg-white rounded-xl p-8 text-center" style={{ color: NAVY }}>
+          <p className="text-[14px] font-bold uppercase tracking-[0.18em]" style={{ color: BLUE }}>Подключить школу</p>
+          <div className="flex justify-center my-4"><JoinQr /></div>
+          <p className="font-montserrat font-extrabold text-[22px]">учисьпро.рф/podklyuchit-shkolu</p>
+          <div className="h-px bg-slate-200 my-4" />
+          <p className="text-[14px] text-slate-500">Или сразу городской промокод для учеников: <b className="text-slate-800"><CityPromo /></b></p>
         </div>
       </div>
       <p className="text-[15px] text-slate-400">Спасибо за внимание. Готовы показать платформу учителям и родителям на живом примере.</p>

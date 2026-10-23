@@ -60,6 +60,13 @@ def smtp_creds():
     return os.environ.get('SMTP_USER', '').strip(), os.environ.get('SMTP_PASSWORD', '').strip()
 
 
+def join_url(inst: dict, city: dict, source: str = 'letter') -> str:
+    """Ссылка «Подключить школу»: форма откроется уже заполненной данными школы из справочника."""
+    ref = inst.get('_ref') or ''
+    q = f"?city={city['slug']}&src={source}" + (f"&ref={ref}" if ref else '')
+    return f'{SITE}/podklyuchit-shkolu{q}'
+
+
 def greeting(director: str) -> str:
     parts = (director or '').split()
     if len(parts) >= 3:
@@ -83,6 +90,7 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
     page = f'{SITE}{path}'
     page_label = f'{SITE_LABEL}{path}'
     reply = smtp_creds()[0]
+    join = join_url(inst, city)
 
     chat = (f'Ученики нашей школы участвуют в пилотном проекте УЧИСЬПРО. До 31 мая 2027 года бесплатно доступны '
             f'ИИ-наставник по школьным предметам и курсы 1–11 класса с подготовкой к ОГЭ и ЕГЭ. '
@@ -102,15 +110,18 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
 2. Зарегистрироваться (email или Яндекс ID)
 3. Ввести промокод {promo} — доступ откроется сразу до 31.05.2027
 
-ЧТО НУЖНО ОТ ШКОЛЫ
-Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: без договоров, закупок и абонентской платы; дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.
+ПОДКЛЮЧИТЬ ШКОЛУ — 1 МИНУТА
+{join}
+Форма уже заполнена данными вашей школы. Сразу после отправки вы получите отдельную ссылку и QR-код для учеников вашей школы, готовые тексты для чатов, памятку для печати и страницу, где видно, сколько учеников подключилось — по классам.
 
-Готовый текст для школьных и родительских чатов:
+Для школы участие бесплатное: без договоров, закупок и абонентской платы; дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.
+
+Можно и без подключения — просто передать ученикам городской промокод. Готовый текст для школьных и родительских чатов:
 «{chat}»
 
 Презентация для директора (5 минут): {deck}
 
-Если хотите подключить школу официально, получить памятку для родителей или задать вопросы — просто ответьте на это письмо.
+Есть вопросы — просто ответьте на это письмо.
 
 С уважением,
 команда УЧИСЬПРО
@@ -142,13 +153,20 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
 2. Зарегистрироваться (email или Яндекс ID)<br>
 3. Ввести промокод <span style="display:inline-block;background:#7c3aed;color:#fff;font-weight:bold;letter-spacing:1px;padding:2px 10px;border-radius:6px">{escape(promo)}</span> — доступ откроется сразу до 31.05.2027
 </td></tr></table>
-<p style="margin:0 0 8px"><b>Что нужно от школы</b></p>
-<p style="margin:0 0 16px">Только передать ученикам и родителям промокод — например, через классных руководителей. Для школы участие бесплатное: <b>без договоров, закупок и абонентской платы</b>, дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.</p>
-<p style="margin:0 0 6px;font-size:13px;color:#5b5670">Готовый текст для школьных и родительских чатов:</p>
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-left:4px solid #06b6d4;margin:0 0 20px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.55;color:#334155">{escape(chat)}</td></tr></table>
 <p style="margin:0 0 20px;text-align:center">
-<a href="{deck}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:10px">Презентация для директора — 5 минут</a></p>
-<p style="margin:0 0 14px">Если хотите подключить школу официально, получить памятку для родителей или задать вопросы — просто <b>ответьте на это письмо</b>.</p>
+<a href="{join}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 26px;border-radius:10px">Подключить школу — 1 минута</a><br>
+<span style="font-size:12px;color:#8a849c">Форма уже заполнена данными вашей школы</span></p>
+<p style="margin:0 0 8px"><b>Что школа получит сразу после подключения</b></p>
+<ul style="margin:0 0 16px;padding-left:20px">
+{li('отдельную ссылку и <b>QR-код для учеников вашей школы</b>;')}
+{li('готовые тексты для школьных и родительских чатов и памятку для печати;')}
+{li('страницу, где видно, <b>сколько учеников подключилось — по классам</b>.')}
+</ul>
+<p style="margin:0 0 16px">Для школы участие бесплатное: <b>без договоров, закупок и абонентской платы</b>, дополнительной нагрузки на учителей нет. Персональные данные обрабатываются по 152-ФЗ.</p>
+<p style="margin:0 0 6px;font-size:13px;color:#5b5670">Можно и без подключения — передать ученикам городской промокод. Текст для чатов:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-left:4px solid #06b6d4;margin:0 0 18px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.55;color:#334155">{escape(chat)}</td></tr></table>
+<p style="margin:0 0 18px;text-align:center"><a href="{deck}" style="color:#6d28d9;font-weight:bold">Презентация для директора — 5 минут</a></p>
+<p style="margin:0 0 14px">Есть вопросы — просто <b>ответьте на это письмо</b>.</p>
 <p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
 </td></tr>
 <tr><td style="padding:16px 28px;background:#faf9fd;color:#8a849c;font-size:12px;line-height:1.5">
@@ -185,3 +203,65 @@ def open_smtp():
 
 def pause():
     time.sleep(PAUSE_SEC)
+
+
+REMINDER_CAMPAIGN = 'pilot_join_reminder_2026'
+REMINDER_SUBJECT = 'Подключить школу к пилоту УЧИСЬПРО теперь можно за 1 минуту'
+
+
+def build_reminder(inst: dict, unsub_url: str, city: dict):
+    """Короткое напоминание школам, получившим первое письмо: одна кнопка «Подключить школу»."""
+    g = greeting(inst.get('contact_name', ''))
+    school = inst.get('org_name') or 'вашей школы'
+    join = join_url(inst, city, 'reminder')
+    gen = city['name_gen']
+    reply = smtp_creds()[0]
+    text = f"""{g}
+
+Недавно мы писали вам о бесплатном доступе к УЧИСЬПРО для учеников школ {gen} до 31 мая 2027 года.
+
+Теперь подключить {school} можно за 1 минуту — без договоров и звонков:
+{join}
+
+Форма уже заполнена данными вашей школы. Сразу после отправки вы получите:
+— отдельную ссылку и QR-код для учеников вашей школы;
+— готовые тексты для школьных и родительских чатов и памятку для печати;
+— страницу, где видно, сколько учеников подключилось — по классам.
+
+Для школы участие бесплатное, нагрузки на учителей нет.
+
+С уважением,
+команда УЧИСЬПРО
+{SITE_LABEL}
+
+—
+Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций. Больше не присылать письма: {unsub_url}
+"""
+    li = lambda x: f'<li style="margin:0 0 6px">{x}</li>'
+    html = f"""<!doctype html><html><body style="margin:0;background:#f4f2fb;font-family:Arial,Helvetica,sans-serif;color:#1f1b2e">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2fb;padding:24px 0"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
+<tr><td style="background:#6d28d9;background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:22px 28px;color:#fff">
+<div style="font-size:20px;font-weight:bold">УЧИСЬПРО</div>
+<div style="font-size:14px;opacity:.9;margin-top:4px">Пилотный проект для школ {escape(gen)} · 2026/27</div></td></tr>
+<tr><td style="padding:26px 28px;font-size:15px;line-height:1.55">
+<p style="margin:0 0 14px">{escape(g)}</p>
+<p style="margin:0 0 14px">Недавно мы писали вам о бесплатном доступе к УЧИСЬПРО для учеников школ {escape(gen)} до 31 мая 2027 года.</p>
+<p style="margin:0 0 18px">Теперь подключить <b>{escape(school)}</b> можно за 1 минуту — без договоров и звонков.</p>
+<p style="margin:0 0 20px;text-align:center">
+<a href="{join}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 26px;border-radius:10px">Подключить школу — 1 минута</a><br>
+<span style="font-size:12px;color:#8a849c">Форма уже заполнена данными вашей школы</span></p>
+<p style="margin:0 0 8px"><b>Сразу после отправки вы получите:</b></p>
+<ul style="margin:0 0 16px;padding-left:20px">
+{li('отдельную ссылку и <b>QR-код для учеников вашей школы</b>;')}
+{li('готовые тексты для чатов и памятку для печати;')}
+{li('страницу, где видно, <b>сколько учеников подключилось — по классам</b>.')}
+</ul>
+<p style="margin:0 0 14px">Для школы участие бесплатное, нагрузки на учителей нет. Вопросы — просто ответьте на это письмо.</p>
+<p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
+</td></tr>
+<tr><td style="padding:16px 28px;background:#faf9fd;color:#8a849c;font-size:12px;line-height:1.5">
+Вы получили это письмо, потому что адрес вашей школы опубликован в официальном справочнике образовательных организаций.
+<a href="{unsub_url}" style="color:#8a849c">Больше не присылать письма</a>.</td></tr>
+</table></td></tr></table></body></html>"""
+    return REMINDER_SUBJECT, html, text, reply

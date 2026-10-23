@@ -208,6 +208,13 @@ export interface PilotOverview {
   sender: string | null;
   batch_max: number;
   last: (OutreachSend & { city: string })[];
+  joined?: {
+    schools: number;
+    week: number;
+    students: number;
+    list: { school: string; city: string; contact: string; reach: string; code: string; source: string | null; at: string; students: number }[];
+  };
+  reminder?: { enabled: boolean; pending: number; sent: number };
 }
 
 export function pilotOverview() {
@@ -229,7 +236,7 @@ export function pilotSend(city: string, limit: number) {
   );
 }
 
-export function pilotSettings(body: { enabled?: boolean; daily_limit?: number }) {
+export function pilotSettings(body: { enabled?: boolean; daily_limit?: number; reminder_enabled?: boolean }) {
   return req<{ enabled: boolean; daily_limit: number; last_tick_at: string | null }>("pilot_settings", { method: "POST", body });
 }
 
