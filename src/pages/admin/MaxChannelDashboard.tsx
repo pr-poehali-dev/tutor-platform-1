@@ -143,6 +143,16 @@ export default function MaxChannelDashboard() {
         headers: { "X-Admin-Pin": pin, "Content-Type": "application/json" },
         body: "{}",
       });
+      if (action === "post_trends") {
+        const d = await r.json().catch(() => ({}));
+        setNote(
+          d.already_posted
+            ? "Этот пост уже выходил в канале"
+            : d.ok
+              ? "Пост «Три подхода к качеству учёбы» опубликован"
+              : `Не удалось опубликовать: ${d.error || d.reason || "ошибка"}`,
+        );
+      }
       if (action === "post_article_now") {
         const d = await r.json().catch(() => ({}));
         setNote(
@@ -300,6 +310,31 @@ export default function MaxChannelDashboard() {
                   {busy === "seed_posts_2" ? "Публикую…" : "Опубликовать набор"}
                 </Button>
               </div>
+            </Card>
+
+            {/* Экспертный пост */}
+            <Card className="border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.07] to-transparent p-5 mb-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Icon name="GraduationCap" size={20} className="text-emerald-400 mt-0.5" />
+                  <div>
+                    <div className="font-bold text-white">Пост «Три подхода к качеству учёбы»</div>
+                    <div className="text-white/50 text-xs mt-0.5">
+                      Персонализация, активные методы, проверка по ходу — с советами родителям и кнопкой «Попробовать бесплатно». Выходит один раз
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => act("post_trends")}
+                  disabled={busy === "post_trends"}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600"
+                >
+                  {busy === "post_trends" ? "Публикую…" : "Опубликовать пост"}
+                </Button>
+              </div>
+              {note && note.includes("«Три подхода") || note === "Этот пост уже выходил в канале" ? (
+                <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-sm text-white/85">{note}</p>
+              ) : null}
             </Card>
 
             {/* Метрики */}
