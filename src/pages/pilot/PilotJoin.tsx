@@ -184,6 +184,18 @@ export default function PilotJoin() {
               </form>
 
               <div className="space-y-4">
+                <a
+                  href={`https://max.ru/id631205241205_bot?start=pilot_join${form.city ? "_" + form.city : ""}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackGoal("pilot_join_max_click", { city: form.city })}
+                  className="flex items-center gap-3 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-4 text-sm hover:bg-sky-500/15"
+                >
+                  <Icon name="MessageCircle" size={20} className="shrink-0 text-sky-300" />
+                  <span className="flex-1">
+                    <b>Удобнее в MAX?</b> Бот пришлёт условия и ссылку на подключение — можно переслать коллегам.
+                  </span>
+                </a>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                   <p className="mb-3 font-bold">Что сразу получит школа</p>
                   <ul className="space-y-2 text-sm text-white/70">

@@ -112,6 +112,16 @@
       "headers": {
         "Authorization": "Bearer ${CRON_SECRET}"
       }
+    },
+    {
+      "name": "pilot-weekly-report",
+      "description": "Каждый понедельник в 09:00 по Москве (06:00 UTC): сводка пилота для школ владельцу в MAX — сколько школ подключилось за неделю, сколько учеников пришло по ссылкам школ, самые активные школы и школы без учеников. Уходит не чаще раза в неделю; подстраховка — пульс с сайта в понедельник после 9:00",
+      "schedule": "0 6 * * 1",
+      "method": "GET",
+      "url": "https://functions.poehali.dev/52557a9a-8a90-48fa-a709-c9bb87d03645?action=weekly_report&send=1",
+      "headers": {
+        "Authorization": "Bearer ${CRON_SECRET}"
+      }
     }
   ]
 }

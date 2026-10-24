@@ -309,6 +309,10 @@ def handle_webhook(conn, body: dict) -> dict:
     low = text.lower().strip()
     sender_obj = msg.get('sender') or {}
     import tutors
+    import school_pilot
+    if low.startswith('/start pilot') or low in ('/pilot', 'пилот'):
+        school_pilot.start(conn, sender_obj, low.split()[1] if low.startswith('/start') else 'pilot_command')
+        return ok({'ok': True})
     if low.startswith('/start tutor') or low in ('/repetitor', 'репетитор', '/tutor'):
         src = low.split()[1] if low.startswith('/start') and len(low.split()) > 1 else 'command'
         tutors.start(conn, sender_obj, src)

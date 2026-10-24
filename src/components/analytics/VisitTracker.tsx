@@ -29,11 +29,15 @@ const DAILY_REPORT_URL = (func2url as Record<string, string>)["daily-report"];
  *  из-за чего отчёт почти не приходил. Бэкенд сам следит, чтобы письмо
  *  ушло не раньше 9:00 по Москве и строго один раз в сутки. */
 let reportTicked = false;
+const SCHOOL_PILOT_URL = (func2url as Record<string, string>)["school-pilot"];
+
 function tickDailyReport() {
   if (reportTicked || !DAILY_REPORT_URL) return;
   reportTicked = true;
   try {
     fetch(`${DAILY_REPORT_URL}?action=tick`).catch(() => {});
+    // Недельная сводка пилота: сервер шлёт только в понедельник после 9:00 МСК и раз в неделю.
+    if (SCHOOL_PILOT_URL && new Date().getDay() === 1) fetch(`${SCHOOL_PILOT_URL}?action=weekly_tick`).catch(() => {});
   } catch {
     /* фоновая задача — молчим */
   }

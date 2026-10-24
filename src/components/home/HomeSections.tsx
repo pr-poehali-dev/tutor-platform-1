@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import Icon from "@/components/ui/icon";
 import DirectionDoors from "@/components/home/DirectionDoors";
+import PilotBanner from "@/components/pilot/PilotBanner";
 import TrialHero from "@/components/home/TrialHero";
 import HeroTryTutor from "@/components/home/HeroTryTutor";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
@@ -72,6 +73,7 @@ export default function HomeSections() {
 
       {/* Остальные направления — ниже пробной недели */}
       <DirectionDoors />
+      <PilotBanner place="home" />
 
       {/* Вошедшему — сразу его обучение */}
       {isAuthenticated && (

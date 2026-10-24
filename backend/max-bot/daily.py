@@ -152,6 +152,10 @@ def handle_update(conn, body: dict) -> bool:
     kind = body.get('update_type')
     if kind == 'bot_started':
         start_payload = str(body.get('payload') or '')
+        if start_payload.lower().startswith('pilot'):
+            import school_pilot
+            school_pilot.start(conn, body.get('user') or {}, start_payload)
+            return True
         if start_payload.startswith('tutor'):
             import tutors
             tutors.start(conn, body.get('user') or {}, start_payload)

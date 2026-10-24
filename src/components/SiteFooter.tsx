@@ -84,6 +84,7 @@ const BUSINESS: FooterLink[] = [
   { to: "/corporate", label: "Корпоративное обучение" },
   { to: "/repetitoram", label: "Репетиторам" },
   { to: "/school-builder", label: "ИИ-конструктор курса" },
+  { to: "/podklyuchit-shkolu?src=footer", label: "Пилот для школ — бесплатно" },
   { to: "/for-schools", label: "Школам и центрам" },
   { to: "/partners", label: "Партнёрская программа" },
   { to: "/feed/partnyorskie-programmy-s-bankom-tochka", label: "Партнёрство с Точка Банк" },

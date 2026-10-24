@@ -1,4 +1,5 @@
 import DirectionLanding from "@/components/direction/DirectionLanding";
+import PilotBanner from "@/components/pilot/PilotBanner";
 
 /** Первая страница направления «Школа» (1–11 класс). */
 export default function SchoolHome() {
@@ -32,6 +33,7 @@ export default function SchoolHome() {
         { value: "1–11", label: "классы, все предметы" },
         { value: "0 ₽", label: "первый урок" },
       ]}
+      afterGroups={<PilotBanner place="shkola" compact />}
       groups={[
         {
           title: "Каждый день",
