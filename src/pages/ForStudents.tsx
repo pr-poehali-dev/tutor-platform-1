@@ -7,6 +7,7 @@ import StudentMentor from "@/components/students/StudentMentor";
 
 const SITE_URL = "https://учисьпро.рф";
 const CANONICAL = `${SITE_URL}/studentam`;
+const OG_IMAGE = "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/19d67b8d-2c3a-41e7-865d-80de29178d5d.jpg";
 
 const FEATURES = [
   { icon: "Lightbulb", title: "Выбор темы", text: "Пять тем от простой к сильной: объект, предмет, где взять данные и чем тема рискованна." },
@@ -73,6 +74,17 @@ const JSON_LD = [
     description:
       "Бесплатный ИИ-научрук для студентов: выбор темы, план курсовой, проверка черновика, оформление по ГОСТу, подготовка к защите и сессии.",
     offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
+    audience: { "@type": "EducationalAudience", educationalRole: "student" },
+    provider: { "@type": "Organization", name: "УЧИСЬПРО", url: SITE_URL },
+    inLanguage: "ru",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Студентам", item: CANONICAL },
+    ],
   },
   {
     "@context": "https://schema.org",
@@ -85,9 +97,10 @@ export default function ForStudents() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Студентам: бесплатный ИИ-научрук для курсовой, диплома и сессии"
-        description="ИИ-научрук поможет выбрать тему, составить план курсовой, проверит черновик, оформит список литературы по ГОСТу и подготовит к защите и сессии. Бесплатно, без регистрации."
-        keywords="план курсовой, как выбрать тему курсовой, оформление по ГОСТу, список литературы по ГОСТу, подготовка к защите курсовой, ИИ для студентов, научный руководитель"
+        title="ИИ-научрук для студентов: тема, план курсовой, ГОСТ и защита — бесплатно"
+        description="Бесплатный ИИ-научрук: поможет выбрать тему, составит план курсовой, проверит черновик, оформит список литературы по ГОСТ Р 7.0.100-2018 и подготовит к защите и сессии. Без регистрации."
+        keywords="план курсовой, как выбрать тему курсовой, оформление списка литературы по госту, проверка курсовой, подготовка к защите курсовой, речь на защиту, ИИ для студентов, научный руководитель онлайн"
+        image={OG_IMAGE}
         canonical={CANONICAL}
         jsonLd={JSON_LD}
       />
@@ -178,6 +191,12 @@ export default function ForStudents() {
               </details>
             ))}
           </div>
+        </section>
+
+        <section className="mb-6 text-center">
+          <Link to="/feed/ii-nauchruk-dlya-studentov" className="inline-flex items-center gap-2 text-sm font-bold text-violet-200 hover:text-white">
+            <Icon name="BookOpen" size={16} /> Как научрук помогает с курсовой — разбор с примерами
+          </Link>
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8 text-center">

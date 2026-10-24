@@ -53,6 +53,7 @@ const FOOTER_LINKS: Record<LearnerDirection, FooterLink[]> = {
     { to: "/ai-helper", label: "Свой ИИ-помощник" },
     { to: "/zarabotok-na-neirosetyah", label: "Заработок на нейросетях" },
     { to: "/remote-professions", label: "Удалённые профессии" },
+    { to: "/studentam", label: "Студентам: ИИ-научрук" },
     { to: "/career-pro", label: "Профориентация PRO" },
     { to: "/for-managers", label: "Руководителю" },
     { to: "/instrumenty-rukovoditelya", label: "Инструменты руководителя" },
