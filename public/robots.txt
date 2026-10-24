@@ -49,7 +49,7 @@ Disallow: /grants/my
 Disallow: /feed/submit
 Disallow: /status
 Disallow: /auth/
-Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&paid&from&ref
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&paid&from&ref&src
 
 User-agent: Bingbot
 Allow: /
