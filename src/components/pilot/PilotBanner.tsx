@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
+import PilotVideo from "./PilotVideo";
 
 const MAX_BOT_PILOT = "https://max.ru/id631205241205_bot?start=pilot_site";
 
@@ -9,7 +10,7 @@ const MAX_BOT_PILOT = "https://max.ru/id631205241205_bot?start=pilot_site";
  * ученику — найти ссылку своей школы или промокод города.
  * place — где стоит баннер (для меток в Метрике и в заявках).
  */
-export default function PilotBanner({ place, compact = false }: { place: string; compact?: boolean }) {
+export default function PilotBanner({ place, compact = false, video = false }: { place: string; compact?: boolean; video?: boolean }) {
   const join = `/podklyuchit-shkolu?src=banner_${place}`;
   const goal = (target: string) => () => trackGoal("pilot_banner_click", { place, target });
 
@@ -34,7 +35,8 @@ export default function PilotBanner({ place, compact = false }: { place: string;
   return (
     <section className="px-4 pb-12">
       <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-500/15 via-cyan-500/10 to-violet-500/10 p-6 md:p-8">
-        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+        <div className={`grid items-center gap-6 ${video ? "md:grid-cols-[220px_1fr_auto]" : "md:grid-cols-[1fr_auto]"}`}>
+          {video && <PilotVideo place={place} />}
           <div>
             <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-100">
               <Icon name="School" size={13} /> Пилотный проект для школ · 2026/27

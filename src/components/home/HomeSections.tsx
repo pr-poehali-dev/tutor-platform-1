@@ -73,7 +73,7 @@ export default function HomeSections() {
 
       {/* Остальные направления — ниже пробной недели */}
       <DirectionDoors />
-      <PilotBanner place="home" />
+      <PilotBanner place="home" video />
 
       {/* Вошедшему — сразу его обучение */}
       {isAuthenticated && (
