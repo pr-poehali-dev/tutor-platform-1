@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {"name": "CORS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "Список режимов", "method": "GET", "path": "/?action=modes", "expectedStatus": 200, "expectedBody": {"per_hour": 20}, "bodyMatcher": "partial"},
+    {"name": "Неизвестный режим", "method": "POST", "path": "/?action=ask", "body": {"mode": "essay", "text": "напиши мне курсовую по экономике"}, "expectedStatus": 400},
+    {"name": "Короткий черновик отклоняется", "method": "POST", "path": "/?action=ask", "body": {"mode": "review", "text": "Короткий текст черновика"}, "expectedStatus": 400},
+    {"name": "Неизвестное действие", "method": "GET", "path": "/?action=foo", "expectedStatus": 404}
+  ]
+}
