@@ -67,6 +67,23 @@ def join_url(inst: dict, city: dict, source: str = 'letter') -> str:
     return f'{SITE}/podklyuchit-shkolu{q}'
 
 
+MAX_BOT = 'https://max.ru/id631205241205_bot'
+
+
+def max_url(city: dict, source: str = 'letter') -> str:
+    """Бот MAX с приветствием директора: условия пилота и кнопка подключения с городом школы."""
+    return f"{MAX_BOT}?start=pilot_{source}_{city.get('page_slug') or city['slug']}"
+
+
+def max_block_html(url: str) -> str:
+    return (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;'
+            f'border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 16px;font-size:14px;line-height:1.5">'
+            f'<b>Удобнее в мессенджере?</b> Откройте условия пилота в MAX — бот пришлёт их вместе с кнопкой подключения, '
+            f'сообщение легко переслать завучу или классным руководителям.<br>'
+            f'<a href="{url}" style="display:inline-block;margin-top:8px;background:#2563eb;color:#ffffff;text-decoration:none;'
+            f'font-weight:bold;padding:9px 16px;border-radius:8px">Открыть условия в MAX</a></td></tr></table>')
+
+
 def greeting(director: str) -> str:
     parts = (director or '').split()
     if len(parts) >= 3:
@@ -91,6 +108,7 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
     page_label = f'{SITE_LABEL}{path}'
     reply = smtp_creds()[0]
     join = join_url(inst, city)
+    mx = max_url(city, 'letter')
 
     chat = (f'Ученики нашей школы участвуют в пилотном проекте УЧИСЬПРО. До 31 мая 2027 года бесплатно доступны '
             f'ИИ-наставник по школьным предметам и курсы 1–11 класса с подготовкой к ОГЭ и ЕГЭ. '
@@ -120,6 +138,8 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
 «{chat}»
 
 Презентация для директора (5 минут): {deck}
+
+Удобнее в мессенджере? Условия пилота и кнопка подключения в MAX — сообщение легко переслать завучу или классным руководителям: {mx}
 
 Есть вопросы — просто ответьте на это письмо.
 
@@ -166,6 +186,7 @@ def build_letter(inst: dict, unsub_url: str, city: dict = None):
 <p style="margin:0 0 6px;font-size:13px;color:#5b5670">Можно и без подключения — передать ученикам городской промокод. Текст для чатов:</p>
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-left:4px solid #06b6d4;margin:0 0 18px"><tr><td style="padding:12px 14px;font-size:14px;line-height:1.55;color:#334155">{escape(chat)}</td></tr></table>
 <p style="margin:0 0 18px;text-align:center"><a href="{deck}" style="color:#6d28d9;font-weight:bold">Презентация для директора — 5 минут</a></p>
+{max_block_html(mx)}
 <p style="margin:0 0 14px">Есть вопросы — просто <b>ответьте на это письмо</b>.</p>
 <p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
 </td></tr>
@@ -214,6 +235,7 @@ def build_reminder(inst: dict, unsub_url: str, city: dict):
     g = greeting(inst.get('contact_name', ''))
     school = inst.get('org_name') or 'вашей школы'
     join = join_url(inst, city, 'reminder')
+    mx = max_url(city, 'reminder')
     gen = city['name_gen']
     reply = smtp_creds()[0]
     text = f"""{g}
@@ -227,6 +249,8 @@ def build_reminder(inst: dict, unsub_url: str, city: dict):
 — отдельную ссылку и QR-код для учеников вашей школы;
 — готовые тексты для школьных и родительских чатов и памятку для печати;
 — страницу, где видно, сколько учеников подключилось — по классам.
+
+Удобнее в мессенджере? Условия пилота и кнопка подключения в MAX: {mx}
 
 Для школы участие бесплатное, нагрузки на учителей нет.
 
@@ -257,6 +281,7 @@ def build_reminder(inst: dict, unsub_url: str, city: dict):
 {li('готовые тексты для чатов и памятку для печати;')}
 {li('страницу, где видно, <b>сколько учеников подключилось — по классам</b>.')}
 </ul>
+{max_block_html(mx)}
 <p style="margin:0 0 14px">Для школы участие бесплатное, нагрузки на учителей нет. Вопросы — просто ответьте на это письмо.</p>
 <p style="margin:0">С уважением,<br>команда УЧИСЬПРО<br><a href="{SITE}" style="color:#6d28d9">{SITE_LABEL}</a></p>
 </td></tr>
