@@ -10,6 +10,17 @@ import { trackGoal } from "@/components/analytics/YandexMetrika";
  * репетитору нужен канал «я хочу продавать курсы». Раньше такой человек
  * упирался в закрытую дверь и уходил.
  */
+/** Откуда пришёл репетитор: ?src=max_vk, tg_profi и т. п. — из ссылок ботов MAX и Telegram. */
+function leadSource(): string {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("src");
+    if (fromUrl) sessionStorage.setItem("tutor_src", fromUrl.slice(0, 60));
+    return sessionStorage.getItem("tutor_src") || "site";
+  } catch {
+    return "site";
+  }
+}
+
 export default function TutorsLeadForm() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -37,13 +48,13 @@ export default function TutorsLeadForm() {
       contact_phone: isEmail ? undefined : contact.trim(),
       audience_type: "author",
       topic: subject.trim() || undefined,
-      message: `Заявка репетитора на доступ к своей школе. Предмет: ${subject.trim() || "не указан"}`,
+      message: `Заявка репетитора на доступ к своей школе. Предмет: ${subject.trim() || "не указан"}. Источник: ${leadSource()}`,
     });
     setSending(false);
     if (res.ok) {
       setDone(true);
       // Главная конверсия воронки репетиторов — на эту цель обучается Директ.
-      trackGoal("tutor_lead_sent", { subject: subject.trim().slice(0, 60) });
+      trackGoal("tutor_lead_sent", { subject: subject.trim().slice(0, 60), source: leadSource() });
     } else {
       setError(res.message || "Не удалось отправить. Попробуйте ещё раз");
     }

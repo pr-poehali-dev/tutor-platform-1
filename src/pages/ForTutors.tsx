@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { trackGoal } from "@/components/analytics/YandexMetrika";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
@@ -138,6 +140,14 @@ const JSON_LD = [
 ];
 
 export default function ForTutors() {
+  const [params] = useSearchParams();
+  const src = params.get("src") || "";
+
+  // Переход из бота MAX или Telegram — отдельная цель, чтобы видеть, какой канал приводит репетиторов.
+  useEffect(() => {
+    if (src) trackGoal("tutor_page_from_bot", { source: src });
+  }, [src]);
+
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
@@ -203,6 +213,15 @@ export default function ForTutors() {
           <p className="text-white/40 text-sm mt-4">
             Ничего не нужно платить и подключать — просто попробуйте
           </p>
+          <a
+            href={`https://max.ru/id631205241205_bot?start=tutor_site${src ? "_" + src.replace(/[^a-z0-9_-]/gi, "").slice(0, 30) : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackGoal("tutor_max_click", { source: src || "site" })}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl border border-sky-400/30 bg-sky-500/10 px-4 py-2.5 text-sm font-bold text-sky-100 hover:bg-sky-500/15"
+          >
+            <Icon name="MessageCircle" size={16} /> Удобнее в мессенджере? Заявка за минуту в MAX
+          </a>
         </section>
 
         {/* Боли */}

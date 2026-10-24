@@ -130,10 +130,12 @@ def tg_send_to_channel(chat_id, text: str, image_url: str = '',
     return (True, None) if success else (False, str(res)[:300])
 
 
-def tg_send_to_user(chat_id, text: str) -> tuple:
-    success, res = tg_api('sendMessage', {
-        'chat_id': chat_id, 'text': sanitize_text(text)[:4096],
-        'parse_mode': 'HTML', 'disable_web_page_preview': True})
+def tg_send_to_user(chat_id, text: str, buttons=None) -> tuple:
+    payload = {'chat_id': chat_id, 'text': sanitize_text(text)[:4096],
+               'parse_mode': 'HTML', 'disable_web_page_preview': True}
+    if buttons:
+        payload['reply_markup'] = {'inline_keyboard': [[{'text': t_, 'url': u}] for t_, u in buttons]}
+    success, res = tg_api('sendMessage', payload)
     return (True, None) if success else (False, str(res)[:300])
 
 
@@ -145,16 +147,33 @@ def channel_link() -> str:
 MAX_TUTOR_LINK = "https://max.ru/id631205241205_bot?start=tutor_telegram"
 
 
+def tutor_source(text: str) -> str:
+    """/start tutor_vk → «vk»: метка источника для страницы и заявки."""
+    parts = (text or '').split()
+    raw = parts[1] if len(parts) > 1 and parts[1].startswith('tutor') else ''
+    src = raw[len('tutor'):].lstrip('_-')
+    return ''.join(ch for ch in src if ch.isalnum() or ch in '_-')[:40] or 'direct'
+
+
+def tutor_page(source: str) -> str:
+    return f"{SITE_URL}/repetitoram?src=tg_{source}"
+
+
 def tutor_text() -> str:
     return (
         "Здравствуйте! УЧИСЬПРО ищет репетиторов для сотрудничества:\n\n"
+        "• бесплатный ИИ-помощник для занятий: домашки, варианты ОГЭ/ЕГЭ, проверка решений по фото;\n"
         "• собрать свой онлайн-курс с ИИ за вечер — бесплатно;\n"
         "• получать учеников с платформы;\n"
         "• 20% с оплат семей, которых вы привели.\n\n"
-        f"Условия: {SITE_URL}/repetitoram\n"
-        f"Оставить заявку за минуту (бот в MAX): {MAX_TUTOR_LINK}\n\n"
+        "Все условия и заявка за минуту — по кнопке ниже.\n\n"
         "Или напишите сюда свой предмет и телефон — мы свяжемся пн–пт, 8:00–17:00 мск."
     )
+
+
+def tutor_buttons(source: str):
+    return [('Условия для репетиторов', tutor_page(source)),
+            ('Оставить заявку в MAX', f"{MAX_TUTOR_LINK.rsplit('_', 1)[0]}_tg_{source}")]
 
 
 def notify_owner_max(text: str):
@@ -516,11 +535,12 @@ def handle_webhook(conn, body: dict) -> dict:
             return ok({'ok': True, 'stopped': str(uid)})
 
         if text.startswith('/start tutor') or text in ('/repetitor', 'репетитор', '/tutor'):
-            tg_send_to_user(uid, tutor_text())
+            src = tutor_source(text)
+            tg_send_to_user(uid, tutor_text(), tutor_buttons(src))
             notify_owner_max(
                 "👩‍🏫 Репетитор открыл Telegram-бота\n"
                 f"Имя: {chat.get('first_name') or '—'} {chat.get('last_name') or ''}\n"
-                f"Telegram: @{chat.get('username') or '—'} (id {uid})")
+                f"Telegram: @{chat.get('username') or '—'} (id {uid})\nИсточник: {src}")
             mark_welcomed(conn, uid, chat.get('username') or chat.get('first_name'))
             return ok({'ok': True, 'tutor': str(uid)})
 

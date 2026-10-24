@@ -11,6 +11,12 @@ from daily import api, keyboard, t
 SITE = 'https://xn--h1amcedk2a6b.xn--p1ai'
 TUTORS_PAGE = SITE + '/repetitoram'
 
+
+def page_url(source: str) -> str:
+    """Страница для репетиторов с меткой источника: видно, откуда пришла заявка."""
+    src = ''.join(ch for ch in (source or '').lower() if ch.isalnum() or ch in '_-')[:40] or 'max'
+    return f'{TUTORS_PAGE}?src=max_{src}'
+
 INTERESTS = {
     'ti_tool': 'ИИ-помощник для занятий',
     'ti_course': 'Свой онлайн-курс с ИИ',
@@ -56,14 +62,16 @@ def start(conn, user: dict, source: str):
     if row and row[0] == 'done':
         send(uid, "Рады снова видеть! Ваша заявка у нас, свяжемся в рабочее время "
                   "(пн–пт, 8:00–17:00 мск). Подробности для репетиторов — по кнопке.",
-             [[{'type': 'link', 'text': 'Условия для репетиторов', 'url': TUTORS_PAGE}]])
+             [[{'type': 'link', 'text': 'Условия для репетиторов', 'url': page_url(source)}]])
         return
     hello = f"Здравствуйте{', ' + name.split()[0] if name else ''}! Это УЧИСЬПРО — платформа с ИИ-репетитором для школьников.\n\n"
     send(uid, hello +
          "Мы не конкуренты, а партнёры: даём репетиторам бесплатный ИИ-помощник для занятий — "
          "готовит домашки и варианты ОГЭ/ЕГЭ, проверяет решения учеников по фото, объясняет темы "
          "между уроками. Ученики остаются вашими.\n\n"
-         "Займёт минуту. Какой предмет вы ведёте? Напишите одним сообщением, например: «Математика, ОГЭ/ЕГЭ».")
+         "Все условия — на странице для репетиторов (кнопка ниже).\n\n"
+         "Займёт минуту. Какой предмет вы ведёте? Напишите одним сообщением, например: «Математика, ОГЭ/ЕГЭ».",
+         [[{'type': 'link', 'text': 'Условия для репетиторов', 'url': page_url(source)}]])
 
 
 def on_text(conn, user: dict, text: str) -> bool:
@@ -94,7 +102,7 @@ def on_text(conn, user: dict, text: str) -> bool:
 def finish(uid, name, source, subject, interest, contact):
     send(uid, "Готово, заявка принята! Свяжемся с вами в рабочее время: пн–пт, 8:00–17:00 мск.\n\n"
               "Пока можно посмотреть условия и собрать пробный курс — это бесплатно.",
-         [[{'type': 'link', 'text': 'Условия для репетиторов', 'url': TUTORS_PAGE}],
+         [[{'type': 'link', 'text': 'Условия для репетиторов', 'url': page_url(source)}],
           [{'type': 'link', 'text': 'Собрать курс с ИИ', 'url': SITE + '/course-builder'}]])
     notify_owner(
         "👩‍🏫 Новый репетитор из MAX\n"
