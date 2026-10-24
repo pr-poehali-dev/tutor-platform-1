@@ -14,6 +14,11 @@ const CANONICAL = `${SITE_URL}/repetitoram`;
 
 /** Комиссия платформы — совпадает со значением platform_fee_percent в базе. */
 const FEE_PERCENT = 8;
+/** Вознаграждение за приглашённых учеников — совпадает с PARTNER_LINE_PERCENT[1] в backend/access. */
+const REFERRAL_PERCENT = 20;
+/** Единые формулировки условий — те же слова в ботах MAX и Telegram. */
+const FEE_TEXT = `Продаёте свой курс — платформа берёт ${FEE_PERCENT}% с продажи, ${100 - FEE_PERCENT}% ваши. Без абонплаты.`;
+const REFERRAL_TEXT = `Приводите учеников на подписку УЧИСЬПРО — получаете ${REFERRAL_PERCENT}% с каждой их оплаты.`;
 
 const PAINS = [
   {
@@ -82,7 +87,11 @@ const SCHOOL_FEATURES = [
 const FAQ = [
   {
     q: "Сколько это стоит?",
-    a: `Конструктор курсов бесплатный — им можно пользоваться без регистрации. Если решите продавать через платформу, абонплаты нет: мы берём ${FEE_PERCENT}% с реальных продаж. Нет продаж — нет платежей.`,
+    a: `Конструктор курсов и ИИ-помощник для занятий — бесплатно. ${FEE_TEXT} Нет продаж — нет платежей.`,
+  },
+  {
+    q: `Чем отличаются ${FEE_PERCENT}% и ${REFERRAL_PERCENT}%?`,
+    a: `Это два разных условия. ${FEE_PERCENT}% — то, что вы платите платформе, когда продаёте свой курс: из 1 000 ₽ вам остаётся ${(100 - FEE_PERCENT) * 10} ₽. ${REFERRAL_PERCENT}% — то, что платформа платит вам: ${REFERRAL_TEXT.charAt(0).toLowerCase() + REFERRAL_TEXT.slice(1)} Ученик оплатил 1 000 ₽ — вам ${REFERRAL_PERCENT * 10} ₽.`,
   },
   {
     q: "Курс от ИИ — это же шаблон?",
@@ -117,7 +126,7 @@ const JSON_LD = [
       "@type": "Offer",
       price: "0",
       priceCurrency: "RUB",
-      description: `Конструктор курсов бесплатно. Комиссия платформы ${FEE_PERCENT}% только с продаж, без абонплаты.`,
+      description: `Конструктор курсов бесплатно. ${FEE_TEXT} ${REFERRAL_TEXT}`,
     },
   },
   {
@@ -152,7 +161,7 @@ export default function ForTutors() {
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
         title="Репетиторам: соберите свой онлайн-курс с ИИ за минуту"
-        description={`Репетиторам и преподавателям: ИИ собирает готовый курс — программа, уроки, задания, квизы и маркетинг-пакет. Продавайте под своим брендом, без абонплаты, комиссия ${FEE_PERCENT}%.`}
+        description={`Репетиторам: бесплатный ИИ-помощник и конструктор курсов. Продаёте свой курс — ${100 - FEE_PERCENT}% ваши, без абонплаты. Приводите учеников — ${REFERRAL_PERCENT}% с их оплат.`}
         keywords="платформа для репетиторов, как создать онлайн курс, конструктор курсов, репетитору своя школа, продавать курсы онлайн, заработок репетитора"
         canonical={CANONICAL}
         jsonLd={JSON_LD}
@@ -300,7 +309,7 @@ export default function ForTutors() {
             <h2 className="font-montserrat font-black text-2xl mb-5 text-center">
               Честные условия
             </h2>
-            <div className="grid sm:grid-cols-3 gap-4 text-center">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div>
                 <p className="font-montserrat font-black text-3xl bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
                   0 ₽
@@ -314,7 +323,15 @@ export default function ForTutors() {
                   {FEE_PERCENT}%
                 </p>
                 <p className="text-white/65 text-sm mt-1">
-                  Комиссия только с реальных продаж, без абонплаты
+                  Платите платформе только с продаж своих курсов, {100 - FEE_PERCENT}% остаётся вам
+                </p>
+              </div>
+              <div>
+                <p className="font-montserrat font-black text-3xl bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  +{REFERRAL_PERCENT}%
+                </p>
+                <p className="text-white/65 text-sm mt-1">
+                  Платформа платит вам с каждой оплаты учеников, которых вы привели
                 </p>
               </div>
               <div>
