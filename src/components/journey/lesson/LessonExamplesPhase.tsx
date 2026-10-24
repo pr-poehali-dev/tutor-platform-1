@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "../journeyData";
 import { MathText } from "@/lib/mathFormat";
+import ExpertTips from "@/components/courses/lessonViewer/ExpertTips";
 
 interface Props {
   lesson: Lesson;
@@ -96,6 +97,8 @@ export default function LessonExamplesPhase({
           )}
         </>
       )}
+
+      {isLast && allRevealed && <ExpertTips tips={lesson.expert_tips} />}
 
       <div className="flex items-center justify-between mt-6">
         <button

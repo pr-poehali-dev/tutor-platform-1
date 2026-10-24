@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { Lesson } from "@/components/journey/journeyData";
 import { MathText } from "@/lib/mathFormat";
+import ExpertTips from "./ExpertTips";
 
 type Phase = "theory" | "examples" | "tasks" | "done";
 
@@ -77,6 +78,8 @@ export default function LessonViewerExamples({
           )}
         </>
       )}
+
+      {isLast && allRevealed && <ExpertTips tips={lesson.expert_tips} />}
 
       <div className="flex items-center justify-between mt-6">
         <button

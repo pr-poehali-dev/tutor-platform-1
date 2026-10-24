@@ -149,6 +149,12 @@ export interface Task {
   fun_fact: string;
 }
 
+export interface ExpertTip {
+  kind: "lifehack" | "trap" | "beyond";
+  title: string;
+  text: string;
+}
+
 export interface TheoryBlock {
   heading: string;
   content: string;
@@ -182,6 +188,8 @@ export interface Lesson {
   tasks: Task[];
   /** Хронология ключевых событий урока (история). */
   timeline?: TimelineEvent[];
+  /** «Фишки» эксперта: приём, ловушка на экзамене, применение за пределами школы. */
+  expert_tips?: ExpertTip[];
   /** Химия: сколько уравнений реакций проверено на баланс и сколько исправлено. */
   chem_verified?: { checked: number; fixed: number };
   _cached?: boolean;
