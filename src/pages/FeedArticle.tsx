@@ -390,6 +390,16 @@ export default function FeedArticlePage() {
                 </ul>
               );
             }
+            const isOrderedList = lines.length > 1 && lines.every((l) => /^\s*\d+[.)]\s+/.test(l));
+            if (isOrderedList) {
+              return (
+                <ol key={i} className="list-decimal pl-5 space-y-2 marker:text-primary marker:font-bold">
+                  {lines.map((l, j) => (
+                    <li key={j}>{renderInline(l.replace(/^\s*\d+[.)]\s+/, ""))}</li>
+                  ))}
+                </ol>
+              );
+            }
             return <p key={i}>{renderInline(p)}</p>;
           })}
         </article>
