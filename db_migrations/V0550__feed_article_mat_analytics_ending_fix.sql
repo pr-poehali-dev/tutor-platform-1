@@ -1,0 +1,1 @@
+UPDATE t_p78828167_tutor_platform_1.feed_articles SET content = replace(content, 'так же, как мы посмотрели на эти.', 'так же, как мы посмотрели на рынки из этой статьи.'), updated_at = NOW() WHERE slug = 'biznes-analitika-mat-labs-rynki-kompanii-proverka'
