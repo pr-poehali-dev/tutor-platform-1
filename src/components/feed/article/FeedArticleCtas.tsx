@@ -39,6 +39,8 @@ export default function FeedArticleCtas({ article }: Props) {
   const isTurnkey = tags.includes("готовый бизнес") && tags.includes("mat-labs.ru");
   // Статьи о «Радаре заказчиков» на mat-labs.ru — ведём в каталог.
   const isRadar = tags.includes("радар заказчиков") && tags.includes("mat-labs.ru");
+  // Статьи о разделе «Бизнес-аналитика» на mat-labs.ru — ведём в отчёты о рынках.
+  const isMatAnalytics = tags.includes("бизнес-аналитика") && tags.includes("mat-labs.ru");
   // Статьи о сочинениях — ведём в Мастерскую сочинений.
   const isWriting = tags.includes("сочинение");
   const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
@@ -49,7 +51,7 @@ export default function FeedArticleCtas({ article }: Props) {
   const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
     "олимпиада", "прораб", "для бизнеса", "обновление"];
   const hasSpecial =
-    isGrantAi || isTurnkey || isRadar || isWriting || isForecast || isSchoolBuilder ||
+    isGrantAi || isTurnkey || isRadar || isMatAnalytics || isWriting || isForecast || isSchoolBuilder ||
     (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
 
   return (
@@ -76,6 +78,36 @@ export default function FeedArticleCtas({ article }: Props) {
               <Icon name="PenLine" size={18} />
               Записаться в Мастерскую сочинений
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* CTA mat-labs.ru: бизнес-аналитика */}
+      {isMatAnalytics && (
+        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-cyan-700/30 via-indigo-600/20 to-violet-700/35 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-cyan-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-cyan-500/20 flex items-center justify-center">
+              <Icon name="ChartPie" fallback="BarChart3" size={28} className="text-cyan-200" />
+            </div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Посмотрите рынок своей ниши
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
+              Объём, лидеры, приток новичков и риски — для любой отрасли и региона.
+              Превью бесплатно и без регистрации.
+            </p>
+            <a
+              href="https://mat-labs.ru/analytics"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackGoal("article_mat_analytics_click", { slug: article.slug })}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-cyan-500/25"
+            >
+              <Icon name="BarChart3" size={18} />
+              Открыть бизнес-аналитику
+            </a>
           </div>
         </div>
       )}
