@@ -41,6 +41,23 @@ export default function FeedArticleCtas({ article }: Props) {
   const isRadar = tags.includes("радар заказчиков") && tags.includes("mat-labs.ru");
   // Статьи о разделе «Бизнес-аналитика» на mat-labs.ru — ведём в отчёты о рынках.
   const isMatAnalytics = tags.includes("бизнес-аналитика") && tags.includes("mat-labs.ru");
+  // Статьи о модуле «Базы компаний» ведём сразу в каталог баз.
+  const isMatDatabases = isMatAnalytics && tags.includes("базы компаний");
+  const matCta = isMatDatabases
+    ? {
+        title: "Соберите базу компаний под свою задачу",
+        text: "26 готовых баз и конструктор выборки. Анализ любой базы — бесплатно и без регистрации.",
+        href: "https://mat-labs.ru/analytics/databases",
+        icon: "Database",
+        button: "Открыть базы компаний",
+      }
+    : {
+        title: "Посмотрите рынок своей ниши",
+        text: "Объём, лидеры, приток новичков и риски — для любой отрасли и региона. Превью бесплатно и без регистрации.",
+        href: "https://mat-labs.ru/analytics",
+        icon: "ChartPie",
+        button: "Открыть бизнес-аналитику",
+      };
   // Статьи о сочинениях — ведём в Мастерскую сочинений.
   const isWriting = tags.includes("сочинение");
   const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
@@ -89,24 +106,23 @@ export default function FeedArticleCtas({ article }: Props) {
           <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
           <div className="relative">
             <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-cyan-500/20 flex items-center justify-center">
-              <Icon name="ChartPie" fallback="BarChart3" size={28} className="text-cyan-200" />
+              <Icon name={matCta.icon} fallback="BarChart3" size={28} className="text-cyan-200" />
             </div>
             <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Посмотрите рынок своей ниши
+              {matCta.title}
             </h3>
             <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              Объём, лидеры, приток новичков и риски — для любой отрасли и региона.
-              Превью бесплатно и без регистрации.
+              {matCta.text}
             </p>
             <a
-              href="https://mat-labs.ru/analytics"
+              href={matCta.href}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackGoal("article_mat_analytics_click", { slug: article.slug })}
+              onClick={() => trackGoal(isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-cyan-500/25"
             >
               <Icon name="BarChart3" size={18} />
-              Открыть бизнес-аналитику
+              {matCta.button}
             </a>
           </div>
         </div>
