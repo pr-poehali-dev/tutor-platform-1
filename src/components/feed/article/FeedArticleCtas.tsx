@@ -37,6 +37,8 @@ export default function FeedArticleCtas({ article }: Props) {
   // ведём сразу в оценку компетенций и HR-помощник.
   // Статьи о разделе «Готовый бизнес под ключ» на mat-labs.ru.
   const isTurnkey = tags.includes("готовый бизнес") && tags.includes("mat-labs.ru");
+  // Статьи о «Радаре заказчиков» на mat-labs.ru — ведём в каталог.
+  const isRadar = tags.includes("радар заказчиков") && tags.includes("mat-labs.ru");
   // Статьи о сочинениях — ведём в Мастерскую сочинений.
   const isWriting = tags.includes("сочинение");
   const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
@@ -47,7 +49,7 @@ export default function FeedArticleCtas({ article }: Props) {
   const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
     "олимпиада", "прораб", "для бизнеса", "обновление"];
   const hasSpecial =
-    isGrantAi || isTurnkey || isWriting || isForecast || isSchoolBuilder ||
+    isGrantAi || isTurnkey || isRadar || isWriting || isForecast || isSchoolBuilder ||
     (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
 
   return (
@@ -74,6 +76,36 @@ export default function FeedArticleCtas({ article }: Props) {
               <Icon name="PenLine" size={18} />
               Записаться в Мастерскую сочинений
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* CTA mat-labs.ru: Радар заказчиков */}
+      {isRadar && (
+        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-indigo-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
+          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+          <div className="relative">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-violet-500/20 flex items-center justify-center">
+              <Icon name="Radar" size={28} className="text-violet-200" />
+            </div>
+            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
+              Найдите заказчиков с бюджетом
+            </h3>
+            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
+              18 тысяч компаний, получивших господдержку в 2024–2026 годах. Каталог бесплатный,
+              контакты — пробный доступ на 3 дня без карты.
+            </p>
+            <a
+              href="https://mat-labs.ru/radar"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackGoal("article_radar_click", { slug: article.slug })}
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
+            >
+              <Icon name="Search" size={18} />
+              Открыть Радар заказчиков
+            </a>
           </div>
         </div>
       )}
