@@ -355,6 +355,13 @@ def generate_trend_article(cur) -> dict:
         return {'created': False, 'reason': 'нет данных для статьи'}
     key, name, emoji, desc, s7, s30, score, momentum, rank = row
 
+    cur.execute(
+        "SELECT 1 FROM feed_articles WHERE ai_notes = %s "
+        "AND created_at > NOW() - INTERVAL '60 days' LIMIT 1",
+        (f'Аналитический отчёт по направлению «{name}». Сгенерировано ИИ-аналитиком трендов.',))
+    if cur.fetchone():
+        return {'created': False, 'reason': f'по направлению «{name}» уже есть свежая статья'}
+
     # Фактура: свежие публикации по теме
     cur.execute(
         "SELECT title FROM it_trend_signals WHERE direction_key = %s "
