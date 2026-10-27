@@ -43,7 +43,16 @@ export default function FeedArticleCtas({ article }: Props) {
   const isMatAnalytics = tags.includes("бизнес-аналитика") && tags.includes("mat-labs.ru");
   // Статьи о модуле «Базы компаний» ведём сразу в каталог баз.
   const isMatDatabases = isMatAnalytics && tags.includes("базы компаний");
-  const matCta = isMatDatabases
+  const isMatBi = isMatAnalytics && tags.includes("облачный BI");
+  const matCta = isMatBi
+    ? {
+        title: "Постройте дашборд из своей таблицы",
+        text: "Загрузите выгрузку продаж из Excel или CRM — графики и сравнение с рынком за минуту. Бесплатно и без регистрации.",
+        href: "https://mat-labs.ru/analytics/bi",
+        icon: "LayoutDashboard",
+        button: "Открыть облачный BI",
+      }
+    : isMatDatabases
     ? {
         title: "Соберите базу компаний под свою задачу",
         text: "26 готовых баз и конструктор выборки. Анализ любой базы — бесплатно и без регистрации.",
@@ -118,7 +127,7 @@ export default function FeedArticleCtas({ article }: Props) {
               href={matCta.href}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackGoal(isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
+              onClick={() => trackGoal(isMatBi ? "article_mat_bi_click" : isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-cyan-500/25"
             >
               <Icon name="BarChart3" size={18} />
