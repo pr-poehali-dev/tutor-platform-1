@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

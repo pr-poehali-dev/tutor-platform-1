@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { CITIES, NICHES, buildSearchLinks, City, Niche } from "@/components/playbook/cities";
 import { listInstitutions, EduInstitution } from "@/components/admin/eduInstitutions/api";

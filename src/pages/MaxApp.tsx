@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import { getMaxInitData, haptic, launchedFromMax } from "@/components/max/maxBridge";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import HelperChat from "@/components/ai-helper/HelperChat";
 import { Helper, helperApi } from "@/components/ai-helper/api";

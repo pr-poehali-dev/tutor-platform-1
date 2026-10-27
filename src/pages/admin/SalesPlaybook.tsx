@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { SEGMENTS } from "@/components/playbook/segments";
 import { ALGORITHMS } from "@/components/playbook/algorithms";
