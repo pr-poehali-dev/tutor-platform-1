@@ -1,1 +1,0 @@
-UPDATE t_p78828167_tutor_platform_1.feed_articles SET title = title WHERE slug = $q$__x — «а» | 1 573,0 | ₽ **b** ![c](https://x.ru/a.webp) [d](/grants)__$q$

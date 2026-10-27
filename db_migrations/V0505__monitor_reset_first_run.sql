@@ -1,2 +1,0 @@
--- Сброс отметки времени после прерванного первого запуска мониторинга, чтобы обход стартовал сразу.
-UPDATE t_p78828167_tutor_platform_1.monitor_state SET last_run_at = NULL, locked_until = NULL WHERE id = 1;

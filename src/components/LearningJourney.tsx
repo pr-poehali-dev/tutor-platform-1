@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import StepSubject from "./journey/StepSubject";
 import StepTest from "./journey/StepTest";

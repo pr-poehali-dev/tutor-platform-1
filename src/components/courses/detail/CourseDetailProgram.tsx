@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { Course, getCoursePrice } from "@/components/courses/coursesData";
 import { CourseDetail } from "@/components/courses/courseDetailsData";

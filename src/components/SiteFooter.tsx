@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { useDirection } from "@/hooks/useDirection";
 import { DIRECTIONS, LEARNER_ORDER, LearnerDirection } from "@/lib/directions";

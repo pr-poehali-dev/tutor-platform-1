@@ -1,2 +1,0 @@
--- Проверочная пробная неделя, созданная при тестировании, закрывается и помечается, чтобы не попасть в отчёты.
-UPDATE t_p78828167_tutor_platform_1.tutor_trials SET expires_at = NOW(), source = 'qa_test' WHERE source = 'qa';

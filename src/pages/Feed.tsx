@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "@/lib/router-compat";
 import { FEED_DIRECTION_CATEGORIES, FeedDirection } from "@/components/feed/api";
 import { getSavedDirection } from "@/lib/directions";
 import Icon from "@/components/ui/icon";

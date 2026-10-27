@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "@/lib/router-compat";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

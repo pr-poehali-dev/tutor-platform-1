@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SimHeader from "@/components/simulators/SimHeader";
-import Scene3D from "@/components/simulators/Scene3D";
+import Scene3D from "@/components/simulators/Scene3DClient";
 import Player from "@/components/simulators/Player";
 import ObjectsPanel from "@/components/simulators/builder/ObjectsPanel";
 import StepsPanel from "@/components/simulators/builder/StepsPanel";
@@ -308,14 +308,13 @@ export default function SimBuilder() {
                     <p className="mb-1 text-xs text-white/45">Или начните с шаблона:</p>
                     <div className="flex flex-wrap gap-1">
                       {TEMPLATES.map((t) => (
-                        <Link
+                        <a
                           key={t.slug}
-                          to={`/trenazhery/konstruktor?from=${t.slug}`}
-                          reloadDocument
+                          href={`/trenazhery/konstruktor?from=${t.slug}`}
                           className="rounded-md border border-white/10 px-2 py-0.5 text-xs text-white/65 hover:text-white"
                         >
                           {t.title}
-                        </Link>
+                        </a>
                       ))}
                     </div>
                   </div>

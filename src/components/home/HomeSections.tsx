@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import Icon from "@/components/ui/icon";
 import DirectionDoors from "@/components/home/DirectionDoors";

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { TUTOR_SUBJECTS } from "./tutorHubData";
 
 export default function TutorSubjects() {

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, ReactNode } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "@/lib/router-compat";
 import { QRCodeSVG } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { LibraryItem } from "@/components/kids/libraryData";
 import { AUTOPLAY_COUNTDOWN_SEC } from "@/components/kids/talePlayerUtils";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { useUserProgress, SavedJourney } from "@/components/journey/useUserProgress";
 import { SUBJECTS } from "@/components/journey/journeyData";

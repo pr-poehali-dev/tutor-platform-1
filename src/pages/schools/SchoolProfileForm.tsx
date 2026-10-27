@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "@/lib/router-compat";
 import Seo from "@/components/seo/Seo";
 import Icon from "@/components/ui/icon";
 import DirLayout from "@/components/schools/DirLayout";

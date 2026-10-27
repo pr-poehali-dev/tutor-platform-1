@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "@/lib/router-compat";
 import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import func2url from "../../backend/func2url.json";

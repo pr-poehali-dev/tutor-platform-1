@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import { useDirection } from "@/hooks/useDirection";
 import DirectionSwitch from "./DirectionSwitch";
 

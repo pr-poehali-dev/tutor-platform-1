@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,15 @@ export default function SimPlay({ saved = false }: { saved?: boolean }) {
   const [sim, setSim] = useState<Simulator | null>(saved ? null : findTemplate(slug) || null);
   const [loading, setLoading] = useState(saved);
   const [error, setError] = useState(!saved && !findTemplate(slug) ? "Тренажёр не найден" : "");
-  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
+  const [name, setName] = useState("");
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(NAME_KEY);
+      if (stored) setName((cur) => cur || stored);
+    } catch {
+      /* noop */
+    }
+  }, []);
   const [group, setGroup] = useState(params.get("g") || "");
   const [started, setStarted] = useState(false);
   const [sent, setSent] = useState<"" | "ok" | "fail">("");

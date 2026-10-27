@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
@@ -90,6 +90,9 @@ export default function MaxApp() {
         <span className="grid h-16 w-16 place-items-center rounded-2xl bg-primary text-2xl font-bold">У</span>
         <Icon name="Loader2" size={24} className="mt-6 animate-spin text-white/60" />
         <p className="mt-3 text-white/60">Входим через MAX…</p>
+        <p className="sr-only">
+          УЧИСЬПРО в MAX — ИИ-репетитор, разбор домашки и подготовка к ОГЭ и ЕГЭ прямо в мессенджере.
+        </p>
       </Screen>
     );
   }

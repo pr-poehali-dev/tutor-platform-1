@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "@/lib/router-compat";
 import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import HelperChat from "@/components/ai-helper/HelperChat";

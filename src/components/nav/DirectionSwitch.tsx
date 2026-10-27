@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { DIRECTIONS, LEARNER_ORDER, LearnerDirection, saveDirection } from "@/lib/directions";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 

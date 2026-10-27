@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import func2url from "../../backend/func2url.json";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

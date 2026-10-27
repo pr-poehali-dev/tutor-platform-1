@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { QRCodeSVG } from "qrcode.react";
 import Icon from "@/components/ui/icon";
 import { PilotSchool, chatText, parentsText } from "./api";

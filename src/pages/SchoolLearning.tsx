@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { useAuth } from "@/context/AuthContext";
@@ -53,7 +53,10 @@ export default function SchoolLearning() {
       <main className="max-w-4xl mx-auto px-5 md:px-8 py-8 pb-16">
         <h1 className="font-montserrat font-black text-2xl md:text-3xl mb-6">Моё обучение</h1>
         {loading ? (
-          <div className="text-white/50 text-sm py-10 text-center">Загружаем ваши курсы…</div>
+          <div className="text-white/50 text-sm py-10 text-center">
+            Загружаем ваши курсы…
+            <span className="sr-only"> Здесь собраны курсы онлайн-школ, купленные на УЧИСЬПРО.</span>
+          </div>
         ) : error ? (
           <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] p-8 text-center">
             <Icon name="CircleAlert" size={28} className="text-rose-300 mx-auto mb-3" />

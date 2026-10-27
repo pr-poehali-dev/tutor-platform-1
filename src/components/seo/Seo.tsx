@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Helmet } from "@/lib/helmet";
+import { useLocation } from "@/lib/router-compat";
 
 interface SeoProps {
   title: string;
@@ -68,12 +70,12 @@ function isPreviewHost(): boolean {
  * (?utm_source=…) или из письма (?paid=1) создавал для поиска отдельный адрес
  * той же страницы. Это плодило дубли: одна страница — десяток «разных» URL.
  */
-function canonicalize(url: string): string {
+function canonicalize(url: string, preview: boolean): string {
   if (!url) return SITE_URL;
   let clean = normalizeUrl(url).split("#")[0].split("?")[0];
   // С preview-домена канонический адрес обязан указывать на рабочий сайт:
   // путь сохраняем, хост подменяем.
-  if (isPreviewHost()) {
+  if (preview) {
     try {
       clean = SITE_URL + new URL(clean).pathname;
     } catch {
@@ -120,12 +122,19 @@ export default function Seo({
       : `${title} — УЧИСЬПРО`;
   // Описание длиннее лимита поиск обрезает на полуслове — режем сами по целому слову.
   const metaDescription = clampDescription(description);
-  const rawUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
-  const url = canonicalize(rawUrl);
+  // Хост известен только в браузере: на сервере и при гидрации считаем домен
+  // рабочим, после гидрации уточняем (иначе разметка сервера и браузера разойдётся).
+  const { pathname } = useLocation();
+  const [preview, setPreview] = useState(false);
+  useEffect(() => {
+    setPreview(isPreviewHost());
+  }, []);
+  const rawUrl = canonical || SITE_URL + pathname;
+  const url = canonicalize(rawUrl, preview);
   const img = normalizeUrl(image);
   // Технический домен закрываем целиком: одного canonical мало, поиск
   // трактует его как подсказку и всё равно может показать копию.
-  const blockIndex = noindex || isPreviewHost();
+  const blockIndex = noindex || preview;
 
   // Подсказка разработчику: в продакшене молчим, чтобы не шуметь в консоли посетителю.
   if (import.meta.env.DEV) {
@@ -143,7 +152,6 @@ export default function Seo({
 
   return (
     <Helmet>
-      <html lang="ru" />
       <title>{fullTitle}</title>
       <meta name="description" content={metaDescription} />
       {keywords && <meta name="keywords" content={keywords} />}

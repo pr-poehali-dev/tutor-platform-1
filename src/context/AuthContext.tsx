@@ -60,14 +60,17 @@ function saveToken(token: string | null) {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => loadToken());
+  // Токен лежит в localStorage — он есть только в браузере. Сервер и первая
+  // отрисовка в браузере начинают с «идёт проверка», токен читаем в эффекте.
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [subscription, setSubscription] = useState<AuthSubscription | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!token);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const currentToken = loadToken();
+    setToken(currentToken);
     if (!currentToken) {
       setUser(null);
       setSubscription(null);

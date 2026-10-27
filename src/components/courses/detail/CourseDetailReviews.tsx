@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { CourseDetail } from "@/components/courses/courseDetailsData";
 
 interface Props {

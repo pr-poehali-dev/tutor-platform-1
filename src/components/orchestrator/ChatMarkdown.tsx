@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import Icon from "@/components/ui/icon";
 
 // Лёгкий рендерер markdown для ответов ассистента:

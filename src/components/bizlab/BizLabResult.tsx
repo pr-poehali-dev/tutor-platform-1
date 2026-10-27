@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { BizAnswers, BizMetrics, BizVerdict } from "./types";
 import { BoardReview } from "./api";

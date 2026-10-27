@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Seo from "@/components/seo/Seo";
 import Icon from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Seo from "@/components/seo/Seo";
 import { COURSES } from "@/components/courses/coursesData";
 import StatsHeader from "./coursesContent/StatsHeader";

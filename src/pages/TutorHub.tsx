@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { lazy, Suspense } from "react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

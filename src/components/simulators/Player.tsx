@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
-import Scene3D, { enterVR, vrSupported } from "./Scene3D";
+import Scene3D, { enterVR, vrSupported } from "./Scene3DClient";
 import { Mistake, RunResult, Simulator, scoreRun } from "./types";
 
 interface Props {

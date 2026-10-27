@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { COURSES, BESTSELLER_COURSE_IDS, FREE_FOREVER_COURSE_IDS } from "@/components/courses/coursesData";
 import CourseCardCompact from "@/components/courses/CourseCardCompact";

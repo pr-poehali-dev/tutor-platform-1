@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import { Message } from "@/components/kids/nannyFoxUtils";
 
 interface Props {
-  scrollRef: RefObject<HTMLDivElement>;
+  scrollRef: RefObject<HTMLDivElement | null>;
   messages: Message[];
   loading: boolean;
   playingIdx: number | null;

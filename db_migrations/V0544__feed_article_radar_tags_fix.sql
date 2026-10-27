@@ -1,1 +1,0 @@
-UPDATE t_p78828167_tutor_platform_1.feed_articles SET tags = '["mat-labs.ru","МАТ-Лабс","радар заказчиков","господдержка","гранты","субсидии","аналитика данных","поиск клиентов","B2B-продажи"]'::jsonb, updated_at = NOW() WHERE slug = 'radar-zakazchikov-mat-labs-analitika-gospodderzhki'

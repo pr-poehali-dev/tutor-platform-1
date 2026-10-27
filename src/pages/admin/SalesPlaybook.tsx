@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { Helmet } from "@/lib/helmet";
 import Icon from "@/components/ui/icon";
 import { SEGMENTS } from "@/components/playbook/segments";

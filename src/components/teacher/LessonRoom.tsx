@@ -22,7 +22,7 @@ interface LessonRoomProps {
   setInputText: (v: string) => void;
   sendMessage: () => void;
   stopDemo: () => void;
-  chatRef: RefObject<HTMLDivElement>;
+  chatRef: RefObject<HTMLDivElement | null>;
   isRecording: boolean;
   isTranscribing: boolean;
   voiceError: string | null;

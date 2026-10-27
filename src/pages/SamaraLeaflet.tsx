@@ -1,4 +1,4 @@
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import { DEFAULT_PILOT_CITY, PilotCity, SITE_LABEL, findPilotCity } from "@/data/pilotCities";

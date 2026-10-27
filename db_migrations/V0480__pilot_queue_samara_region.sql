@@ -1,2 +1,0 @@
--- Самарская область — первой среди регионов, но после второй волны городов (чтобы 21 город ушёл за 2 недели).
-UPDATE t_p78828167_tutor_platform_1.pilot_cities SET queue_order = 35 WHERE slug = 'samara-region';

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel, isCourseBestseller } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";

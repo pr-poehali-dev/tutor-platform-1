@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "@/lib/router-compat";
 import { useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

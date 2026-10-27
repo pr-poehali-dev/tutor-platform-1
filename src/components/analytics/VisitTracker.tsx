@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import func2url from "../../../backend/func2url.json";
 import { tickReminders } from "@/components/marathon/api";
 import { kidsEnrichTick, pilotTick } from "@/components/admin/eduInstitutions/api";

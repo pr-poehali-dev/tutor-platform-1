@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { supportChat, supportTicket, ChatMsg } from "./api";
 
@@ -24,15 +24,20 @@ function isWorkingHours(): boolean {
 export default function SupportWidget() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<ChatMsg[]>(() => {
-    try { return JSON.parse(sessionStorage.getItem(STORE) || "[]"); } catch { return []; }
-  });
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    try { setMsgs(JSON.parse(sessionStorage.getItem(STORE) || "[]")); } catch { /* noop */ }
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
     try { sessionStorage.setItem(STORE, JSON.stringify(msgs.slice(-20))); } catch { /* noop */ }
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [msgs, busy, form]);

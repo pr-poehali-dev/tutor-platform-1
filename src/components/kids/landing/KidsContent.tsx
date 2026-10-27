@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { AGES, AREAS, ACTIVITIES } from "@/components/kids/kidsData";
 import { PRINCIPLES, REVIEWS, FAQ_ITEMS, GAMES_FAQ } from "./kidsLandingData";

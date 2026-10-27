@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { DIRECTIONS, LEARNER_ORDER, LearnerDirection, getSavedDirection, saveDirection } from "@/lib/directions";
 import { trackGoal } from "@/components/analytics/YandexMetrika";

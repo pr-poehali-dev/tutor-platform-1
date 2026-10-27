@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import { directionForPath } from "@/lib/directions";
 
 const COUNTER_IDS = [101026698, 109375884];

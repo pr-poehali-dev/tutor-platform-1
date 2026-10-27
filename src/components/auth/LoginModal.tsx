@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/context/AuthContext";
 import YandexLoginButton from "@/components/auth/YandexLoginButton";

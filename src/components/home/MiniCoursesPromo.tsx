@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { MINI_COURSES, coursesByTrack } from "@/components/minicourse/registry";
 import type { CourseAudience } from "@/components/minicourse/registry";

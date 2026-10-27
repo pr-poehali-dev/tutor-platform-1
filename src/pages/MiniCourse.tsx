@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "@/lib/router-compat";
 import CoursesHub from "@/components/minicourse/CoursesHub";
 import LessonView from "@/components/minicourse/LessonView";
 import CourseLanding from "@/components/minicourse/CourseLanding";

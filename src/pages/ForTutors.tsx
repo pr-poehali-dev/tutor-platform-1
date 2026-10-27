@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "@/lib/router-compat";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";

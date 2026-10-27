@@ -1,1 +1,0 @@
-UPDATE t_p78828167_tutor_platform_1.feed_articles SET tags = tags WHERE slug = $t$__none__$t$ AND tags <> '["x"]'::jsonb

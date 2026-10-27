@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { KIDS_TRIAL_MONTHS, KIDS_MONTHLY_PRICE } from "./kidsPromoConfig";
 import { directionForPath } from "@/lib/directions";
