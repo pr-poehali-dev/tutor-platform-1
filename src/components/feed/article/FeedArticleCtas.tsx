@@ -44,7 +44,16 @@ export default function FeedArticleCtas({ article }: Props) {
   // Статьи о модуле «Базы компаний» ведём сразу в каталог баз.
   const isMatDatabases = isMatAnalytics && tags.includes("базы компаний");
   const isMatBi = isMatAnalytics && tags.includes("облачный BI");
-  const matCta = isMatBi
+  const isMatPipes = isMatAnalytics && !isMatBi && tags.includes("конвейер данных");
+  const matCta = isMatPipes
+    ? {
+        title: "Подключите 1С и CRM бесплатно",
+        text: "Данные загружаются сами по расписанию, очищаются от дублей и открываются в дашборде. Тариф «Старт» — 0 ₽ навсегда.",
+        href: "https://mat-labs.ru/analytics/pipes",
+        icon: "Workflow",
+        button: "Открыть конвейер данных",
+      }
+    : isMatBi
     ? {
         title: "Постройте дашборд из своей таблицы",
         text: "Загрузите выгрузку продаж из Excel или CRM — графики и сравнение с рынком за минуту. Бесплатно и без регистрации.",
@@ -127,7 +136,7 @@ export default function FeedArticleCtas({ article }: Props) {
               href={matCta.href}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackGoal(isMatBi ? "article_mat_bi_click" : isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
+              onClick={() => trackGoal(isMatPipes ? "article_mat_pipes_click" : isMatBi ? "article_mat_bi_click" : isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-cyan-500/25"
             >
               <Icon name="BarChart3" size={18} />
