@@ -47,9 +47,14 @@ export function useSongPlayerAudio(song: Song, onFinish?: () => void) {
 
   const stopAudio = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = "";
+      const a = audioRef.current;
       audioRef.current = null;
+      a.onended = null;
+      a.ontimeupdate = null;
+      a.onerror = null;
+      a.pause();
+      a.removeAttribute("src");
+      a.load();
     }
     if (fallbackTimerRef.current) {
       clearTimeout(fallbackTimerRef.current);
@@ -67,9 +72,11 @@ export function useSongPlayerAudio(song: Song, onFinish?: () => void) {
     }
   };
 
+  const unmountedRef = useRef(false);
+
   /** Запустить фоновую мелодию в цикле на нужной громкости. */
   const startMusic = () => {
-    if (!musicEnabled) return;
+    if (!musicEnabled || unmountedRef.current) return;
     if (!musicRef.current) {
       const m = new Audio(melody.url);
       m.loop = true;
@@ -82,12 +89,15 @@ export function useSongPlayerAudio(song: Song, onFinish?: () => void) {
   };
 
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
       cancelledRef.current = true;
       stopAudio();
       stopMusic();
       if (musicRef.current) {
-        musicRef.current.src = "";
+        musicRef.current.removeAttribute("src");
+        musicRef.current.load();
         musicRef.current = null;
       }
     };
@@ -107,7 +117,8 @@ export function useSongPlayerAudio(song: Song, onFinish?: () => void) {
     stopMusic();
     // пересоздаём музыку — у разных песен разные стили
     if (musicRef.current) {
-      musicRef.current.src = "";
+      musicRef.current.removeAttribute("src");
+      musicRef.current.load();
       musicRef.current = null;
     }
      
@@ -277,6 +288,7 @@ export function useSongPlayerAudio(song: Song, onFinish?: () => void) {
         onFinish?.();
       };
       audio.onerror = () => {
+        if (cancelledRef.current || unmountedRef.current || audioRef.current !== audio) return;
         // Если файл не загрузился — откатываемся на голос Лисы
         stopAudio();
         startMusic();
