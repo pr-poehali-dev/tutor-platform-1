@@ -17,6 +17,7 @@ import CoursePurchaseForm from "@/components/courses/checkout/CoursePurchaseForm
 import CheckoutCouponForm from "@/components/checkout/CheckoutCouponForm";
 import CourseEmailPay from "@/components/courses/checkout/CourseEmailPay";
 import AccessBanner from "@/components/intensive/AccessBanner";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 
 export default function CourseCheckout() {
   const { courseId } = useParams();
@@ -340,6 +341,16 @@ export default function CourseCheckout() {
                   onPay={handlePay}
                   onDemoConfirm={handleDemoConfirm}
                 />
+                {!demoMode && price > 0 && !promoOn && (
+                  <div className="mt-5 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-amber-100 text-sm">2 курса — −50%, 3 и больше — −60%</p>
+                      <p className="text-white/55 text-xs mt-0.5">Положите этот курс в корзину и добавьте ещё — скидка на всю сумму.</p>
+                    </div>
+                    <AddToCartButton course={course} size="md" />
+                    <Link to="/cart" className="text-amber-200 text-sm font-bold underline whitespace-nowrap">Корзина</Link>
+                  </div>
+                )}
               </>
             )}
           </div>

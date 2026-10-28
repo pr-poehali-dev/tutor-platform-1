@@ -2,6 +2,7 @@ import { useNavigate } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { Course, getCoursePrice } from "@/components/courses/coursesData";
 import { useAccess } from "@/context/AccessContext";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 
 interface Props {
   course: Course;
@@ -68,6 +69,7 @@ export default function CourseDetailFooter({
             <Icon name="Gift" size={14} />
             Пробный урок
           </button>
+          <AddToCartButton course={course} size="md" className="hidden sm:inline-flex" />
           <button
             onClick={() => navigate(`/course-checkout/${course.id}`)}
             className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white text-sm font-bold px-4 md:px-7 py-3 md:py-3.5 rounded-2xl hover:opacity-90 transition-opacity glow-purple"

@@ -134,6 +134,57 @@
         "error": "string"
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Корзина: 3 курса — скидка 60%",
+      "method": "POST",
+      "path": "/?action=cart_quote",
+      "body": {
+        "course_ids": [
+          17,
+          57,
+          72
+        ]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "count": 3,
+        "discount_percent": 60,
+        "total_rub": 21498.0,
+        "final_rub": 8599.2
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Корзина: 2 курса — скидка 50%",
+      "method": "POST",
+      "path": "/?action=cart_quote",
+      "body": {
+        "course_ids": [
+          17,
+          57
+        ]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "count": 2,
+        "discount_percent": 50,
+        "final_rub": 8249.5
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Оплата корзины без входа — 401",
+      "method": "POST",
+      "path": "/?action=buy_cart",
+      "body": {
+        "course_ids": [
+          17,
+          57
+        ],
+        "return_url": "https://example.com/ok"
+      },
+      "expectedStatus": 401
     }
   ]
 }

@@ -72,7 +72,7 @@ interface AccessState {
   buySubscription: (planId: string, returnUrl: string, email?: string, period?: "month" | "year", couponCode?: string) => Promise<BuySubscriptionResult>;
   validateCoupon: (couponCode: string, amountRub: number) => Promise<{ valid: boolean; percent?: number; discountRub?: number; finalRub?: number; message?: string }>;
   syncPayment: () => Promise<{ synced: boolean; activated?: Array<{ kind: string; id: number; course_id?: number }> }>;
-  confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
+  confirmDemoPurchase: (purchaseId: number, kind?: "course" | "subscription" | "cart") => Promise<{ ok: boolean; courseId?: number; subscriptionId?: number; message?: string }>;
 }
 
 const AccessContext = createContext<AccessState | null>(null);
@@ -314,7 +314,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     }
   }, [token, refreshAccess]);
 
-  const confirmDemoPurchase = useCallback(async (purchaseId: number, kind: "course" | "subscription" = "course") => {
+  const confirmDemoPurchase = useCallback(async (purchaseId: number, kind: "course" | "subscription" | "cart" = "course") => {
     const authToken = token || readToken();
     if (!authToken) return { ok: false, message: "Требуется вход" };
     try {

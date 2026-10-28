@@ -4,6 +4,7 @@ import { Course, GRADES, SUBJECTS, getCoursePrice, examBadgeLabel, isCourseBests
 import { useAccess } from "@/context/AccessContext";
 import { isPromoActive } from "@/components/promo/dobroConfig";
 import { courseUrl } from "@/components/courses/courseSlug";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 
 interface Props {
   course: Course;
@@ -107,14 +108,17 @@ export default function CourseCardCompact({ course }: Props) {
               </>
             )}
           </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <AddToCartButton course={course} />
           <span className="inline-flex items-center gap-1.5 flex-shrink-0 bg-purple-500/15 border border-purple-500/30 text-purple-200 text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-purple-500/25 transition-colors">
             {course.freeForever || promoOn
               ? "Начать"
               : owned
               ? "Продолжить"
-              : `Купить за ${price.toLocaleString("ru-RU")} ₽`}
+              : "Купить"}
             <Icon name="ArrowRight" size={12} />
           </span>
+          </div>
         </div>
       </div>
     </Link>

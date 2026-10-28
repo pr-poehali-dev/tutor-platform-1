@@ -16,6 +16,8 @@ import NotFound from "@/pages/PageNotFound";
 import {UserDataProvider} from "@/context/UserDataContext";
 import {AuthProvider} from "@/context/AuthContext";
 import {AccessProvider} from "@/context/AccessContext";
+import {CartProvider} from "@/context/CartContext";
+import CartFloatingButton from "@/components/cart/CartFloatingButton";
 import {ZnaikaProvider} from "@/context/ZnaikaContext";
 import LoginModal from "@/components/auth/LoginModal";
 import YandexMetrika from "@/components/analytics/YandexMetrika";
@@ -162,6 +164,7 @@ function RootComponent() {
                                 <RefCapture/>
                                 <ZnaikaProvider>
                                     <AccessProvider>
+                                      <CartProvider>
                                         <ErrorBoundary>
                                             <Suspense fallback={<PageSkeleton/>}>
                                                 <Outlet/>
@@ -172,6 +175,8 @@ function RootComponent() {
                                         <Suspense fallback={null}><PilotPendingJoin/></Suspense>
                                         <InstallBanner/>
                                         <LoginModal/>
+                                        <CartFloatingButton/>
+                                      </CartProvider>
                                     </AccessProvider>
                                 </ZnaikaProvider>
                             </AuthProvider>

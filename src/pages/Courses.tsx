@@ -15,6 +15,7 @@ import CoursesHeader from "@/components/courses/catalog/CoursesHeader";
 import CoursesFilters from "@/components/courses/catalog/CoursesFilters";
 import CoursesGrid from "@/components/courses/catalog/CoursesGrid";
 import AiPicker from "@/components/ai/AiPicker";
+import CartPromoBanner from "@/components/cart/CartPromoBanner";
 
 export default function CoursesPage() {
   const [searchParams] = useSearchParams();
@@ -148,6 +149,7 @@ export default function CoursesPage() {
       <CoursesHeader />
 
       <main>
+        <CartPromoBanner className="pt-6" />
         {/* ИИ-подборщик: родителю проще спросить словами «что подойдёт
             восьмикласснику по математике», чем крутить пять фильтров. */}
         <div className="max-w-6xl mx-auto px-4 pt-6">

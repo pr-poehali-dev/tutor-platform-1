@@ -21,6 +21,7 @@ import { Route as Business2026RouteImport } from './routes/business-2026'
 import { Route as BusinessCoachRouteImport } from './routes/business-coach'
 import { Route as CabinetRouteImport } from './routes/cabinet'
 import { Route as CareerProRouteImport } from './routes/career-pro'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as ChemistryProblemsRouteImport } from './routes/chemistry-problems'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CorporateRouteImport } from './routes/corporate'
@@ -262,6 +263,11 @@ const CabinetRoute = CabinetRouteImport.update({
 const CareerProRoute = CareerProRouteImport.update({
   id: '/career-pro',
   path: '/career-pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChemistryProblemsRoute = ChemistryProblemsRouteImport.update({
@@ -1207,6 +1213,7 @@ export interface FileRoutesByFullPath {
   '/business-coach': typeof BusinessCoachRoute
   '/cabinet': typeof CabinetRoute
   '/career-pro': typeof CareerProRoute
+  '/cart': typeof CartRoute
   '/chemistry-problems': typeof ChemistryProblemsRoute
   '/contacts': typeof ContactsRoute
   '/corporate': typeof CorporateRoute
@@ -1403,6 +1410,7 @@ export interface FileRoutesByTo {
   '/business-coach': typeof BusinessCoachRoute
   '/cabinet': typeof CabinetRoute
   '/career-pro': typeof CareerProRoute
+  '/cart': typeof CartRoute
   '/chemistry-problems': typeof ChemistryProblemsRoute
   '/contacts': typeof ContactsRoute
   '/corporate': typeof CorporateRoute
@@ -1600,6 +1608,7 @@ export interface FileRoutesById {
   '/business-coach': typeof BusinessCoachRoute
   '/cabinet': typeof CabinetRoute
   '/career-pro': typeof CareerProRoute
+  '/cart': typeof CartRoute
   '/chemistry-problems': typeof ChemistryProblemsRoute
   '/contacts': typeof ContactsRoute
   '/corporate': typeof CorporateRoute
@@ -1798,6 +1807,7 @@ export interface FileRouteTypes {
     | '/business-coach'
     | '/cabinet'
     | '/career-pro'
+    | '/cart'
     | '/chemistry-problems'
     | '/contacts'
     | '/corporate'
@@ -1994,6 +2004,7 @@ export interface FileRouteTypes {
     | '/business-coach'
     | '/cabinet'
     | '/career-pro'
+    | '/cart'
     | '/chemistry-problems'
     | '/contacts'
     | '/corporate'
@@ -2190,6 +2201,7 @@ export interface FileRouteTypes {
     | '/business-coach'
     | '/cabinet'
     | '/career-pro'
+    | '/cart'
     | '/chemistry-problems'
     | '/contacts'
     | '/corporate'
@@ -2387,6 +2399,7 @@ export interface RootRouteChildren {
   BusinessCoachRoute: typeof BusinessCoachRoute
   CabinetRoute: typeof CabinetRoute
   CareerProRoute: typeof CareerProRoute
+  CartRoute: typeof CartRoute
   ChemistryProblemsRoute: typeof ChemistryProblemsRoute
   ContactsRoute: typeof ContactsRoute
   CorporateRoute: typeof CorporateRoute
@@ -2655,6 +2668,13 @@ declare module '@tanstack/react-router' {
       path: '/career-pro'
       fullPath: '/career-pro'
       preLoaderRoute: typeof CareerProRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chemistry-problems': {
@@ -3947,6 +3967,7 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessCoachRoute: BusinessCoachRoute,
   CabinetRoute: CabinetRoute,
   CareerProRoute: CareerProRoute,
+  CartRoute: CartRoute,
   ChemistryProblemsRoute: ChemistryProblemsRoute,
   ContactsRoute: ContactsRoute,
   CorporateRoute: CorporateRoute,

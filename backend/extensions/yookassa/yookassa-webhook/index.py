@@ -434,6 +434,32 @@ def handler(event, context):
                 'body': json.dumps({'status': 'ok', 'kind': 'school_course'})
             }
 
+        # ── Branch CART: корзина курсов одним платежом (course_purchases с общим cart_id) ──
+        if metadata.get('kind') == 'course_cart':
+            cart_id = str(metadata.get('cart_id') or '')[:40]
+            if not cart_id:
+                return {'statusCode': 400, 'headers': HEADERS,
+                        'body': json.dumps({'error': 'Missing cart_id in metadata'})}
+            if payment_status == 'succeeded':
+                cur.execute(f"""
+                    UPDATE {S}course_purchases
+                    SET status = 'paid', payment_id = %s, purchased_at = NOW(), updated_at = NOW()
+                    WHERE cart_id = %s AND status <> 'paid'
+                    RETURNING user_id
+                """, (payment_id, cart_id))
+                rows = cur.fetchall()
+                if rows:
+                    award_referral_purchase_znaika(cur, S, rows[0][0])
+                conn.commit()
+            elif payment_status == 'canceled':
+                cur.execute(f"""
+                    UPDATE {S}course_purchases SET status = 'canceled', updated_at = NOW()
+                    WHERE cart_id = %s AND status = 'pending'
+                """, (cart_id,))
+                conn.commit()
+            return {'statusCode': 200, 'headers': HEADERS,
+                    'body': json.dumps({'status': 'ok', 'kind': 'course_cart'})}
+
         # ── Branch A: разовая покупка курса (course_purchases) ──
         if metadata.get('kind') == 'course_purchase':
             purchase_id_raw = metadata.get('purchase_id')

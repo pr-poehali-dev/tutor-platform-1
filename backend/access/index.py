@@ -3,6 +3,8 @@
 GET  /?action=check[&course_id=N]   header: X-Auth-Token  -> { has_subscription, purchased_course_ids, course_access }
 POST /?action=buy_course            body: {course_id, grade, title, return_url} -> создаёт платёж ЮKassa за курс
 POST /?action=buy_subscription      body: {plan_id, return_url, email?} -> создаёт платёж ЮKassa за подписку
+POST /?action=cart_quote           body: {course_ids} -> расчёт корзины: 2 курса −50%, 3+ курса −60% (только на сервере)
+POST /?action=buy_cart             body: {course_ids, return_url, email?} -> один платёж ЮKassa за корзину
 POST /?action=confirm_demo          body: {purchase_id, kind?} -> демо-активация без оплаты (для тестов)
 POST /?action=redeem_access         body: {code} -> активирует промокод доступа (напр. «САМАРА» — курсы раздела «Школьникам»)
 POST /?action=tutor_start_trial     body: {source?} -> 7 дней ИИ-репетитора бесплатно, без карты, один раз на аккаунт
@@ -984,6 +986,172 @@ def handle_buy_course(token: str, body: dict) -> dict:
         conn.close()
 
 
+CART_MAX_ITEMS = 10
+
+
+def cart_discount_percent(n: int) -> int:
+    """Скидка корзины: 2 курса — 50% от общей суммы, 3 и больше — 60%."""
+    if n >= 3:
+        return 60
+    if n == 2:
+        return 50
+    return 0
+
+
+def course_base_kopecks(cur, course_id: int) -> int:
+    """Цена курса считается только на сервере: индивидуальная, затем взрослая по направлению, затем по классу."""
+    if course_id in COURSE_ID_PRICE_KOPECKS:
+        return COURSE_ID_PRICE_KOPECKS[course_id]
+    cur.execute("SELECT subject, grade_band FROM course_curricula WHERE course_id = %s LIMIT 1", (course_id,))
+    row = cur.fetchone()
+    if not row:
+        return 0
+    subject, band = row
+    if band == 'adult':
+        return ADULT_SUBJECT_PRICE_KOPECKS.get(subject or '', ADULT_DEFAULT_KOPECKS)
+    return GRADE_PRICE_KOPECKS.get(band or 'all', GRADE_PRICE_KOPECKS['all'])
+
+
+def _cart_ids(body: dict) -> list:
+    ids = []
+    for v in (body.get('course_ids') or [])[:CART_MAX_ITEMS * 2]:
+        try:
+            cid = int(v)
+        except (TypeError, ValueError):
+            continue
+        if cid not in ids:
+            ids.append(cid)
+    return ids[:CART_MAX_ITEMS]
+
+
+def compute_cart(cur, course_ids: list, user_id=None) -> dict:
+    """Пересчёт корзины на сервере: убирает бесплатные, неизвестные и уже купленные курсы, применяет скидку."""
+    owned = set(get_purchased_courses(cur, user_id)) if user_id else set()
+    items, skipped = [], []
+    for cid in course_ids:
+        if cid in FREE_FOREVER_COURSE_IDS:
+            skipped.append({'course_id': cid, 'reason': 'free'})
+            continue
+        if cid in owned:
+            skipped.append({'course_id': cid, 'reason': 'owned'})
+            continue
+        base = course_base_kopecks(cur, cid)
+        if base <= 0:
+            skipped.append({'course_id': cid, 'reason': 'unknown'})
+            continue
+        items.append({'course_id': cid, 'base_kopecks': base})
+    total = sum(i['base_kopecks'] for i in items)
+    percent = cart_discount_percent(len(items))
+    final = total - (total * percent) // 100
+    # Распределяем итог по позициям пропорционально цене, остаток копеек — на последнюю.
+    acc = 0
+    for idx, it in enumerate(items):
+        if idx == len(items) - 1:
+            it['final_kopecks'] = final - acc
+        else:
+            it['final_kopecks'] = it['base_kopecks'] - (it['base_kopecks'] * percent) // 100
+            acc += it['final_kopecks']
+    return {'items': items, 'skipped': skipped, 'count': len(items), 'total_kopecks': total,
+            'discount_percent': percent, 'discount_kopecks': total - final, 'final_kopecks': final}
+
+
+def _cart_public(c: dict) -> dict:
+    return {
+        'items': [{'course_id': i['course_id'], 'price_rub': i['base_kopecks'] / 100,
+                   'final_rub': i['final_kopecks'] / 100} for i in c['items']],
+        'skipped': c['skipped'], 'count': c['count'],
+        'total_rub': c['total_kopecks'] / 100, 'discount_percent': c['discount_percent'],
+        'discount_rub': c['discount_kopecks'] / 100, 'final_rub': c['final_kopecks'] / 100,
+    }
+
+
+def handle_cart_quote(token: str, body: dict) -> dict:
+    """Расчёт корзины без оплаты: показывает итог со скидкой (гостю — без учёта купленного)."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token) if token else None
+            return ok(_cart_public(compute_cart(cur, _cart_ids(body), user_id)))
+    finally:
+        conn.close()
+
+
+def handle_buy_cart(token: str, body: dict) -> dict:
+    """Оплата корзины одним платежом ЮKassa. Сумма и скидка считаются только здесь."""
+    if is_promo_active():
+        return err('Во время акции ДОБРО все курсы бесплатны — оплата не нужна', 409)
+    return_url = (body.get('return_url') or '').strip()
+    if not return_url.startswith('https://'):
+        return err('return_url должен быть https', 400)
+    customer_email_override = (body.get('email') or '').strip()
+    ids = _cart_ids(body)
+    if not ids:
+        return err('Корзина пуста', 400)
+
+    shop_id = os.environ.get('YOOKASSA_SHOP_ID', '')
+    secret_key = os.environ.get('YOOKASSA_SECRET_KEY', '')
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Требуется вход', 401)
+            cart = compute_cart(cur, ids, user_id)
+            if not cart['items']:
+                return ok({'already_purchased': True, **_cart_public(cart)})
+            if cart['final_kopecks'] < 100:
+                return err('Сумма заказа слишком мала для оплаты картой', 400)
+
+            email = customer_email_override or get_user_email(cur, user_id) or ''
+            if not email or '@' not in email:
+                return err('Укажи email — на него придёт чек по 54-ФЗ', 400)
+            if customer_email_override and '@' in customer_email_override:
+                cur.execute(
+                    "UPDATE auth_users SET email = %s WHERE id = %s AND (email IS NULL OR email = '' OR email <> %s)",
+                    (customer_email_override, user_id, customer_email_override)
+                )
+
+            cart_id = uuid.uuid4().hex[:24]
+            purchase_ids = []
+            for it in cart['items']:
+                cur.execute(
+                    "INSERT INTO course_purchases (user_id, course_id, amount_kopecks, base_kopecks, status, "
+                    "payment_provider, cart_id) VALUES (%s, %s, %s, %s, 'pending', 'yookassa', %s) RETURNING id",
+                    (user_id, it['course_id'], it['final_kopecks'], it['base_kopecks'], cart_id)
+                )
+                purchase_ids.append(cur.fetchone()[0])
+            conn.commit()
+
+            n = cart['count']
+            title = f"Курсы УЧИСЬПРО: {n} шт." + (f", скидка {cart['discount_percent']}%" if cart['discount_percent'] else '')
+            public = _cart_public(cart)
+            if not shop_id or not secret_key:
+                return ok({'cart_id': cart_id, 'purchase_ids': purchase_ids, 'demo_mode': True,
+                           'status': 'pending', **public})
+            try:
+                yk = create_yookassa_payment(
+                    shop_id=shop_id, secret_key=secret_key, amount_rub=cart['final_kopecks'] / 100,
+                    description=title, return_url=return_url, customer_email=email,
+                    metadata={'kind': 'course_cart', 'cart_id': cart_id, 'user_id': str(user_id)},
+                )
+            except Exception as e:
+                cur.execute("UPDATE course_purchases SET status = 'failed', updated_at = NOW() WHERE cart_id = %s",
+                            (cart_id,))
+                conn.commit()
+                print(f'[cart] payment error {type(e).__name__}: {e}')
+                return err('Не удалось создать платёж. Попробуйте позже', 502)
+
+            payment_id = yk.get('id', '')
+            cur.execute("UPDATE course_purchases SET payment_id = %s, updated_at = NOW() WHERE cart_id = %s",
+                        (payment_id, cart_id))
+            conn.commit()
+            return ok({'cart_id': cart_id, 'purchase_ids': purchase_ids, 'payment_id': payment_id,
+                       'payment_url': (yk.get('confirmation') or {}).get('confirmation_url', ''),
+                       'status': 'pending', **public})
+    finally:
+        conn.close()
+
+
 def lookup_promo(cur, promo_code: str):
     """Возвращает (promo_id, percent) действующего промокода-скидки или (None, 0).
 
@@ -1299,6 +1467,20 @@ def handle_confirm_demo(token: str, body: dict) -> dict:
                 return ok({'success': True, 'subscription_id': purchase_id,
                           'expires_at': expires_at.isoformat() if expires_at else None})
 
+            if kind == 'cart':
+                cur.execute(
+                    "UPDATE course_purchases SET status = 'paid', purchased_at = NOW(), updated_at = NOW() "
+                    "WHERE cart_id = (SELECT cart_id FROM course_purchases WHERE id = %s AND user_id = %s) "
+                    "AND user_id = %s AND status = 'pending' AND cart_id IS NOT NULL RETURNING course_id",
+                    (purchase_id, user_id, user_id)
+                )
+                ids = [r[0] for r in cur.fetchall()]
+                if not ids:
+                    return err('Заказ не найден', 404)
+                award_referral_purchase_znaika(cur, user_id)
+                conn.commit()
+                return ok({'success': True, 'course_ids': ids})
+
             cur.execute(
                 "UPDATE course_purchases SET status = 'paid', purchased_at = NOW(), updated_at = NOW() "
                 "WHERE id = %s AND user_id = %s AND status = 'pending' RETURNING course_id",
@@ -1348,6 +1530,10 @@ def handler(event: dict, context) -> dict:
             return handle_buy_subscription(token, body)
         if action == 'validate_coupon' and method == 'POST':
             return handle_validate_coupon(token, body)
+        if action == 'cart_quote' and method == 'POST':
+            return handle_cart_quote(token, body)
+        if action == 'buy_cart' and method == 'POST':
+            return handle_buy_cart(token, body)
         if action == 'confirm_demo' and method == 'POST':
             return handle_confirm_demo(token, body)
         if action == 'sync_payment' and method == 'POST':
