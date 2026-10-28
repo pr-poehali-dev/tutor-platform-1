@@ -869,6 +869,15 @@ def handler(event: dict, context) -> dict:
         r = json.loads(handle_kids_enrich()['body'])
         return ok({'ok': True, 'found': r.get('found', 0), 'imported': r.get('imported', 0)})
 
+    # Догрузка школ Москвы, Петербурга и областей из встроенного реестра — по региону за вызов, без дублей.
+    if action == 'capitals_tick':
+        conn = get_db()
+        try:
+            with conn.cursor() as cur:
+                return ok(pilot.ensure_capitals(cur, conn))
+        finally:
+            conn.close()
+
     if not check_admin(headers):
         return err('Нет доступа', 403)
 

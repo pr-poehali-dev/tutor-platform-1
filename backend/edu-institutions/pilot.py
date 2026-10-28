@@ -215,7 +215,36 @@ REGISTRIES = {'wave1': registry_wave1, 'wave2': registry_wave2, 'samara_region':
               'extra': registry_extra}
 
 
+CAPITALS = {'moskva': 'Москва', 'moskovskaya': 'Московская область', 'spb': 'Санкт-Петербург',
+            'leningradskaya': 'Ленинградская область'}
+
+
+def import_capital(cur, conn, name: str) -> dict:
+    """Школы Москвы, Петербурга и их областей (реестр Рособрнадзора 28.10.2026). Повтор ничего не дублирует."""
+    if name not in CAPITALS:
+        return {'error': 'Неизвестный реестр'}
+    cur.execute(f'SELECT count(*) FROM {TABLE}')
+    before = cur.fetchone()[0]
+    import importlib
+    cur.execute(importlib.import_module(f'capital_sql.c_{name}').SQL)
+    conn.commit()
+    cur.execute(f'SELECT count(*) FROM {TABLE}')
+    return {'inserted': cur.fetchone()[0] - before, 'registry': name}
+
+
+def ensure_capitals(cur, conn) -> dict:
+    """Догружает по одному региону за вызов, если его школ ещё нет в базе."""
+    for name, city in CAPITALS.items():
+        cur.execute(f"SELECT 1 FROM {TABLE} WHERE audience='school' AND city=%s AND source LIKE %s LIMIT 1",
+                    (city, '%28.10.2026'))
+        if not cur.fetchone():
+            return import_capital(cur, conn, name)
+    return {'inserted': 0, 'done': True}
+
+
 def import_registry(cur, conn, name: str = 'wave1') -> dict:
+    if name in CAPITALS:
+        return import_capital(cur, conn, name)
     """Загружает школы из реестра одним запросом. Повторный запуск ничего не дублирует (ключ — город + ИНН)."""
     if name in registry_regions.SLUGS:
         rows, source = registry_regions.rows(name), registry_regions.SOURCE
