@@ -129,6 +129,15 @@ export default function Navbar({ mobileMenuOpen, onScrollTo, onToggleMobile }: N
 
           <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
             <Link
+              to="/podklyuchit-shkolu?src=header"
+              title="Пилотный проект для школ и детских садов — бесплатно"
+              className="flex items-center gap-1.5 text-amber-200 bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/40 text-xs lg:text-sm font-semibold px-2.5 lg:px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+            >
+              <Icon name="School" size={14} aria-hidden="true" />
+              <span className="hidden lg:inline">Проект «Школа»</span>
+              <span className="lg:hidden">Школам</span>
+            </Link>
+            <Link
               to="/search"
               aria-label="Поиск по сайту"
               title="Поиск по сайту"

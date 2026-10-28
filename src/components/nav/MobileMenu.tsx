@@ -116,6 +116,18 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
         )}
 
         <Link
+          to="/podklyuchit-shkolu?src=mobile_menu"
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-400/15 border border-amber-400/40 hover:bg-amber-400/25 transition-all"
+        >
+          <Icon name="School" size={18} className="text-amber-200" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block text-sm font-bold text-amber-100">Проект «Школа»</span>
+            <span className="block text-xs text-amber-100/60">Подключить школу или детский сад — бесплатно</span>
+          </span>
+        </Link>
+
+        <Link
           to="/mini-course"
           onClick={onClose}
           className="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/12 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
