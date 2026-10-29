@@ -40,7 +40,7 @@ export default function AdultHome() {
             { to: "/kurs/ii-agenty-i-avtomatizaciya-v-n8n-ot-pervogo-scenariya-92", icon: "Bot", title: "ИИ-агенты и автоматизация в n8n", text: "Без программирования: CRM, Telegram, база знаний. 48 уроков · 11 590 ₽", badge: "Новинка" },
             { to: "/kurs/menedzher-marketpleysov-s-nulya-wildberries-i-ozon-s-ii-93", icon: "ShoppingCart", title: "Менеджер маркетплейсов", text: "Wildberries и Ozon с ИИ: от карточки до прибыли. 48 уроков · 14 790 ₽", badge: "Новинка" },
             { to: "/kurs/vayb-koding-sozdaem-sayty-botov-i-prilozheniya-s-ii-94", icon: "Wand2", title: "Вайб-кодинг", text: "Сайты, боты и сервисы с нейросетью без кода. 48 уроков · 7 190 ₽", badge: "Новинка" },
-            { to: "/kurs/smm-s-nulya-prodvizhenie-v-socsetyah-s-ii-ot-95", icon: "Megaphone", title: "SMM с нуля", text: "VK, Telegram, таргет, дизайн и ИИ. 48 уроков · 4,99 ₽", badge: "Новинка" },
+            { to: "/kurs/smm-s-nulya-prodvizhenie-v-socsetyah-s-ii-ot-95", icon: "Megaphone", title: "SMM с нуля", text: "VK, Telegram, таргет, дизайн и ИИ. 48 уроков · 2 990 ₽", badge: "Новинка" },
             { to: "/marafon-skorochtenie-pedagogam", icon: "BookOpen", title: "Педагог скорочтения с нуля", text: "Бесплатный 3-дневный марафон: методика, упражнения и первые ученики.", badge: "Бесплатно" },
           ],
         },
