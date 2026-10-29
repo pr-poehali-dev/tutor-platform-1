@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { LEARNING_PATH_URL, Task } from "@/components/journey/journeyData";
 import { MathText } from "@/lib/mathFormat";
 import LessonLoadingProgress from "@/components/journey/lesson/LessonLoadingProgress";
+import { lessonGrade, lessonSubject } from "@/components/courses/lessonSubject";
 
 interface Props {
   open: boolean;
@@ -15,29 +16,8 @@ interface Props {
   onFinish?: (correct: number, total: number) => void;
 }
 
-// Маппинг как в LessonViewerModal
-const SUPPORTED_SUBJECTS = [
-  "math", "physics", "english", "russian",
-  "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
-  "chemistry", "biology", "cs", "ai", "history", "society", "geography",
-  "logic", "skills", "career", "literature", "marketing", "robotics", "smartmach",
-  "psychology", "personalbrand",
-];
-const mapSubject = (s: string) => {
-  if (SUPPORTED_SUBJECTS.includes(s)) return s;
-  if (s === "prompteng" || s === "neuroincome" || s === "cybersec" || s === "devops" || s === "aiagents" || s === "vibecoding") return "ai";
-  if (s === "marketplaces") return "business";
-  if (s === "smm") return "marketing";
-  if (s === "accounting" || s === "autocad" || s === "trading") return "business";
-  return "math";
-};
-const mapGrade = (g: string) => {
-  if (["5-9", "10-11", "ege"].includes(g)) return g;
-  if (g === "oge") return "5-9";
-  if (g === "1-4") return "5-9";
-  if (g === "adult") return "10-11";
-  return "5-9";
-};
+const mapSubject = lessonSubject;
+const mapGrade = lessonGrade;
 
 interface AnswerRecord {
   task: Task;

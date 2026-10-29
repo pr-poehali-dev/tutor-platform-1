@@ -10,6 +10,7 @@ import LessonViewerExamples from "./lessonViewer/LessonViewerExamples";
 import LessonViewerTasks, { LessonViewerDone } from "./lessonViewer/LessonViewerTasks";
 import LessonVoiceChat from "./LessonVoiceChat";
 import ChemVerifiedNote from "./lessonViewer/ChemVerifiedNote";
+import { lessonGrade, lessonSubject } from "@/components/courses/lessonSubject";
 
 interface Props {
   open: boolean;
@@ -24,32 +25,8 @@ interface Props {
   onComplete?: (correct: number, total: number) => void;
 }
 
-// Предметы, которые бэкенд learning-path понимает напрямую (есть в SUBJECT_TOPICS).
-const SUPPORTED_SUBJECTS = [
-  "math", "physics", "english", "russian",
-  "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
-  "chemistry", "biology", "cs", "ai", "history", "society", "geography",
-  "logic", "skills", "career", "literature", "marketing", "robotics", "smartmach",
-  "psychology", "personalbrand",
-];
-
-const mapSubject = (s: string): string => {
-  if (SUPPORTED_SUBJECTS.includes(s)) return s;
-  // Близкие соответствия для предметов без собственного набора тем.
-  if (s === "prompteng" || s === "neuroincome" || s === "cybersec" || s === "devops" || s === "aiagents" || s === "vibecoding") return "ai";
-  if (s === "marketplaces") return "business";
-  if (s === "smm") return "marketing";
-  if (s === "accounting" || s === "autocad" || s === "trading") return "business";
-  return "math";
-};
-
-const mapGrade = (g: string): string => {
-  if (["5-9", "10-11", "ege"].includes(g)) return g;
-  if (g === "oge") return "5-9";
-  if (g === "1-4") return "5-9";
-  if (g === "adult") return "10-11";
-  return "5-9";
-};
+const mapSubject = lessonSubject;
+const mapGrade = lessonGrade;
 
 type Phase = "theory" | "examples" | "tasks" | "done";
 

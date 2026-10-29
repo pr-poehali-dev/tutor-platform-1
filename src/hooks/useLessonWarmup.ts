@@ -1,25 +1,10 @@
 import { useEffect, useRef } from "react";
 import { LEARNING_PATH_URL } from "@/components/journey/journeyData";
 import type { RealLesson } from "./useCourseCurriculum";
+import { lessonGrade, lessonSubject } from "@/components/courses/lessonSubject";
 
-// Предметы, которые бэкенд learning-path понимает напрямую (как в LessonViewerModal).
-const SUPPORTED_SUBJECTS = [
-  "math", "physics", "english", "russian",
-  "chinese", "korean", "datascience", "product", "avangard", "roomscan", "business",
-  "chemistry", "biology", "cs", "ai", "history", "society", "geography",
-  "logic", "skills", "career", "literature", "marketing", "robotics", "smartmach",
-  "psychology",
-];
-
-const mapSubject = (s: string): string => (SUPPORTED_SUBJECTS.includes(s) ? s : "math");
-
-const mapGrade = (g: string): string => {
-  if (["5-9", "10-11", "ege"].includes(g)) return g;
-  if (g === "oge") return "5-9";
-  if (g === "1-4") return "5-9";
-  if (g === "adult") return "10-11";
-  return "5-9";
-};
+const mapSubject = lessonSubject;
+const mapGrade = lessonGrade;
 
 // Чтобы не греть один и тот же урок повторно в рамках сессии.
 const warmedKeys = new Set<string>();

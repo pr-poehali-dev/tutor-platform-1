@@ -234,7 +234,69 @@ SUBJECT_TOPICS = {
             'ege': ['Основы НЛП и раппорт', 'Метамодель языка', 'Работа с убеждениями', 'Техники КПТ', 'Эриксоновский гипноз', 'Коучинг по модели GROW', 'Переговоры и влияние', 'Первичная диагностика', 'Работа с тревогой и депрессией', 'Этика и границы практики'],
         }
     },
+    'hr': {
+        'name': 'Кадровый учёт и трудовое право',
+        'topics': {
+            '5-9': ['Кадровые документы', 'Трудовой договор', 'Приём и увольнение', 'Отпуска и табель', 'Персональные данные', 'Проверки ГИТ'],
+            '10-11': ['Кадровые документы', 'Трудовой договор', 'Приём и увольнение', 'Отпуска и табель', 'Персональные данные', 'Проверки ГИТ'],
+            'ege': ['Кадровые документы', 'Трудовой договор', 'Приём и увольнение', 'Отпуска и табель', 'Персональные данные', 'Проверки ГИТ'],
+        }
+    },
+    'tenders': {
+        'name': 'Тендеры и госзакупки',
+        'topics': {
+            '5-9': ['44-ФЗ и 223-ФЗ', 'Поиск закупок в ЕИС', 'Подготовка заявки', 'Обеспечение и банковская гарантия', 'Исполнение контракта', 'Жалобы в ФАС'],
+            '10-11': ['44-ФЗ и 223-ФЗ', 'Поиск закупок в ЕИС', 'Подготовка заявки', 'Обеспечение и банковская гарантия', 'Исполнение контракта', 'Жалобы в ФАС'],
+            'ege': ['44-ФЗ и 223-ФЗ', 'Поиск закупок в ЕИС', 'Подготовка заявки', 'Обеспечение и банковская гарантия', 'Исполнение контракта', 'Жалобы в ФАС'],
+        }
+    },
+    'ved': {
+        'name': 'ВЭД и таможня',
+        'topics': {
+            '5-9': ['Внешнеторговый контракт', 'Инкотермс', 'Таможенное оформление', 'Коды ТН ВЭД', 'Валютный контроль', 'Логистика импорта'],
+            '10-11': ['Внешнеторговый контракт', 'Инкотермс', 'Таможенное оформление', 'Коды ТН ВЭД', 'Валютный контроль', 'Логистика импорта'],
+            'ege': ['Внешнеторговый контракт', 'Инкотермс', 'Таможенное оформление', 'Коды ТН ВЭД', 'Валютный контроль', 'Логистика импорта'],
+        }
+    },
+    'sales': {
+        'name': 'Продажи B2B',
+        'topics': {
+            '5-9': ['Воронка продаж', 'Холодные контакты', 'Выявление потребностей', 'Презентация и КП', 'Работа с возражениями', 'Закрытие сделки'],
+            '10-11': ['Воронка продаж', 'Холодные контакты', 'Выявление потребностей', 'Презентация и КП', 'Работа с возражениями', 'Закрытие сделки'],
+            'ege': ['Воронка продаж', 'Холодные контакты', 'Выявление потребностей', 'Презентация и КП', 'Работа с возражениями', 'Закрытие сделки'],
+        }
+    },
+    'gamedev': {
+        'name': 'Геймдизайн и разработка игр',
+        'topics': {
+            '5-9': ['Игровые механики', 'Баланс и прогрессия', 'Дизайн уровней', 'Python и Pygame', 'Тестирование игры', 'Публикация'],
+            '10-11': ['Игровые механики', 'Баланс и прогрессия', 'Дизайн уровней', 'Python и Pygame', 'Тестирование игры', 'Публикация'],
+            'ege': ['Игровые механики', 'Баланс и прогрессия', 'Дизайн уровней', 'Python и Pygame', 'Тестирование игры', 'Публикация'],
+        }
+    },
+    '3d': {
+        'name': '3D-моделирование и анимация',
+        'topics': {
+            '5-9': ['Интерфейс Blender', 'Полигональное моделирование', 'Материалы и текстуры', 'Свет и рендер', 'Анимация', 'Финальный проект'],
+            '10-11': ['Интерфейс Blender', 'Полигональное моделирование', 'Материалы и текстуры', 'Свет и рендер', 'Анимация', 'Финальный проект'],
+            'ege': ['Интерфейс Blender', 'Полигональное моделирование', 'Материалы и текстуры', 'Свет и рендер', 'Анимация', 'Финальный проект'],
+        }
+    },
+    'design': {
+        'name': 'Графический дизайн',
+        'topics': {
+            '5-9': ['Композиция', 'Цвет', 'Типографика', 'Figma', 'Дизайн интерфейсов', 'Портфолио'],
+            '10-11': ['Композиция', 'Цвет', 'Типографика', 'Figma', 'Дизайн интерфейсов', 'Портфолио'],
+            'ege': ['Композиция', 'Цвет', 'Типографика', 'Figma', 'Дизайн интерфейсов', 'Портфолио'],
+        }
+    },
 }
+
+
+def subject_display_name(subject, fallback='Курс'):
+    """Название предмета для промптов. Неизвестный предмет не подменяется математикой."""
+    item = SUBJECT_TOPICS.get(subject)
+    return item['name'] if item else fallback
 
 
 # Предметы с неизменной фактурой: даты, произведения, законы и термины не меняются
@@ -369,7 +431,7 @@ def action_diagnostic_test(subject, grade):
 def action_analyze_results(subject, grade, answers):
     """Шаг 2: Анализ ответов — выявление пробелов и сильных тем"""
     answers_str = json.dumps(answers, ensure_ascii=False)
-    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    subject_name = subject_display_name(subject)
     prompt = f"""Ты — диагност-педагог. Проанализируй ответы ученика на диагностический тест по "{subject_name}" (уровень {grade}).
 
 Ответы (для каждого вопроса: topic, level, is_correct):
@@ -402,7 +464,7 @@ def action_build_program(subject, grade, weak_topics, level):
     Каждый модуль = последовательность уроков с теорией, видео, практикой и контрольным тестом.
     Программа реально учит, а не просто список тем."""
     topics_list = ', '.join([t['topic'] if isinstance(t, dict) else t for t in weak_topics])
-    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    subject_name = subject_display_name(subject)
     prompt = f"""Ты — опытный методист и педагог. Составь РЕАЛЬНУЮ персональную программу обучения по предмету "{subject_name}" для класса {grade}.
 
 Уровень ученика: {level}
@@ -1281,7 +1343,7 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
         if fixed and cached_tasks:
             cached['tasks'] = cached_tasks
             return chem_check_lesson(cached) if subject == 'chemistry' else cached
-        subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+        subject_name = subject_display_name(subject)
         try:
             fresh_tasks = _generate_lesson_tasks_only(
                 subject_name, topic, grade, difficulty,
@@ -1297,7 +1359,7 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
             update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, fresh_tasks)
         return chem_check_lesson(cached) if subject == 'chemistry' else cached
 
-    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    subject_name = subject_display_name(subject)
     title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
     needs_timeline = subject in TIMELINE_SUBJECTS
 
@@ -1428,7 +1490,7 @@ def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questi
     shown_questions — список текстов задач, которые уже видел пользователь (исключаем повторы).
     n — сколько задач сгенерировать (по умолчанию 5).
     """
-    subject_name = SUBJECT_TOPICS.get(subject, SUBJECT_TOPICS['math'])['name']
+    subject_name = subject_display_name(subject)
     tasks = _generate_lesson_tasks_only(
         subject_name, topic, grade, difficulty,
         shown_questions=shown_questions,
@@ -1443,7 +1505,7 @@ def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questi
 def action_generate_task(subject, topic, difficulty, completed_tasks):
     """Шаг 4: Уникальное задание для модуля (не повторяется)"""
     completed_str = '; '.join(completed_tasks[-20:]) if completed_tasks else 'нет'
-    prompt = f"""Сгенерируй УНИКАЛЬНОЕ задание по теме "{topic}" (предмет: {SUBJECT_TOPICS[subject]['name']}, сложность: {difficulty}).
+    prompt = f"""Сгенерируй УНИКАЛЬНОЕ задание по теме "{topic}" (предмет: {subject_display_name(subject)}, сложность: {difficulty}).
 
 Уже выданные задания (НЕ повторяй и не делай похожие): {completed_str}
 
