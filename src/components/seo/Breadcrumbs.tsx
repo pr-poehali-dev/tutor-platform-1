@@ -10,6 +10,8 @@ export interface Crumb {
 interface Props {
   items: Crumb[];
   className?: string;
+  /** false — разметку BreadcrumbList уже отдаёт head() маршрута, второй раз не дублируем. */
+  withJsonLd?: boolean;
 }
 
 const SITE_URL = "https://учисьпро.рф";
@@ -24,7 +26,7 @@ function absUrl(href?: string): string {
  * Хлебные крошки + автоматический BreadcrumbList в JSON-LD для Google/Яндекс.
  * Пример: <Breadcrumbs items={[{label: "Главная", href: "/"}, {label: "Курсы", href: "/?#courses"}, {label: "Математика"}]} />
  */
-export default function Breadcrumbs({ items, className = "" }: Props) {
+export default function Breadcrumbs({ items, className = "", withJsonLd = true }: Props) {
   if (!items.length) return null;
 
   const jsonLd = {
@@ -41,22 +43,18 @@ export default function Breadcrumbs({ items, className = "" }: Props) {
 
   return (
     <>
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      {withJsonLd && (
+        <Helmet>
+          <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        </Helmet>
+      )}
 
       <nav aria-label="Хлебные крошки" className={`flex items-center gap-1.5 text-xs md:text-sm ${className}`}>
-        <ol className="flex items-center gap-1.5 flex-wrap" itemScope itemType="https://schema.org/BreadcrumbList">
+        <ol className="flex items-center gap-1.5 flex-wrap">
           {items.map((c, i) => {
             const isLast = i === items.length - 1;
             return (
-              <li
-                key={i}
-                className="flex items-center gap-1.5"
-                itemProp="itemListElement"
-                itemScope
-                itemType="https://schema.org/ListItem"
-              >
+              <li key={i} className="flex items-center gap-1.5">
                 {i > 0 && (
                   <Icon name="ChevronRight" size={12} className="text-white/30 flex-shrink-0" />
                 )}
@@ -64,9 +62,8 @@ export default function Breadcrumbs({ items, className = "" }: Props) {
                   <Link
                     to={c.href}
                     className="text-white/55 hover:text-white transition-colors"
-                    itemProp="item"
                   >
-                    <span itemProp="name">
+                    <span>
                       {i === 0 && <Icon name="Home" size={12} className="inline mr-1 -mt-0.5" />}
                       {c.label}
                     </span>
@@ -79,14 +76,12 @@ export default function Breadcrumbs({ items, className = "" }: Props) {
                         : "text-white/55"
                     }
                     title={isLast ? c.label : undefined}
-                    itemProp="name"
                     aria-current={isLast ? "page" : undefined}
                   >
                     {i === 0 && !c.href && <Icon name="Home" size={12} className="inline mr-1 -mt-0.5" />}
                     {c.label}
                   </span>
                 )}
-                <meta itemProp="position" content={String(i + 1)} />
               </li>
             );
           })}

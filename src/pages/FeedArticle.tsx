@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "@/lib/router-compat";
+import { getRouteApi } from "@tanstack/react-router";
 import Icon from "@/components/ui/icon";
-import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
 import CityArticleNav from "@/components/business2026/CityArticleNav";
@@ -16,6 +16,9 @@ import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 import FeedArticleSpoiler from "@/components/feed/article/FeedArticleSpoiler";
 import SeriesNav from "@/components/feed/article/SeriesNav";
+import { breadcrumbItems } from "@/components/feed/seo";
+
+const route = getRouteApi("/feed/$slug");
 
 // Инлайн-разметка: **жирный** текст и [ссылки](/path) внутри абзацев,
 // заголовков и списков.
@@ -66,9 +69,11 @@ function renderInline(text: string) {
 export default function FeedArticlePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [article, setArticle] = useState<FeedArticleType | null>(null);
+  const initial = route.useLoaderData()?.seo ?? null;
+  const ssrArticle = initial && !initial.seo_only && initial.slug === slug ? initial : null;
+  const [article, setArticle] = useState<FeedArticleType | null>(ssrArticle);
   const [related, setRelated] = useState<FeedArticleType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!ssrArticle);
   const [notFound, setNotFound] = useState(false);
   const [limited, setLimited] = useState<{ limit?: number; message?: string } | null>(null);
 
@@ -82,10 +87,13 @@ export default function FeedArticlePage() {
     }
     // Защита от гонки при быстрой смене статей: не обновляем состояние после размонтирования/смены slug.
     let cancelled = false;
-    setLoading(true);
+    const hasSsr = !!ssrArticle && ssrArticle.slug === slug;
+    if (!hasSsr) {
+      setLoading(true);
+      setArticle(null);
+    }
     setNotFound(false);
     setLimited(null);
-    setArticle(null);
     window.scrollTo(0, 0);
     fetchArticle(slug).then((data) => {
       if (cancelled) return;
@@ -133,7 +141,6 @@ export default function FeedArticlePage() {
   const meta = CATEGORY_META[article.category];
   const fullText = article.content || article.summary;
   const rawBlocks = fullText.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
-  const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
 
   // Собираем блоки-спойлеры: ":::spoiler Заголовок" ... ":::"
   // Всё между маркерами прячется под кнопку — чтобы в статьях-практикумах
@@ -162,81 +169,9 @@ export default function FeedArticlePage() {
     (/sertifikat|certificate|partnyorskie|partnyorstv|partner|tochka/i.test(article.slug) ||
       (article.tags || []).some((t) => /сертификат|партнёрств|партнерств/i.test(t)));
 
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: article.title,
-      description: article.summary || article.title,
-      datePublished: article.published_at,
-      dateModified: article.published_at || article.created_at,
-      dateCreated: article.created_at,
-      author: {
-        "@type": article.source_kind === "user" ? "Person" : "Organization",
-        name: article.author_display_name || article.source_name || "УЧИСЬПРО",
-      },
-      publisher: {
-        "@type": "Organization",
-        name: "УЧИСЬПРО",
-        logo: {
-          "@type": "ImageObject",
-          url: "https://cdn.poehali.dev/projects/b18d4f87-2b38-4fb5-a766-cc6cbae44e5a/files/17bc9252-13b8-4e83-af00-e904346aa5a9.jpg",
-        },
-      },
-      image: article.cover_url ? [article.cover_url] : undefined,
-      url: articleUrl(article.slug),
-      mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl(article.slug) },
-      inLanguage: "ru",
-      articleSection: meta.label,
-      keywords: (article.tags || []).join(", ") || undefined,
-      wordCount,
-      // Время чтения считаем от текста, а не берём поле из базы: там у части
-      // статей осталось значение от исходного замысла («19 минут» при тексте
-      // на 200 слов). Расхождение заявленного и фактического объёма —
-      // прямой сигнал недостоверности для поисковика.
-      timeRequired: `PT${Math.max(1, Math.round(wordCount / 180))}M`,
-      isAccessibleForFree: true,
-      articleBody: fullText,
-    },
-  ];
-
-  // Бренд к заголовку не клеим руками: Seo сам добавит «— УЧИСЬПРО», если
-  // остаётся место в сниппете. Раньше суффикс «| Лента УЧИСЬПРО» приписывался
-  // всегда — и у статей с длинным заголовком поиск обрезал название на полуслове,
-  // показывая огрызок вместо сути.
-  const seoTitle = article.title;
-  // Описание в выдаче обрывается примерно на 170 символах. Обрезаем сами и по
-  // границе слова, чтобы сниппет заканчивался мыслью, а не серединой слова.
-  const rawDesc = article.summary || article.title;
-  const seoDesc =
-    rawDesc.length <= 170
-      ? rawDesc
-      : rawDesc.slice(0, 167).replace(/[\s,;:—-]+\S*$/, "") + "…";
-  // Заготовки и совсем короткие заметки не отдаём в индекс: страница с парой
-  // абзацев конкурирует сама с собой и тянет вниз оценку всего раздела.
-  // Порог держим тот же, что в карте сайта (api/sitemap.ts), чтобы адрес
-  // не попадал в sitemap с пометкой noindex на самой странице.
-  const THIN_CHARS = 1500;
-  const isThin = fullText.length < THIN_CHARS;
 
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
-      <Seo
-        title={seoTitle}
-        description={seoDesc}
-        noindex={isThin}
-        canonical={articleUrl(article.slug)}
-        image={article.cover_url || undefined}
-        type="article"
-        article={{
-          publishedTime: article.published_at,
-          modifiedTime: article.published_at,
-          author: article.author_display_name || article.source_name || "УЧИСЬПРО",
-          section: meta.label,
-          tags: article.tags,
-        }}
-        jsonLd={jsonLd}
-      />
 
       {/* Top bar */}
       <div className="border-b border-white/5 bg-background/60 backdrop-blur-xl sticky top-0 z-40">
@@ -262,12 +197,8 @@ export default function FeedArticlePage() {
 
         <Breadcrumbs
           className="mb-4"
-          items={[
-            { label: "Главная", href: "/" },
-            { label: "Лента", href: "/feed" },
-            { label: `${meta.emoji} ${meta.label}`, href: "/feed" },
-            { label: article.title },
-          ]}
+          items={breadcrumbItems(article).map((c, i, all) => (i === all.length - 1 ? { label: c.label } : c))}
+          withJsonLd={false}
         />
 
         <FeedArticleHeader article={article} meta={meta} isDocCover={isDocCover} />

@@ -4,6 +4,7 @@
 Публичные:
 GET  /?action=list[&category=&page=]          — лента опубликованных статей
 GET  /?action=item&slug=...                   — детальная статья
+GET  /?action=seo&slug=...                    — статья для серверной отрисовки и метатегов (без счётчика)
 POST /?action=submit  (X-Auth-Token)          — пользователь публикует статью → status=pending
 
 Админские (X-Admin-Key):
@@ -236,6 +237,35 @@ def handle_item(qs: dict, token: str = '', ip: str = '') -> dict:
             # Инкремент просмотров
             cur.execute("UPDATE feed_articles SET views = views + 1 WHERE id = %s", (row[0],))
             conn.commit()
+            return ok({'item': article})
+    finally:
+        conn.close()
+
+
+def handle_seo(qs: dict) -> dict:
+    """Статья для серверной отрисовки страницы и метатегов: без счётчика просмотров.
+    Разборы произведений отдаём без текста — у них дневной лимит чтения."""
+    slug = (qs.get('slug') or '').strip()
+    if not slug:
+        return err('slug обязателен', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {ARTICLE_COLS}, updated_at FROM feed_articles "
+                f"WHERE slug = %s AND status = 'published' "
+                f"AND (published_at IS NULL OR published_at <= NOW()) LIMIT 1",
+                (slug,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return err('Статья не найдена', 404)
+            article = serialize_article(row, detail=True)
+            article['updated_at'] = row[-1].isoformat() if row[-1] else None
+            article['content_length'] = len(article.get('content') or '')
+            if article.get('category') == 'literature':
+                article['content'] = ''
+                article['seo_only'] = True
             return ok({'item': article})
     finally:
         conn.close()
@@ -495,6 +525,8 @@ def handler(event: dict, context) -> dict:
 
     if action == 'list':
         return with_cache(with_db_retry(lambda: handle_list(qs)), 60)
+    if action == 'seo':
+        return with_cache(with_db_retry(lambda: handle_seo(qs)), 300)
     if action == 'item':
         ip = ((event.get('requestContext') or {}).get('identity') or {}).get('sourceIp', '')
         return with_db_retry(lambda: handle_item(qs, token, ip))

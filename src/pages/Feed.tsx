@@ -32,13 +32,28 @@ function initialDirection(raw: string | null): FeedDirection {
 
 export default function Feed() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [direction, setDirectionState] = useState<FeedDirection>(() => initialDirection(searchParams.get("d")));
-  const [category, setCategory] = useState<CatFilter>("all");
+  const [direction, setDirectionState] = useState<FeedDirection>(() =>
+    // Пришли по ссылке на рубрику (?c=) — показываем её во всех направлениях,
+    // иначе сохранённое «школьникам» скрыло бы, например, «Бизнес и деньги».
+    searchParams.get("c") && !searchParams.get("d") ? "all" : initialDirection(searchParams.get("d")),
+  );
+  const urlCat = searchParams.get("c");
+  const [category, setCategoryState] = useState<CatFilter>(
+    urlCat && urlCat in CATEGORY_META ? (urlCat as FeedCategory) : "all",
+  );
+  const setCategory = (c: CatFilter) => {
+    setCategoryState(c);
+    const next = new URLSearchParams(searchParams);
+    if (c === "all") next.delete("c");
+    else next.set("c", c);
+    setSearchParams(next, { replace: true });
+  };
 
   const setDirection = (d: FeedDirection) => {
     setDirectionState(d);
-    setCategory("all");
+    setCategoryState("all");
     const next = new URLSearchParams(searchParams);
+    next.delete("c");
     if (d === "all") next.delete("d");
     else next.set("d", d);
     setSearchParams(next, { replace: true });
@@ -137,6 +152,11 @@ export default function Feed() {
     }
   };
 
+  const catMeta = category === "all" ? null : CATEGORY_META[category];
+  const crumbs = catMeta
+    ? [{ label: "Главная", href: "/" }, { label: "Лента", href: "/feed" }, { label: catMeta.label }]
+    : [{ label: "Главная", href: "/" }, { label: "Лента" }];
+
   const featured = items[0];
   const rest = items.slice(1);
 
@@ -154,8 +174,12 @@ export default function Feed() {
   return (
     <div className="min-h-screen bg-mesh font-golos text-white">
       <Seo
-        title="Лента — наука, культура, ИИ и роботы | УЧИСЬПРО"
-        description="Свежие новости и статьи для школьников: научные открытия, культура, образование, нейросети и роботы. Как журнал «Хочу всё знать», только онлайн."
+        title={catMeta ? `${catMeta.label} — статьи и новости в Ленте` : "Лента — наука, культура, ИИ и роботы | УЧИСЬПРО"}
+        description={
+          catMeta
+            ? `Рубрика «${catMeta.label}» в Ленте УЧИСЬПРО: свежие статьи, разборы и новости простым языком.`
+            : "Свежие новости и статьи для школьников: научные открытия, культура, образование, нейросети и роботы. Как журнал «Хочу всё знать», только онлайн."
+        }
         canonical={`${SITE_URL}/feed`}
         keywords="лента новостей для школьников, новости науки, новости культуры, минпросвещения, новости ии, новости роботов, хочу всё знать"
         jsonLd={jsonLd}
@@ -169,7 +193,7 @@ export default function Feed() {
             <span className="font-montserrat font-black text-base gradient-text-purple tracking-wide group-hover:opacity-80 transition-opacity">УЧИСЬПРО</span>
           </Link>
           <div className="hidden md:block">
-            <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Лента" }]} />
+            <Breadcrumbs items={crumbs} />
           </div>
           <Link
             to="/feed/submit"
@@ -182,7 +206,7 @@ export default function Feed() {
       </div>
 
       <div className="md:hidden max-w-7xl mx-auto px-4 pt-3">
-        <Breadcrumbs items={[{ label: "Главная", href: "/" }, { label: "Лента" }]} />
+        <Breadcrumbs items={crumbs} withJsonLd={false} />
       </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-5 md:px-8 pt-6 pb-16">
