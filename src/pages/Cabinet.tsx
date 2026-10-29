@@ -9,6 +9,7 @@ import ExamChecklistWidget from "@/components/examChecklist/ExamChecklistWidget"
 import ConsultationRequest from "@/components/cabinet/ConsultationRequest";
 import MyPlanWidget from "@/components/cabinet/MyPlanWidget";
 import StartHereWidget from "@/components/cabinet/StartHereWidget";
+import MyPurchasesWidget from "@/components/cabinet/MyPurchasesWidget";
 
 const PLAN_LABELS: Record<string, { name: string; color: string }> = {
   trial: { name: "Пробный (7 дней)", color: "from-white/10 to-white/5" },
@@ -102,6 +103,9 @@ export default function Cabinet() {
             Выйти
           </button>
         </div>
+
+        {/* Оплаченные курсы и продукты — первым делом, чтобы купленное не терялось */}
+        <MyPurchasesWidget />
 
         {/* Новичку — сначала бесплатный старт, а не разговор об оплате */}
         {!hasActiveSub && <StartHereWidget />}

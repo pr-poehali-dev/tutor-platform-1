@@ -674,6 +674,43 @@ def handle_check(token: str, course_id: int | None) -> dict:
         conn.close()
 
 
+def handle_my_purchases(token: str) -> dict:
+    """Все оплаченные продукты пользователя для личного кабинета: курсы, интенсивы, подписка."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            user_id = resolve_user(cur, token)
+            if not user_id:
+                return err('Нужен вход в аккаунт', 401)
+            cur.execute(
+                "SELECT course_id, purchased_at FROM course_purchases "
+                "WHERE user_id = %s AND status = 'paid' ORDER BY purchased_at DESC NULLS LAST",
+                (user_id,)
+            )
+            courses = {}
+            for cid, at in cur.fetchall():
+                courses[int(cid)] = at.isoformat() if at else None
+            cur.execute(
+                "SELECT ia.track, ia.access_token, ia.email, ia.activated_at FROM intensive_access ia "
+                "JOIN auth_users u ON lower(u.email) = lower(ia.email) "
+                "WHERE u.id = %s AND ia.status = 'paid' ORDER BY ia.activated_at DESC NULLS LAST",
+                (user_id,)
+            )
+            products = []
+            for track, acc_token, email, at in cur.fetchall():
+                iso = at.isoformat() if at else None
+                if track and re.match(r'^course-[0-9]+$', track):
+                    courses.setdefault(int(track[7:]), iso)
+                products.append({'track': track, 'token': acc_token, 'email': email, 'paid_at': iso})
+            return ok({
+                'courses': [{'course_id': k, 'paid_at': v} for k, v in courses.items()],
+                'products': products,
+                'has_subscription': get_subscription_active(cur, user_id),
+            })
+    finally:
+        conn.close()
+
+
 def create_yookassa_payment(shop_id: str, secret_key: str, amount_rub: float,
                              description: str, return_url: str,
                              customer_email: str, metadata: dict) -> dict:
@@ -1524,6 +1561,8 @@ def handler(event: dict, context) -> dict:
                 except ValueError:
                     course_id = None
             return handle_check(token, course_id)
+        if action == 'my_purchases' and method == 'GET':
+            return handle_my_purchases(token)
         if action == 'buy_course' and method == 'POST':
             return handle_buy_course(token, body)
         if action == 'buy_subscription' and method == 'POST':

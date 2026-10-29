@@ -60,11 +60,11 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "validate_coupon: промокод ДОБРО даёт 30% без токена",
+      "name": "validate_coupon: промокод MARAFON30 даёт 30% без токена",
       "method": "POST",
       "path": "/?action=validate_coupon",
       "body": {
-        "coupon_code": "ДОБРО",
+        "coupon_code": "MARAFON30",
         "amount_rub": 1000
       },
       "expectedStatus": 200,
@@ -185,6 +185,16 @@
         "return_url": "https://example.com/ok"
       },
       "expectedStatus": 401
+    },
+    {
+      "name": "my_purchases без входа - 401",
+      "method": "GET",
+      "path": "/?action=my_purchases",
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }

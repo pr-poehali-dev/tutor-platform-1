@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
@@ -7,9 +8,11 @@ import Reveal from "@/components/intensive/Reveal";
 import CasesBlock from "@/components/ai-assistant/CasesBlock";
 import FaqBlock from "@/components/ai-assistant/FaqBlock";
 import PricingBlock from "@/components/ai-assistant/PricingBlock";
+import LessonsBlock from "@/components/ai-assistant/LessonsBlock";
 import { COURSE_META, PROGRAM, PRICING, FAQ } from "@/components/ai-assistant/data";
 
 export default function AiAssistant() {
+  const [granted, setGranted] = useState(false);
   const scrollToPricing = () => {
     document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -111,6 +114,7 @@ export default function AiAssistant() {
             track={COURSE_META.track}
             productName="курс"
             grantedText="Оплата прошла — курс полностью твой. Проходи уроки в своём темпе, ИИ-наставник на связи 24/7. Начни с первого дня ниже."
+            onGranted={() => setGranted(true)}
           />
         </section>
 
@@ -125,7 +129,17 @@ export default function AiAssistant() {
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {PROGRAM.map((p) => (
-              <div key={p.day} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <a
+                key={p.day}
+                href={`#day${p.day}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.replaceState(null, "", `#day${p.day}`);
+                  window.dispatchEvent(new HashChangeEvent("hashchange"));
+                  document.getElementById("lessons")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="block rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-cyan-400/40 p-4 transition-colors"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/25 to-blue-500/15 flex items-center justify-center">
                     <Icon name={p.icon} size={16} className="text-cyan-300" />
@@ -134,10 +148,12 @@ export default function AiAssistant() {
                 </div>
                 <h3 className="font-montserrat font-bold text-white text-sm mb-0.5">{p.title}</h3>
                 <p className="text-white/50 text-xs">{p.sub}</p>
-              </div>
+              </a>
             ))}
           </div>
         </section>
+
+        <LessonsBlock granted={granted} onBuy={scrollToPricing} />
 
         {/* ФОРМАТ */}
         <section className="mb-14">
