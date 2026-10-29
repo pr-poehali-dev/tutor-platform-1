@@ -78,6 +78,7 @@ import { Route as TutorRouteImport } from './routes/tutor'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as VzroslymRouteImport } from './routes/vzroslym'
 import { Route as WritingCraftRouteImport } from './routes/writing-craft'
+import { Route as YazykZa30DneyRouteImport } from './routes/yazyk-za-30-dney'
 import { Route as ZarabotokNaNeirosetyahRouteImport } from './routes/zarabotok-na-neirosetyah'
 import { Route as ZnaikaRouteImport } from './routes/znaika'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -551,6 +552,11 @@ const VzroslymRoute = VzroslymRouteImport.update({
 const WritingCraftRoute = WritingCraftRouteImport.update({
   id: '/writing-craft',
   path: '/writing-craft',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YazykZa30DneyRoute = YazykZa30DneyRouteImport.update({
+  id: '/yazyk-za-30-dney',
+  path: '/yazyk-za-30-dney',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ZarabotokNaNeirosetyahRoute = ZarabotokNaNeirosetyahRouteImport.update({
@@ -1270,6 +1276,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/vzroslym': typeof VzroslymRoute
   '/writing-craft': typeof WritingCraftRoute
+  '/yazyk-za-30-dney': typeof YazykZa30DneyRoute
   '/zarabotok-na-neirosetyah': typeof ZarabotokNaNeirosetyahRoute
   '/znaika': typeof ZnaikaRoute
   '/admin/ads': typeof AdminAdsRoute
@@ -1467,6 +1474,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/vzroslym': typeof VzroslymRoute
   '/writing-craft': typeof WritingCraftRoute
+  '/yazyk-za-30-dney': typeof YazykZa30DneyRoute
   '/zarabotok-na-neirosetyah': typeof ZarabotokNaNeirosetyahRoute
   '/znaika': typeof ZnaikaRoute
   '/admin/ads': typeof AdminAdsRoute
@@ -1665,6 +1673,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/vzroslym': typeof VzroslymRoute
   '/writing-craft': typeof WritingCraftRoute
+  '/yazyk-za-30-dney': typeof YazykZa30DneyRoute
   '/zarabotok-na-neirosetyah': typeof ZarabotokNaNeirosetyahRoute
   '/znaika': typeof ZnaikaRoute
   '/admin/ads': typeof AdminAdsRoute
@@ -1864,6 +1873,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/vzroslym'
     | '/writing-craft'
+    | '/yazyk-za-30-dney'
     | '/zarabotok-na-neirosetyah'
     | '/znaika'
     | '/admin/ads'
@@ -2061,6 +2071,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/vzroslym'
     | '/writing-craft'
+    | '/yazyk-za-30-dney'
     | '/zarabotok-na-neirosetyah'
     | '/znaika'
     | '/admin/ads'
@@ -2258,6 +2269,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/vzroslym'
     | '/writing-craft'
+    | '/yazyk-za-30-dney'
     | '/zarabotok-na-neirosetyah'
     | '/znaika'
     | '/admin/ads'
@@ -2456,6 +2468,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   VzroslymRoute: typeof VzroslymRoute
   WritingCraftRoute: typeof WritingCraftRoute
+  YazykZa30DneyRoute: typeof YazykZa30DneyRoute
   ZarabotokNaNeirosetyahRoute: typeof ZarabotokNaNeirosetyahRoute
   ZnaikaRoute: typeof ZnaikaRoute
   AdminAdsRoute: typeof AdminAdsRoute
@@ -3067,6 +3080,13 @@ declare module '@tanstack/react-router' {
       path: '/writing-craft'
       fullPath: '/writing-craft'
       preLoaderRoute: typeof WritingCraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/yazyk-za-30-dney': {
+      id: '/yazyk-za-30-dney'
+      path: '/yazyk-za-30-dney'
+      fullPath: '/yazyk-za-30-dney'
+      preLoaderRoute: typeof YazykZa30DneyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/zarabotok-na-neirosetyah': {
@@ -4024,6 +4044,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   VzroslymRoute: VzroslymRoute,
   WritingCraftRoute: WritingCraftRoute,
+  YazykZa30DneyRoute: YazykZa30DneyRoute,
   ZarabotokNaNeirosetyahRoute: ZarabotokNaNeirosetyahRoute,
   ZnaikaRoute: ZnaikaRoute,
   AdminAdsRoute: AdminAdsRoute,

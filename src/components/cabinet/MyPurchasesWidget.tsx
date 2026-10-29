@@ -13,6 +13,7 @@ const ACCESS_URL = (func2url as Record<string, string>).access;
 const PRODUCTS: Record<string, { title: string; href: string; icon: string; note: string }> = {
   "ai-assistant": { title: "ИИ-ассистент для работы", href: "/ai-assistant#lessons", icon: "Bot", note: "Курс · 5 дней с ИИ-наставником" },
   automation: { title: "Твой первый автопилот", href: "/intensive", icon: "Workflow", note: "Интенсив по автоматизации · 7 дней" },
+  "spy-language": { title: "Язык за 30 дней: ядро 1000 слов", href: "/yazyk-za-30-dney", icon: "Globe", note: "Интенсив · 30 дней, 8 языков" },
   bizreport: { title: "Разбор бизнес-идеи", href: "/biz-report", icon: "FileText", note: "PDF-разбор от Бизнес-лаборатории" },
 };
 

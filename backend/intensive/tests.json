@@ -5,79 +5,120 @@
       "method": "GET",
       "path": "/?action=ping",
       "expectedStatus": 200,
-      "expectedBody": {"ok": true, "service": "intensive"},
+      "expectedBody": {
+        "ok": true,
+        "service": "intensive"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Lead requires name",
       "method": "POST",
       "path": "/?action=lead",
-      "body": {"contact": "test@mail.ru"},
+      "body": {
+        "contact": "test@mail.ru"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Lead requires contact",
       "method": "POST",
       "path": "/?action=lead",
-      "body": {"name": "Иван"},
+      "body": {
+        "name": "Иван"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Lead success",
       "method": "POST",
       "path": "/?action=lead",
-      "body": {"name": "Тест Заявка", "contact": "test@example.com", "comment": "автотест", "source": "test"},
+      "body": {
+        "name": "Тест Заявка",
+        "contact": "test@example.com",
+        "comment": "автотест",
+        "source": "test"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": true},
+      "expectedBody": {
+        "ok": true
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Trainer requires message",
       "method": "POST",
       "path": "/?action=trainer",
-      "body": {"session_id": "t1", "scenario_key": "leaks"},
+      "body": {
+        "session_id": "t1",
+        "scenario_key": "leaks"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Homework requires submission",
       "method": "POST",
       "path": "/?action=check_homework",
-      "body": {"session_id": "t1", "lesson_key": "day1", "submission": "x"},
+      "body": {
+        "session_id": "t1",
+        "lesson_key": "day1",
+        "submission": "x"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Audit requires description",
       "method": "POST",
       "path": "/?action=audit",
-      "body": {"description": "x"},
+      "body": {
+        "description": "x"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Check access requires email",
       "method": "POST",
       "path": "/?action=check_access",
-      "body": {"email": "bad"},
+      "body": {
+        "email": "bad"
+      },
       "expectedStatus": 400,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
       "name": "Check access unknown email no access",
       "method": "POST",
       "path": "/?action=check_access",
-      "body": {"email": "noone-test@example.com"},
+      "body": {
+        "email": "noone-test@example.com"
+      },
       "expectedStatus": 200,
-      "expectedBody": {"access": false},
+      "expectedBody": {
+        "access": false
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -85,7 +126,9 @@
       "method": "GET",
       "path": "/?action=leads",
       "expectedStatus": 401,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     },
     {
@@ -93,7 +136,39 @@
       "method": "GET",
       "path": "/?action=nonsense",
       "expectedStatus": 404,
-      "expectedBody": {"error": "string"},
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "lang_words: неизвестный язык",
+      "method": "POST",
+      "path": "/?action=lang_words",
+      "body": {
+        "lang": "xx",
+        "day": 1,
+        "chunk": 0
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "lang_words: день 2 без оплаты закрыт",
+      "method": "POST",
+      "path": "/?action=lang_words",
+      "body": {
+        "lang": "en",
+        "day": 2,
+        "chunk": 0
+      },
+      "expectedStatus": 403,
+      "expectedBody": {
+        "error": "string"
+      },
       "bodyMatcher": "partial"
     }
   ]

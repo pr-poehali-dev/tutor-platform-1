@@ -30,6 +30,7 @@ export const DIRECTION_MENU: Record<LearnerDirection, MenuLink[]> = {
   adult: [
     { label: "Все программы", icon: "Library", path: "/kursy-dlya-vzroslyh", desc: "40+ курсов: ИИ, IT, бизнес" },
     { label: "Нейросети", icon: "Sparkles", path: "/ai-assistant", desc: "ИИ для работы за 5 дней" },
+    { label: "Язык за 30 дней", icon: "Globe", path: "/yazyk-za-30-dney", desc: "Ядро 1000 слов, 8 языков" },
     { label: "Удалёнка", icon: "Laptop", path: "/remote-professions", desc: "Профессии для работы из дома" },
     { label: "Руководителю", icon: "Briefcase", path: "/for-managers", desc: "Разборы и шаблоны" },
     { label: "Своё дело", icon: "Rocket", path: "/business-2026", desc: "Где и что открывать" },

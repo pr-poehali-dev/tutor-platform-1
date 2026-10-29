@@ -50,6 +50,7 @@ const FOOTER_LINKS: Record<LearnerDirection, FooterLink[]> = {
   adult: [
     { to: "/kursy-dlya-vzroslyh", label: "Все 40+ программ" },
     { to: "/ai-assistant", label: "Нейросети для работы" },
+    { to: "/yazyk-za-30-dney", label: "Иностранный язык за 30 дней" },
     { to: "/ai-helper", label: "Свой ИИ-помощник" },
     { to: "/zarabotok-na-neirosetyah", label: "Заработок на нейросетях" },
     { to: "/remote-professions", label: "Удалённые профессии" },

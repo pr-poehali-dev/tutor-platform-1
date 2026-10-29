@@ -9,6 +9,7 @@ POST /?action=check_homework  body:{session_id, lesson_key, submission} — ИИ
 POST /?action=audit           body:{description} — ИИ-аудит бизнеса (источники, потери, связка)
 POST /?action=check_access    body:{email} — проверка оплаченного доступа после оплаты
 GET  /?action=leads           (X-Admin-Key) — список заявок для админки
+POST /?action=lang_words      body:{lang, day, chunk, token?} — слова ядра «1000 слов» (интенсив языка)
 GET  /?action=ping            — health-check
 """
 import json
@@ -19,6 +20,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import psycopg2
+from core_words import day_words
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
 POLZA_API_KEY = os.environ.get('POLZA_API_KEY', '')
@@ -375,9 +377,15 @@ def handle_check_homework(body: dict) -> dict:
     if not submission or len(submission) < 10:
         return err('Слишком короткий ответ — напиши подробнее', 400)
     criteria = HOMEWORK_CRITERIA.get(lesson_key, 'Оцени работу студента по полноте и качеству.')
+    lang_m = re.match(r'^lang_([a-z]{2})_d(\d{1,2})$', lesson_key)
+    if lang_m and lang_m.group(1) in LANGS:
+        criteria = (f"Язык изучения: {LANGS[lang_m.group(1)]}. Ученик учит его по ядру из 1000 частотных слов, день {lang_m.group(2)}. "
+                    "Он прислал предложения с новыми словами. Проверь грамматику и уместность слов, "
+                    "исправь каждую ошибку, покажи правильный вариант и коротко объясни на русском. "
+                    "Оцени по 100-балльной шкале: правильность, использование слов дня, естественность фраз.")
 
     system = (
-        f"Ты — строгий, но доброжелательный куратор {'курса «ИИ-ассистент для работы»' if lesson_key.startswith('ai_') else 'интенсива по автоматизации микробизнеса'}. "
+        f"Ты — строгий, но доброжелательный куратор {'курса «ИИ-ассистент для работы»' if lesson_key.startswith('ai_') else 'языкового интенсива по методике ускоренной подготовки' if lesson_key.startswith('lang_') else 'интенсива по автоматизации микробизнеса'}. "
         "Проверяешь домашнее задание по критериям, опираясь на практику внедрения CRM, "
         "связок и автосценариев без программирования. "
         "Никогда не выдумывай — оценивай только то, что прислал студент.\n"
@@ -510,6 +518,103 @@ def handle_check_access(body: dict, ip: str = 'unknown') -> dict:
         conn.close()
 
 
+LANG_TRACK = 'spy-language'
+LANGS = {
+    'en': 'английский', 'de': 'немецкий', 'fr': 'французский', 'es': 'испанский',
+    'it': 'итальянский', 'zh': 'китайский (путунхуа)', 'tr': 'турецкий', 'ar': 'арабский',
+}
+CHUNK = 12
+
+
+def has_lang_access(cur, token: str) -> bool:
+    if not token:
+        return False
+    cur.execute(
+        "SELECT 1 FROM intensive_access WHERE access_token = %s AND track = %s AND status = 'paid' LIMIT 1",
+        (token[:80], LANG_TRACK))
+    return cur.fetchone() is not None
+
+
+def generate_words(lang: str, words: list) -> list:
+    """Перевод порции ядра через ИИ: слово, чтение русскими буквами, короткий пример."""
+    system = (
+        f"Ты — методист языковой школы. Язык изучения: {LANGS[lang]}. Ученик говорит по-русски. "
+        "Для каждого русского слова или фразы дай самый частотный разговорный эквивалент. "
+        "Верни строго JSON-массив без markdown, по одному объекту на слово, в том же порядке: "
+        '[{"ru": "исходное слово", "w": "перевод (для китайского — иероглифы)", '
+        '"tr": "произношение русскими буквами (для китайского — пиньинь и русское чтение)", '
+        '"ex": "очень короткий пример на языке изучения, до 6 слов", "exr": "перевод примера на русский"}]. '
+        "Пояснения в скобках у русского слова — только для смысла, не переводи их."
+    )
+    raw = call_polza(system, [{'role': 'user', 'content': '\n'.join(words)}], max_tokens=1800, temperature=0.2)
+    if not raw:
+        return []
+    raw = re.sub(r'^```(?:json)?\s*', '', raw.strip())
+    raw = re.sub(r'\s*```$', '', raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        m = re.search(r'\[.*\]', raw, flags=re.DOTALL)
+        if not m:
+            return []
+        try:
+            data = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            return []
+    out = []
+    for i, ru in enumerate(words):
+        item = data[i] if i < len(data) and isinstance(data[i], dict) else {}
+        w = str(item.get('w') or '').strip()
+        if not w:
+            return []
+        out.append({
+            'ru': ru, 'w': w[:120],
+            'tr': str(item.get('tr') or '')[:120],
+            'ex': str(item.get('ex') or '')[:160],
+            'exr': str(item.get('exr') or '')[:160],
+        })
+    return out
+
+
+def handle_lang_words(body: dict) -> dict:
+    lang = (body.get('lang') or '').strip().lower()
+    if lang not in LANGS:
+        return err('Неизвестный язык', 400)
+    try:
+        day = int(body.get('day'))
+        chunk = int(body.get('chunk') or 0)
+    except (TypeError, ValueError):
+        return err('Неверный день', 400)
+    all_words = day_words(day)
+    if not all_words:
+        return err('В этот день новых слов нет', 400)
+    portion = all_words[chunk * CHUNK:(chunk + 1) * CHUNK]
+    if chunk < 0 or not portion:
+        return err('Неверная порция', 400)
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if day > 1 and not has_lang_access(cur, (body.get('token') or '').strip()):
+                return err('День откроется после оплаты курса', 403)
+            cur.execute(
+                "SELECT words FROM language_core_words WHERE lang = %s AND day = %s AND chunk = %s",
+                (lang, day, chunk))
+            row = cur.fetchone()
+            if row:
+                return ok({'words': row[0], 'cached': True})
+            words = generate_words(lang, portion)
+            if not words:
+                return err('Не удалось подготовить слова, попробуйте ещё раз', 503)
+            cur.execute(
+                "INSERT INTO language_core_words (lang, day, chunk, words) VALUES (%s,%s,%s,%s) "
+                "ON CONFLICT (lang, day, chunk) DO NOTHING",
+                (lang, day, chunk, json.dumps(words, ensure_ascii=False)))
+            conn.commit()
+            return ok({'words': words, 'cached': False})
+    finally:
+        conn.close()
+
+
 def handle_leads(headers: dict) -> dict:
     if not is_admin(headers):
         return err('unauthorized', 401)
@@ -554,6 +659,8 @@ def handler(event: dict, context) -> dict:
         return handle_audit(body)
     if action == 'check_access' and method == 'POST':
         return handle_check_access(body, client_ip(event))
+    if action == 'lang_words' and method == 'POST':
+        return handle_lang_words(body)
     if action == 'leads' and method == 'GET':
         return handle_leads(headers)
 
