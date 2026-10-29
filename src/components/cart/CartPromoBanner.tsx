@@ -5,10 +5,12 @@ import { isPromoActive } from "@/components/promo/dobroConfig";
 
 interface Props {
   className?: string;
+  /** Показывать кнопку «Выбрать курсы» — для страниц без карточек курсов (например, главной). */
+  catalogLink?: boolean;
 }
 
 /** Баннер акции «Больше курсов — больше скидка»: 2 курса −50%, 3 и больше −60%. */
-export default function CartPromoBanner({ className = "" }: Props) {
+export default function CartPromoBanner({ className = "", catalogLink = false }: Props) {
   const { ids, loaded } = useCart();
   if (isPromoActive()) return null;
   const n = loaded ? ids.length : 0;
@@ -16,7 +18,9 @@ export default function CartPromoBanner({ className = "" }: Props) {
 
   const status =
     n === 0
-      ? "Нажмите «В корзину» на карточках курсов"
+      ? catalogLink
+        ? "Выберите 2 и больше курса в каталоге — скидка применится автоматически"
+        : "Нажмите «В корзину» на карточках курсов"
       : n === 1
       ? "В корзине 1 курс — добавьте ещё один и получите −50%"
       : n === 2
@@ -48,6 +52,16 @@ export default function CartPromoBanner({ className = "" }: Props) {
               <p className="text-xs font-semibold mt-1 opacity-80">за 3 и больше</p>
             </div>
           </div>
+
+          {n === 0 && catalogLink && (
+            <Link
+              to="/courses"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1030] font-black px-5 py-3.5 hover:opacity-90 transition-opacity"
+            >
+              Выбрать курсы
+              <Icon name="ArrowRight" size={18} />
+            </Link>
+          )}
 
           {n > 0 && (
             <Link

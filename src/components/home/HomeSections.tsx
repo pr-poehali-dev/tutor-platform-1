@@ -4,6 +4,7 @@ import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import Icon from "@/components/ui/icon";
 import DirectionDoors from "@/components/home/DirectionDoors";
 import PilotBanner from "@/components/pilot/PilotBanner";
+import CartPromoBanner from "@/components/cart/CartPromoBanner";
 import TrialHero from "@/components/home/TrialHero";
 import HeroTryTutor from "@/components/home/HeroTryTutor";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
@@ -70,6 +71,9 @@ export default function HomeSections() {
         </div>
       </section>
 
+
+      {/* Акция: 2 курса −50%, 3 и больше −60% */}
+      <CartPromoBanner catalogLink className="pb-8" />
 
       {/* Остальные направления — ниже пробной недели */}
       <DirectionDoors />
