@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
@@ -22,6 +23,7 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
   const coverLink = COVER_EXTERNAL_LINKS[article.slug];
   const coverHref = coverLink || article.cover_url || "";
   const isPartnerLink = Boolean(coverLink);
+  const [verticalVideo, setVerticalVideo] = useState(false);
   return (
     <>
       {/* Хлебные крошки рендерит страница (FeedArticle.tsx) — здесь их быть не должно,
@@ -86,17 +88,21 @@ export default function FeedArticleHeader({ article, meta, isDocCover }: Props) 
 
       {/* Видео к статье (рекламный/пояснительный ролик) */}
       {article.video_url && (
-        <div className="rounded-3xl overflow-hidden mb-6 border border-white/10 bg-black">
+        <div className={`rounded-3xl overflow-hidden mb-6 border border-white/10 bg-black ${verticalVideo ? "flex justify-center" : ""}`}>
           <video
             src={article.video_url}
-            poster={article.cover_url || undefined}
+            poster={verticalVideo ? undefined : article.cover_url || undefined}
             controls
             autoPlay
             muted
             loop
             playsInline
             preload="metadata"
-            className="w-full aspect-video object-cover"
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              setVerticalVideo(v.videoHeight > v.videoWidth);
+            }}
+            className={verticalVideo ? "h-[75vh] max-h-[720px] w-auto max-w-full object-contain" : "w-full aspect-video object-cover"}
             aria-label={`Видео к статье «${article.title}»`}
           />
         </div>
