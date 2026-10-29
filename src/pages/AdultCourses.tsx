@@ -4,6 +4,8 @@ import Icon from "@/components/ui/icon";
 import Seo from "@/components/seo/Seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import SiteFooter from "@/components/SiteFooter";
+import CartPromoBanner from "@/components/cart/CartPromoBanner";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 import { COURSES, getCoursePrice, getCoursePriceLabel } from "@/components/courses/coursesData";
 import { courseUrl } from "@/components/courses/courseSlug";
 import { getCourseSeoCopy } from "@/components/courses/seo";
@@ -158,6 +160,8 @@ export default function AdultCourses() {
           </Link>
         </div>
 
+        <CartPromoBanner className="!px-0 mb-12" />
+
         {grouped.map((track) => (
           <section key={track.id} className="mb-12" aria-labelledby={`track-${track.id}`}>
             <h2
@@ -190,9 +194,12 @@ export default function AdultCourses() {
                         {getCourseSeoCopy(c.id)!.income!.range}
                       </p>
                     )}
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between gap-2 text-xs">
                       <span className="font-bold text-white">{getCoursePriceLabel(c)}</span>
-                      <span className="text-white/40">{c.lessons} уроков</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-white/40">{c.lessons} уроков</span>
+                        <AddToCartButton course={c} />
+                      </span>
                     </div>
                   </Link>
                 </li>
