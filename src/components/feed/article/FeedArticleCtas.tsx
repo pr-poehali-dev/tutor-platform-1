@@ -1,519 +1,57 @@
-import { Link } from "@/lib/router-compat";
-import Icon from "@/components/ui/icon";
 import { FeedArticle as FeedArticleType } from "@/components/feed/types";
-import { trackGoal } from "@/components/analytics/YandexMetrika";
 import FeedArticleDefaultCta from "./FeedArticleDefaultCta";
+import FeedArticleServiceCtas from "./FeedArticleServiceCtas";
+import FeedArticleGrantCtas from "./FeedArticleGrantCtas";
+import FeedArticleTagCtas from "./FeedArticleTagCtas";
+import { getFeedCtaFlags } from "./feedCtaFlags";
 
 interface Props {
   article: FeedArticleType;
 }
 
 export default function FeedArticleCtas({ article }: Props) {
-  const tags = (article.tags || []).map((t) => t.toLowerCase());
-  // Статья про прогноз/калькулятор EduFlow AI — ведём прямо на калькулятор.
-  const isForecast =
-    tags.some((t) => ["eduflow ai", "прогноз"].includes(t)) ||
-    /eduflow|prognoz/i.test(article.slug);
-  // Важно: раньше сюда попадала любая статья, где в адресе встречалось «shkol»
-  // (а это почти всё про школу) — и читатель видел призыв открыть свою онлайн-школу.
-  // Теперь ориентируемся на теги и на явные адреса про конструктор.
-  // Теги разнородные: «онлайн-школа», «онлайн-школы», «репетиторам», «репетиторы»,
-  // «инфобизнес», «бизнес на знаниях». Перечислять их списком бессмысленно —
-  // половина статей про запуск школы мимо него проходила и получала общий призыв.
-  // «репетиторам» в дательном — это обращение к преподавателю. Просто «репетитор»
-  // стоит в статьях для родителей («как выбрать репетитора»), им предлагать
-  // открыть школу незачем.
-  const B2B_TAG = /(онлайн[- ]школ|конструктор (курсов|школ)|репетиторам|инфобизнес|бизнес на знаниях|edtech|доходимост|методолог)/i;
-  const isSchoolBuilder =
-    !isForecast &&
-    (tags.some((t) => B2B_TAG.test(t)) ||
-      /(konstruktor|svoya|sozdat|otkryt|zapustit)[-_]?shkol/i.test(article.slug) ||
-      /(shkol[ay]?[-_]za[-_]|metodologiya-uchispro|brosayut-kursy)/i.test(article.slug));
-  // Статьи про отдельный сервис grant-ai.ru — ведём на внешний сайт, а не на /grants.
-  const isGrantAi =
-    tags.some((t) => ["grant-ai", "grant-ai.ru"].includes(t)) ||
-    /grant-ai/i.test(article.slug);
-  // Статьи о найме на grant-ai.ru: общий текст про гранты там не к месту,
-  // ведём сразу в оценку компетенций и HR-помощник.
-  // Статьи о разделе «Готовый бизнес под ключ» на mat-labs.ru.
-  const isTurnkey = tags.includes("готовый бизнес") && tags.includes("mat-labs.ru");
-  // Статьи о «Радаре заказчиков» на mat-labs.ru — ведём в каталог.
-  const isRadar = tags.includes("радар заказчиков") && tags.includes("mat-labs.ru");
-  // Статьи о разделе «Бизнес-аналитика» на mat-labs.ru — ведём в отчёты о рынках.
-  const isMatAnalytics = tags.includes("бизнес-аналитика") && tags.includes("mat-labs.ru");
-  // Статьи о модуле «Базы компаний» ведём сразу в каталог баз.
-  const isMatDatabases = isMatAnalytics && tags.includes("базы компаний");
-  const isMatBi = isMatAnalytics && tags.includes("облачный BI");
-  const isMatPipes = isMatAnalytics && !isMatBi && tags.includes("конвейер данных");
-  const matCta = isMatPipes
-    ? {
-        title: "Подключите 1С и CRM бесплатно",
-        text: "Данные загружаются сами по расписанию, очищаются от дублей и открываются в дашборде. Тариф «Старт» — 0 ₽ навсегда.",
-        href: "https://mat-labs.ru/analytics/pipes",
-        icon: "Workflow",
-        button: "Открыть конвейер данных",
-      }
-    : isMatBi
-    ? {
-        title: "Постройте дашборд из своей таблицы",
-        text: "Загрузите выгрузку продаж из Excel или CRM — графики и сравнение с рынком за минуту. Бесплатно и без регистрации.",
-        href: "https://mat-labs.ru/analytics/bi",
-        icon: "LayoutDashboard",
-        button: "Открыть облачный BI",
-      }
-    : isMatDatabases
-    ? {
-        title: "Соберите базу компаний под свою задачу",
-        text: "26 готовых баз и конструктор выборки. Анализ любой базы — бесплатно и без регистрации.",
-        href: "https://mat-labs.ru/analytics/databases",
-        icon: "Database",
-        button: "Открыть базы компаний",
-      }
-    : {
-        title: "Посмотрите рынок своей ниши",
-        text: "Объём, лидеры, приток новичков и риски — для любой отрасли и региона. Превью бесплатно и без регистрации.",
-        href: "https://mat-labs.ru/analytics",
-        icon: "ChartPie",
-        button: "Открыть бизнес-аналитику",
-      };
-  // Статьи о сочинениях — ведём в Мастерскую сочинений.
-  const isWriting = tags.includes("сочинение");
-  const isGrantAiTeam = isGrantAi && tags.includes("фонд оплаты труда");
-  const isGrantAiHiring = isGrantAi && !isGrantAiTeam && tags.includes("оценка компетенций");
-  // Специальные призывы закрывают лишь несколько узких тем.
-  // Если ни один не подошёл — показываем общий, подобранный по смыслу статьи,
-  // чтобы читатель не уходил с сайта без предложения.
-  const specialTags = ["дети", "развитие детей", "дошкольное образование", "аудиосказки",
-    "олимпиада", "прораб", "для бизнеса", "обновление"];
-  const hasSpecial =
-    isGrantAi || isTurnkey || isRadar || isMatAnalytics || isWriting || isForecast || isSchoolBuilder ||
-    (article.tags || []).some((t) => specialTags.includes(t.toLowerCase()));
+  const {
+    isForecast,
+    isSchoolBuilder,
+    isGrantAi,
+    isTurnkey,
+    isRadar,
+    isMatAnalytics,
+    isMatDatabases,
+    isMatBi,
+    isMatPipes,
+    matCta,
+    isWriting,
+    isGrantAiTeam,
+    isGrantAiHiring,
+    hasSpecial,
+  } = getFeedCtaFlags(article);
 
   return (
     <>
       {!hasSpecial && <FeedArticleDefaultCta article={article} />}
-      {/* CTA: Мастерская сочинений для статей о сочинениях */}
-      {isWriting && (
-        <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-600/30 via-rose-600/15 to-violet-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-amber-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">✍️</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Пишите сочинения на высокий балл
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              Итоговое сочинение, ЕГЭ и журналистские жанры — с наставником, который разбирает ваши тексты.
-            </p>
-            <Link
-              to="/writing-craft"
-              onClick={() => trackGoal("article_writing_click", { slug: article.slug })}
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-amber-500/25"
-            >
-              <Icon name="PenLine" size={18} />
-              Записаться в Мастерскую сочинений
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA mat-labs.ru: бизнес-аналитика */}
-      {isMatAnalytics && (
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-cyan-700/30 via-indigo-600/20 to-violet-700/35 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-cyan-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-cyan-500/20 flex items-center justify-center">
-              <Icon name={matCta.icon} fallback="BarChart3" size={28} className="text-cyan-200" />
-            </div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              {matCta.title}
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              {matCta.text}
-            </p>
-            <a
-              href={matCta.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackGoal(isMatPipes ? "article_mat_pipes_click" : isMatBi ? "article_mat_bi_click" : isMatDatabases ? "article_mat_databases_click" : "article_mat_analytics_click", { slug: article.slug })}
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-cyan-500/25"
-            >
-              <Icon name="BarChart3" size={18} />
-              {matCta.button}
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* CTA mat-labs.ru: Радар заказчиков */}
-      {isRadar && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-indigo-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-              <Icon name="Radar" size={28} className="text-violet-200" />
-            </div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Найдите заказчиков с бюджетом
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              18 тысяч компаний, получивших господдержку в 2024–2026 годах. Каталог бесплатный,
-              контакты — пробный доступ на 3 дня без карты.
-            </p>
-            <a
-              href="https://mat-labs.ru/radar"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackGoal("article_radar_click", { slug: article.slug })}
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-            >
-              <Icon name="Search" size={18} />
-              Открыть Радар заказчиков
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* CTA mat-labs.ru: готовый IT-бизнес под своим брендом */}
-      {isTurnkey && (
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-700/35 via-teal-600/20 to-violet-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-violet-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🚀</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Проверьте, свободен ли ваш город
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              Бесплатный разбор за 30 минут: обсудим нишу, город и ваш опыт. Каждый проект можно
-              посмотреть вживую до оплаты.
-            </p>
-            <a
-              href="https://mat-labs.ru/gotovyy-biznes"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackGoal("article_turnkey_click", { slug: article.slug })}
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-violet-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-emerald-500/25"
-            >
-              <Icon name="Rocket" size={18} />
-              Выбрать проект
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* CTA grant-ai.ru для статей о расчёте команды */}
-      {isGrantAiTeam && (
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">👥</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Рассчитайте команду за две минуты
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              Фонд оплаты труда по зарплатам вашего региона, со страховыми взносами, и гранты,
-              которые помогут его покрыть. Без регистрации и бесплатно.
-            </p>
-            <a
-              href="https://grant-ai.ru/team"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackGoal("article_grant_ai_team_click", { slug: article.slug })}
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-            >
-              <Icon name="Calculator" size={18} />
-              Рассчитать команду
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* CTA grant-ai.ru для статей о найме: оценка компетенций и HR-помощник */}
-      {isGrantAiHiring && (
-        <div className="relative overflow-hidden rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🎯</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Проверьте квалификацию за 15 минут
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5">
-              Независимая оценка для врачей, инженеров и сварщиков с сертификатом, который работодатель
-              проверяет по коду. HR-помощник для специалистов и работодателей. Бесплатно.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href="https://grant-ai.ru/skills"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackGoal("article_grant_ai_skills_click", { slug: article.slug })}
-                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-6 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-              >
-                <Icon name="BadgeCheck" size={18} />
-                Пройти оценку
-              </a>
-              <a
-                href="https://grant-ai.ru/hr"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackGoal("article_grant_ai_hr_click", { slug: article.slug })}
-                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold px-6 py-3.5 rounded-xl transition-colors"
-              >
-                <Icon name="Briefcase" size={18} />
-                HR-помощник
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CTA grant-ai.ru — переход на отдельный сервис по грантам */}
-      {isGrantAi && !isGrantAiHiring && !isGrantAiTeam && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🚀</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Попробуйте новые возможности на grant-ai.ru
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              Сопровождение выполнения условий, помощь с отчётностью и библиотека идей с готовыми промптами для победы.
-              Черновик заявки и оценка шансов — бесплатно.
-            </p>
-            <a
-              href="https://grant-ai.ru"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackGoal("article_grant_ai_cta_click", { slug: article.slug })}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-            >
-              <Icon name="ExternalLink" size={18} />
-              Перейти на grant-ai.ru
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* CTA прогноз EduFlow AI — прямой переход к калькулятору прибыли школы */}
-      {isForecast && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/40 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 bg-violet-500/20 border border-violet-400/30 rounded-full px-3 py-1 mb-3">
-              <Icon name="Sparkles" size={12} className="text-violet-200" />
-              <span className="text-violet-100 text-[11px] font-bold uppercase tracking-wider">Прогноз школы</span>
-            </div>
-            <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
-              Посчитайте прибыль своей школы за 30 секунд
-            </h3>
-            <p className="text-white/80 text-sm md:text-base max-w-lg mx-auto mb-4">
-              Задайте нишу, цену курса и бюджет — ИИ-прогноз покажет выручку, доходимость и чистую
-              прибыль ещё до первого вложенного рубля. Бесплатно и без регистрации.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-white/60 text-xs mb-5">
-              <span className="inline-flex items-center gap-1.5"><Icon name="TrendingUp" size={13} className="text-emerald-300" /> Выручка и прибыль</span>
-              <span className="inline-flex items-center gap-1.5"><Icon name="Percent" size={13} className="text-cyan-300" /> ROMI рекламы</span>
-              <span className="inline-flex items-center gap-1.5"><Icon name="Clock" size={13} className="text-fuchsia-300" /> Срок окупаемости</span>
-            </div>
-            <Link
-              to="/for-business#forecast"
-              onClick={() => trackGoal("article_forecast_cta_click", { slug: article.slug })}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-            >
-              <Icon name="Calculator" size={18} />
-              Открыть калькулятор прогноза
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA конструктор школ — прямой переход к запуску школы */}
-      {isSchoolBuilder && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/35 via-fuchsia-600/20 to-cyan-700/30 p-6 md:p-8 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-56 h-56 rounded-full bg-violet-500/25 blur-3xl" aria-hidden="true" />
-          <div className="absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🚀</div>
-            <h3 className="font-montserrat font-black text-2xl md:text-3xl text-white mb-2">
-              Методичка на курс пишется неделями. Здесь — минута
-            </h3>
-            <p className="text-white/80 text-sm md:text-base max-w-lg mx-auto mb-3">
-              Назовите тему — ИИ вернёт программу по модулям: уроки с конспектами, практические задания,
-              квизы, рекомендованную цену и тексты для объявления. Дальше подключаются оплаты с чеками
-              по 54-ФЗ, ваш бренд и домен. Без абонплаты: 8% с продажи, нет продаж — вы ничего не должны.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-white/60 text-xs mb-5">
-              <span className="inline-flex items-center gap-1.5"><Icon name="Sparkles" size={13} className="text-violet-300" /> Программа за 40 секунд</span>
-              <span className="inline-flex items-center gap-1.5"><Icon name="Wallet" size={13} className="text-cyan-300" /> Оплаты и чеки 54-ФЗ</span>
-              <span className="inline-flex items-center gap-1.5"><Icon name="GraduationCap" size={13} className="text-fuchsia-300" /> ИИ-наставник 24/7</span>
-            </div>
-            <Link
-              to="/school-builder"
-              onClick={() => trackGoal("article_school_builder_cta_click", { slug: article.slug })}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-7 py-3.5 rounded-xl hover:scale-[1.03] transition-transform shadow-lg shadow-violet-500/25"
-            >
-              <Icon name="Rocket" size={18} />
-              Собрать программу бесплатно
-            </Link>
-            <p className="text-white/40 text-[11px] mt-2.5">
-              Без регистрации и карты. PDF с программой остаётся у вас, даже если вы не вернётесь.
-            </p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
-              <Link to="/repetitoram" className="text-white/45 hover:text-white/70 text-xs underline underline-offset-2 transition-colors">
-                Условия и комиссия для репетиторов
-              </Link>
-              <Link to="/for-business" className="text-white/45 hover:text-white/70 text-xs underline underline-offset-2 transition-colors">
-                Демо для школы и учебного центра
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CTA «Малыш» — для статей про детей/дошкольников */}
-      {article.tags && article.tags.some((t) => ["дети", "развитие детей", "дошкольное образование", "аудиосказки"].includes(t.toLowerCase())) && (
-        <div className="relative overflow-hidden rounded-2xl border border-pink-400/30 bg-gradient-to-br from-pink-600/30 via-rose-500/20 to-amber-500/20 p-5 md:p-6 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-pink-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🦊</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Откройте «Малыш» прямо сейчас
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              Сказки с озвучкой, обучение чтению, умные игры и песни для детей от 2 лет. Бесплатно, без карты — первое занятие за полминуты.
-            </p>
-            <Link
-              to="/kids"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-pink-500/20"
-            >
-              <Icon name="Sparkles" size={18} />
-              Войти в Малыша
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA олимпиады — для статей с тегом «олимпиада» */}
-      {article.tags && article.tags.some((t) => t.toLowerCase() === "олимпиада") && (
-        <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-purple-700/40 to-cyan-700/30 p-5 md:p-6 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🏆</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Готов проверить свои силы?
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              Пройди мини-олимпиаду без ошибок и забери главный приз — 5000 ЗНАЕК.
-            </p>
-            <Link
-              to="/olympiad"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-amber-500/20"
-            >
-              <Icon name="Rocket" size={18} />
-              Участвовать в олимпиаде
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA курс прораба — для статей с тегом «прораб» */}
-      {article.tags && article.tags.some((t) => t.toLowerCase() === "прораб") && (
-        <div className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-slate-800/60 to-amber-700/30 p-5 md:p-6 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">👷</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Освойте профессию прораба
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              10 модулей и 56 уроков: СНиПы, планирование, охрана труда и заработок на ремонте. Бесплатно, с именным сертификатом.
-            </p>
-            <Link
-              to="/course-checkout/72"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-amber-500/20"
-            >
-              <Icon name="HardHat" size={18} />
-              Перейти к курсу
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* CTA конструктор школ — для статей с тегом «для бизнеса» */}
-      {article.tags && article.tags.some((t) => t.toLowerCase() === "для бизнеса") && (
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-700/30 via-fuchsia-600/20 to-cyan-700/30 p-5 md:p-6 mb-8 text-center">
-          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <div className="text-4xl mb-2">🚀</div>
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5">
-              Своя школа без IT-команды и абонплаты
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-4">
-              ИИ соберёт программу курса за минуту и будет отвечать ученикам 24/7 строго в её рамках.
-              Ваш бренд, ваш домен, оплаты с чеками по 54-ФЗ. Платите 8% с продаж — абонплаты нет.
-            </p>
-            <Link
-              to="/for-business#lead"
-              onClick={() => trackGoal("article_business_cta_click", { slug: article.slug })}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-cyan-500 text-white font-black px-6 py-3 rounded-xl hover:opacity-95 transition-opacity shadow-lg shadow-violet-500/20"
-            >
-              <Icon name="Rocket" size={18} />
-              Получить демо и цену
-            </Link>
-            <p className="text-white/40 text-[11px] mt-2.5">
-              Покажем платформу и соберём ваш первый курс прямо на демо. Ответим в течение рабочего дня.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* CTA три обновлённых курса — для статьи с тегом «обновление» */}
-      {article.tags && article.tags.some((t) => t.toLowerCase() === "обновление") && (
-        <div className="relative overflow-hidden rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-700/30 via-fuchsia-600/20 to-cyan-700/30 p-5 md:p-6 mb-8">
-          <div className="absolute -top-16 -right-8 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
-          <div className="relative">
-            <h3 className="font-montserrat font-black text-xl md:text-2xl text-white mb-1.5 text-center">
-              Открой обновлённый курс
-            </h3>
-            <p className="text-white/75 text-sm md:text-base max-w-md mx-auto mb-5 text-center">
-              Доступ навсегда, чек по 54-ФЗ, оплата защищена через ЮKassa.
-            </p>
-            <div className="grid sm:grid-cols-3 gap-3">
-              <Link
-                to="/course-checkout/17"
-                className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
-              >
-                <span className="text-3xl">🌍</span>
-                <span className="text-white font-bold text-sm leading-tight">Английский с нуля</span>
-                <span className="gradient-text-purple font-black text-base">6 599 ₽</span>
-              </Link>
-              <Link
-                to="/course-checkout/57"
-                className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
-              >
-                <span className="text-3xl">📣</span>
-                <span className="text-white font-bold text-sm leading-tight">Интернет-маркетолог</span>
-                <span className="gradient-text-purple font-black text-base">9 900 ₽</span>
-              </Link>
-              <Link
-                to="/course-checkout/65"
-                className="flex flex-col items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-4 py-4 transition-colors text-center"
-              >
-                <span className="text-3xl">🤖</span>
-                <span className="text-white font-bold text-sm leading-tight">Нейросети с нуля</span>
-                <span className="gradient-text-purple font-black text-base">5 990 ₽</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      <FeedArticleServiceCtas
+        article={article}
+        isWriting={isWriting}
+        isMatAnalytics={isMatAnalytics}
+        isMatPipes={isMatPipes}
+        isMatBi={isMatBi}
+        isMatDatabases={isMatDatabases}
+        matCta={matCta}
+        isRadar={isRadar}
+        isTurnkey={isTurnkey}
+      />
+      <FeedArticleGrantCtas
+        article={article}
+        isGrantAi={isGrantAi}
+        isGrantAiTeam={isGrantAiTeam}
+        isGrantAiHiring={isGrantAiHiring}
+      />
+      <FeedArticleTagCtas
+        article={article}
+        isForecast={isForecast}
+        isSchoolBuilder={isSchoolBuilder}
+      />
     </>
   );
 }
