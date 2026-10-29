@@ -77,6 +77,7 @@ export default function LessonViewerModal({ open, onClose, subjectId, topic, gra
           topic,
           grade: mapGrade(grade),
           difficulty: "средний",
+          lesson_title: lessonTitle,
         }),
         signal: controller.signal,
       });

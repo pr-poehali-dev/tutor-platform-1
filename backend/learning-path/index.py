@@ -311,8 +311,9 @@ FIXED_CONTENT_SUBJECTS = {
 
 
 def is_fixed_content_subject(subject):
-    """Нужно ли фиксировать (кэшировать целиком) контент по этому предмету."""
-    return str(subject or '').strip().lower() in FIXED_CONTENT_SUBJECTS
+    """Уроки курсов стационарные: теория и задачи собираются один раз, затем
+    одинаковые для всех учеников. Список FIXED_CONTENT_SUBJECTS оставлен для истории."""
+    return True
 
 
 # Предметы, где событие без даты бессмысленно — требуем от ИИ ленту времени.
@@ -621,6 +622,30 @@ def _lesson_cache_key(subject, topic, grade, difficulty, lesson_title):
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
 
+LOCK_SCORE = 80
+
+
+def lesson_quality(data):
+    """Оценка полноты урока 0–100: теория, примеры с шагами, ошибки, фишки, резюме.
+    Чем выше — тем удачнее сборка. Лучшая версия закрепляется и больше не пересобирается."""
+    if not isinstance(data, dict) or data.get('_fallback'):
+        return 0
+    score = 0
+    blocks = [b for b in (data.get('theory_blocks') or []) if isinstance(b, dict)]
+    score += min(len(blocks), 3) * 8
+    score += min(sum(len(str(b.get('content') or '')) for b in blocks) // 60, 20)
+    score += min(sum(len(b.get('key_points') or []) for b in blocks), 6)
+    examples = [e for e in (data.get('examples') or []) if isinstance(e, dict)]
+    score += min(len(examples), 3) * 5
+    score += min(sum(1 for e in examples if len(e.get('solution_steps') or []) >= 2), 3) * 3
+    score += min(len(data.get('common_mistakes') or []), 3) * 2
+    score += 8 if data.get('expert_tips') else 0
+    score += 4 if len(str(data.get('summary') or '')) > 60 else 0
+    tasks = [t for t in (data.get('tasks') or []) if isinstance(t, dict)]
+    score += min(len(tasks), 5)
+    return min(score, 100)
+
+
 def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
     """Возвращает урок из кэша БД, если есть, и обновляет счётчик попаданий.
 
@@ -635,7 +660,7 @@ def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT lesson_data FROM lesson_cache WHERE cache_key = %s LIMIT 1",
+                "SELECT lesson_data, is_locked, quality_score FROM lesson_cache WHERE cache_key = %s LIMIT 1",
                 (key,)
             )
             row = cur.fetchone()
@@ -644,13 +669,28 @@ def get_cached_lesson(subject, topic, grade, difficulty, lesson_title):
             data = row['lesson_data']
             if isinstance(data, str):
                 data = json.loads(data)
+            # Старые записи без оценки — оцениваем один раз; удачные сразу закрепляем.
+            if not row.get('is_locked') and not row.get('quality_score') and isinstance(data, dict):
+                q = lesson_quality(data)
+                row['is_locked'] = q >= LOCK_SCORE
+                cur.execute(
+                    "UPDATE lesson_cache SET quality_score = %s, is_locked = %s WHERE cache_key = %s",
+                    (q, row['is_locked'], key))
+                conn.commit()
+            # Закреплённый (лучший) урок отдаём всегда как есть — без пересборки.
+            if row.get('is_locked'):
+                cur.execute(
+                    "UPDATE lesson_cache SET hit_count = hit_count + 1, last_accessed_at = NOW() WHERE cache_key = %s",
+                    (key,))
+                conn.commit()
+                return data
             # Устаревшая запись по истории — без ленты времени. Возвращаем None,
             # чтобы урок пересобрался с датами и перезаписал кэш.
             if subject in TIMELINE_SUBJECTS and isinstance(data, dict) and not data.get('timeline'):
                 return None
             # Уроки «школьного» уровня, собранные до экспертной планки, — без фишек эксперта.
             # Пересобираем: новый урок глубже и перезапишет кэш.
-            if isinstance(data, dict) and data.get('_level') != 'expert':
+            if isinstance(data, dict) and data.get('_level') != 'expert' and lesson_quality(data) < 60:
                 return None
             # Уроки по алканам без изомеризации и циклизации (обязательны в школе — уточнение
             # репетитора Юлии Быковой) пересобираем заново.
@@ -680,6 +720,9 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
     (без ленты времени) навсегда остался бы в кэше и пересборка ничего не дала бы.
     """
     key = _lesson_cache_key(subject, topic, grade, difficulty, lesson_title)
+    quality = lesson_quality(lesson_data)
+    if quality <= 0:
+        return
     conn = _get_db_conn()
     if conn is None:
         return
@@ -688,11 +731,16 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
             cur.execute(
                 """
                 INSERT INTO lesson_cache
-                    (cache_key, subject, grade, topic, difficulty, lesson_title, lesson_data)
-                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                    (cache_key, subject, grade, topic, difficulty, lesson_title, lesson_data,
+                     quality_score, is_locked)
+                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s)
                 ON CONFLICT (cache_key) DO UPDATE
                     SET lesson_data = EXCLUDED.lesson_data,
+                        quality_score = EXCLUDED.quality_score,
+                        is_locked = EXCLUDED.is_locked,
                         last_accessed_at = NOW()
+                    WHERE lesson_cache.is_locked = FALSE
+                      AND EXCLUDED.quality_score >= lesson_cache.quality_score
                 """,
                 (
                     key,
@@ -702,6 +750,8 @@ def save_lesson_to_cache(subject, topic, grade, difficulty, lesson_title, lesson
                     difficulty,
                     lesson_title or '',
                     json.dumps(lesson_data, ensure_ascii=False),
+                    quality,
+                    quality >= LOCK_SCORE,
                 )
             )
             conn.commit()
@@ -729,10 +779,13 @@ def update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, 
             cur.execute(
                 """
                 UPDATE lesson_cache
-                SET lesson_data = jsonb_set(lesson_data, '{tasks}', %s::jsonb, true)
+                SET lesson_data = jsonb_set(lesson_data, '{tasks}', %s::jsonb, true),
+                    quality_score = LEAST(100, quality_score + %s),
+                    is_locked = (LEAST(100, quality_score + %s) >= %s)
                 WHERE cache_key = %s
+                  AND COALESCE(jsonb_array_length(lesson_data->'tasks'), 0) = 0
                 """,
-                (json.dumps(tasks, ensure_ascii=False), key),
+                (json.dumps(tasks, ensure_ascii=False), min(len(tasks), 5), min(len(tasks), 5), LOCK_SCORE, key),
             )
             conn.commit()
     except Exception:
@@ -1484,21 +1537,28 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
     return data
 
 
-def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=None, n=5):
+def action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=None, n=5, lesson_title=None):
     """Отдельный быстрый запрос — только задачи к уроку.
 
     shown_questions — список текстов задач, которые уже видел пользователь (исключаем повторы).
     n — сколько задач сгенерировать (по умолчанию 5).
     """
     subject_name = subject_display_name(subject)
+    if lesson_title is not None:
+        cached = get_cached_lesson(subject, topic, grade, difficulty, lesson_title)
+        cached_tasks = cached.get('tasks') if isinstance(cached, dict) else None
+        if isinstance(cached_tasks, list) and cached_tasks:
+            return {'tasks': cached_tasks, '_cached': True}
     tasks = _generate_lesson_tasks_only(
         subject_name, topic, grade, difficulty,
-        shown_questions=shown_questions,
+        shown_questions=None if lesson_title is not None else shown_questions,
         n=max(1, min(int(n or 5), 8)),
-        seed=random.randint(1000, 9999),
+        seed=None if lesson_title is not None else random.randint(1000, 9999),
     )
     if subject == 'chemistry':
         tasks = chem_check_tasks(tasks)
+    if lesson_title is not None and tasks:
+        update_cached_lesson_tasks(subject, topic, grade, difficulty, lesson_title, tasks)
     return {'tasks': tasks}
 
 
@@ -1744,7 +1804,9 @@ def handler(event, context):
                     'body': json.dumps({'error': 'topic обязателен'}, ensure_ascii=False),
                 }
             try:
-                result = action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=shown_questions, n=n)
+                lt = body.get('lesson_title')
+                result = action_generate_lesson_tasks(subject, topic, grade, difficulty, shown_questions=shown_questions, n=n,
+                                                      lesson_title=str(lt)[:500] if isinstance(lt, str) and lt.strip() else None)
             except Exception as e:
                 print(f'[learning-path] generate_lesson_tasks failed: {str(e)[:200]}')
                 result = {'tasks': []}

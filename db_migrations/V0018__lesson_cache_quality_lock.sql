@@ -1,0 +1,2 @@
+ALTER TABLE t_p78828167_tutor_platform_1.lesson_cache ADD COLUMN IF NOT EXISTS quality_score INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE t_p78828167_tutor_platform_1.lesson_cache ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE;
