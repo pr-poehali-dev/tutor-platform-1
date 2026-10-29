@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { useYookassa, isValidEmail } from "@/components/extensions/yookassa/useYookassa";
 import { setPaidEmail } from "@/components/intensive/api";
@@ -10,7 +10,6 @@ import {
   MoneyBackGuarantee,
   SecurePaymentBadge,
 } from "@/components/courses/CheckoutBoosters";
-import { ACTIVE_PROMO_CODE } from "@/components/checkout/CheckoutCouponForm";
 import { trackGoal } from "@/components/analytics/YandexMetrika";
 import func2url from "../../../../backend/func2url.json";
 
@@ -32,8 +31,7 @@ export default function CourseEmailPay({ course, price }: Props) {
   const [email, setEmail] = useState("");
   const [agree, setAgree] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
-  // Промокод для покупателя без входа. Раньше эта форма скидку не поддерживала:
-  // гость платил полную цену, даже когда действовала скидка 30%.
+  // Промокод для покупателя без входа.
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState<{ code: string; percent: number; finalRub: number } | null>(null);
   const [couponChecking, setCouponChecking] = useState(false);
@@ -41,18 +39,10 @@ export default function CourseEmailPay({ course, price }: Props) {
 
   const { createPayment, isLoading, error } = useYookassa({ apiUrl: YOOKASSA_URL });
 
-  // Действующую скидку применяем сами. Раньше человек должен был заметить
-  // жёлтый блок и нажать его — кто не нажал, платил на 30% больше.
-  useEffect(() => {
-    if (couponApplied || couponChecking || price < 10) return;
-    applyCoupon(ACTIVE_PROMO_CODE, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const track = `course-${course.id}`;
   const finalPrice = couponApplied ? couponApplied.finalRub : price;
 
-  const applyCoupon = async (raw?: string, silent = false) => {
+  const applyCoupon = async (raw?: string) => {
     const code = (raw ?? coupon).trim();
     if (!code) return;
     setCouponChecking(true);
@@ -65,9 +55,7 @@ export default function CourseEmailPay({ course, price }: Props) {
       });
       const data = await res.json();
       if (!data.valid) {
-        // При автоприменении молчим: человек этот код не вводил,
-        // ошибка про «недействительный промокод» его только напугает.
-        if (!silent) setCouponError(data.message || "Промокод не найден или недействителен");
+        setCouponError(data.message || "Промокод не найден или недействителен");
         return;
       }
       setCouponApplied({
@@ -76,7 +64,7 @@ export default function CourseEmailPay({ course, price }: Props) {
         finalRub: data.final_rub ?? price,
       });
     } catch {
-      if (!silent) setCouponError("Не удалось проверить промокод, попробуй ещё раз");
+      setCouponError("Не удалось проверить промокод, попробуй ещё раз");
     } finally {
       setCouponChecking(false);
     }
@@ -148,7 +136,7 @@ export default function CourseEmailPay({ course, price }: Props) {
         Доступ навсегда · оплата картой или СБП · чек по 54-ФЗ
       </p>
 
-      {/* Скидка для покупателя без входа: подставляем действующий промокод одним нажатием */}
+      {/* Промокод для покупателя без входа */}
       {price < 10 ? null : couponApplied ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 mb-5">
           <span className="flex items-center gap-2 min-w-0">
@@ -167,24 +155,22 @@ export default function CourseEmailPay({ course, price }: Props) {
         </div>
       ) : (
         <div className="mb-5">
-          <button
-            onClick={() => { setCoupon(ACTIVE_PROMO_CODE); applyCoupon(ACTIVE_PROMO_CODE); }}
-            disabled={couponChecking}
-            className="w-full flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/15 disabled:opacity-60 px-4 py-3 text-left transition-colors"
-          >
-            <span className="text-xl leading-none">🎒</span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-white font-bold text-sm">К учебному году — скидка 30%</span>
-              <span className="block text-white/55 text-xs mt-0.5">
-                Промокод{" "}
-                <span className="font-mono font-bold text-amber-300 tracking-wider">{ACTIVE_PROMO_CODE}</span>
-                {" "}— нажми, чтобы применить
-              </span>
-            </span>
-            {couponChecking
-              ? <Icon name="Loader2" size={16} className="text-amber-300 animate-spin flex-shrink-0" />
-              : <Icon name="ChevronRight" size={16} className="text-amber-300 flex-shrink-0" />}
-          </button>
+          <div className="flex gap-2">
+            <input
+              value={coupon}
+              onChange={(e) => { setCoupon(e.target.value); setCouponError(null); }}
+              onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+              placeholder="Промокод, если есть"
+              className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white font-mono tracking-wider placeholder:text-white/30 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:border-amber-400/60 uppercase text-sm"
+            />
+            <button
+              onClick={() => applyCoupon()}
+              disabled={couponChecking || !coupon.trim()}
+              className="px-4 rounded-xl font-bold text-sm flex-shrink-0 bg-white/10 text-white hover:bg-white/15 disabled:opacity-50"
+            >
+              {couponChecking ? <Icon name="Loader2" size={16} className="animate-spin" /> : "Применить"}
+            </button>
+          </div>
           {couponError && (
             <p className="text-rose-300 text-xs mt-2 flex items-center gap-1.5">
               <Icon name="AlertCircle" size={12} />
