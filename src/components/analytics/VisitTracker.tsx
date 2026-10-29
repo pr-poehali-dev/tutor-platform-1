@@ -23,6 +23,22 @@ function getVisitorId(): { id: string; isNew: boolean } {
 }
 
 const DAILY_REPORT_URL = (func2url as Record<string, string>)["daily-report"];
+const LEARNING_PATH_URL = (func2url as Record<string, string>)["learning-path"];
+
+/** Шаг ИИ-методиста — раз за сессию вкладки, с задержкой. Сервер сам делает
+ *  не больше одного шага в 4 минуты: проверка урока, улучшение или вердикт. */
+let methodistTicked = false;
+function tickMethodist() {
+  if (methodistTicked || !LEARNING_PATH_URL) return;
+  methodistTicked = true;
+  setTimeout(() => {
+    fetch(LEARNING_PATH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "methodist_tick" }),
+    }).catch(() => {});
+  }, 15000);
+}
 
 /** Ленивый дневной отчёт владельцу — один раз за сессию вкладки.
  *  Планировщик Vercel на текущем тарифе выполняет не все задания,
@@ -68,6 +84,7 @@ export default function VisitTracker() {
 
   useEffect(() => {
     tickDailyReport();
+    tickMethodist();
     tickReminders();
     tickPilotOutreach();
     monitorTick();

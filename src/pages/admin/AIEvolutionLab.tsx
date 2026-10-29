@@ -5,6 +5,7 @@ import Seo from "@/components/seo/Seo";
 import AutopilotPanel from "@/components/admin/AutopilotPanel";
 import AutomationStatusPanel from "@/components/admin/AutomationStatusPanel";
 import AgentGraph from "@/components/admin/AgentGraph";
+import MethodistPanel from "@/components/admin/MethodistPanel";
 import func2url from "../../../backend/func2url.json";
 
 const EVOLVE_URL = (func2url as Record<string, string>)["ai-evolve"];
@@ -177,6 +178,8 @@ export default function AIEvolutionLab() {
         <AutomationStatusPanel />
 
         {/* Автопилот + Граф связей */}
+        <MethodistPanel />
+
         <div className="grid lg:grid-cols-2 gap-5 mb-8">
           <AutopilotPanel />
           <AgentGraph />

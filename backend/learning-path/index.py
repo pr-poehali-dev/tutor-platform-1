@@ -14,6 +14,7 @@ import urllib.error
 import psycopg2
 import psycopg2.extras
 
+import methodist
 from chem import ALKANE_RULES, CHEM_RULES, fix_obj as chem_fix_obj, is_alkane_topic
 
 
@@ -1415,6 +1416,14 @@ def action_generate_lesson(subject, topic, grade, difficulty, lesson_title='', i
     subject_name = subject_display_name(subject)
     title_hint = f'Название урока: "{lesson_title}". ' if lesson_title else ''
     needs_timeline = subject in TIMELINE_SUBJECTS
+    _rc = _get_db_conn()
+    try:
+        _rules = methodist.rules_for(_rc, subject)
+    finally:
+        if _rc is not None:
+            _rc.close()
+    if _rules:
+        title_hint += '\nПРАВИЛА МЕТОДИСТА ПЛАТФОРМЫ (выведены из разборов прошлых уроков, соблюдай):\n' + '\n'.join(f'- {r}' for r in _rules) + '\n'
 
     # ── Этап 1: теория + примеры (быстрый запрос, ~2800 токенов) ──
     prompt_main = f"""Ты — эксперт-практик по предмету "{subject_name}": автор олимпиадных задач, эксперт ЕГЭ/ОГЭ и преподаватель профильного вуза. Составь урок по теме "{topic}" для уровня "{grade}", сложность "{difficulty}".
@@ -1818,6 +1827,31 @@ def handler(event, context):
                     for k, v in SUBJECT_TOPICS.items()
                 ]
             }
+
+        elif action == 'methodist_tick':
+            conn = _get_db_conn()
+            if conn is None:
+                result = {'step': 'no_db'}
+            else:
+                try:
+                    from datetime import datetime
+                    result = methodist.tick(conn, call_polza, lesson_quality, SUBJECT_TOPICS, datetime.now().year,
+                                            force=bool(body.get('force')) and body.get('admin_key') == os.environ.get('ADMIN_KEY', '-'))
+                except Exception as e:
+                    print(f'[methodist] tick failed: {str(e)[:200]}')
+                    result = {'step': 'error'}
+                finally:
+                    conn.close()
+
+        elif action == 'methodist_status':
+            conn = _get_db_conn()
+            if conn is None:
+                result = {}
+            else:
+                try:
+                    result = methodist.status(conn)
+                finally:
+                    conn.close()
 
         elif action == 'warmup':
             try:
