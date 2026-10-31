@@ -1,5 +1,6 @@
 import { Link } from "@/lib/router-compat";
 import Icon from "@/components/ui/icon";
+import MasshtabLink from "@/components/masshtab/MasshtabLink";
 import { useDirection } from "@/hooks/useDirection";
 import { DIRECTIONS, LEARNER_ORDER, LearnerDirection } from "@/lib/directions";
 
@@ -194,6 +195,7 @@ export default function SiteFooter() {
           <nav aria-label="Партнёрам и бизнесу">
             <h4 className="font-montserrat font-bold text-white/80 text-sm mb-3">Партнёрам и бизнесу</h4>
             <LinkList links={BUSINESS} accent="text-white/50" />
+            <MasshtabLink variant="footer" place="footer" />
             <div className="mt-5 pt-3 border-t border-white/8 space-y-1.5 text-xs">
               <p className="text-white/60 flex items-center gap-1.5">
                 <Icon name="ShieldCheck" size={12} className="text-green-400" aria-hidden="true" /> Серверы в РФ

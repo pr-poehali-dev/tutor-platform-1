@@ -16,6 +16,7 @@ import FeedArticleFooter from "@/components/feed/article/FeedArticleFooter";
 import FeedAudioPlayer from "@/components/feed/article/FeedAudioPlayer";
 import FeedArticleSpoiler from "@/components/feed/article/FeedArticleSpoiler";
 import SeriesNav from "@/components/feed/article/SeriesNav";
+import MasshtabLink from "@/components/masshtab/MasshtabLink";
 import { breadcrumbItems } from "@/components/feed/seo";
 
 const route = getRouteApi("/feed/$slug");
@@ -339,6 +340,8 @@ export default function FeedArticlePage() {
         <SeriesNav slug={article.slug} />
 
         <FeedArticleCtas article={article} />
+
+        {article.category === "business" && <MasshtabLink place={`article_${article.slug}`.slice(0, 80)} />}
 
         <FeedArticleFooter article={article} related={related} />
       </main>
